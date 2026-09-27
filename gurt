@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.5.2"
+GURT_VERSION="0.5.3"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -1490,9 +1490,10 @@ repo_add() {
   if [[ -n $KEYSRC ]]; then
     key=$(fetch_key "$name" "$KEYSRC")
     if [[ -n ${EXPECT_FPR:-} ]]; then
-      local got_fpr; got_fpr=$(gpg --show-keys --with-colons "$key" 2>/dev/null | awk -F: '$1 == "fpr" {print $10; exit}')
-      if [[ ${got_fpr^^} != "${EXPECT_FPR^^}" ]]; then
-        rm -f "$key"; die "🚩 key fingerprint mismatch for $name: expected $EXPECT_FPR, got ${got_fpr:-nothing} — NOT adding it"
+      # key files can hold several keys (e.g. an old + a current one) — the pinned one has to be among them
+      local got_fpr; got_fpr=$(gpg --show-keys --with-colons "$key" 2>/dev/null | awk -F: '$1 == "fpr" {print toupper($10)}')
+      if ! grep -qxF "${EXPECT_FPR^^}" <<<"$got_fpr"; then
+        rm -f "$key"; die "🚩 key fingerprint mismatch for $name: expected $EXPECT_FPR, got $(head -n1 <<<"$got_fpr" || true) — NOT adding it"
       fi
       msg2 "key fingerprint matches the pinned one ✅"
     fi

@@ -1,0 +1,16 @@
+pkgname = google-chrome
+pkgver = repo
+pkgrel = 1
+pkgdesc = Google Chrome — web browser (official repo)
+url = https://www.google.com/chrome/
+license = custom
+maintainer = clrealy
+arch = x86_64
+via_repo = google-chrome
+via_type = apt
+via_url = https://dl.google.com/linux/chrome/deb
+via_suite = stable
+via_components = main
+via_key = https://dl.google.com/linux/linux_signing_key.pub
+via_fingerprint = EB4C1BFD4F042F6DDDCCEC917721F63BD38B4796
+via_pkg = google-chrome-stable
