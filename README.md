@@ -42,9 +42,16 @@ It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine,
 
 Mirrors and releases are set in [`gurt.conf`](gurt.conf), so apt can point at Ubuntu instead of Debian, for example.
 
-### System tools? Use a box 📦
+### System tools go in a box automatically 📦
 
-Regular `apt/` `dnf/` `zypper/` `pacman/` installs are for **apps**. System tools (package managers, GUIs for them, daemons) need their real distro around them, so put them in a **box**:
+Regular `apt/` `dnf/` `zypper/` `pacman/` installs are for **apps**. **System utilities automatically go in a box**, which is a real container of their distro. gurt boxes a package when:
+
+- it's a package manager, a frontend for one, or a distro config tool (dnfdragora, synaptic, yast, mintupdate…)
+- it depends on package-manager internals (libdnf, libzypp, libapt-pkg, python3-apt…)
+- it installs system services or hooks (systemd units, udev rules, PAM, polkit helpers…)
+- it would overwrite files your distro owns
+
+Kernels, bootloaders and init systems are **refused**, because those have to come from your own distro. If you already have a package from your distro, gurt just tells you. `--box` forces a box, and `--no-box` turns auto-boxing off.
 
 ```sh
 gurt install --box dnf/dnfdragora      # real Fedora, in a container

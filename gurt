@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.7.0"
+GURT_VERSION="0.8.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -42,7 +42,7 @@ FOREIGN_SOURCES="aur apt dnf zypper pacman flatpak snap"
 IDX_DIR="$GURT_CACHE/index"
 IDX_MAX_AGE="${IDX_MAX_AGE:-86400}"   # re-download foreign indexes after a day
 
-NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT="" EXPECT_FPR="" BOX=false
+NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT="" EXPECT_FPR="" BOX=false NOBOX=false
 
 # ───────────────────────── pretty output ─────────────────────────
 if [[ -t 2 && -z ${NO_COLOR:-} ]]; then
@@ -1031,6 +1031,9 @@ foreign_dep() { # src dep
   local src=$1 dep=$2 g nat
   dep=${dep%%[<>=]*}
   [[ -z $dep ]] && return 0
+  if [[ $dep =~ $OSPART_RE || $dep =~ $PMLIB_RE || $dep =~ $SYSTOOL_RE ]] && ! host_has "$dep"; then
+    warn "not pulling $dep from $src — it's system plumbing (if this app needs it, try: gurt install --box $src/<app>)"; return 0
+  fi
   if $NODEPS; then host_has "$dep" || warn "--nodeps: not getting $dep"; return 0; fi
   host_has "$dep" && return 0
   is_installed "$(pkey "$src" "$dep")" && return 0
@@ -1064,6 +1067,27 @@ foreign_dep() { # src dep
         warn "couldn't find dep '$dep' anywhere — skipping it, stuff might break"
       fi ;;
   esac
+}
+
+# ── what goes in a box ──
+# distro-specific system utilities: need their real distro around them → auto-box
+SYSTOOL_RE='^(dnf|dnf5|dnf-.*|dnf5daemon.*|dnfdragora.*|yum|yum-.*|yumex.*|rpm|rpm-.*|zypper|zypper-.*|yast2.*|libzypp|apt|apt-.*|aptitude|synaptic|dpkg|dpkg-.*|debconf.*|pacman|pacman-.*|pamac.*|octopi.*|packagekit.*|gnome-software.*|plasma-discover.*|mint(update|install|sources|backup|drivers|report).*|ubuntu-drivers.*|software-properties.*|update-manager.*|cockpit.*|firewalld.*|firewall-config|system-config-.*|anaconda.*|calamares.*|timeshift|tuned.*|abrt.*)$'
+# libraries only package-manager tooling depends on
+PMLIB_RE='^(libdnf.*|python3-dnf.*|python3-libdnf.*|dnf-data|libdnf5.*|libzypp.*|libapt-pkg.*|python3-apt|apt-utils|librpm.*|rpm-libs|python3-rpm|libalpm.*|pyalpm|packagekit.*|libpackagekit.*|libyui.*|python3-yui|python3-manatools)$'
+# files that mean "this hooks into the system"
+SYSFILE_RE='(^|/)lib/systemd/system/|^etc/systemd/system/|(^|/)lib/udev/rules\.d/|^etc/pam\.d/|(^|/)lib/modules/|^etc/sudoers\.d/|^usr/share/polkit-1/actions/|^usr/share/dbus-1/system-services/|^etc/dbus-1/system\.d/'
+# the OS itself — a box can't help, use your own distro's
+OSPART_RE='^(linux|linux-lts|linux-zen|linux-hardened|linux-image.*|linux-headers.*|kernel|kernel-.*|grub.*|grub2.*|shim.*|systemd|systemd-.*|udev|dracut.*|mkinitcpio.*|initramfs-tools.*|plymouth.*|efibootmgr|refind|syslinux|sysvinit.*|openrc.*|runit.*|.*-firmware|linux-firmware.*|firmware-.*)$'
+
+# should this explicit install go in a box? prints the reason, empty = no
+box_reason() { # src name deps files(newline list, may be empty)
+  local src=$1 name=$2 deps=$3 files=${4:-} d
+  case $src in apt|dnf|zypper|pacman) ;; *) return 0 ;; esac
+  [[ $name =~ $SYSTOOL_RE ]] && { echo "it's a system utility for its own distro"; return; }
+  local IFS=,; for d in $deps; do [[ ${d%%[<>=]*} =~ $PMLIB_RE ]] && { echo "it needs package-manager internals ($d)"; return; }; done
+  if [[ -n $files ]] && grep -qE "$SYSFILE_RE" <<<"$files"; then echo "it installs system services/hooks"; return; fi
+  if [[ -n $files && -z $R ]] && [[ -n $(sed 's|^|/|' <<<"$files" | sys_owned) ]]; then echo "it would overwrite files your distro owns"; return; fi
+  return 0
 }
 
 WARNED_FOREIGN=false
@@ -1125,19 +1149,36 @@ foreign_install() { # src name reason
     [[ $reason == explicit ]] && msg "$(pretty "$key") $(inst_ver "$key") is already installed and up to date 👍"
     return 0
   fi
+  if [[ $name =~ $OSPART_RE ]]; then
+    die "$src/$name is part of an operating system (kernel/boot/init) — that has to come from YOUR distro, not another one or a box 💀"
+  fi
   if [[ $name =~ $CORE_RE ]] && ! $FORCE; then
     die "$src/$name is a core system package — another distro's copy of it would wreck your install 💀"
+  fi
+  local why=""
+  if [[ $reason == explicit ]] && ! $FORCE && [[ $(src_pm "$src") != "$PM" ]] && pm_has "$name"; then
+    msg "you already have $name from your distro ($PM) 👍 — nothing to do (want $src's version anyway? gurt install --box $src/$name)"; return 0
+  fi
+  if [[ $reason == explicit ]] && ! $NOBOX; then
+    why=$(box_reason "$src" "$name" "$deps")
+    if [[ -n $why ]]; then msg "📦 $src/$name goes in a box — $why"; box_install "$src" "$name" "$reason"; return; fi
   fi
   if [[ $reason == explicit ]]; then
     foreign_banner
     ask "install $src/$name $ver ($desc)?" || die "aborted, no cap"
   fi
+  # unpack first so we can look inside before touching anything
+  repack_foreign "$src" "$name" "$ver" "$path" "$sum" "$deps" "$desc" "$prov"
+  local built=$BUILT_PKG
+  if [[ $reason == explicit ]] && ! $NOBOX; then
+    why=$(box_reason "$src" "$name" "" "$(tar -xzf "$built" -O .FILES 2>/dev/null || true)")
+    if [[ -n $why ]]; then msg "📦 $src/$name goes in a box — $why"; NOCONFIRM=true box_install "$src" "$name" "$reason"; return; fi
+  fi
   local d dl=()
   IFS=, read -ra dl <<<"$deps"
   for d in "${dl[@]}"; do foreign_dep "$src" "$d"; done
   flush_native
-  repack_foreign "$src" "$name" "$ver" "$path" "$sum" "$deps" "$desc" "$prov"
-  install_file "$BUILT_PKG" "$reason"
+  install_file "$built" "$reason"
 }
 
 # ── flatpak + snap: they manage their own installs, gurt drives them and remembers what it put there ──
@@ -1910,8 +1951,9 @@ ${B}options${R0}
   -y, --noconfirm      don't ask, just send it
   -f, --force          reinstall / overwrite / ignore reverse deps
   -r, --repo SRC       use this source for bare names, e.g.  gurt install htop --repo apt
-  --box                install apt/ dnf/ zypper/ pacman/ stuff inside a real container of that
-                       distro (distrobox) — for system tools that need the real package manager
+  --box                force apt/ dnf/ zypper/ pacman/ stuff into a real container of that distro
+                       (system utilities go there automatically)
+  --no-box             never auto-box (you know what you're doing)
   -a, --all            search every source
   --nodeps             don't install distro deps
   --nocheck            skip check()
@@ -1929,6 +1971,7 @@ main() {
       -f|--force)     FORCE=true ;;
       -a|--all)       ALLSRC=true ;;
       --box|--container) BOX=true ;;
+      --no-box)       NOBOX=true ;;
       -r|--repo|--from) shift; REPO=${1:?--repo needs a source (gurt aur apt dnf zypper pacman)} ;;
       --repo=*|--from=*)  REPO=${1#*=} ;;
       --key)          shift; KEYSRC=${1:?--key needs a url or file} ;;
