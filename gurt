@@ -1156,7 +1156,7 @@ foreign_install() { # src name reason
     die "$src/$name is a core system package — another distro's copy of it would wreck your install 💀"
   fi
   local why=""
-  if [[ $reason == explicit ]] && ! $FORCE && [[ $(src_pm "$src") != "$PM" ]] && pm_has "$name"; then
+  if [[ $reason == explicit ]] && ! $FORCE && ! $BOX && pm_has "$name"; then
     msg "you already have $name from your distro ($PM) 👍 — nothing to do (want $src's version anyway? gurt install --box $src/$name)"; return 0
   fi
   if [[ $reason == explicit ]] && ! $NOBOX; then
