@@ -55,6 +55,32 @@ gurt checks every binary after installing it and tells you if something is missi
 
 Maintainer scripts (postinst, .install hooks) are **not** run.
 
+## Add your own repos
+
+PPAs, vendor apt repos, Fedora COPRs, custom pacman repos: add them once and install from them on **any** distro.
+
+```sh
+# an Ubuntu PPA (gurt finds the signing key itself)
+gurt repo add ppa:fastfetch/stable
+
+# any apt repo, with its signing key
+gurt repo add claude apt https://downloads.claude.ai/claude-code/apt/stable stable main \
+  --key https://downloads.claude.ai/keys/claude-code.asc
+gurt install claude-code --repo claude
+
+# rpm repos (Fedora, openSUSE, COPR…) and pacman repos work too
+gurt repo add mycopr rpm 'https://download.copr.fedorainfracloud.org/results/owner/project/fedora-44-$arch' --key <key-url>
+gurt repo add chaotic pacman 'https://cdn-mirror.chaotic.cx/$repo/$arch' chaotic-aur
+
+gurt repo list            # everything gurt knows about
+gurt repo remove claude
+```
+
+- 🔏 **With `--key`:** gurt checks the repo's GPG signature (apt `InRelease`, rpm `repomd.xml.asc`) and makes sure the package index matches it. A bad signature or a tampered index gets refused, and the repo isn't added. Pacman repo signatures aren't checked yet
+- ⚠️ **Without a key:** packages are still checked against the repo's own checksums, but gurt warns you that the index itself isn't signature-verified
+- 🧩 **Deps:** anything a custom repo's package needs but doesn't ship gets pulled from its parent distro. A PPA's missing libs come from Ubuntu/Debian, for example
+- Repo files live in `~/.config/gurt/repos.d/` (or `/etc/gurt/repos.d/` for everyone on the machine)
+
 ## Install
 
 ```sh

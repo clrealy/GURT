@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.3.0"
+GURT_VERSION="0.4.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -42,7 +42,7 @@ FOREIGN_SOURCES="aur apt dnf zypper pacman"
 IDX_DIR="$GURT_CACHE/index"
 IDX_MAX_AGE="${IDX_MAX_AGE:-86400}"   # re-download foreign indexes after a day
 
-NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO=""
+NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT=""
 
 # ───────────────────────── pretty output ─────────────────────────
 if [[ -t 2 && -z ${NO_COLOR:-} ]]; then
@@ -630,8 +630,8 @@ install_any() { # spec reason
   case $src in
     gurt) ensure_repo; resolve_and_install "$name" "$reason" ;;
     aur)  aur_install "$name" "$reason" ;;
-    apt|dnf|zypper|pacman) foreign_install "$src" "$name" "$reason" ;;
-    *) die "unknown source '$src' — pick one of: gurt $FOREIGN_SOURCES" ;;
+    *) is_binary_src "$src" || die "unknown source '$src' — pick one of: gurt $(all_sources) (or add one: gurt repo add)"
+       foreign_install "$src" "$name" "$reason" ;;
   esac
 }
 
@@ -656,14 +656,44 @@ norm_src() {
     *)                              echo "$1" ;;
   esac
 }
-src_pm()   { case $1 in aur|pacman) echo pacman ;; *) echo "$1" ;; esac; }
+# ── custom repos (gurt repo add) ──
+# one file per repo:  ~/.config/gurt/repos.d/<name>.conf  (or /etc/gurt/repos.d/ for everyone)
+#   type=apt|rpm|pacman   url=…   suite=…   components=…   key=/path/to/key.asc
+USER_REPO_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/repos.d"
+KEY_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/keys"
+REPO_DIRS=(/etc/gurt/repos.d "$USER_REPO_DIR")
+repo_file() { local d; for d in "${REPO_DIRS[@]}"; do [[ -f $d/$1.conf ]] && { echo "$d/$1.conf"; return 0; }; done; return 1; }
+repo_get()  { local f; f=$(repo_file "$1") || return 0; awk -v k="$2" 'index($0, k "=") == 1 { print substr($0, length(k) + 2); exit }' "$f"; }
+custom_repos() { local d f; for d in "${REPO_DIRS[@]}"; do for f in "$d"/*.conf; do basename "$f" .conf; done; done | sort -u; }
+all_sources()  { echo "$FOREIGN_SOURCES $(custom_repos | tr '\n' ' ')"; }
+src_kind() {
+  case $1 in
+    gurt) echo gurt ;; aur) echo aur ;; apt) echo apt ;; dnf|zypper) echo rpm ;; pacman) echo pacman ;;
+    *) if repo_file "$1" >/dev/null; then repo_get "$1" type; else echo unknown; fi ;;
+  esac
+}
+is_binary_src() { case $(src_kind "$1") in apt|rpm|pacman) return 0 ;; *) return 1 ;; esac; }
+src_pm() {
+  case $1 in
+    aur|pacman) echo pacman ;; apt|dnf|zypper) echo "$1" ;;
+    *) case $(src_kind "$1") in apt) echo apt ;; rpm) echo dnf ;; pacman) echo pacman ;; esac ;;
+  esac
+}
+# the built-in source a custom repo falls back to for deps (a PPA's libs live in Ubuntu/Debian, etc)
+src_fallback() { case $(src_kind "$1") in apt) echo apt ;; rpm) echo dnf ;; pacman) echo pacman ;; esac; }
 src_base() {
   case $1 in
     apt)    echo "$APT_MIRROR" ;;
     dnf)    echo "${DNF_MIRROR//\$arch/$CARCH}" ;;
     zypper) echo "${ZYPPER_MIRROR//\$arch/$CARCH}" ;;
     pacman) echo "$PACMAN_MIRROR" ;;
+    *)      local u; u=$(repo_get "$1" url); echo "${u//\$arch/$CARCH}" ;;
   esac
+}
+# armored or binary key → a keyring gpgv can use
+gpg_keyring() { # key out
+  need_tool gpg "signed repos"
+  if grep -q 'BEGIN PGP' "$1" 2>/dev/null; then gpg --dearmor < "$1" > "$2"; else cp "$1" "$2"; fi
 }
 debarch() { case $CARCH in x86_64) echo amd64 ;; aarch64) echo arm64 ;; armv7l) echo armhf ;; i?86) echo i386 ;; ppc64le) echo ppc64el ;; *) echo "$CARCH" ;; esac; }
 idx_file() { echo "$IDX_DIR/$1.tsv"; }
@@ -680,31 +710,50 @@ need_tool() { command -v "$1" >/dev/null || die "the $2 source needs '$1' — in
 
 sync_source() {
   local s=$1 tmp out
-  case $s in
+  case $(src_kind "$s") in
     aur) msg2 "aur is searched live, nothing to sync"; return 0 ;;
-    apt|dnf|zypper|pacman) ;;
-    *) die "unknown source '$s' (have: gurt $FOREIGN_SOURCES)" ;;
+    apt|rpm|pacman) ;;
+    *) die "unknown source '$s' (have: gurt $(all_sources))" ;;
   esac
   mkdir -p "$IDX_DIR"; tmp=$(mktemp -d "${TMPDIR:-/tmp}/gurt-idx.XXXXXX"); out=$(idx_file "$s")
   msg "syncing $s index from $(src_base "$s")"
   case $s in
-    apt)        sync_apt "$tmp" ;;
-    dnf|zypper) sync_rpm "$s" "$tmp" ;;
-    pacman)     sync_pacman "$tmp" ;;
+    apt)        sync_apt "$tmp" "$APT_MIRROR" "$APT_SUITE" "$APT_COMPONENTS" "" ;;
+    dnf|zypper) sync_rpm "$s" "$tmp" "" ;;
+    pacman)     sync_pacman "$tmp" "$PACMAN_MIRROR/\$repo/os/\$arch" "$PACMAN_REPOS" ;;
+    *) case $(src_kind "$s") in
+         apt)    sync_apt "$tmp" "$(src_base "$s")" "$(repo_get "$s" suite)" "$(repo_get "$s" components)" "$(repo_get "$s" key)" ;;
+         rpm)    sync_rpm "$s" "$tmp" "$(repo_get "$s" key)" ;;
+         pacman) sync_pacman "$tmp" "$(repo_get "$s" url)" "$(repo_get "$s" suite)" ;;
+       esac ;;
   esac > "$tmp/index.tsv"
   [[ -s $tmp/index.tsv ]] || { rm -rf "$tmp"; die "$s index came back empty (mirror down? check gurt.conf)"; }
   mv "$tmp/index.tsv" "$out"; rm -rf "$tmp"
   msg2 "$(wc -l < "$out") packages in $s"
 }
 
-sync_apt() {
-  local tmp=$1 c u da; da=$(debarch)
-  for c in $APT_COMPONENTS; do
-    u="$APT_MIRROR/dists/$APT_SUITE/$c/binary-$da/Packages"
-    rm -f "$tmp/P"
-    if fetch_quiet "$u.xz" "$tmp/P.xz" 2>/dev/null; then xz -dc "$tmp/P.xz" > "$tmp/P"
-    elif fetch_quiet "$u.gz" "$tmp/P.gz" 2>/dev/null; then gzip -dc "$tmp/P.gz" > "$tmp/P"
-    else warn "no package index for $APT_SUITE/$c at $APT_MIRROR"; continue; fi
+sync_apt() { # tmp mirror suite components [key]
+  local tmp=$1 mirror=$2 suite=$3 comps=$4 key=${5:-} c u da rel="" ext rp got want; da=$(debarch)
+  if [[ -n $key ]]; then
+    need_tool gpgv "signed repos"
+    fetch_quiet "$mirror/dists/$suite/InRelease" "$tmp/InRelease" || die "no InRelease at $mirror/dists/$suite — can't check the signature"
+    gpg_keyring "$key" "$tmp/kr.gpg"
+    gpgv --keyring "$tmp/kr.gpg" --output "$tmp/Release" "$tmp/InRelease" 2>/dev/null ||
+      die "🚩 signature check FAILED for $mirror ($suite) — not trusting this repo"
+    rel="$tmp/Release"; msg2 "signature ok 🔏"
+  fi
+  for c in $comps; do
+    rm -f "$tmp/P" "$tmp/P.xz" "$tmp/P.gz"; rp=""
+    for ext in xz gz; do
+      if fetch_quiet "$mirror/dists/$suite/$c/binary-$da/Packages.$ext" "$tmp/P.$ext" 2>/dev/null; then rp="$c/binary-$da/Packages.$ext"; break; fi
+    done
+    [[ -n $rp ]] || { warn "no package index for $suite/$c at $mirror"; continue; }
+    if [[ -n $rel ]]; then
+      want=$(awk -v f="$rp" '/^SHA256:/ {s=1; next} /^[^ ]/ {s=0} s && $3 == f {print $1; exit}' "$rel")
+      got=$(sha256sum "$tmp/P.$ext" | awk '{print $1}')
+      [[ -n $want && $got == "$want" ]] || die "🚩 $rp doesn't match the signed Release file — refusing"
+    fi
+    case $ext in xz) xz -dc "$tmp/P.xz" > "$tmp/P" ;; gz) gzip -dc "$tmp/P.gz" > "$tmp/P" ;; esac
     awk 'BEGIN { RS=""; FS="\n"; OFS="\t" }
     { n=v=f=s=d=pd=ds=pv=""
       for (i=1; i<=NF; i++) { l=$i
@@ -727,15 +776,28 @@ sync_apt() {
   done
 }
 
-sync_rpm() {
-  local s=$1 tmp=$2 base href
+sync_rpm() { # src tmp [key]
+  local s=$1 tmp=$2 key=${3:-} base href want got
   need_tool python3 "$s"
   base=$(src_base "$s")
   fetch_quiet "$base/repodata/repomd.xml" "$tmp/repomd.xml" || die "can't reach $base"
+  if [[ -n $key ]]; then
+    need_tool gpgv "signed repos"
+    fetch_quiet "$base/repodata/repomd.xml.asc" "$tmp/repomd.xml.asc" || die "$s has no repomd.xml.asc — can't check the signature"
+    gpg_keyring "$key" "$tmp/kr.gpg"
+    gpgv --keyring "$tmp/kr.gpg" "$tmp/repomd.xml.asc" "$tmp/repomd.xml" 2>/dev/null ||
+      die "🚩 signature check FAILED for $s — not trusting this repo"
+    msg2 "signature ok 🔏"
+  fi
   href=$(awk '/<data type="primary">/ {p=1} p && /<location / { match($0, /href="[^"]+"/); print substr($0, RSTART+6, RLENGTH-7); exit }' "$tmp/repomd.xml")
   [[ -n $href ]] || die "couldn't find primary metadata in $s repomd.xml"
   msg2 "grabbing ${href##*/}"
   download "$base/$href" "$tmp/primary.${href##*.}" 2>&1 | tail -n0 >&2
+  if [[ -n $key ]]; then
+    want=$(awk '/<data type="primary">/ {p=1} p && /<checksum / { match($0, />[0-9a-f]+</); print substr($0, RSTART+1, RLENGTH-2); exit }' "$tmp/repomd.xml")
+    got=$(sha256sum "$tmp/primary.${href##*.}" | awk '{print $1}')
+    [[ $got == "$want" ]] || die "🚩 $s primary metadata doesn't match the signed repomd.xml — refusing"
+  fi
   case $href in
     *.zst) need_tool zstd "$s"; zstd -qdc "$tmp/primary.zst" > "$tmp/primary.xml" ;;
     *.xz)  xz -dc "$tmp/primary.xz"  > "$tmp/primary.xml" ;;
@@ -789,10 +851,10 @@ for row in best.values():
 PY
 }
 
-sync_pacman() {
-  local tmp=$1 r
+sync_pacman() { # tmp server-template('$repo' '$arch') repos
+  local tmp=$1 tpl=$2 repos=$3 r server
   local prog='
-    function flush() { if (n != "") print n "\t" v "\t" repo "/os/" arch "/" f "\tsha256:" s "\t" d "\t" ds "\t" p; n=v=f=s=d=ds=p=""; sec="" }
+    function flush() { if (n != "") print n "\t" v "\t" server "/" f "\tsha256:" s "\t" d "\t" ds "\t" p; n=v=f=s=d=ds=p=""; sec="" }
     FNR == 1 { flush() }
     /^%[A-Z0-9]+%$/ { sec=$0; next }
     /^$/ { sec=""; next }
@@ -808,11 +870,12 @@ sync_pacman() {
       if (x ~ /\.so=/) { split(x, a, "="); y=a[2]; sub(/-.*/, "", y); x=a[1] "." y } else sub(/[<>=].*/, "", x)
       p = p (p == "" ? "" : ",") x }
     END { flush() }'
-  for r in $PACMAN_REPOS; do
-    fetch_quiet "$PACMAN_MIRROR/$r/os/$CARCH/$r.db" "$tmp/$r.db" 2>/dev/null || { warn "couldn't get $r.db from $PACMAN_MIRROR"; continue; }
+  for r in $repos; do
+    server=${tpl//\$repo/$r}; server=${server//\$arch/$CARCH}
+    fetch_quiet "$server/$r.db" "$tmp/$r.db" 2>/dev/null || { warn "couldn't get $r.db from $server"; continue; }
     mkdir -p "$tmp/$r"
     tar -xf "$tmp/$r.db" -C "$tmp/$r" 2>/dev/null || { warn "couldn't open $r.db (install zstd?)"; continue; }
-    find "$tmp/$r" -name desc -exec awk -v repo="$r" -v arch="$CARCH" "$prog" {} +
+    find "$tmp/$r" -name desc -exec awk -v server="$server" "$prog" {} +
   done
 }
 
@@ -890,8 +953,11 @@ foreign_dep() { # src dep
       fi ;;
     *)
       local prov
+      local fb; fb=$(src_fallback "$src")
       if [[ -n $(idx_lookup "$src" "$dep") ]]; then
         msg2 "pulling $dep from $src (your distro doesn't have it)"; foreign_install "$src" "$dep" dep
+      elif [[ $fb != "$src" ]] && ( ensure_idx "$fb" ) >/dev/null 2>&1 && [[ -n $(idx_lookup "$fb" "$dep") ]]; then
+        msg2 "pulling $dep from $fb (needed by $src)"; foreign_install "$fb" "$dep" dep
       elif prov=$(idx_provider "$src" "$dep") && [[ -n $prov ]]; then
         host_has "$prov" || is_installed "$(pkey "$src" "$prov")" && return 0
         msg2 "pulling $prov from $src (provides $dep)"; foreign_install "$src" "$prov" dep
@@ -916,7 +982,8 @@ repack_foreign() { # src name ver path sum deps desc provides
   if [[ -f $file ]] && ! verify "$file" "$hash" "$algo"; then rm -f "$file"; fi
   if [[ ! -f $file ]]; then
     msg2 "downloading ${path##*/}"
-    download "$(src_base "$src")/$path" "$file.part" && mv "$file.part" "$file"
+    local src_url="$path"; [[ $path =~ ^[a-z]+:// ]] || src_url="$(src_base "$src")/$path"
+    download "$src_url" "$file.part" && mv "$file.part" "$file"
   fi
   verify "$file" "$hash" "$algo" || { rm -f "$file"; die "checksum mismatch on ${path##*/} 🚩 (mirror out of sync? run: gurt sync $src)"; }
   work=$(mktemp -d "${TMPDIR:-/tmp}/gurt-repack.XXXXXX"); mkdir -p "$work/pkg" "$work/x"
@@ -1058,7 +1125,7 @@ cmd_sync() { # [source...|all]
   for s in "$@"; do
     s=$(norm_src "$s")
     case $s in
-      all) sync_main; local x; for x in apt dnf zypper pacman; do ( sync_source "$x" ) || warn "$x didn't sync, skipping"; done ;;
+      all) sync_main; local x; for x in apt dnf zypper pacman $(custom_repos); do ( sync_source "$x" ) || warn "$x didn't sync, skipping"; done ;;
       gurt) sync_main ;;
       *) sync_source "$s" ;;
     esac
@@ -1104,7 +1171,7 @@ cmd_search() { # [-a] [src/]term
   if [[ $spec == */* ]]; then src=$(norm_src "${spec%%/*}"); term=${spec#*/}; else src=gurt; term=$spec; fi
   if $ALLSRC; then
     search_main "$term" && found=1
-    for src in $FOREIGN_SOURCES; do
+    for src in $(all_sources); do
       [[ $src == aur ]] && { search_foreign aur "$term" 2>/dev/null && found=1; continue; }
       ( idx_fresh "$src" || sync_source "$src" ) >/dev/null 2>&1 || { warn "$src unreachable, skipped"; continue; }
       search_foreign "$src" "$term" && found=1
@@ -1130,12 +1197,12 @@ cmd_info() {
       local F v b d o; tsv "$row"; v=${F[1]:-}; b=${F[2]:-}; d=${F[3]:-}; o=${F[4]:-}
       printf '%-14s: %s\n' source "aur (built from source)" pkgname "$name" version "$v" pkgbase "$b" pkgdesc "$d" url "$AUR_URL/packages/$name"
       [[ -n $o ]] && printf '%-14s: %s\n' "out of date" yes ;;
-    apt|dnf|zypper|pacman)
+    *)
+      is_binary_src "$src" || die "unknown source '$src'"
       ensure_idx "$src"
       row=$(idx_lookup "$src" "$name"); [[ -n $row ]] || die "no package '$name' in $src"
       local F v p s deps d; tsv "$row"; v=${F[1]:-}; p=${F[2]:-}; s=${F[3]:-}; deps=${F[4]:-}; d=${F[5]:-}
       printf '%-14s: %s\n' source "$src (binary from $(src_base "$src"))" pkgname "$name" version "$v" pkgdesc "$d" file "${p##*/}" checksum "$s" depends "${deps//,/, }" ;;
-    *) die "unknown source '$src'" ;;
   esac
   if is_installed "$key"; then printf '%-14s: %s (%s)\n' installed "$(inst_ver "$key")" "$(cat "$DB/$key/reason")"
   else printf '%-14s: no\n' installed; fi
@@ -1173,7 +1240,7 @@ find_outdated() {
 used_sources() {
   local d k seen=" "
   for d in "$DB"/*:*/; do k=$(basename "$d"); k=${k%%:*}; [[ $seen == *" $k "* ]] || { seen+="$k "; echo "$k"; }; done
-  for k in apt dnf zypper pacman; do [[ -f $(idx_file "$k") && $seen != *" $k "* ]] && { seen+="$k "; echo "$k"; }; done
+  for k in apt dnf zypper pacman $(custom_repos); do [[ -f $(idx_file "$k") && $seen != *" $k "* ]] && { seen+="$k "; echo "$k"; }; done
   return 0
 }
 
@@ -1300,6 +1367,107 @@ cmd_checksum() {
     done; rm -rf "$tmp" )
 }
 
+# ── gurt repo: add your own apt/rpm/pacman repos (PPAs, vendor repos, COPRs…) ──
+fetch_key() { # name source(url|file) -> prints stored key path
+  local name=$1 src=$2 out="$KEY_DIR/$1.asc"
+  mkdir -p "$KEY_DIR"
+  if [[ $src =~ ^https?:// ]]; then fetch_quiet "$src" "$out.part" || die "couldn't download key from $src"; mv "$out.part" "$out"
+  else [[ -f $src ]] || die "no key file at $src"; cp "$src" "$out"; fi
+  grep -q 'BEGIN PGP PUBLIC KEY' "$out" || gpg --show-keys "$out" >/dev/null 2>&1 || { rm -f "$out"; die "that doesn't look like a PGP public key"; }
+  echo "$out"
+}
+show_fpr() { command -v gpg >/dev/null && gpg --show-keys --with-fingerprint "$1" 2>/dev/null | awk 'NR<=4' | sed 's/^/     /' >&2; return 0; }
+
+repo_add() {
+  local name type url suite comps="" key=""
+  if [[ ${1:-} == ppa:*/* ]]; then                 # ppa:owner/name shortcut
+    local owner=${1#ppa:}; local ppa=${owner#*/}; owner=${owner%%/*}
+    name="ppa-${owner,,}-${ppa,,}"; type=apt; comps=main
+    url="https://ppa.launchpadcontent.net/$owner/$ppa/ubuntu"
+    suite=${SUITE_OPT:-$( . /etc/os-release 2>/dev/null; echo "${UBUNTU_CODENAME:-}")}
+    suite=${suite:-noble}
+    if [[ -z $KEYSRC ]] && command -v python3 >/dev/null; then
+      local fpr
+      fpr=$(fetch_quiet "https://api.launchpad.net/1.0/~$owner/+archive/ubuntu/$ppa" /dev/stdout 2>/dev/null |
+            python3 -c 'import sys,json; print(json.load(sys.stdin).get("signing_key_fingerprint") or "")' 2>/dev/null || true)
+      [[ -n $fpr ]] && KEYSRC="https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x$fpr"
+    fi
+    msg2 "PPA → $url ($suite)"
+  else
+    name=${1:-}; type=${2:-}; url=${3:-}; suite=${SUITE_OPT:-${4:-}}
+    (( $# > 4 )) && { shift 4; comps="$*"; }
+    [[ -n $name && -n $type && -n $url ]] || die "usage: gurt repo add <name> <apt|rpm|pacman> <url> [suite] [components…] [--key URL|file]
+     e.g. gurt repo add claude apt https://downloads.claude.ai/claude-code/apt/stable stable main --key https://downloads.claude.ai/keys/claude-code.asc
+          gurt repo add ppa:owner/name"
+  fi
+  name=${name,,}
+  [[ $name =~ ^[a-z0-9][a-z0-9._-]*$ ]] || die "repo names are lowercase letters, digits, . _ - only"
+  if [[ " gurt main $FOREIGN_SOURCES " == *" $name "* || $(norm_src "$name") != "$name" ]]; then die "'$name' is a built-in source name, pick another"; fi
+  case ${type,,} in
+    apt|deb|debian|ubuntu) type=apt; suite=${suite:-stable}; comps=${comps:-main} ;;
+    rpm|dnf|yum|zypper|fedora|suse) type=rpm ;;
+    pacman|arch) type=pacman; suite=${suite:-$name} ;;
+    *) die "type has to be apt, rpm or pacman" ;;
+  esac
+  [[ $url =~ ^(https?|file)://  ]] || die "url should start with https://"
+  [[ $url == http://* ]] && warn "that's plain http — only safe with a signing key (--key)"
+  if [[ $type == pacman ]]; then
+    [[ -n $KEYSRC ]] && warn "pacman repo signatures aren't checked yet — ignoring --key (packages are still sha256-checked against the repo db)"
+    KEYSRC=""
+  fi
+  if [[ -n $KEYSRC ]]; then
+    key=$(fetch_key "$name" "$KEYSRC")
+    msg2 "signing key saved — make sure this fingerprint is legit:"; show_fpr "$key"
+  else
+    warn "no signing key (--key) — packages are still checksum-checked, but the repo's index itself isn't signature-verified"
+  fi
+  mkdir -p "$USER_REPO_DIR"
+  { printf 'type=%s\nurl=%s\n' "$type" "${url%/}"
+    [[ -n $suite ]] && printf 'suite=%s\n' "$suite"
+    [[ -n $comps ]] && printf 'components=%s\n' "$comps"
+    [[ -n $key ]] && printf 'key=%s\n' "$key"
+  } > "$USER_REPO_DIR/$name.conf"
+  msg "added repo $name ($type) ✅"
+  if ( sync_source "$name" ); then
+    msg "now:  gurt search $name/<term>   ·   gurt install <pkg> --repo $name"
+  else
+    rm -f "$USER_REPO_DIR/$name.conf" "$KEY_DIR/$name.asc"
+    die "didn't add $name — the first sync failed (bad url/suite, or it failed the signature check) 🚫"
+  fi
+}
+
+repo_list() {
+  local r f
+  printf '%s%-22s %-7s %s%s\n' "$B" "name" "type" "url" "$R0"
+  printf '%-22s %-7s %s\n' gurt main "$GURT_REPO_URL" aur build "$AUR_URL" apt apt "$APT_MIRROR ($APT_SUITE)" \
+    dnf rpm "$(src_base dnf)" zypper rpm "$(src_base zypper)" pacman pacman "$PACMAN_MIRROR"
+  for r in $(custom_repos); do
+    f=$(repo_file "$r")
+    printf '%-22s %-7s %s%s%s\n' "$r" "$(repo_get "$r" type)" "$(repo_get "$r" url)" \
+      "$([[ -n $(repo_get "$r" suite) ]] && echo " ($(repo_get "$r" suite))")" "$([[ -n $(repo_get "$r" key) ]] && echo " 🔏")"
+  done
+}
+
+repo_remove() {
+  local name=${1:?usage: gurt repo remove <name>} f d users=()
+  f=$(repo_file "$name") || die "no custom repo called $name"
+  for d in "$DB"/"$name":*/; do users+=("$(pretty "$(basename "$d")")"); done
+  (( ${#users[@]} )) && warn "still installed from $name: ${users[*]} (they stay installed, but won't get updates)"
+  [[ -w $f ]] || die "$f belongs to root — sudo rm it yourself"
+  rm -f "$f" "$KEY_DIR/$name.asc" "$(idx_file "$name")"
+  msg "removed repo $name 🗑️"
+}
+
+cmd_repo() {
+  local sub=${1:-list}; shift || true
+  case $sub in
+    add)            repo_add "$@" ;;
+    list|ls)        repo_list ;;
+    remove|rm|del)  repo_remove "$@" ;;
+    *) die "usage: gurt repo [list | add … | remove <name>]" ;;
+  esac
+}
+
 cmd_doctor() {
   local id="unknown"; [[ -r /etc/os-release ]] && id=$(. /etc/os-release; echo "${PRETTY_NAME:-$ID}")
   printf '%-14s %s\n' gurt "$GURT_VERSION" distro "$id" "pkg manager" "$PM" arch "$CARCH" \
@@ -1324,6 +1492,9 @@ cmd_doctor() {
   srcline dnf "$(has python3 && has zstd && { has bsdtar || { has rpm2cpio && has cpio; }; } && echo 1)" "$(src_base dnf)  (needs python3, zstd, bsdtar or rpm2cpio+cpio)"
   srcline zypper "$(has python3 && has zstd && { has bsdtar || { has rpm2cpio && has cpio; }; } && echo 1)" "$(src_base zypper)  (needs python3, zstd, bsdtar or rpm2cpio+cpio)"
   srcline pacman "$(has zstd && echo 1)" "$PACMAN_MIRROR [$PACMAN_REPOS]  (needs zstd)"
+  local r; for r in $(custom_repos); do
+    srcline "$r" "$( { [[ -z $(repo_get "$r" key) ]] || has gpgv; } && echo 1)" "$(repo_get "$r" type) · $(repo_get "$r" url)$([[ -n $(repo_get "$r" key) ]] && echo ' 🔏')"
+  done
   (( ok == 0 )) && msg "all good bestie ✨"
 }
 
@@ -1341,6 +1512,13 @@ ${B}sources${R0}   (no prefix = main GURT · write it as aur/yay OR  yay --repo 
   dnf/htop             Fedora binary packages             (aliases: fedora/ yum/ rpm/)
   zypper/htop          openSUSE binary packages           (aliases: suse/ opensuse/)
   pacman/htop          Arch official binary packages      (aliases: arch/)
+
+${B}your own repos${R0}   (PPAs, vendor apt/rpm repos, COPRs, custom pacman repos)
+  repo list                      every source gurt knows
+  repo add ppa:owner/name        add an Ubuntu PPA (key fetched automatically)
+  repo add <name> <apt|rpm|pacman> <url> [suite] [components…] --key <url|file>
+  repo remove <name>
+  then: gurt install <pkg> --repo <name>
 
 ${B}using packages${R0}
   sync [source|all]    pull the latest recipes / package indexes
@@ -1389,6 +1567,10 @@ main() {
       -a|--all)       ALLSRC=true ;;
       -r|--repo|--from) shift; REPO=${1:?--repo needs a source (gurt aur apt dnf zypper pacman)} ;;
       --repo=*|--from=*)  REPO=${1#*=} ;;
+      --key)          shift; KEYSRC=${1:?--key needs a url or file} ;;
+      --key=*)        KEYSRC=${1#*=} ;;
+      --suite)        shift; SUITE_OPT=${1:?--suite needs a value} ;;
+      --suite=*)      SUITE_OPT=${1#*=} ;;
       --nodeps)       NODEPS=true ;;
       --nocheck)      NOCHECK=true ;;
       --keep)         KEEP=true ;;
@@ -1406,7 +1588,7 @@ main() {
   # --repo X  →  every bare package name becomes X/name
   if [[ -n $REPO ]]; then
     REPO=$(norm_src "$REPO")
-    [[ " gurt $FOREIGN_SOURCES " == *" $REPO "* ]] || die "unknown repo '$REPO' — pick one of: gurt $FOREIGN_SOURCES"
+    [[ " gurt $(all_sources) " == *" $REPO "* ]] || die "unknown repo '$REPO' — pick one of: gurt $(all_sources) (or add one: gurt repo add)"
     case $cmd in
       install|i|get|search|s|info|remove|rm|yeet|files)
         local withrepo=()
@@ -1434,6 +1616,7 @@ main() {
     srcinfo)           cmd_srcinfo "$@" ;;
     checksum)          cmd_checksum "$@" ;;
     new)               cmd_new "$@" ;;
+    repo|repos)        cmd_repo "$@" ;;
     doctor)            cmd_doctor ;;
     yo)                echo "gurt: yo 🦆" ;;
     version)           echo "gurt $GURT_VERSION" ;;
