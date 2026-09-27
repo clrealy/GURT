@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.8.0"
+GURT_VERSION="0.8.1"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -999,6 +999,11 @@ host_has() {
   fi
   # some libs keep the number in the name: libnss3 → libnss3.so
   [[ $b == lib* ]] && ld_has "$b.so" && return 0
+  # names with an API version baked in: libatspi2.0-0 → libatspi.so.0, libglib2.0-0 → libglib-2.0.so.0
+  if [[ $b =~ ^(lib[a-z_+]+)-?([0-9][0-9.]*)-([0-9]+)$ ]]; then
+    ld_has "${BASH_REMATCH[1]}.so.${BASH_REMATCH[3]}" && return 0
+    ld_has "${BASH_REMATCH[1]}-${BASH_REMATCH[2]}.so.${BASH_REMATCH[3]}" && return 0
+  fi
   return 1
 }
 # does the host's package manager have a package with this exact name?
