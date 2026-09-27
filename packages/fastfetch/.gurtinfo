@@ -1,0 +1,15 @@
+pkgname = fastfetch
+pkgver = 2.69.0
+pkgrel = 1
+pkgdesc = Like neofetch, but much faster because written mostly in C
+url = https://github.com/fastfetch-cli/fastfetch
+license = MIT
+maintainer = clearly124
+arch = x86_64
+arch = aarch64
+arch = armv7l
+arch = riscv64
+makedepends = cc
+makedepends = cmake
+makedepends = git
+source = git+https://github.com/fastfetch-cli/fastfetch.git#tag=2.69.0

@@ -1,0 +1,22 @@
+pkgname=btop
+pkgver=1.4.4
+pkgrel=1
+pkgdesc="A monitor of resources (CPU, memory, disks, network, processes) that looks sick"
+url="https://github.com/aristocratos/btop"
+license="Apache-2.0"
+maintainer="clearly124"
+arch=(x86_64 aarch64 armv7l riscv64)
+depends=()
+makedepends=(cc make git)
+source=("git+https://github.com/aristocratos/btop.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd btop
+  make PREFIX="$prefix" STATIC=false
+}
+
+package() {
+  cd btop
+  make install PREFIX="$prefix" DESTDIR="$pkgdir"
+}

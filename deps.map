@@ -1,0 +1,40 @@
+# deps.map — translates GENERIC dependency names into each distro's real package names
+#
+# format:  <generic>  <pm>=<pkg>[,<pkg>...]  ...
+#   pm keys: apt dnf pacman zypper apk xbps emerge eopkg   (yum uses the dnf column)
+#   <pm>=-   means "nothing to install on this distro"
+#   missing pm key → gurt just tries the generic name as-is
+#
+# recipes ONLY use the generic names on the left. PRs adding more mappings are goated 🙏
+
+# ── toolchains & build systems ──
+cc          apt=build-essential  dnf=gcc,gcc-c++,make  pacman=base-devel  zypper=gcc,gcc-c++,make  apk=build-base  xbps=base-devel  emerge=-  eopkg=gcc,make
+make        emerge=dev-build/make
+cmake       emerge=dev-build/cmake
+meson       emerge=dev-build/meson
+ninja       apt=ninja-build  dnf=ninja-build  apk=samurai  emerge=dev-build/ninja
+pkg-config  apt=pkg-config  dnf=pkgconf-pkg-config  pacman=pkgconf  zypper=pkgconf-pkg-config  apk=pkgconf  xbps=pkg-config  emerge=dev-util/pkgconf
+autotools   apt=autoconf,automake,libtool  dnf=autoconf,automake,libtool  pacman=autoconf,automake,libtool  zypper=autoconf,automake,libtool  apk=autoconf,automake,libtool  xbps=autoconf,automake,libtool  emerge=-
+git         emerge=dev-vcs/git
+curl        emerge=net-misc/curl
+unzip       emerge=app-arch/unzip
+
+# ── languages ──
+python3     pacman=python  emerge=dev-lang/python
+rust        apt=cargo  dnf=cargo  pacman=rust  zypper=cargo  apk=cargo  xbps=cargo  emerge=dev-lang/rust
+go          apt=golang-go  dnf=golang  pacman=go  zypper=go  apk=go  xbps=go  emerge=dev-lang/go
+nodejs      apt=nodejs,npm  dnf=nodejs,npm  pacman=nodejs,npm  zypper=nodejs-default,npm-default  apk=nodejs,npm  xbps=nodejs  emerge=net-libs/nodejs
+lua         apt=lua5.4  dnf=lua  pacman=lua  zypper=lua54  apk=lua5.4  xbps=lua54  emerge=dev-lang/lua
+
+# ── libraries (headers included) ──
+openssl     apt=libssl-dev  dnf=openssl-devel  pacman=openssl  zypper=libopenssl-devel  apk=openssl-dev  xbps=openssl-devel  emerge=dev-libs/openssl
+zlib        apt=zlib1g-dev  dnf=zlib-devel  pacman=zlib  zypper=zlib-devel  apk=zlib-dev  xbps=zlib-devel  emerge=sys-libs/zlib
+ncurses     apt=libncurses-dev  dnf=ncurses-devel  pacman=ncurses  zypper=ncurses-devel  apk=ncurses-dev  xbps=ncurses-devel  emerge=sys-libs/ncurses
+libcurl     apt=libcurl4-openssl-dev  dnf=libcurl-devel  pacman=curl  zypper=libcurl-devel  apk=curl-dev  xbps=libcurl-devel  emerge=net-misc/curl
+sqlite      apt=libsqlite3-dev  dnf=sqlite-devel  pacman=sqlite  zypper=sqlite3-devel  apk=sqlite-dev  xbps=sqlite-devel  emerge=dev-db/sqlite
+sdl2        apt=libsdl2-dev  dnf=SDL2-devel  pacman=sdl2  zypper=SDL2-devel  apk=sdl2-dev  xbps=SDL2-devel  emerge=media-libs/libsdl2
+gtk3        apt=libgtk-3-dev  dnf=gtk3-devel  pacman=gtk3  zypper=gtk3-devel  apk=gtk+3.0-dev  xbps=gtk+3-devel  emerge=x11-libs/gtk+:3
+x11         apt=libx11-dev  dnf=libX11-devel  pacman=libx11  zypper=libX11-devel  apk=libx11-dev  xbps=libX11-devel  emerge=x11-libs/libX11
+wayland     apt=libwayland-dev  dnf=wayland-devel  pacman=wayland  zypper=wayland-devel  apk=wayland-dev  xbps=wayland-devel  emerge=dev-libs/wayland
+vulkan      apt=libvulkan-dev  dnf=vulkan-loader-devel  pacman=vulkan-icd-loader  zypper=vulkan-devel  apk=vulkan-loader-dev  xbps=vulkan-loader-devel  emerge=media-libs/vulkan-loader
+dbus        apt=libdbus-1-dev  dnf=dbus-devel  pacman=dbus  zypper=dbus-1-devel  apk=dbus-dev  xbps=dbus-devel  emerge=sys-apps/dbus

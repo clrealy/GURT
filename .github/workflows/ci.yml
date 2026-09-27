@@ -1,0 +1,60 @@
+name: gurt ci
+on:
+  push: { branches: [main] }
+  pull_request:
+permissions: { contents: read, pages: write, id-token: write }
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: shellcheck gurt
+        run: shellcheck -S warning gurt install.sh tools/lint.sh
+      - name: lint recipes
+        run: ./tools/lint.sh
+
+  # builds every recipe the PR touched, on a few different distros
+  build:
+    if: github.event_name == 'pull_request'
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [debian:stable, fedora:latest, archlinux:latest, alpine:latest, opensuse/tumbleweed]
+    container: ${{ matrix.distro }}
+    steps:
+      - name: bootstrap
+        run: |
+          if command -v apt-get; then apt-get update && apt-get install -y git bash sudo
+          elif command -v dnf; then dnf install -y git bash sudo tar gzip findutils
+          elif command -v pacman; then pacman -Syu --noconfirm git bash sudo
+          elif command -v apk; then apk add git bash sudo tar coreutils findutils
+          elif command -v zypper; then zypper -n install git bash sudo tar gzip findutils; fi
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: build changed packages
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$PWD"
+          changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- packages | cut -d/ -f2 | sort -u)
+          [ -z "$changed" ] && { echo "no recipes changed"; exit 0; }
+          export GURT_ALLOW_ROOT=1 GURT_REPO_DIR="$PWD" GURT_ROOT=/tmp/gurtroot
+          for p in $changed; do [ -d packages/$p ] && ./gurt -y install "$p"; done
+
+  pages:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: lint
+    runs-on: ubuntu-latest
+    environment: { name: github-pages, url: "${{ steps.deploy.outputs.page_url }}" }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - run: python3 tools/gen-index.py
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: site }
+      - id: deploy
+        uses: actions/deploy-pages@v4

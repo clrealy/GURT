@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GURT Packages</title>
+<meta name="description" content="GURT Universal Repository Thingy — community build recipes for every Linux distro.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f5f0; --panel:#ffffff; --ink:#16161a; --muted:#6b6b76; --line:#e3e1d8;
+  --accent:#f5b400; --accent-ink:#1a1400; --tag:#efece2; --code:#f1efe7; --good:#1f8a4c;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f0f12; --panel:#17171c; --ink:#ecebe6; --muted:#9a99a3; --line:#2a2a31;
+    --accent:#ffc629; --accent-ink:#1a1400; --tag:#23232a; --code:#1d1d23; --good:#46c37b;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f0f12; --panel:#17171c; --ink:#ecebe6; --muted:#9a99a3; --line:#2a2a31;
+  --accent:#ffc629; --accent-ink:#1a1400; --tag:#23232a; --code:#1d1d23; --good:#46c37b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Space Grotesk",system-ui,sans-serif}
+code,pre,.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.wrap{max-width:980px;margin:0 auto;padding:0 16px}
+header{padding:48px 0 24px}
+.logo{display:flex;align-items:center;gap:12px;font-weight:700;font-size:40px;letter-spacing:-1px}
+.logo .duck{font-size:40px}
+.tag{color:var(--muted);margin:4px 0 0}
+.tag b{color:var(--ink)}
+.install{margin-top:20px;background:var(--code);border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow-x:auto;font-size:14px;white-space:pre}
+.search{position:sticky;top:0;background:var(--bg);padding:16px 0;z-index:2}
+.search input{width:100%;padding:14px 16px;font:inherit;font-size:17px;border-radius:12px;border:2px solid var(--line);background:var(--panel);color:var(--ink);outline:none}
+.search input:focus{border-color:var(--accent)}
+.meta{color:var(--muted);font-size:14px;margin:6px 2px 0}
+.list{display:grid;gap:10px;padding-bottom:40px}
+.pkg{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;cursor:pointer;transition:transform .08s,border-color .08s;text-align:left;font:inherit;color:inherit;width:100%}
+.pkg:hover{border-color:var(--accent);transform:translateY(-1px)}
+.row{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
+.name{font-weight:700;font-size:18px}
+.ver{font-size:13px;color:var(--good)}
+.desc{color:var(--muted);margin-top:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{background:var(--tag);border-radius:999px;padding:2px 10px;font-size:12px}
+dialog{border:none;border-radius:16px;padding:0;max-width:760px;width:calc(100% - 32px);background:var(--panel);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+.dhead{padding:20px 20px 8px;display:flex;justify-content:space-between;gap:12px;align-items:start}
+.dhead h2{margin:0;font-size:26px}
+.x{background:none;border:none;color:var(--muted);font-size:26px;cursor:pointer;line-height:1}
+.dbody{padding:0 20px 20px}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:8px 0 16px}
+td{padding:6px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{color:var(--muted);width:130px}
+td a{color:inherit}
+pre{background:var(--code);border:1px solid var(--line);border-radius:10px;padding:14px;overflow:auto;font-size:13px;max-height:340px;margin:0}
+.cmd{display:flex;gap:8px;align-items:center;margin:12px 0}
+.cmd code{flex:1;background:var(--code);padding:10px 12px;border-radius:8px;border:1px solid var(--line);overflow-x:auto;white-space:nowrap}
+.btn{background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer}
+footer{color:var(--muted);font-size:13px;padding:24px 0 40px;border-top:1px solid var(--line)}
+footer a{color:inherit}
+.empty{color:var(--muted);text-align:center;padding:40px 0}
+@media (max-width:520px){.logo{font-size:32px}.logo .duck{font-size:32px}td:first-child{width:100px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><span class="duck">🦆</span><span>gurt</span></div>
+    <p class="tag"><b>G</b>URT <b>U</b>niversal <b>R</b>epository <b>T</b>hingy — community build recipes for <b>every</b> Linux distro. Like the AUR, minus the gatekeeping.</p>
+    <div class="install mono">curl -fsSL https://raw.githubusercontent.com/clrealy/gurt/main/install.sh | sh
+gurt install fastfetch</div>
+  </header>
+
+  <div class="search">
+    <input id="q" type="search" placeholder="search packages…" autocomplete="off" aria-label="Search packages">
+    <div class="meta" id="count">loading…</div>
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <footer>
+    Works on Debian, Ubuntu, Fedora, Arch, openSUSE, Alpine, Void, Gentoo, Solus and friends.
+    Recipes are user-submitted — always read the GURTBUILD before you install. ·
+    <a href="https://github.com/clrealy/gurt">source</a> ·
+    <a href="https://github.com/clrealy/gurt/blob/main/CONTRIBUTING.md">submit a package</a>
+  </footer>
+</div>
+
+<dialog id="dlg">
+  <div class="dhead"><div><h2 id="dname"></h2><div class="desc" id="ddesc"></div></div><button class="x" onclick="dlg.close()" aria-label="Close">×</button></div>
+  <div class="dbody">
+    <div class="cmd"><code id="dcmd"></code><button class="btn" id="copy">copy</button></div>
+    <table id="dtable"></table>
+    <pre id="dsrc">loading GURTBUILD…</pre>
+  </div>
+</dialog>
+
+<script>
+const REPO = "clrealy/gurt", BRANCH = "main";
+let PKGS = [];
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ago = t => { const d = (Date.now()/1000 - t)/86400; return d < 1 ? "today" : d < 2 ? "yesterday" : d < 60 ? Math.floor(d)+" days ago" : new Date(t*1000).toLocaleDateString(); };
+
+function render(){
+  const q = $("#q").value.trim().toLowerCase();
+  const hits = PKGS.filter(p => !q || (p.pkgname + " " + (p.pkgdesc||"")).toLowerCase().includes(q))
+    .sort((a,b) => (b.pkgname.toLowerCase()===q) - (a.pkgname.toLowerCase()===q) || a.pkgname.localeCompare(b.pkgname));
+  $("#count").textContent = `${hits.length} of ${PKGS.length} packages`;
+  $("#list").innerHTML = hits.length ? hits.map(p => `
+    <button class="pkg" data-n="${esc(p.pkgname)}">
+      <div class="row"><span class="name">${esc(p.pkgname)}</span><span class="ver mono">${esc(p.pkgver)}-${esc(p.pkgrel)}</span></div>
+      <div class="desc">${esc(p.pkgdesc)}</div>
+      <div class="chips">${(p.arch||[]).map(a=>`<span class="chip mono">${esc(a)}</span>`).join("")}
+        ${p.maintainer?`<span class="chip">by ${esc(p.maintainer)}</span>`:""}<span class="chip">updated ${ago(p.updated)}</span></div>
+    </button>`).join("") : `<div class="empty">nothing matched 😔 womp womp — <a href="https://github.com/${REPO}/blob/${BRANCH}/CONTRIBUTING.md">package it yourself?</a></div>`;
+}
+
+async function showPkg(name){
+  const p = PKGS.find(x => x.pkgname === name); if(!p) return;
+  $("#dname").textContent = p.pkgname + " " + p.pkgver + "-" + p.pkgrel;
+  $("#ddesc").textContent = p.pkgdesc || "";
+  $("#dcmd").textContent = "gurt install " + p.pkgname;
+  const row = (k,v) => v && (Array.isArray(v) ? v.length : true) ? `<tr><td>${k}</td><td>${v}</td></tr>` : "";
+  $("#dtable").innerHTML =
+    row("upstream", p.url ? `<a href="${esc(p.url)}" rel="noopener">${esc(p.url)}</a>` : "") +
+    row("license", esc(p.license)) + row("maintainer", esc(p.maintainer)) +
+    row("arch", esc((p.arch||[]).join(", "))) +
+    row("depends", esc((p.depends||[]).join(", "))) +
+    row("makedepends", esc((p.makedepends||[]).join(", "))) +
+    row("recipe", `<a href="https://github.com/${REPO}/tree/${BRANCH}/packages/${encodeURIComponent(p.pkgname)}">packages/${esc(p.pkgname)}</a>`);
+  $("#dsrc").textContent = "loading GURTBUILD…";
+  dlg.showModal();
+  try {
+    const r = await fetch(`https://raw.githubusercontent.com/${REPO}/${BRANCH}/packages/${encodeURIComponent(p.pkgname)}/GURTBUILD`);
+    $("#dsrc").textContent = r.ok ? await r.text() : "couldn't load the GURTBUILD (repo not pushed yet?)";
+  } catch { $("#dsrc").textContent = "couldn't load the GURTBUILD"; }
+}
+
+$("#list").addEventListener("click", e => { const b = e.target.closest(".pkg"); if (b) showPkg(b.dataset.n); });
+$("#q").addEventListener("input", () => { render(); try { history.replaceState(null, "", $("#q").value ? "?q=" + encodeURIComponent($("#q").value) : location.pathname); } catch {} });
+$("#copy").addEventListener("click", async () => { try { await navigator.clipboard.writeText($("#dcmd").textContent); $("#copy").textContent = "copied ✓"; setTimeout(()=>$("#copy").textContent="copy",1200);} catch {} });
+const dlg = $("#dlg");
+$("#q").value = new URLSearchParams(location.search).get("q") || "";
+
+fetch("packages.json").then(r => r.json()).then(d => { PKGS = d.packages; render(); })
+  .catch(() => { $("#count").textContent = "couldn't load packages.json"; });
+</script>
+</body>
+</html>

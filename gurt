@@ -1,0 +1,639 @@
+#!/usr/bin/env bash
+# ┌──────────────────────────────────────────────────────────────┐
+# │ gurt — GURT Universal Repository Thingy                      │
+# │ an AUR-style community build repo that works on EVERY distro │
+# │ made by clearly124 · MIT license                             │
+# └──────────────────────────────────────────────────────────────┘
+set -euo pipefail
+shopt -s nullglob
+
+GURT_VERSION="0.1.0"
+
+# ───────────────────────── config ─────────────────────────
+# load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
+_user_conf="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/gurt.conf"
+_envsave=$(declare -p GURT_REPO_URL GURT_BRANCH GURT_PREFIX GURT_ROOT GURT_CACHE 2>/dev/null || true)
+# shellcheck disable=SC1090
+[[ -r ${GURT_CONF:-/etc/gurt.conf} ]] && . "${GURT_CONF:-/etc/gurt.conf}"
+# shellcheck disable=SC1090
+[[ -r $_user_conf ]] && . "$_user_conf"
+eval "$_envsave"
+
+GURT_REPO_URL="${GURT_REPO_URL:-https://github.com/clrealy/gurt.git}"
+GURT_BRANCH="${GURT_BRANCH:-main}"
+GURT_PREFIX="${GURT_PREFIX:-/usr/local}"
+GURT_ROOT="${GURT_ROOT:-/}"
+GURT_CACHE="${GURT_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/gurt}"
+GURT_REPO_DIR="${GURT_REPO_DIR:-$GURT_CACHE/repo}"
+
+NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false
+
+# ───────────────────────── pretty output ─────────────────────────
+if [[ -t 2 && -z ${NO_COLOR:-} ]]; then
+  B=$'\e[1m' R0=$'\e[0m' RED=$'\e[31m' GRN=$'\e[32m' YLW=$'\e[33m' BLU=$'\e[34m' MAG=$'\e[35m'
+else B='' R0='' RED='' GRN='' YLW='' BLU='' MAG=''; fi
+msg()  { printf '%s==>%s %s%s%s\n' "$GRN" "$R0" "$B" "$*" "$R0" >&2; }
+msg2() { printf '  %s->%s %s\n' "$BLU" "$R0" "$*" >&2; }
+warn() { printf '%s==> heads up:%s %s\n' "$YLW" "$R0" "$*" >&2; }
+die()  { printf '%s==> nah:%s %s\n' "$RED" "$R0" "$*" >&2; exit 1; }
+ask()  {
+  $NOCONFIRM && return 0
+  local a; printf '%s::%s %s [y/N] ' "$MAG" "$R0" "$1" >&2
+  { read -r a 2>/dev/null </dev/tty; } 2>/dev/null || read -r a || return 1
+  [[ $a == [yY]* ]]
+}
+
+# ───────────────────────── paths ─────────────────────────
+R="${GURT_ROOT%/}"                       # "" when root is /
+DB="$R/var/lib/gurt/local"
+SELF_DIR=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
+
+depmap_file() {
+  local f
+  for f in "$GURT_REPO_DIR/deps.map" "$SELF_DIR/deps.map" /usr/local/share/gurt/deps.map /usr/share/gurt/deps.map; do
+    [[ -r $f ]] && { echo "$f"; return; }
+  done
+}
+
+asroot() {
+  if (( EUID == 0 )) || { [[ -n $R ]] && [[ -w $R ]]; }; then "$@"
+  elif command -v sudo >/dev/null; then sudo "$@"
+  elif command -v doas >/dev/null; then doas "$@"
+  else die "need root for that (install sudo or doas)"; fi
+}
+
+# ───────────────────────── distro detection ─────────────────────────
+detect_pm() {
+  local id="" like=""
+  if [[ -r /etc/os-release ]]; then
+    id=$(. /etc/os-release; echo "${ID:-}"); like=$(. /etc/os-release; echo "${ID_LIKE:-}")
+  fi
+  local w
+  for w in $id $like; do
+    case $w in
+      debian|ubuntu|linuxmint|pop|elementary|zorin|kali|raspbian|devuan) command -v apt-get >/dev/null && { echo apt; return; } ;;
+      fedora|rhel|centos|rocky|almalinux|nobara) command -v dnf >/dev/null && { echo dnf; return; }
+                                                 command -v yum >/dev/null && { echo yum; return; } ;;
+      arch|manjaro|endeavouros|cachyos|garuda|artix) command -v pacman >/dev/null && { echo pacman; return; } ;;
+      suse|opensuse|opensuse-tumbleweed|opensuse-leap|sles) command -v zypper >/dev/null && { echo zypper; return; } ;;
+      alpine|postmarketos) command -v apk >/dev/null && { echo apk; return; } ;;
+      void) command -v xbps-install >/dev/null && { echo xbps; return; } ;;
+      gentoo|funtoo) command -v emerge >/dev/null && { echo emerge; return; } ;;
+      solus) command -v eopkg >/dev/null && { echo eopkg; return; } ;;
+    esac
+  done
+  # fallback: sniff for whatever package manager exists
+  local pm
+  for pm in apt-get dnf yum pacman zypper apk xbps-install emerge eopkg; do
+    if command -v "$pm" >/dev/null; then
+      case $pm in apt-get) echo apt ;; xbps-install) echo xbps ;; *) echo "$pm" ;; esac; return
+    fi
+  done
+  echo none
+}
+PM=$(detect_pm)
+
+pm_has() {
+  case $PM in
+    apt)            dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -q 'ok installed' ;;
+    dnf|yum|zypper) rpm -q --whatprovides "$1" >/dev/null 2>&1 ;;
+    pacman)         pacman -T "$1" >/dev/null 2>&1 || pacman -Qg "$1" >/dev/null 2>&1 ;;
+    apk)            apk info -e "$1" >/dev/null 2>&1 ;;
+    xbps)           xbps-query "$1" >/dev/null 2>&1 ;;
+    emerge)         portageq has_version / "$1" >/dev/null 2>&1 ;;
+    eopkg)          eopkg li 2>/dev/null | awk '{print $1}' | grep -qxF "$1" ;;
+    *)              return 1 ;;
+  esac
+}
+
+pm_install() {
+  (( $# )) || return 0
+  msg "installing distro deps via $PM: $*"
+  case $PM in
+    apt)    asroot apt-get install -y "$@" ;;
+    dnf)    asroot dnf install -y "$@" ;;
+    yum)    asroot yum install -y "$@" ;;
+    pacman) asroot pacman -S --needed --noconfirm "$@" ;;
+    zypper) asroot zypper --non-interactive install "$@" ;;
+    apk)    asroot apk add "$@" ;;
+    xbps)   asroot xbps-install -Sy "$@" ;;
+    emerge) asroot emerge --noreplace "$@" ;;
+    eopkg)  asroot eopkg install -y "$@" ;;
+    *)      die "couldn't find a package manager I know. install these yourself then rerun with --nodeps: $*" ;;
+  esac
+}
+
+# generic dep name -> native package name(s) for this distro ("-" = not needed)
+map_dep() {
+  local dep=$1 key=$PM map val
+  [[ $key == yum ]] && key=dnf
+  map=$(depmap_file)
+  if [[ -n $map ]]; then
+    val=$(awk -v d="$dep" -v k="$key" '
+      /^[[:space:]]*#/ {next}
+      $1==d { for (i=2;i<=NF;i++) { n=index($i,"="); if (substr($i,1,n-1)==k) { print substr($i,n+1); f=1 } }
+              if (!f) print d; exit }' "$map")
+  fi
+  [[ -z ${val:-} ]] && val=$dep
+  [[ $val == "-" ]] && return 0
+  echo "${val//,/ }"
+}
+in_depmap() { local m; m=$(depmap_file); [[ -n $m ]] && awk -v d="$1" '$1==d{f=1} END{exit !f}' "$m"; }
+
+install_native() {
+  local missing=() p
+  for p in "$@"; do pm_has "$p" || missing+=("$p"); done
+  pm_install "${missing[@]}"
+}
+
+# ───────────────────────── metadata helpers ─────────────────────────
+# read "key = value" files (.gurtinfo / .PKGINFO) without executing anything
+info_get() { awk -v k="$2" 'index($0, k" = ")==1 { print substr($0, length(k)+4) }' "$1"; }
+
+is_installed()  { [[ -f $DB/$1/info ]]; }
+inst_ver()      { echo "$(info_get "$DB/$1/info" pkgver)-$(info_get "$DB/$1/info" pkgrel)"; }
+repo_info()     { echo "$GURT_REPO_DIR/packages/$1/.gurtinfo"; }
+is_gurt_pkg()   { [[ -f $(repo_info "$1") ]]; }
+repo_ver()      { local f; f=$(repo_info "$1"); echo "$(info_get "$f" pkgver)-$(info_get "$f" pkgrel)"; }
+# is $2 newer than $1?
+vnewer() { [[ $1 != "$2" && $(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1) == "$2" ]]; }
+
+ensure_repo() {
+  [[ -d $GURT_REPO_DIR/packages ]] || cmd_sync
+}
+
+# ───────────────────────── recipes (GURTBUILD) ─────────────────────────
+load_recipe() {
+  [[ -f GURTBUILD ]] || die "no GURTBUILD in $PWD"
+  pkgname="" pkgver="" pkgrel=1 pkgdesc="" url="" license="" maintainer=""
+  arch=() depends=() makedepends=() source=() sha256sums=()
+  unset -f prepare build check package 2>/dev/null || true
+  # shellcheck disable=SC1091
+  . ./GURTBUILD
+  [[ $pkgname =~ ^[a-z0-9][a-z0-9._+-]*$ ]]  || die "bad pkgname '$pkgname' (lowercase, digits, . _ + - only)"
+  [[ -n $pkgver && $pkgver =~ ^[A-Za-z0-9._+~]+$ ]] || die "bad pkgver '$pkgver' (no dashes/spaces)"
+  [[ $pkgrel =~ ^[0-9]+$ ]]                 || die "bad pkgrel '$pkgrel'"
+  [[ -n $pkgdesc ]]                         || die "pkgdesc is empty"
+  declare -F package >/dev/null             || die "GURTBUILD needs a package() function"
+  (( ${#arch[@]} )) || arch=(any)
+  (( ${#source[@]} == ${#sha256sums[@]} ))  || die "source has ${#source[@]} entries but sha256sums has ${#sha256sums[@]}"
+}
+
+print_srcinfo() {
+  local x
+  printf 'pkgname = %s\npkgver = %s\npkgrel = %s\npkgdesc = %s\n' "$pkgname" "$pkgver" "$pkgrel" "$pkgdesc"
+  [[ -n $url ]]        && printf 'url = %s\n' "$url"
+  [[ -n $license ]]    && printf 'license = %s\n' "$license"
+  [[ -n $maintainer ]] && printf 'maintainer = %s\n' "$maintainer"
+  for x in "${arch[@]}";        do printf 'arch = %s\n' "$x"; done
+  for x in "${depends[@]}";     do printf 'depends = %s\n' "$x"; done
+  for x in "${makedepends[@]}"; do printf 'makedepends = %s\n' "$x"; done
+  for x in "${source[@]}";      do printf 'source = %s\n' "$x"; done
+}
+
+arch_ok() {
+  local a m; m=$(uname -m)
+  for a in "${arch[@]}"; do [[ $a == any || $a == "$m" ]] && return 0; done
+  return 1
+}
+
+download() {
+  if command -v curl >/dev/null; then curl -fL --retry 3 --progress-bar -o "$2" "$1"
+  elif command -v wget >/dev/null; then wget -q --show-progress -O "$2" "$1"
+  else die "need curl or wget to download sources"; fi
+}
+
+verify() { # file sum
+  [[ $2 == SKIP ]] && return 0
+  local got; got=$(sha256sum "$1" | awk '{print $1}')
+  [[ $got == "$2" ]]
+}
+
+unpack() { # file
+  case $1 in
+    *.tar|*.tar.*|*.tgz|*.tbz2|*.txz|*.tzst) tar -xf "$1" -C "$srcdir" ;;
+    *.zip) command -v unzip >/dev/null || die "need unzip"; unzip -q -o "$1" -d "$srcdir" ;;
+    *) cp -a "$1" "$srcdir/" ;;
+  esac
+}
+
+fetch_sources() {
+  local i s name loc sum dest
+  mkdir -p "$SRCDEST"
+  for i in "${!source[@]}"; do
+    s=${source[$i]}; sum=${sha256sums[$i]}
+    if [[ $s == *::* ]]; then name=${s%%::*}; loc=${s#*::}; else loc=$s; name=${s%%#*}; name=${name##*/}; fi
+    case $loc in
+      git+*)
+        local repo=${loc#git+} frag="" ref="" commit=""
+        [[ $repo == *#* ]] && { frag=${repo#*#}; repo=${repo%%#*}; }
+        case $frag in tag=*|branch=*) ref=${frag#*=} ;; commit=*) commit=${frag#*=} ;; esac
+        [[ $s == *::* ]] || { name=${repo##*/}; name=${name%.git}; }
+        msg2 "cloning $repo${ref:+ @ $ref}${commit:+ @ $commit}"
+        if [[ -n $commit ]]; then
+          git clone -q "$repo" "$srcdir/$name" && git -C "$srcdir/$name" -c advice.detachedHead=false checkout -q "$commit"
+        else
+          git clone -q --depth 1 ${ref:+--branch "$ref"} "$repo" "$srcdir/$name"
+        fi ;;
+      http://*|https://*|ftp://*)
+        dest="$SRCDEST/$name"
+        if [[ -f $dest ]] && ! verify "$dest" "$sum"; then rm -f "$dest"; fi
+        if [[ ! -f $dest ]]; then
+          msg2 "downloading $name"
+          download "$loc" "$dest.part" && mv "$dest.part" "$dest"
+        fi
+        verify "$dest" "$sum" || die "sha256 mismatch on $name — source changed or got tampered with 🚩"
+        [[ $sum == SKIP ]] && warn "$name has no checksum (SKIP)"
+        unpack "$dest" ;;
+      *)  # local file shipped next to the GURTBUILD
+        [[ -f $startdir/$loc ]] || die "missing local source file: $loc"
+        verify "$startdir/$loc" "$sum" || die "sha256 mismatch on local file $loc"
+        unpack "$startdir/$loc" ;;
+    esac
+  done
+}
+
+# build a recipe dir into a .gurt package (never needs root)
+BUILT_PKG=""
+build_pkg() {
+  local rdir outdir work
+  rdir=$(cd "$1" && pwd)
+  mkdir -p "${2:-$PWD}"; outdir=$(cd "${2:-$PWD}" && pwd)
+  if (( EUID == 0 )) && [[ -z ${GURT_ALLOW_ROOT:-} ]]; then
+    die "don't build as root fr. run gurt as your normal user — it'll ask for sudo when it needs it (or set GURT_ALLOW_ROOT=1 in containers)"
+  fi
+  work=$(mktemp -d "${TMPDIR:-/tmp}/gurt-build.XXXXXX")
+  (
+    set -eE
+    cd "$rdir"
+    startdir=$rdir srcdir="$work/src" pkgdir="$work/pkg" prefix=$GURT_PREFIX
+    mkdir -p "$srcdir" "$pkgdir"
+    export startdir srcdir pkgdir prefix
+    load_recipe
+    arch_ok || die "$pkgname doesn't support $(uname -m) (arch: ${arch[*]})"
+    SRCDEST="$GURT_CACHE/sources/$pkgname"
+    msg "building $pkgname $pkgver-$pkgrel"
+    fetch_sources
+    export MAKEFLAGS="${MAKEFLAGS:--j$(nproc 2>/dev/null || echo 2)}"
+    export CFLAGS="${CFLAGS:--O2 -pipe}" CXXFLAGS="${CXXFLAGS:--O2 -pipe}"
+    if declare -F prepare >/dev/null; then msg "prepare()"; cd "$srcdir"; prepare; fi
+    if declare -F build   >/dev/null; then msg "build()";   cd "$srcdir"; build;   fi
+    if ! $NOCHECK && declare -F check >/dev/null; then msg "check()"; cd "$srcdir"; check; fi
+    msg "package()"; cd "$srcdir"; package
+
+    cd "$pkgdir"
+    [[ -n $(find . -mindepth 1 -print | head -n1) ]] || die "package() didn't put anything in \$pkgdir"
+    find . -mindepth 1 ! -type d | sed 's|^\./||' | LC_ALL=C sort > "$work/.FILES"
+    find . -mindepth 1 -type d   | sed 's|^\./||' | LC_ALL=C sort > "$work/.DIRS"
+    local rel_prefix=${prefix#/}
+    if grep -qv "^$rel_prefix/" "$work/.FILES"; then
+      warn "this package installs files outside $prefix — could clash with your distro's own packages"
+    fi
+    local a=any; [[ ${arch[*]} == any ]] || a=$(uname -m)
+    { print_srcinfo; printf 'builddate = %s\nprefix = %s\n' "$(date +%s)" "$prefix"; } > "$work/.PKGINFO"
+    local top=()
+    mapfile -t top < <(find . -mindepth 1 -maxdepth 1 | sed 's|^\./||')
+    cp "$work/.PKGINFO" "$work/.FILES" "$work/.DIRS" .
+    local out="$outdir/$pkgname-$pkgver-$pkgrel-$a.gurt"
+    tar --owner=0 --group=0 --numeric-owner -czf "$out" .PKGINFO .FILES .DIRS "${top[@]}"
+    echo "$out" > "$work/.out"
+    msg "built $(basename "$out") 📦"
+  )
+  BUILT_PKG=$(cat "$work/.out")
+  if $KEEP; then msg2 "kept build dir: $work"; else rm -rf "$work"; fi
+}
+
+# ───────────────────────── install / remove ─────────────────────────
+install_file() { # file.gurt [reason]
+  local f reason=${2:-explicit} tmp name dbd
+  f=$(readlink -f "$1")
+  tmp=$(mktemp -d "${TMPDIR:-/tmp}/gurt-inst.XXXXXX")
+  tar -xzf "$f" -C "$tmp" .PKGINFO .FILES .DIRS 2>/dev/null || { rm -rf "$tmp"; die "not a gurt package: $1"; }
+  name=$(info_get "$tmp/.PKGINFO" pkgname)
+  [[ -n $name ]] || die "package has no name??"
+  if grep -qE '(^|/)\.\.(/|$)|^/' "$tmp/.FILES" "$tmp/.DIRS"; then die "package has sketchy paths (.. or absolute) — refusing"; fi
+  dbd="$DB/$name"
+  [[ $reason == dep && -f $dbd/reason ]] && reason=$(cat "$dbd/reason")
+
+  # file conflicts
+  local rel owner conflicts=()
+  while IFS= read -r rel; do
+    [[ -e $R/$rel || -L $R/$rel ]] || continue
+    [[ -f $dbd/files ]] && grep -qxF "$rel" "$dbd/files" && continue
+    owner=""
+    for o in "$DB"/*/files; do grep -qxF "$rel" "$o" && { owner=$(basename "$(dirname "$o")"); break; }; done
+    conflicts+=("/$rel${owner:+  (owned by $owner)}")
+  done < "$tmp/.FILES"
+  if (( ${#conflicts[@]} )); then
+    printf '   %s\n' "${conflicts[@]}" >&2
+    $FORCE || { rm -rf "$tmp"; die "$name would overwrite existing files ^ (use --force if you're sure)"; }
+    warn "--force: overwriting anyway"
+  fi
+
+  # remember which dirs WE create so remove only cleans those up
+  : > "$tmp/newdirs"
+  while IFS= read -r rel; do [[ -d $R/$rel ]] || echo "$rel" >> "$tmp/newdirs"; done < "$tmp/.DIRS"
+  [[ -f $dbd/dirs ]] && cat "$dbd/dirs" >> "$tmp/newdirs"
+  LC_ALL=C sort -u -o "$tmp/newdirs" "$tmp/newdirs"
+
+  msg "installing $name $(info_get "$tmp/.PKGINFO" pkgver)-$(info_get "$tmp/.PKGINFO" pkgrel)"
+  asroot mkdir -p "${R:-/}" "$DB"
+  asroot tar -xzf "$f" -C "${R:-/}" --no-overwrite-dir --keep-directory-symlink \
+    --exclude=./.PKGINFO --exclude=.PKGINFO --exclude=.FILES --exclude=.DIRS
+
+  # upgrade: drop files the new version no longer ships
+  if [[ -f $dbd/files ]]; then
+    LC_ALL=C comm -23 <(LC_ALL=C sort "$dbd/files") "$tmp/.FILES" | while IFS= read -r rel; do
+      [[ -n $rel ]] && asroot rm -f -- "$R/$rel"
+    done
+  fi
+
+  echo "$reason" > "$tmp/reason"
+  asroot mkdir -p "$dbd"
+  asroot cp "$tmp/.PKGINFO" "$dbd/info"
+  asroot cp "$tmp/.FILES"   "$dbd/files"
+  asroot cp "$tmp/newdirs"  "$dbd/dirs"
+  asroot cp "$tmp/reason"   "$dbd/reason"
+  rm -rf "$tmp"
+  msg "$name installed ✅"
+}
+
+remove_pkg() {
+  local name=$1 dbd="$DB/$1" o
+  [[ -d $dbd ]] || die "$name isn't installed"
+  local rdeps=()
+  for o in "$DB"/*/info; do
+    local other; other=$(basename "$(dirname "$o")")
+    [[ $other == "$name" ]] && continue
+    info_get "$o" depends | grep -qxF "$name" && rdeps+=("$other")
+  done
+  if (( ${#rdeps[@]} )) && ! $FORCE; then die "$name is needed by: ${rdeps[*]} (use --force to yeet it anyway)"; fi
+  msg "removing $name"
+  local rel
+  while IFS= read -r rel; do [[ -n $rel ]] && asroot rm -f -- "$R/$rel"; done < "$dbd/files"
+  LC_ALL=C sort -r "$dbd/dirs" | while IFS= read -r rel; do
+    [[ -n $rel ]] && asroot rmdir -- "$R/$rel" 2>/dev/null || true
+  done
+  asroot rm -rf -- "$dbd"
+  msg "$name removed 🗑️"
+}
+
+declare -A VISITED=()
+resolve_and_install() { # name reason
+  local name=$1 reason=${2:-dep}
+  [[ -n ${VISITED[$name]:-} ]] && return 0
+  VISITED[$name]=1
+  local rdir="$GURT_REPO_DIR/packages/$name" info
+  info=$(repo_info "$name")
+  [[ -f $info ]] || die "no package '$name' in gurt (try: gurt search $name)"
+
+  if is_installed "$name" && ! $FORCE && ! vnewer "$(inst_ver "$name")" "$(repo_ver "$name")"; then
+    [[ $reason == explicit ]] && msg "$name $(inst_ver "$name") is already installed and up to date 👍"
+    return 0
+  fi
+
+  local d natives=()
+  for d in $(info_get "$info" depends) $(info_get "$info" makedepends); do
+    if is_gurt_pkg "$d" && ! in_depmap "$d"; then
+      is_installed "$d" || { msg2 "$name needs gurt package $d"; resolve_and_install "$d" dep; }
+    else
+      # shellcheck disable=SC2207
+      natives+=($(map_dep "$d"))
+    fi
+  done
+  if $NODEPS; then
+    (( ${#natives[@]} )) && warn "--nodeps: skipping distro deps: ${natives[*]}"
+  else
+    install_native "${natives[@]}"
+  fi
+
+  if ! $NOCONFIRM; then
+    printf '\n%s──── %s/GURTBUILD ────%s\n' "$B" "$name" "$R0" >&2
+    cat "$rdir/GURTBUILD" >&2
+    printf '%s───────────────────────%s\n' "$B" "$R0" >&2
+    ask "read that GURTBUILD? build + install $name $(repo_ver "$name")?" || die "aborted, no cap"
+  fi
+  build_pkg "$rdir" "$GURT_CACHE/pkg"
+  install_file "$BUILT_PKG" "$reason"
+}
+
+# ───────────────────────── commands ─────────────────────────
+cmd_sync() {
+  command -v git >/dev/null || die "need git to sync"
+  if [[ -d $GURT_REPO_DIR/.git ]]; then
+    msg "syncing gurt repo"
+    git -C "$GURT_REPO_DIR" pull -q --ff-only
+  else
+    msg "cloning gurt repo from $GURT_REPO_URL"
+    mkdir -p "$(dirname "$GURT_REPO_DIR")"
+    git clone -q --depth 1 -b "$GURT_BRANCH" "$GURT_REPO_URL" "$GURT_REPO_DIR"
+  fi
+  local n; n=$(find "$GURT_REPO_DIR/packages" -mindepth 1 -maxdepth 1 -type d | wc -l)
+  msg2 "$n packages available"
+}
+
+cmd_search() {
+  ensure_repo
+  local term=${1:-} f name desc ver tag found=0
+  for f in "$GURT_REPO_DIR"/packages/*/.gurtinfo; do
+    name=$(info_get "$f" pkgname); desc=$(info_get "$f" pkgdesc)
+    if [[ -z $term ]] || grep -qiF -- "$term" <<<"$name $desc"; then
+      ver=$(repo_ver "$name"); tag=""
+      is_installed "$name" && tag=" ${GRN}[installed $(inst_ver "$name")]${R0}"
+      printf '%sgurt/%s%s%s%s %s%s%s%s\n    %s\n' "$MAG" "$R0" "$B" "$name" "$R0" "$GRN" "$ver" "$R0" "$tag" "$desc"
+      found=1
+    fi
+  done
+  (( found )) || { echo "nothing matched '$term' 😔 womp womp"; return 1; }
+}
+
+cmd_info() {
+  local name=${1:?usage: gurt info <pkg>} f
+  ensure_repo
+  f=$(repo_info "$name")
+  if [[ -f $f ]]; then
+    awk -F' = ' '{ printf "%-14s: %s\n", $1, substr($0, length($1)+4) }' "$f"
+  elif is_installed "$name"; then
+    awk -F' = ' '{ printf "%-14s: %s\n", $1, substr($0, length($1)+4) }' "$DB/$name/info"
+  else die "no package '$name'"; fi
+  if is_installed "$name"; then printf '%-14s: %s (%s)\n' installed "$(inst_ver "$name")" "$(cat "$DB/$name/reason")"
+  else printf '%-14s: no\n' installed; fi
+}
+
+cmd_list() {
+  local d n
+  for d in "$DB"/*/; do
+    n=$(basename "$d"); printf '%s %s\n' "$n" "$(inst_ver "$n")"
+  done
+}
+
+cmd_upgrade() {
+  cmd_sync
+  local d n todo=()
+  for d in "$DB"/*/; do
+    n=$(basename "$d")
+    is_gurt_pkg "$n" || continue
+    if vnewer "$(inst_ver "$n")" "$(repo_ver "$n")"; then
+      msg2 "$n  $(inst_ver "$n") -> $(repo_ver "$n")"; todo+=("$n")
+    fi
+  done
+  (( ${#todo[@]} )) || { msg "everything's up to date, you're chillin 😎"; return 0; }
+  ask "upgrade ${#todo[@]} package(s)?" || die "aborted"
+  for n in "${todo[@]}"; do resolve_and_install "$n" "$(cat "$DB/$n/reason")"; done
+}
+
+cmd_files() { local n=${1:?usage: gurt files <pkg>}; is_installed "$n" || die "$n isn't installed"; sed 's|^|/|' "$DB/$n/files"; }
+
+cmd_owns() {
+  local p=${1:?usage: gurt owns <path>} f
+  p=$(readlink -m "$p"); p=${p#"$R"}; p=${p#/}
+  for f in "$DB"/*/files; do grep -qxF "$p" "$f" && { echo "/$p is owned by $(basename "$(dirname "$f")") $(inst_ver "$(basename "$(dirname "$f")")")"; return 0; }; done
+  echo "no gurt package owns /$p"; return 1
+}
+
+cmd_srcinfo() { ( cd "${1:-.}" && load_recipe && print_srcinfo ); }
+
+cmd_new() {
+  local n=${1:?usage: gurt new <pkgname>}
+  [[ -e $n ]] && die "$n already exists"
+  mkdir -p "$n"
+  cat > "$n/GURTBUILD" <<EOF
+# GURTBUILD for $n
+# docs: see CONTRIBUTING.md in the gurt repo
+pkgname=$n
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="describe it in one line"
+url="https://example.com/$n"
+license="MIT"
+maintainer="your-handle"
+arch=(x86_64 aarch64)          # or (any) for scripts
+depends=()                     # runtime deps, GENERIC names from deps.map
+makedepends=(cc make)          # build-time deps
+source=("\$pkgname-\$pkgver.tar.gz::https://example.com/\$pkgname-\$pkgver.tar.gz")
+sha256sums=(SKIP)              # run: gurt checksum
+
+build() {
+  cd "\$pkgname-\$pkgver"
+  ./configure --prefix="\$prefix"
+  make
+}
+
+package() {
+  cd "\$pkgname-\$pkgver"
+  make DESTDIR="\$pkgdir" install
+}
+EOF
+  msg "made $n/GURTBUILD — edit it, then: gurt build $n && gurt srcinfo $n > $n/.gurtinfo"
+}
+
+cmd_checksum() {
+  ( cd "${1:-.}"; load_recipe
+    local s loc name tmp; tmp=$(mktemp -d)
+    for s in "${source[@]}"; do
+      if [[ $s == *::* ]]; then name=${s%%::*}; loc=${s#*::}; else loc=$s; name=${s##*/}; fi
+      case $loc in
+        git+*) echo "SKIP  # $name (git)";;
+        http*|ftp*) download "$loc" "$tmp/$name" >/dev/null 2>&1 || die "couldn't download $loc"
+                    echo "$(sha256sum "$tmp/$name" | awk '{print $1}')  # $name";;
+        *) echo "$(sha256sum "$loc" | awk '{print $1}')  # $name";;
+      esac
+    done; rm -rf "$tmp" )
+}
+
+cmd_doctor() {
+  local id="unknown"; [[ -r /etc/os-release ]] && id=$(. /etc/os-release; echo "${PRETTY_NAME:-$ID}")
+  printf '%-14s %s\n' gurt "$GURT_VERSION" distro "$id" "pkg manager" "$PM" arch "$(uname -m)" \
+    prefix "$GURT_PREFIX" root "${GURT_ROOT}" repo "$GURT_REPO_URL" cache "$GURT_CACHE" \
+    deps.map "$(depmap_file || true)"
+  local t ok=0
+  for t in bash git tar sha256sum find awk; do command -v "$t" >/dev/null || { warn "missing: $t"; ok=1; }; done
+  command -v curl >/dev/null || command -v wget >/dev/null || { warn "missing: curl or wget"; ok=1; }
+  tar --version 2>/dev/null | grep -q GNU || { warn "gurt needs GNU tar (Alpine: apk add tar)"; ok=1; }
+  command -v sudo >/dev/null || command -v doas >/dev/null || (( EUID == 0 )) || warn "no sudo/doas found"
+  [[ $PM == none ]] && warn "no known package manager — you'll have to install deps yourself (--nodeps)"
+  (( ok == 0 )) && msg "all good bestie ✨"
+}
+
+usage() {
+  cat <<EOF
+${B}gurt${R0} $GURT_VERSION — GURT Universal Repository Thingy 🦆
+community-built packages for EVERY distro. like the AUR but it doesn't care what you run.
+
+${B}usage:${R0} gurt <command> [options] [args]
+
+${B}using packages${R0}
+  sync                 pull the latest recipes
+  search [term]        find packages
+  info <pkg>           show package details
+  install <pkg...>     build + install from the repo (pulls deps from your distro)
+  upgrade              rebuild anything that got updated
+  remove <pkg...>      uninstall (only removes files gurt put there)
+  list                 what you've got installed
+  files <pkg>          files a package owns
+  owns <path>          which package owns a file
+
+${B}making packages${R0}
+  new <name>           scaffold a GURTBUILD
+  build <dir> [out]    build a recipe into a .gurt file (doesn't install)
+  add <file.gurt>      install a .gurt file you built
+  srcinfo [dir]        print .gurtinfo for a recipe (commit this!)
+  checksum [dir]       print sha256sums for a recipe's sources
+
+${B}misc${R0}
+  doctor               check your setup
+  yo                   gurt
+
+${B}options${R0}
+  -y, --noconfirm      don't ask, just send it
+  -f, --force          reinstall / overwrite / ignore reverse deps
+  --nodeps             don't install distro deps
+  --nocheck            skip check()
+  --keep               keep the build dir
+  --root DIR           install into another root (testing, chroots)
+EOF
+}
+
+# ───────────────────────── main ─────────────────────────
+main() {
+  local args=()
+  while (( $# )); do
+    case $1 in
+      -y|--noconfirm) NOCONFIRM=true ;;
+      -f|--force)     FORCE=true ;;
+      --nodeps)       NODEPS=true ;;
+      --nocheck)      NOCHECK=true ;;
+      --keep)         KEEP=true ;;
+      --root)         shift; GURT_ROOT=${1:?--root needs a dir}; R="${GURT_ROOT%/}"; DB="$R/var/lib/gurt/local" ;;
+      --root=*)       GURT_ROOT=${1#*=}; R="${GURT_ROOT%/}"; DB="$R/var/lib/gurt/local" ;;
+      -h|--help)      args=(help "${args[@]}") ;;
+      -V|--version)   args=(version) ;;
+      *)              args+=("$1") ;;
+    esac
+    shift
+  done
+  set -- "${args[@]}"
+  local cmd=${1:-help}; shift || true
+  case $cmd in
+    sync)            cmd_sync ;;
+    search|s)        cmd_search "$@" ;;
+    info)            cmd_info "$@" ;;
+    install|i)       (( $# )) || die "install what tho"; ensure_repo; local p; for p; do resolve_and_install "$p" explicit; done ;;
+    upgrade|update|up) cmd_upgrade ;;
+    remove|rm|yeet)  (( $# )) || die "remove what tho"; local p; for p; do remove_pkg "$p"; done ;;
+    list|ls)         cmd_list ;;
+    files)           cmd_files "$@" ;;
+    owns)            cmd_owns "$@" ;;
+    build)           build_pkg "${1:-.}" "${2:-$PWD}"; echo "$BUILT_PKG" ;;
+    add)             (( $# )) || die "add what tho"; local f; for f; do install_file "$f" explicit; done ;;
+    srcinfo)         cmd_srcinfo "$@" ;;
+    checksum)        cmd_checksum "$@" ;;
+    new)             cmd_new "$@" ;;
+    doctor)          cmd_doctor ;;
+    yo)              echo "gurt: yo 🦆" ;;
+    version)         echo "gurt $GURT_VERSION" ;;
+    help)            usage ;;
+    *)               die "unknown command '$cmd' (try: gurt help)" ;;
+  esac
+}
+main "$@"

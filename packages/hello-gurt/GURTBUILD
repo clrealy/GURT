@@ -1,0 +1,16 @@
+pkgname=hello-gurt
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="The hello world of gurt. Prints 'gurt: yo'"
+url="https://github.com/clrealy/gurt"
+license="MIT"
+maintainer="clearly124"
+arch=(any)
+depends=()
+makedepends=()
+source=("hello-gurt.sh")
+sha256sums=("b47941ea9e252c50fd9baea214e9149c24d6b5d7540e0b11445a832d8a26529c")
+
+package() {
+  install -Dm755 "$srcdir/hello-gurt.sh" "$pkgdir$prefix/bin/hello-gurt"
+}

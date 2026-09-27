@@ -1,0 +1,9 @@
+pkgname = hello-gurt
+pkgver = 1.0.0
+pkgrel = 1
+pkgdesc = The hello world of gurt. Prints 'gurt: yo'
+url = https://github.com/clrealy/gurt
+license = MIT
+maintainer = clearly124
+arch = any
+source = hello-gurt.sh
