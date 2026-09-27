@@ -44,6 +44,25 @@ jobs:
           export GURT_ALLOW_ROOT=1 GURT_REPO_DIR="$PWD" GURT_ROOT=/tmp/gurtroot
           for p in $changed; do [ -d packages/$p ] && ./gurt -y install "$p"; done
 
+  # recipes uploaded from the website don't have .gurtinfo — generate/refresh them on main
+  srcinfo:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: lint
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/checkout@v4
+      - name: regenerate .gurtinfo
+        run: |
+          for d in packages/*/; do ./gurt srcinfo "$d" > "$d/.gurtinfo"; done
+          if [ -n "$(git status --porcelain packages)" ]; then
+            git config user.name "gurt-bot"
+            git config user.email "gurt-bot@users.noreply.github.com"
+            git add packages
+            git commit -m "bot: regenerate .gurtinfo 🦆"
+            git push
+          fi
+
   pages:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: lint
@@ -52,6 +71,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
+      - run: for d in packages/*/; do ./gurt srcinfo "$d" > "$d/.gurtinfo"; done
       - run: python3 tools/gen-index.py
       - name: serve the installer + script from the site too
         run: cp install.sh gurt deps.map site/

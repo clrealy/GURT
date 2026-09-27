@@ -68,6 +68,28 @@ pre{background:var(--code);border:1px solid var(--line);border-radius:10px;paddi
 .cmd{display:flex;gap:8px;align-items:center;margin:12px 0}
 .cmd code{flex:1;background:var(--code);padding:10px 12px;border-radius:8px;border:1px solid var(--line);overflow-x:auto;white-space:nowrap}
 .btn{background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer}
+.secthead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.secthead .btn{margin-top:20px}
+.up .dbody{display:grid;gap:14px}
+.tabs{display:flex;gap:6px}
+.tab{white-space:nowrap;background:var(--tag);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;cursor:pointer}
+.tab.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid .full{grid-column:1/-1}
+.f label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.f input,.f select,.f textarea{width:100%;padding:9px 11px;font:inherit;font-size:14px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);outline:none}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:var(--accent)}
+.checks{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;padding-top:6px}
+.f .checks label{display:flex;align-items:center;gap:6px;margin:0;color:var(--ink);font-size:14px}
+.f .checks input{width:auto}
+#recipe{min-height:260px;font-family:"JetBrains Mono",monospace;font-size:12.5px;line-height:1.45;white-space:pre;tab-size:2}
+.row2{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ghost{background:var(--tag);color:var(--ink);border:1px solid var(--line)}
+.err{color:#d33;font-size:13px;min-height:1em}
+.hint{color:var(--muted);font-size:13px}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:26px;text-align:center;color:var(--muted);cursor:pointer}
+.drop.hot{border-color:var(--accent);color:var(--ink)}
+@media (max-width:600px){.grid{grid-template-columns:1fr}}
 footer{color:var(--muted);font-size:13px;padding:24px 0 40px;border-top:1px solid var(--line)}
 footer a{color:inherit}
 .empty{color:var(--muted);text-align:center;padding:40px 0}
@@ -93,7 +115,7 @@ gurt install htop --repo apt  <span class="c"># same thing, flag style</span></d
       <span class="src">zypper/ <small>openSUSE</small></span>
       <span class="src">pacman/ <small>Arch</small></span>
     </div>
-    <h2 class="sect">Main GURT packages</h2>
+    <div class="secthead"><h2 class="sect">Main GURT packages</h2><button class="btn" id="upbtn">＋ upload a package</button></div>
   </header>
 
   <div class="search">
@@ -118,6 +140,47 @@ gurt install htop --repo apt  <span class="c"># same thing, flag style</span></d
     <div class="cmd"><code id="dcmd"></code><button class="btn" id="copy">copy</button></div>
     <table id="dtable"></table>
     <pre id="dsrc">loading GURTBUILD…</pre>
+  </div>
+</dialog>
+
+<dialog id="up" class="up" aria-label="Upload a package">
+  <div class="dhead"><div><h2>Upload a package 📦</h2><div class="desc">Make a GURTBUILD here (or drop one you wrote), then send it to GitHub. It opens a pull request and CI builds it on 5 distros.</div></div><button class="x" id="upx" aria-label="Close">×</button></div>
+  <div class="dbody">
+    <div class="tabs"><button class="tab on" data-t="make">make one</button><button class="tab" data-t="file">upload a GURTBUILD</button></div>
+
+    <div id="t-make" class="grid">
+      <div class="f"><label>build type</label>
+        <select id="u-tpl">
+          <option value="make">Makefile</option><option value="cmake">CMake</option><option value="meson">Meson</option>
+          <option value="cargo">Rust (cargo)</option><option value="go">Go</option><option value="script">script / prebuilt binary</option>
+        </select></div>
+      <div class="f"><label>package name *</label><input id="u-name" placeholder="cool-app" autocomplete="off"></div>
+      <div class="f"><label>version *</label><input id="u-ver" placeholder="1.2.0" autocomplete="off"></div>
+      <div class="f"><label>license</label><input id="u-lic" placeholder="MIT" autocomplete="off"></div>
+      <div class="f full"><label>description *</label><input id="u-desc" placeholder="does cool stuff" autocomplete="off"></div>
+      <div class="f"><label>homepage</label><input id="u-url" placeholder="https://github.com/someone/cool-app" autocomplete="off"></div>
+      <div class="f"><label>your GitHub handle</label><input id="u-me" placeholder="clearly124" autocomplete="off"></div>
+      <div class="f full"><label>source (tarball URL, or git+https://…#tag=v1.2.0)</label><input id="u-src" placeholder="git+https://github.com/someone/cool-app.git#tag=v$pkgver" autocomplete="off"></div>
+      <div class="f full"><label>sha256 of the tarball (SKIP for git — run <code>gurt checksum</code> to get it)</label><input id="u-sum" placeholder="SKIP" autocomplete="off"></div>
+      <div class="f"><label>runtime deps (generic names, spaces)</label><input id="u-dep" placeholder="ncurses openssl" autocomplete="off"></div>
+      <div class="f"><label>build deps</label><input id="u-mdep" placeholder="(filled from build type)" autocomplete="off"></div>
+      <div class="f full"><label>arch</label><div class="checks">
+        <label><input type="checkbox" class="u-arch" value="x86_64" checked> x86_64</label>
+        <label><input type="checkbox" class="u-arch" value="aarch64" checked> aarch64</label>
+        <label><input type="checkbox" class="u-arch" value="any"> any (scripts)</label></div></div>
+    </div>
+
+    <div id="t-file" hidden>
+      <label class="drop" id="drop"><input type="file" id="u-file" hidden>drop a GURTBUILD here, or click to pick one 📂</label>
+    </div>
+
+    <div class="f"><label>GURTBUILD (edit away)</label><textarea id="recipe" spellcheck="false"></textarea></div>
+    <div class="err" id="u-err"></div>
+    <div class="row2">
+      <button class="btn" id="u-send">upload to GitHub 🚀</button>
+      <button class="btn ghost" id="u-dl">download</button>
+      <span class="hint">GitHub asks you to sign in, forks the repo for you, and opens a pull request.</span>
+    </div>
   </div>
 </dialog>
 
@@ -169,6 +232,86 @@ $("#q").addEventListener("input", () => { render(); try { history.replaceState(n
 $("#copy").addEventListener("click", async () => { try { await navigator.clipboard.writeText($("#dcmd").textContent); $("#copy").textContent = "copied ✓"; setTimeout(()=>$("#copy").textContent="copy",1200);} catch {} });
 const dlg = $("#dlg");
 $("#q").value = new URLSearchParams(location.search).get("q") || "";
+
+// ── upload a package ──
+const up = $("#up"), R = $("#recipe");
+let recipeTouched = false;
+const TPL = {
+  make:   { md: "cc make", b: d => `build() {\n  cd "${d}"\n  make PREFIX="$prefix"\n}`, p: d => `package() {\n  cd "${d}"\n  make PREFIX="$prefix" DESTDIR="$pkgdir" install\n}` },
+  cmake:  { md: "cc cmake", b: d => `build() {\n  cmake -S "${d}" -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$prefix"\n  cmake --build build\n}`, p: () => `package() {\n  DESTDIR="$pkgdir" cmake --install build\n}` },
+  meson:  { md: "cc meson ninja pkg-config", b: d => `build() {\n  meson setup build "${d}" --prefix="$prefix" --buildtype=release\n  meson compile -C build\n}`, p: () => `package() {\n  meson install -C build --destdir "$pkgdir"\n}` },
+  cargo:  { md: "rust", b: d => `build() {\n  cd "${d}"\n  cargo build --release --locked\n}`, p: d => `package() {\n  cd "${d}"\n  install -Dm755 "target/release/$pkgname" "$pkgdir$prefix/bin/$pkgname"\n}` },
+  go:     { md: "go", b: d => `build() {\n  cd "${d}"\n  go build -trimpath -o "$pkgname" .\n}`, p: d => `package() {\n  cd "${d}"\n  install -Dm755 "$pkgname" "$pkgdir$prefix/bin/$pkgname"\n}` },
+  script: { md: "", b: () => "", p: (d, f) => `package() {\n  install -Dm755 "$srcdir/${f}" "$pkgdir$prefix/bin/$pkgname"\n}` },
+};
+const val = id => $(id).value.trim();
+const q = v => `"${v.replace(/(["\\`])/g, "\\$1")}"`;
+function genRecipe() {
+  const t = TPL[$("#u-tpl").value], name = val("#u-name") || "my-app", ver = val("#u-ver") || "1.0.0";
+  const src = val("#u-src"), arch = [...document.querySelectorAll(".u-arch:checked")].map(c => c.value);
+  let dir = "$pkgname-$pkgver", file = "$pkgname";
+  if (src.startsWith("git+")) { dir = src.replace(/#.*/, "").replace(/\/$/, "").split("/").pop().replace(/\.git$/, ""); }
+  else if (src) { file = src.replace(/#.*/, "").split("/").pop(); }
+  let md = val("#u-mdep") || t.md;
+  if (src.startsWith("git+") && !/\bgit\b/.test(md)) md = (md + " git").trim();
+  const lines = [
+    `# GURTBUILD for ${name} — made with the upload form on the GURT site`,
+    `pkgname=${name}`, `pkgver=${ver}`, `pkgrel=1`,
+    `pkgdesc=${q(val("#u-desc") || "describe it in one line")}`,
+    `url=${q(val("#u-url"))}`, `license=${q(val("#u-lic") || "unknown")}`, `maintainer=${q(val("#u-me") || "your-handle")}`,
+    `arch=(${(arch.length ? arch : ["x86_64"]).join(" ")})`,
+    `depends=(${val("#u-dep")})`, `makedepends=(${md})`,
+    src ? `source=(${q(src)})` : `source=()`,
+    src ? `sha256sums=(${q(val("#u-sum") || "SKIP")})` : `sha256sums=()`, "",
+  ];
+  const b = t.b(dir); if (b) lines.push(b, "");
+  lines.push(t.p(dir, file));
+  return lines.join("\n") + "\n";
+}
+function refresh() { if (!recipeTouched) R.value = genRecipe(); check(); }
+function check() {
+  const txt = R.value, name = (txt.match(/^pkgname=["']?([^"'\s]+)/m) || [])[1] || "";
+  const ver = (txt.match(/^pkgver=["']?([^"'\s]+)/m) || [])[1] || "";
+  let e = "";
+  if (!/^[a-z0-9][a-z0-9._+-]*$/.test(name)) e = "package name: lowercase letters, digits, . _ + - only";
+  else if (!/^[A-Za-z0-9._+~]+$/.test(ver)) e = "version: no dashes or spaces";
+  else if (!/^package\(\)|^via_repo=/m.test(txt)) e = "needs a package() function";
+  else if (/\b(sudo|doas)\b/.test(txt)) e = "recipes can't use sudo/doas";
+  else if (/curl[^|\n]*\|\s*(ba)?sh/.test(txt)) e = "no curl | sh in recipes 💀";
+  else if (PKGS.some(p => p.pkgname === name)) e = `heads up: ${name} already exists — this will be an update to it`;
+  $("#u-err").textContent = e;
+  return { name, ok: !e || e.startsWith("heads up") };
+}
+$("#upbtn").addEventListener("click", () => { refresh(); up.showModal(); });
+$("#upx").addEventListener("click", () => up.close());
+document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x === b));
+  $("#t-make").hidden = b.dataset.t !== "make"; $("#t-file").hidden = b.dataset.t !== "file";
+}));
+["#u-tpl","#u-name","#u-ver","#u-lic","#u-desc","#u-url","#u-me","#u-src","#u-sum","#u-dep","#u-mdep"].forEach(id => $(id).addEventListener("input", refresh));
+document.querySelectorAll(".u-arch").forEach(c => c.addEventListener("change", refresh));
+R.addEventListener("input", () => { recipeTouched = true; check(); });
+function loadFile(f) {
+  if (!f) return;
+  if (f.size > 64 * 1024) { $("#u-err").textContent = "that file's way too big for a GURTBUILD"; return; }
+  f.text().then(t => { R.value = t; recipeTouched = true; check(); });
+}
+$("#u-file").addEventListener("change", e => loadFile(e.target.files[0]));
+const drop = $("#drop");
+["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("hot"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("hot"); }));
+drop.addEventListener("drop", e => loadFile(e.dataTransfer.files[0]));
+$("#u-send").addEventListener("click", () => {
+  const c = check(); if (!c.ok) return;
+  const url = `https://github.com/${REPO}/new/${BRANCH}?filename=${encodeURIComponent(`packages/${c.name}/GURTBUILD`)}&value=${encodeURIComponent(R.value)}`;
+  if (url.length > 7500) { $("#u-err").textContent = "recipe's too long to send through the browser — download it and open a PR by hand"; return; }
+  window.open(url, "_blank", "noopener");
+});
+$("#u-dl").addEventListener("click", () => {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([R.value], { type: "text/plain" })); a.download = "GURTBUILD"; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
 
 fetch("packages.json").then(r => r.json()).then(d => { PKGS = d.packages; render(); })
   .catch(() => { $("#count").textContent = "couldn't load packages.json"; });
