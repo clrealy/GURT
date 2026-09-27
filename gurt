@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.2.0"
+GURT_VERSION="0.3.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -1148,28 +1148,95 @@ cmd_list() {
   done
 }
 
-cmd_upgrade() {
-  local d k src name todo=() new synced=" "
-  sync_main
+# ── keeping stuff fresh ──
+# find_outdated: fills TODO with keys that have a newer version (indexes must be synced first)
+TODO=()
+find_outdated() {
+  local d k src name new dir
+  TODO=()
   for d in "$DB"/*/; do
     k=$(basename "$d")
     if [[ $k == *:* ]]; then src=${k%%:*}; name=${k#*:}; else src=gurt; name=$k; fi
     new=""
     case $src in
       gurt) is_gurt_pkg "$name" && new=$(repo_ver "$name") ;;
-      aur)  local dir; dir=$(aur_clone "$name" 2>/dev/null) && new=$(aur_srcinfo_ver "$dir/.SRCINFO") ;;
-      *)    [[ $synced == *" $src "* ]] || { ( sync_source "$src" ) || warn "couldn't sync $src"; synced+="$src "; }
-            new=$(idx_lookup "$src" "$name" | cut -f2) ;;
+      aur)  dir=$(aur_clone "$name" 2>/dev/null) && new=$(aur_srcinfo_ver "$dir/.SRCINFO") ;;
+      *)    new=$(idx_lookup "$src" "$name" | cut -f2) ;;
     esac
     if [[ -n $new ]] && vnewer "$(inst_ver "$k")" "$new"; then
-      msg2 "$(pretty "$k")  $(inst_ver "$k") -> $new"; todo+=("$k")
+      msg2 "$(pretty "$k")  $(inst_ver "$k") -> $new"; TODO+=("$k")
     fi
   done
-  (( ${#todo[@]} )) || { msg "everything's up to date, you're chillin 😎"; return 0; }
-  ask "upgrade ${#todo[@]} package(s)?" || die "aborted"
-  local was=$NOCONFIRM; NOCONFIRM=true   # already said yes
+}
+
+# sources you've actually installed from (so update doesn't download indexes you never use)
+used_sources() {
+  local d k seen=" "
+  for d in "$DB"/*:*/; do k=$(basename "$d"); k=${k%%:*}; [[ $seen == *" $k "* ]] || { seen+="$k "; echo "$k"; }; done
+  for k in apt dnf zypper pacman; do [[ -f $(idx_file "$k") && $seen != *" $k "* ]] && { seen+="$k "; echo "$k"; }; done
+  return 0
+}
+
+refresh_all() {
+  local s
+  sync_main
+  for s in $(used_sources); do
+    [[ $s == aur ]] && continue
+    ( sync_source "$s" ) || warn "couldn't refresh $s, skipping"
+  done
+}
+
+# is there a newer gurt in the main repo?
+repo_gurt_ver() { [[ -f $GURT_REPO_DIR/gurt ]] && sed -n 's/^GURT_VERSION="\(.*\)"$/\1/p' "$GURT_REPO_DIR/gurt" | head -n1; }
+check_self() {
+  local v; v=$(repo_gurt_ver)
+  if [[ -n $v ]] && vnewer "$GURT_VERSION" "$v"; then
+    printf '%s==> gurt %s is out (you have %s) — run: gurt self-update 🦆%s\n' "$MAG" "$v" "$GURT_VERSION" "$R0" >&2
+  fi
+}
+
+cmd_update() {   # like apt update: refresh everything, install nothing
+  refresh_all
+  msg "checking for newer versions"
+  find_outdated
+  if (( ${#TODO[@]} )); then msg "${#TODO[@]} package(s) can be upgraded — run: gurt upgrade"
+  else msg "everything's up to date, you're chillin 😎"; fi
+  check_self
+}
+
+cmd_upgrade() {  # refresh + actually install the new versions
+  refresh_all
+  find_outdated
+  check_self
+  (( ${#TODO[@]} )) || { msg "everything's up to date, you're chillin 😎"; return 0; }
+  ask "upgrade ${#TODO[@]} package(s)?" || die "aborted"
+  local k todo=("${TODO[@]}") was=$NOCONFIRM; NOCONFIRM=true   # already said yes
   for k in "${todo[@]}"; do install_any "$(pretty "$k")" "$(cat "$DB/$k/reason")"; done
   NOCONFIRM=$was
+}
+
+cmd_self_update() {
+  local self new tmp dir
+  self=$(readlink -f "$0")
+  sync_main
+  new=$(repo_gurt_ver)
+  [[ -n $new ]] || die "couldn't find gurt in the main repo"
+  if ! vnewer "$GURT_VERSION" "$new" && ! $FORCE; then
+    msg "gurt $GURT_VERSION is already the newest 😎"; return 0
+  fi
+  bash -n "$GURT_REPO_DIR/gurt" || die "the new gurt has a syntax error?? not installing it"
+  ask "update gurt $GURT_VERSION -> $new ($self)?" || die "aborted"
+  dir=$(dirname "$self")
+  tmp="$dir/.gurt.new.$$"
+  # write a new file then rename over the old one, so this running copy doesn't get corrupted mid-run
+  asroot cp "$GURT_REPO_DIR/gurt" "$tmp"
+  asroot chmod 755 "$tmp"
+  asroot mv -f "$tmp" "$self"
+  for f in /usr/local/share/gurt/deps.map /usr/share/gurt/deps.map; do
+    [[ -f $f ]] && asroot cp "$GURT_REPO_DIR/deps.map" "$f"
+  done
+  msg "gurt updated to $new ✅"
+  exit 0
 }
 
 cmd_files() { local k; k=$(resolve_key "${1:?usage: gurt files <pkg>}") || die "$1 isn't installed"; sed 's|^|/|' "$DB/$k/files"; }
@@ -1280,7 +1347,9 @@ ${B}using packages${R0}
   search [src/]term    find packages   (-a searches every source)
   info [src/]pkg       show package details
   install [src/]pkg…   install (deps come from your distro first, then the source)
+  update               refresh package lists + show what's outdated (installs nothing)
   upgrade              update everything gurt installed, from every source
+  self-update          update gurt itself
   remove pkg…          uninstall (only removes files gurt put there)
   autoremove           remove deps nothing needs anymore
   list                 what you've got installed
@@ -1352,7 +1421,9 @@ main() {
     search|s)          cmd_search "$@" ;;
     info)              cmd_info "$@" ;;
     install|i|get)     (( $# )) || die "install what tho"; for p; do install_any "$p" explicit; done ;;
-    upgrade|update|up) cmd_upgrade ;;
+    update|refresh)    cmd_update ;;
+    upgrade|up)        cmd_upgrade ;;
+    self-update|selfupdate) cmd_self_update ;;
     remove|rm|yeet)    (( $# )) || die "remove what tho"; for p; do remove_pkg "$p"; done ;;
     autoremove|clean)  cmd_autoremove ;;
     list|ls)           cmd_list ;;
