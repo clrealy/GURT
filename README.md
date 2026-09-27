@@ -111,6 +111,11 @@ Your **GitHub account is your GURT account**. There are no new passwords, and GU
 - **Votes 👍 + comments 💬:** every package has them. You sign in with GitHub through [giscus](https://giscus.app), and everything is stored in this repo's GitHub Discussions
 - **🚩 Flag out of date:** opens a pre-filled GitHub issue
 
+**Maintaining packages 🛠️**
+- Every package popup on the site has a **✏️ edit this package** button, which opens its GURTBUILD in GitHub's editor. Non-owners automatically get a fork + pull request
+- `.github/CODEOWNERS` is generated from each recipe's `maintainer=`, so any PR touching a package **automatically asks its maintainer to review**. The repo owner can always approve too
+- To make a maintainer's approval **required**: repo → Settings → Branches → add a rule for `main` → ✅ *Require a pull request* + ✅ *Require review from Code Owners*. Maintainers need to be repo collaborators for GitHub to count them
+
 **Turning on votes + comments (one-time, repo owner):**
 1. Repo → **Settings** → **General** → **Features**, then check **Discussions**
 2. **Discussions** tab → add a category called **Packages** (type: *Announcement*, so only giscus creates threads)

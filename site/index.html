@@ -180,7 +180,7 @@ gurt install htop --repo apt  <span class="c"># same thing, flag style</span></d
     <table id="dtable"></table>
     <pre id="dsrc">loading GURTBUILD…</pre>
     <div class="social">
-      <div class="row2"><h3 class="h3">votes & comments</h3><a class="btn ghost small" id="dflag" target="_blank" rel="noopener">🚩 flag out of date</a></div>
+      <div class="row2"><h3 class="h3">votes & comments</h3><span class="row2"><a class="btn ghost small" id="dedit" target="_blank" rel="noopener">✏️ edit this package</a><a class="btn ghost small" id="dflag" target="_blank" rel="noopener">🚩 flag out of date</a></span></div>
       <div id="giscus"></div>
     </div>
   </div>
@@ -269,6 +269,7 @@ async function showPkg(name){
     title: `[out of date] ${p.pkgname}`, labels: "out-of-date",
     body: `**${p.pkgname}** looks out of date on GURT.\n\nGURT has: ${p.via_repo ? "official repo" : p.pkgver + "-" + p.pkgrel}\nNewest upstream version: \nUpstream: ${p.url || ""}\n`,
   });
+  $("#dedit").href = `https://github.com/${REPO}/edit/${BRANCH}/packages/${encodeURIComponent(p.pkgname)}/GURTBUILD`;
   loadComments(p.pkgname);
   dlg.showModal();
   try {

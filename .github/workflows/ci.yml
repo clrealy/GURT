@@ -52,14 +52,15 @@ jobs:
     permissions: { contents: write }
     steps:
       - uses: actions/checkout@v4
-      - name: regenerate .gurtinfo
+      - name: regenerate .gurtinfo + CODEOWNERS
         run: |
           for d in packages/*/; do ./gurt srcinfo "$d" > "$d/.gurtinfo"; done
-          if [ -n "$(git status --porcelain packages)" ]; then
+          ./tools/gen-codeowners.sh
+          if [ -n "$(git status --porcelain packages .github/CODEOWNERS)" ]; then
             git config user.name "gurt-bot"
             git config user.email "gurt-bot@users.noreply.github.com"
-            git add packages
-            git commit -m "bot: regenerate .gurtinfo 🦆"
+            git add packages .github/CODEOWNERS
+            git commit -m "bot: regenerate .gurtinfo + CODEOWNERS 🦆"
             git push
           fi
 
