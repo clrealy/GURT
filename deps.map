@@ -22,6 +22,7 @@ xdg-utils   emerge=x11-misc/xdg-utils
 flatpak     emerge=sys-apps/flatpak
 podman      emerge=app-containers/podman
 distrobox   emerge=app-containers/distrobox
+patchelf    emerge=dev-util/patchelf
 
 # ── languages ──
 python3     pacman=python  emerge=dev-lang/python

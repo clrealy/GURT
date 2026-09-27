@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.8.1"
+GURT_VERSION="0.8.2"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -530,20 +530,17 @@ install_file() { # file.gurt [reason]
 # after install: refresh the linker cache, teach it about foreign lib dirs, sanity-check binaries
 post_install() {
   local key=$1 files="$DB/$1/files" f
-  if [[ -z $R ]] && grep -qE '(^|/)lib[^/]*\.so(\.[0-9.]+)?$' "$files"; then
-    asroot ldconfig 2>/dev/null || true
-    LDCACHE=""
-    local dirs=() d
-    while IFS= read -r f; do
-      ld_has "$(basename "$f")" || dirs+=("/$(dirname "$f")")
-    done < <(grep -E '^(usr/)?lib[^/]*/([^/]+/)?lib[^/]*\.so\.[0-9]+$' "$files" | head -n 200)
-    if (( ${#dirs[@]} )); then
-      mapfile -t dirs < <(printf '%s\n' "${dirs[@]}" | sort -u)
-      for d in "${dirs[@]}"; do
-        grep -qsxF "$d" /etc/ld.so.conf.d/gurt.conf || { echo "$d" | asroot tee -a /etc/ld.so.conf.d/gurt.conf >/dev/null; msg2 "added $d to the linker path"; }
-      done
-      asroot ldconfig 2>/dev/null || true; LDCACHE=""
+  if [[ -z $R ]]; then
+    # gurt < 0.8.2 put foreign lib folders on the GLOBAL linker path — that let an app's private libs
+    # (Electron ships its own libvulkan/libEGL/libGLESv2…) hijack every program, desktop included. undo it.
+    if [[ -f /etc/ld.so.conf.d/gurt.conf ]]; then
+      warn "removing /etc/ld.so.conf.d/gurt.conf — old gurt put app-private libs on the global library path (that can break your desktop)"
+      asroot rm -f /etc/ld.so.conf.d/gurt.conf
+      asroot ldconfig 2>/dev/null || true
     fi
+    grep -qE '(^|/)lib[^/]*\.so(\.[0-9.]+)?$' "$files" && { asroot ldconfig 2>/dev/null || true; }
+    LDCACHE=""
+    fix_rpaths "$key"
   fi
   # do the binaries actually have what they need?
   command -v ldd >/dev/null || return 0
@@ -565,6 +562,33 @@ post_install() {
       msg2 "try installing those libs from your distro, or reinstall so gurt pulls them from $(pretty "${key%%:*}")"
     fi
   fi
+}
+
+# an app needs a lib that another gurt package put somewhere non-standard → point THAT app at it
+# (RUNPATH via patchelf) instead of touching the system-wide library path
+fix_rpaths() { # key
+  command -v ldd >/dev/null || return 0
+  local key=$1 f lib hit n=0 need=()
+  while IFS= read -r f; do
+    [[ -f /$f && ! -L /$f ]] || continue
+    [[ $(head -c4 "/$f" 2>/dev/null | od -An -c | tr -d ' ') == 177ELF ]] || continue
+    (( n++ > 300 )) && break
+    while IFS= read -r lib; do
+      hit=$(cat "$DB"/*/files 2>/dev/null | awk -v l="/$lib" 'length($0) >= length(l) && substr($0, length($0) - length(l) + 1) == l { print; exit }')
+      [[ -n $hit ]] && need+=("$f|/$(dirname "$hit")")
+    done < <(ldd "/$f" 2>/dev/null | awk '/=> not found/ {print $1}')
+  done < "$DB/$key/files"
+  (( ${#need[@]} )) || return 0
+  if ! command -v patchelf >/dev/null; then
+    if ! $NODEPS; then install_native "$(map_dep patchelf)" || true; fi
+    command -v patchelf >/dev/null || { warn "some files need libs from other gurt packages — install patchelf and reinstall so gurt can link them"; return 0; }
+  fi
+  local e fixed=0
+  for e in "${need[@]}"; do
+    asroot patchelf --add-rpath "${e#*|}" "/${e%%|*}" 2>/dev/null && fixed=$((fixed + 1))
+  done
+  (( fixed )) && msg2 "linked $fixed file(s) to their libs — only those files, your system's library path is untouched 🛡️"
+  return 0
 }
 
 resolve_key() { # user spec (name or src/name) -> installed db key
