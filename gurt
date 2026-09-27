@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.5.0"
+GURT_VERSION="0.5.1"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -155,6 +155,31 @@ map_dep() {
   echo "${val//,/ }"
 }
 in_depmap() { local m; m=$(depmap_file); [[ -n $m ]] && awk -v d="$1" '$1==d{f=1} END{exit !f}' "$m"; }
+
+# stdin: absolute paths → stdout: the ones your distro's package manager owns
+# (checks the symlink-resolved path too — /usr/lib64 is /usr/lib on Arch, /lib is /usr/lib on Debian…)
+sys_owned() {
+  local p c paths=() line
+  declare -A back=()
+  while IFS= read -r p; do
+    [[ -n $p && ( -e $p || -L $p ) ]] || continue
+    paths+=("$p"); back[$p]=$p
+    # the real folder + same name (/usr/lib64/x → /usr/lib/x on Arch), and the fully resolved file
+    for c in "$(readlink -f -- "$(dirname -- "$p")" 2>/dev/null)/$(basename -- "$p")" "$(readlink -f -- "$p" 2>/dev/null)"; do
+      if [[ -n $c && $c != "$p" && -z ${back[$c]:-} ]]; then paths+=("$c"); back[$c]=$p; fi
+    done
+  done
+  (( ${#paths[@]} )) || return 0
+  { case $PM in
+    pacman) pacman -Qo -- "${paths[@]}" 2>/dev/null | sed -n 's/ is owned by .*//p' ;;
+    apt)    dpkg -S -- "${paths[@]}" 2>/dev/null | sed -n 's|^.*: \(/.*\)$|\1|p' ;;
+    dnf|yum|zypper) for p in "${paths[@]}"; do rpm -qf -- "$p" >/dev/null 2>&1 && echo "$p"; done ;;
+    xbps)   for p in "${paths[@]}"; do xbps-query -o "$p" >/dev/null 2>&1 && echo "$p"; done ;;
+    apk)    for p in "${paths[@]}"; do apk info -qW "$p" 2>/dev/null | grep -q . && echo "$p"; done ;;
+    *)      return 0 ;;
+  esac | while IFS= read -r line; do if [[ -n ${back[$line]:-} ]]; then echo "${back[$line]}"; fi; done | sort -u; } || true
+  return 0
+}
 
 install_native() {
   local missing=() p
@@ -439,7 +464,18 @@ install_file() { # file.gurt [reason]
   key=$(pkey "$src" "$name"); dbd="$DB/$key"
   [[ $reason == dep && -f $dbd/reason ]] && reason=$(cat "$dbd/reason")
 
-  # file conflicts
+  # 1) anything your distro owns is off limits — no exceptions, no --force
+  if [[ -z $R ]]; then
+    local sysfiles
+    sysfiles=$(sed 's|^|/|' "$tmp/.FILES" | sys_owned)
+    if [[ -n $sysfiles ]]; then
+      sed 's/^/   /' <<<"$sysfiles" | head -n 15 >&2
+      rm -rf "$tmp"
+      die "$(pretty "$key") would overwrite files your distro ($PM) owns ^ — gurt NEVER does that, not even with --force. your system already has this stuff 🛡️"
+    fi
+  fi
+
+  # 2) file conflicts with other gurt packages / stray files
   local rel owner o conflicts=()
   while IFS= read -r rel; do
     [[ -e $R/$rel || -L $R/$rel ]] || continue
@@ -577,8 +613,13 @@ remove_pkg() {
   mapfile -t rdeps < <(rdeps_of "$key")
   if (( ${#rdeps[@]} )) && ! $FORCE; then die "$(pretty "$key") is needed by: ${rdeps[*]} (use --force to yeet it anyway)"; fi
   msg "removing $(pretty "$key")"
-  local rel
-  while IFS= read -r rel; do [[ -n $rel ]] && asroot rm -f -- "$R/$rel"; done < "$dbd/files"
+  local rel keep=""
+  [[ -z $R ]] && keep=$(sed 's|^|/|' "$dbd/files" | sys_owned)
+  while IFS= read -r rel; do
+    [[ -n $rel ]] || continue
+    if [[ -n $keep ]] && grep -qxF -- "/$rel" <<<"$keep"; then warn "kept /$rel — your distro owns it"; continue; fi
+    asroot rm -f -- "$R/$rel"
+  done < "$dbd/files"
   LC_ALL=C sort -r "$dbd/dirs" | while IFS= read -r rel; do
     [[ -n $rel ]] && asroot rmdir -- "$R/$rel" 2>/dev/null || true
   done
@@ -905,7 +946,7 @@ sync_pacman() { # tmp server-template('$repo' '$arch') repos
 }
 
 # ── dependency smarts: prefer what the host already has / can get natively ──
-CORE_RE='^(glibc|glibc-common|glibc-minimal-langpack|libc6|libc-bin|libc|musl|filesystem|base-files|base|setup|systemd|systemd-libs|libsystemd0|libsystemd-shared|udev|libudev1|bash|sh|dash|coreutils|util-linux|shadow|dpkg|rpm|rpm-libs|pacman|zypper|libzypp|dnf|apt|debconf|debconf-2\.0|cdebconf|init-system-helpers|lsb-base|sysvinit-utils|gcc-libs|libgcc|libgcc-s1|libgcc_s1|libgcc1|libstdc\+\+|libstdc\+\+6|tzdata|ca-certificates|perl-base|linux-api-headers|fedora-release.*|openSUSE-release.*|glibc-langpack-.*)$'
+CORE_RE='^(ncurses|ncurses-libs|ncurses-base|libncurses.*|libtinfo.*|readline|libreadline.*|bzip2-libs|libbz2.*|zlib|zlib1g|zlib-ng.*|openssl-libs|libssl.*|libcrypto.*|xz-libs|liblzma.*|libzstd.*|zstd-libs|libgcc_s1|glibc|glibc-common|glibc-minimal-langpack|libc6|libc-bin|libc|musl|filesystem|base-files|base|setup|systemd|systemd-libs|libsystemd0|libsystemd-shared|udev|libudev1|bash|sh|dash|coreutils|util-linux|shadow|dpkg|rpm|rpm-libs|pacman|zypper|libzypp|dnf|apt|debconf|debconf-2\.0|cdebconf|init-system-helpers|lsb-base|sysvinit-utils|gcc-libs|libgcc|libgcc-s1|libgcc_s1|libgcc1|libstdc\+\+|libstdc\+\+6|tzdata|ca-certificates|perl-base|linux-api-headers|fedora-release.*|openSUSE-release.*|glibc-langpack-.*)$'
 LDCACHE=""
 ld_has() {
   [[ -n $LDCACHE ]] || LDCACHE=$( { ldconfig -p || /sbin/ldconfig -p; } 2>/dev/null || true)
