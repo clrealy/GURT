@@ -1,4 +1,6 @@
-# 🦆 gurt
+<p align="center"><img src="assets/gurt-logo.png" alt="gurt" width="360"></p>
+
+# gurt 🦆
 
 **G**URT **U**niversal **R**epository **T**hingy. It's a community build repo like the AUR, but it works on **every** distro.
 

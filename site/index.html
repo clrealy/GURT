@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GURT Packages</title>
 <meta name="description" content="GURT Universal Repository Thingy — community build recipes for every Linux distro.">
+<link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -27,8 +28,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Space Grotesk
 code,pre,.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
 .wrap{max-width:980px;margin:0 auto;padding:0 16px}
 header{padding:48px 0 24px}
-.logo{display:flex;align-items:center;gap:12px;font-weight:700;font-size:40px;letter-spacing:-1px}
-.logo .duck{font-size:40px}
+.logo{margin:0;line-height:0}
+.logo img{height:110px;width:auto;max-width:100%}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .logo img{filter:drop-shadow(0 0 1px rgba(255,255,255,.35)) brightness(1.15)}}
+:root[data-theme="dark"] .logo img{filter:drop-shadow(0 0 1px rgba(255,255,255,.35)) brightness(1.15)}
 .tag{color:var(--muted);margin:4px 0 0}
 .tag b{color:var(--ink)}
 .install{margin-top:20px;background:var(--code);border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow-x:auto;font-size:14px;white-space:pre}
@@ -62,13 +65,13 @@ pre{background:var(--code);border:1px solid var(--line);border-radius:10px;paddi
 footer{color:var(--muted);font-size:13px;padding:24px 0 40px;border-top:1px solid var(--line)}
 footer a{color:inherit}
 .empty{color:var(--muted);text-align:center;padding:40px 0}
-@media (max-width:520px){.logo{font-size:32px}.logo .duck{font-size:32px}td:first-child{width:100px}}
+@media (max-width:520px){.logo img{height:80px}td:first-child{width:100px}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="logo"><span class="duck">🦆</span><span>gurt</span></div>
+    <h1 class="logo"><img src="assets/gurt-logo.png" alt="gurt" width="894" height="562"></h1>
     <p class="tag"><b>G</b>URT <b>U</b>niversal <b>R</b>epository <b>T</b>hingy — community build recipes for <b>every</b> Linux distro. Like the AUR, minus the gatekeeping.</p>
     <div class="install mono">curl -fsSL https://raw.githubusercontent.com/clrealy/GURT/main/install.sh | sh
 gurt install fastfetch</div>
