@@ -21,7 +21,7 @@ It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine,
 ## Install
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/clrealy/gurt/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/clrealy/GURT/main/install.sh | sh
 ```
 
 You need `bash`, `git`, GNU `tar`, and `curl` or `wget`. Run `gurt doctor` to check your setup.

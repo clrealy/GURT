@@ -19,7 +19,7 @@ _envsave=$(declare -p GURT_REPO_URL GURT_BRANCH GURT_PREFIX GURT_ROOT GURT_CACHE
 [[ -r $_user_conf ]] && . "$_user_conf"
 eval "$_envsave"
 
-GURT_REPO_URL="${GURT_REPO_URL:-https://github.com/clrealy/gurt.git}"
+GURT_REPO_URL="${GURT_REPO_URL:-https://github.com/clrealy/GURT.git}"
 GURT_BRANCH="${GURT_BRANCH:-main}"
 GURT_PREFIX="${GURT_PREFIX:-/usr/local}"
 GURT_ROOT="${GURT_ROOT:-/}"

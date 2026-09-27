@@ -1,8 +1,8 @@
 #!/bin/sh
 # gurt installer — works on any distro with sh + git
-# usage: curl -fsSL https://raw.githubusercontent.com/clrealy/gurt/main/install.sh | sh
+# usage: curl -fsSL https://raw.githubusercontent.com/clrealy/GURT/main/install.sh | sh
 set -eu
-REPO="${GURT_REPO_URL:-https://github.com/clrealy/gurt.git}"
+REPO="${GURT_REPO_URL:-https://github.com/clrealy/GURT.git}"
 BIN="${GURT_BIN:-/usr/local/bin}"
 SHARE="${GURT_SHARE:-/usr/local/share/gurt}"
 say() { printf '\033[32m==>\033[0m %s\n' "$*"; }
