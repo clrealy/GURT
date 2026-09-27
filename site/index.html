@@ -24,6 +24,7 @@
   --accent:#ffc629; --accent-ink:#1a1400; --tag:#23232a; --code:#1d1d23; --good:#46c37b;
 }
 *{box-sizing:border-box}
+[hidden]{display:none !important}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Space Grotesk",system-ui,sans-serif}
 code,pre,.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
 .wrap{max-width:980px;margin:0 auto;padding:0 16px}
@@ -37,17 +38,24 @@ header{padding:48px 0 24px}
 .install{margin-top:20px;background:var(--code);border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow-x:auto;font-size:14px;white-space:pre}
 .install .c{color:var(--muted)}
 .srcs{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-.src{font-family:"JetBrains Mono",monospace;font-size:13px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+.src{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 13px;cursor:pointer;transition:background .1s,border-color .1s}
 .src small{font-family:"Space Grotesk",sans-serif;color:var(--muted);margin-left:4px}
-.src.main{border-color:var(--accent)}
-.sect{font-size:20px;margin:28px 0 0}
+.src:hover{border-color:var(--muted)}
+.src:focus{outline:none}
+.src:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 45%,transparent)}
+.src.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.src.on small{color:var(--accent-ink);opacity:.75}
+.sect{font-size:20px;margin:0}
+.srcblurb{color:var(--muted);margin:14px 0 0}
+#srcpanel .cmd{margin:4px 0 6px}
+#srcpanel .hint a{color:inherit}
 .search{position:sticky;top:0;background:var(--bg);padding:16px 0;z-index:2}
 .search input{width:100%;padding:14px 16px;font:inherit;font-size:17px;border-radius:12px;border:2px solid var(--line);background:var(--panel);color:var(--ink);outline:none}
 .search input:focus{border-color:var(--accent)}
 .meta{color:var(--muted);font-size:14px;margin:6px 2px 0}
 .list{display:grid;gap:10px;padding-bottom:40px}
 .pkg{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;cursor:pointer;transition:transform .08s,border-color .08s;text-align:left;font:inherit;color:inherit;width:100%}
-.pkg:hover{border-color:var(--accent);transform:translateY(-1px)}
+.pkg:hover{border-color:color-mix(in srgb,var(--muted) 60%,var(--line));transform:translateY(-1px)}
 .row{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
 .name{font-weight:700;font-size:18px}
 .ver{font-size:13px;color:var(--good)}
@@ -68,8 +76,9 @@ pre{background:var(--code);border:1px solid var(--line);border-radius:10px;paddi
 .cmd{display:flex;gap:8px;align-items:center;margin:12px 0}
 .cmd code{flex:1;background:var(--code);padding:10px 12px;border-radius:8px;border:1px solid var(--line);overflow-x:auto;white-space:nowrap}
 .btn{background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer}
-.secthead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.secthead .btn{margin-top:20px}
+.secthead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:28px}
+.pkg:focus{outline:none}
+.pkg:focus-visible{border-color:var(--muted)}
 .up .dbody{display:grid;gap:14px}
 .tabs{display:flex;gap:6px}
 .tab{white-space:nowrap;background:var(--tag);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;cursor:pointer}
@@ -107,15 +116,15 @@ gurt install aur/yay       <span class="c"># the AUR, anywhere</span>
 gurt install apt/cowsay    <span class="c"># Debian's repos, anywhere</span>
 gurt install zypper/htop   <span class="c"># openSUSE's repos, anywhere</span>
 gurt install htop --repo apt  <span class="c"># same thing, flag style</span></div>
-    <div class="srcs">
-      <span class="src main">gurt/ <small>Main GURT</small></span>
-      <span class="src">aur/ <small>Arch User Repo</small></span>
-      <span class="src">apt/ <small>Debian · Ubuntu</small></span>
-      <span class="src">dnf/ <small>Fedora</small></span>
-      <span class="src">zypper/ <small>openSUSE</small></span>
-      <span class="src">pacman/ <small>Arch</small></span>
+    <div class="srcs" role="tablist" aria-label="Package sources">
+      <button class="src on" role="tab" aria-selected="true" data-src="gurt">gurt/ <small>Main GURT</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="aur">aur/ <small>Arch User Repo</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="apt">apt/ <small>Debian · Ubuntu</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="dnf">dnf/ <small>Fedora</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="zypper">zypper/ <small>openSUSE</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="pacman">pacman/ <small>Arch</small></button>
     </div>
-    <div class="secthead"><h2 class="sect">Main GURT packages</h2><button class="btn" id="upbtn">＋ upload a package</button></div>
+    <div class="secthead"><h2 class="sect" id="secttitle">Main GURT packages</h2><button class="btn" id="upbtn">＋ upload a package</button></div>
   </header>
 
   <div class="search">
@@ -124,6 +133,14 @@ gurt install htop --repo apt  <span class="c"># same thing, flag style</span></d
   </div>
 
   <div class="list" id="list"></div>
+
+  <section id="srcpanel" hidden>
+    <p class="srcblurb" id="srcblurb"></p>
+    <div class="search"><input id="sq" type="search" placeholder="search…" autocomplete="off" aria-label="Search this source"></div>
+    <div class="cmd"><code id="scmd"></code><button class="btn" id="scopy">copy</button></div>
+    <p class="hint" id="slink"></p>
+    <div class="list" id="slist"></div>
+  </section>
 
   <footer>
     Works on Debian, Ubuntu, Mint, Fedora, Arch, openSUSE, Alpine, Void, Gentoo, Solus and friends. Other sources are searched from the CLI: <code>gurt search -a &lt;term&gt;</code>.
@@ -232,6 +249,57 @@ $("#q").addEventListener("input", () => { render(); try { history.replaceState(n
 $("#copy").addEventListener("click", async () => { try { await navigator.clipboard.writeText($("#dcmd").textContent); $("#copy").textContent = "copied ✓"; setTimeout(()=>$("#copy").textContent="copy",1200);} catch {} });
 const dlg = $("#dlg");
 $("#q").value = new URLSearchParams(location.search).get("q") || "";
+
+// ── source tabs ──
+const SRC = {
+  gurt:   { title: "Main GURT packages" },
+  aur:    { title: "AUR", blurb: "The Arch User Repository — PKGBUILDs gurt builds from source on your machine, on any distro. Results load live from the AUR 👇",
+            web: t => `https://aur.archlinux.org/packages?K=${encodeURIComponent(t)}`, webName: "the AUR site" },
+  apt:    { title: "apt · Debian / Ubuntu", blurb: "Debian's binary packages (point it at Ubuntu in gurt.conf). gurt downloads the .deb, checks it, and uses your own distro's libs when it can.",
+            web: t => `https://packages.debian.org/search?keywords=${encodeURIComponent(t)}`, webName: "packages.debian.org" },
+  dnf:    { title: "dnf · Fedora", blurb: "Fedora's binary packages. gurt downloads the .rpm, checks it, and installs it on whatever you run.",
+            web: t => `https://packages.fedoraproject.org/search?query=${encodeURIComponent(t)}`, webName: "packages.fedoraproject.org" },
+  zypper: { title: "zypper · openSUSE", blurb: "openSUSE Tumbleweed's binary packages — yes, even on Red Star OS (good luck 💀).",
+            web: t => `https://software.opensuse.org/search?q=${encodeURIComponent(t)}`, webName: "software.opensuse.org" },
+  pacman: { title: "pacman · Arch", blurb: "Arch's official binary packages, installable on non-Arch distros.",
+            web: t => `https://archlinux.org/packages/?q=${encodeURIComponent(t)}`, webName: "archlinux.org" },
+};
+let CUR = "gurt", aurTimer = 0, aurSeq = 0;
+function setSrc(src) {
+  CUR = src;
+  document.querySelectorAll(".src").forEach(b => { const on = b.dataset.src === src; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); });
+  const main = src === "gurt";
+  $("#secttitle").textContent = SRC[src].title;
+  $("#upbtn").hidden = !main;
+  document.querySelector(".search").hidden = !main; $("#list").hidden = !main;
+  $("#srcpanel").hidden = main;
+  if (!main) { $("#srcblurb").textContent = SRC[src].blurb; $("#sq").placeholder = `search ${src}/…`; srcUpdate(); }
+}
+function srcUpdate() {
+  const t = $("#sq").value.trim(), c = SRC[CUR];
+  $("#scmd").textContent = t ? `gurt search ${CUR}/${t}` : `gurt search ${CUR}/<name>`;
+  $("#slink").innerHTML = t ? `or browse it on <a href="${esc(c.web(t))}" target="_blank" rel="noopener">${esc(c.webName)} ↗</a>` : "";
+  $("#slist").innerHTML = "";
+  if (CUR === "aur") { clearTimeout(aurTimer); if (t.length >= 2) aurTimer = setTimeout(() => aurSearch(t), 300); }
+}
+async function aurSearch(t) {
+  const seq = ++aurSeq;
+  $("#slist").innerHTML = `<div class="empty">searching the AUR…</div>`;
+  try {
+    const r = await fetch(`https://aur.archlinux.org/rpc/v5/search/${encodeURIComponent(t)}?by=name-desc`);
+    const d = await r.json(); if (seq !== aurSeq) return;
+    const res = (d.results || []).sort((a, b) => (b.Popularity || 0) - (a.Popularity || 0)).slice(0, 40);
+    $("#slist").innerHTML = res.length ? res.map(p => `
+      <div class="pkg" style="cursor:default">
+        <div class="row"><span class="name">${esc(p.Name)}</span><span class="ver mono">${esc(p.Version)}</span></div>
+        <div class="desc">${esc(p.Description || "")}</div>
+        <div class="chips"><span class="chip mono">gurt install aur/${esc(p.Name)}</span>${p.OutOfDate ? `<span class="chip">out of date</span>` : ""}<span class="chip">${esc(p.NumVotes)} votes</span></div>
+      </div>`).join("") : `<div class="empty">nothing on the AUR matched 😔</div>`;
+  } catch { if (seq === aurSeq) $("#slist").innerHTML = `<div class="empty">couldn't reach the AUR from here — use the command above</div>`; }
+}
+document.querySelectorAll(".src").forEach(b => b.addEventListener("click", () => setSrc(b.dataset.src)));
+$("#sq").addEventListener("input", srcUpdate);
+$("#scopy").addEventListener("click", async () => { try { await navigator.clipboard.writeText($("#scmd").textContent); $("#scopy").textContent = "copied ✓"; setTimeout(() => $("#scopy").textContent = "copy", 1200); } catch {} });
 
 // ── upload a package ──
 const up = $("#up"), R = $("#recipe");
