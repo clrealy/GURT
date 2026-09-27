@@ -279,7 +279,7 @@ async function showPkg(name){
 
 // ── accounts: GitHub is your GURT account ──
 // votes + comments = giscus (GitHub Discussions). fill in categoryId after turning on Discussions + installing giscus (see README)
-const GISCUS = { repo: REPO, repoId: "R_kgDOUtoT3g", category: "Packages", categoryId: "" };
+const GISCUS = { repo: REPO, repoId: "R_kgDOUtoT3g", category: "Packages", categoryId: "DIC_kwDOUtoT3s4DGfTO" };
 function loadComments(name) {
   const box = $("#giscus"); box.innerHTML = "";
   if (!GISCUS.categoryId) { box.innerHTML = `<p class="hint">👍 votes + 💬 comments with your GitHub account are coming soon.</p>`; return; }
