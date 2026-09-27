@@ -13,6 +13,15 @@ gurt install dnf/fastfetch  # Fedora's repos... on Arch
 gurt install pacman/btop    # Arch's official repos... on Ubuntu
 ```
 
+Prefer flags? `--repo` works too, and `aur/yay` and `yay --repo aur` do the exact same thing:
+
+```sh
+gurt install yay --repo aur
+gurt install htop --repo apt
+gurt search fetch --repo fedora
+gurt remove htop --repo apt
+```
+
 It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine, Void, Gentoo, Solus, Devuan and anything else built on those.
 
 ## Sources
@@ -78,7 +87,7 @@ gurt files apt/htop       # what files a package owns
 gurt owns /usr/bin/htop
 ```
 
-Flags: `-y` (don't ask), `-f` (force), `-a` (all sources), `--nodeps`, `--nocheck`, `--keep` (keep build dir), `--root DIR` (install into a chroot/test dir).
+Flags: `-r`/`--repo SRC` (pick the source), `-y` (don't ask), `-f` (force), `-a` (all sources), `--nodeps`, `--nocheck`, `--keep` (keep build dir), `--root DIR` (install into a chroot/test dir).
 
 ⚠️ **AUR PKGBUILDs and GURTBUILDs are user-submitted. Read them before you hit `y`.** gurt shows them to you on purpose.
 

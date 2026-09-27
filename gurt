@@ -42,7 +42,7 @@ FOREIGN_SOURCES="aur apt dnf zypper pacman"
 IDX_DIR="$GURT_CACHE/index"
 IDX_MAX_AGE="${IDX_MAX_AGE:-86400}"   # re-download foreign indexes after a day
 
-NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false
+NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO=""
 
 # ───────────────────────── pretty output ─────────────────────────
 if [[ -t 2 && -z ${NO_COLOR:-} ]]; then
@@ -1267,7 +1267,7 @@ every distro's packages, on every distro. + the main GURT repo.
 
 ${B}usage:${R0} gurt <command> [options] [source/]<pkg>
 
-${B}sources${R0}   (no prefix = main GURT)
+${B}sources${R0}   (no prefix = main GURT · write it as aur/yay OR  yay --repo aur)
   btop                 main GURT — community recipes, built for your distro
   aur/yay              Arch User Repository — PKGBUILDs built from source
   apt/htop             Debian/Ubuntu binary packages      (aliases: debian/ ubuntu/ deb/)
@@ -1301,6 +1301,7 @@ ${B}misc${R0}
 ${B}options${R0}
   -y, --noconfirm      don't ask, just send it
   -f, --force          reinstall / overwrite / ignore reverse deps
+  -r, --repo SRC       use this source for bare names, e.g.  gurt install htop --repo apt
   -a, --all            search every source
   --nodeps             don't install distro deps
   --nocheck            skip check()
@@ -1317,6 +1318,8 @@ main() {
       -y|--noconfirm) NOCONFIRM=true ;;
       -f|--force)     FORCE=true ;;
       -a|--all)       ALLSRC=true ;;
+      -r|--repo|--from) shift; REPO=${1:?--repo needs a source (gurt aur apt dnf zypper pacman)} ;;
+      --repo=*|--from=*)  REPO=${1#*=} ;;
       --nodeps)       NODEPS=true ;;
       --nocheck)      NOCHECK=true ;;
       --keep)         KEEP=true ;;
@@ -1331,6 +1334,19 @@ main() {
   set -- "${args[@]}"
   local cmd=${1:-help}; shift || true
   local p
+  # --repo X  →  every bare package name becomes X/name
+  if [[ -n $REPO ]]; then
+    REPO=$(norm_src "$REPO")
+    [[ " gurt $FOREIGN_SOURCES " == *" $REPO "* ]] || die "unknown repo '$REPO' — pick one of: gurt $FOREIGN_SOURCES"
+    case $cmd in
+      install|i|get|search|s|info|remove|rm|yeet|files)
+        local withrepo=()
+        for p; do if [[ $p == */* ]]; then withrepo+=("$p"); else withrepo+=("$REPO/$p"); fi; done
+        (( $# )) || [[ $cmd != search && $cmd != s ]] || withrepo=("$REPO/")
+        set -- "${withrepo[@]}" ;;
+      sync) set -- "$REPO" ;;
+    esac
+  fi
   case $cmd in
     sync)              cmd_sync "$@" ;;
     search|s)          cmd_search "$@" ;;
