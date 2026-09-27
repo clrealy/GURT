@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.6.0"
+GURT_VERSION="0.7.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -42,7 +42,7 @@ FOREIGN_SOURCES="aur apt dnf zypper pacman flatpak snap"
 IDX_DIR="$GURT_CACHE/index"
 IDX_MAX_AGE="${IDX_MAX_AGE:-86400}"   # re-download foreign indexes after a day
 
-NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT="" EXPECT_FPR=""
+NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT="" EXPECT_FPR="" BOX=false
 
 # ───────────────────────── pretty output ─────────────────────────
 if [[ -t 2 && -z ${NO_COLOR:-} ]]; then
@@ -476,7 +476,8 @@ install_file() { # file.gurt [reason]
     if [[ -n $sysfiles ]]; then
       sed 's/^/   /' <<<"$sysfiles" | head -n 15 >&2
       rm -rf "$tmp"
-      die "$(pretty "$key") would overwrite files your distro ($PM) owns ^ — gurt NEVER does that, not even with --force. your system already has this stuff 🛡️"
+      local hint=""; [[ $src != gurt && $src != aur ]] && hint=" — if you really need it, run it in a container instead: gurt install --box $(pretty "$key")"
+      die "$(pretty "$key") would overwrite files your distro ($PM) owns ^ — gurt NEVER does that, not even with --force 🛡️$hint"
     fi
   fi
 
@@ -559,7 +560,7 @@ post_install() {
     warn "$(pretty "$key") installed but some binaries are missing stuff:"
     sed 's/^/     /' <<<"$lacks" >&2
     if grep -q '^needs GLIBC' <<<"$lacks"; then
-      msg2 "that one's a glibc version gap — your distro's glibc is older than the one this was built for 😬 try the aur/ version (builds from source) instead"
+      msg2 "that one's a glibc version gap — your distro's glibc is older than the one this was built for 😬 try the aur/ version (builds from source), or run it in a container: gurt install --box $(pretty "$key")"
     else
       msg2 "try installing those libs from your distro, or reinstall so gurt pulls them from $(pretty "${key%%:*}")"
     fi
@@ -621,6 +622,7 @@ remove_pkg() {
                asroot rm -rf -- "$DB/$key"; msg "$(pretty "$key") removed 🗑️"; return ;;
     snap:*)    msg "removing $(pretty "$key")"; asroot snap remove "$name" || warn "snap couldn't remove it (already gone?)"
                asroot rm -rf -- "$DB/$key"; msg "$(pretty "$key") removed 🗑️"; return ;;
+    box-*:*)   box_remove "$key"; return ;;
   esac
   local dbd="$DB/$key" rdeps=()
   mapfile -t rdeps < <(rdeps_of "$key")
@@ -710,6 +712,11 @@ install_any() { # spec reason
   local spec=$1 reason=${2:-explicit} src name
   if [[ $spec == */* ]]; then src=$(norm_src "${spec%%/*}"); name=${spec#*/}; else src=gurt; name=$spec; fi
   [[ -n $name ]] || die "install what from $src tho"
+  if $BOX || [[ $src == box-* ]]; then
+    src=${src#box-}
+    case $src in apt|dnf|zypper|pacman) box_install "$src" "$name" "$reason"; return ;;
+      *) die "--box works with apt/ dnf/ zypper/ pacman/ (gurt, aur, flatpak and snap already run fine without it)" ;; esac
+  fi
   case $src in
     gurt) ensure_repo; resolve_and_install "$name" "$reason" ;;
     aur)  aur_install "$name" "$reason" ;;
@@ -1262,6 +1269,102 @@ PY
   fi
 }
 
+# ── boxes: the REAL distro in a container (podman/docker + distrobox) — for system tools & stubborn apps ──
+box_name()  { case $1 in apt) echo gurt-debian ;; dnf) echo gurt-fedora ;; zypper) echo gurt-opensuse ;; pacman) echo gurt-arch ;; esac; }
+box_image() {
+  case $1 in
+    apt)    if [[ $APT_MIRROR == *ubuntu* ]]; then echo "docker.io/library/ubuntu:${APT_SUITE:-latest}"; else echo docker.io/library/debian:stable; fi ;;
+    dnf)    echo "registry.fedoraproject.org/fedora:$(sed -n 's|.*/releases/\([0-9]*\)/.*|\1|p' <<<"$DNF_MIRROR" | grep . || echo latest)" ;;
+    zypper) echo registry.opensuse.org/opensuse/tumbleweed:latest ;;
+    pacman) echo docker.io/library/archlinux:latest ;;
+  esac
+}
+box_cmd() { # src action [pkg]
+  local s=$1 a=$2 p=${3:-}
+  case $s:$a in
+    apt:install)    echo "sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y '$p'" ;;
+    apt:remove)     echo "sudo apt-get remove -y '$p'" ;;
+    apt:files)      echo "dpkg -L '$p'" ;;
+    apt:upgrade)    echo "sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y" ;;
+    dnf:install)    echo "sudo dnf install -y '$p'" ;;
+    dnf:remove)     echo "sudo dnf remove -y '$p'" ;;
+    dnf:files|zypper:files) echo "rpm -ql '$p'" ;;
+    dnf:upgrade)    echo "sudo dnf upgrade -y" ;;
+    zypper:install) echo "sudo zypper -n install '$p'" ;;
+    zypper:remove)  echo "sudo zypper -n remove '$p'" ;;
+    zypper:upgrade) echo "sudo zypper -n dup" ;;
+    pacman:install) echo "sudo pacman -Syu --noconfirm '$p'" ;;
+    pacman:remove)  echo "sudo pacman -Rns --noconfirm '$p'" ;;
+    pacman:files)   echo "pacman -Qlq '$p'" ;;
+    pacman:upgrade) echo "sudo pacman -Syu --noconfirm" ;;
+  esac
+}
+ensure_box_tools() {
+  local need=()
+  command -v podman >/dev/null || command -v docker >/dev/null || need+=(podman)
+  command -v distrobox >/dev/null || need+=(distrobox)
+  if (( ${#need[@]} )); then
+    $NODEPS && die "boxes need ${need[*]} (and --nodeps is on)"
+    msg "boxes need ${need[*]} — getting them from your distro"
+    install_native "${need[@]}"
+  fi
+  command -v distrobox >/dev/null || die "couldn't get distrobox — install it with your package manager, then try again"
+}
+ensure_box() { # src
+  local n; n=$(box_name "$1")
+  distrobox list 2>/dev/null | awk -F'|' '{gsub(/ /, "", $2); print $2}' | grep -qx "$n" && return 0
+  msg "creating the $n box ($(box_image "$1")) — first time takes a minute ☕"
+  distrobox create --yes --name "$n" --image "$(box_image "$1")" || die "couldn't create the $n box"
+}
+box_install() { # src pkg reason
+  local src=$1 pkg=$2 reason=${3:-explicit} n key="box-$1:$2" files f exported=()
+  n=$(box_name "$src")
+  if is_installed "$key" && ! $FORCE; then
+    [[ $reason == explicit ]] && msg "$(pretty "$key") is already installed — gurt upgrade keeps the box updated 👍"
+    return 0
+  fi
+  ensure_box_tools
+  [[ $reason == explicit ]] && { ask "install $pkg with the real ${src} inside a $n container?" || die "aborted, no cap"; }
+  ensure_box "$src"
+  msg "installing $pkg inside $n 📦"
+  distrobox enter "$n" -- sh -c "$(box_cmd "$src" install "$pkg")" || die "$src couldn't install $pkg inside the box"
+  files=$(distrobox enter "$n" -- sh -c "$(box_cmd "$src" files "$pkg")" 2>/dev/null || true)
+  # apps → your app menu, commands → ~/.local/bin
+  while IFS= read -r f; do
+    [[ $f == /usr/share/applications/*.desktop ]] || continue
+    distrobox enter "$n" -- distrobox-export --app "$f" >/dev/null 2>&1 && exported+=("app:$f") && msg2 "added $(basename "$f" .desktop) to your app menu"
+  done <<<"$files"
+  while IFS= read -r f; do
+    [[ $f =~ ^/usr/s?bin/[^/]+$ ]] || continue
+    (( ${#exported[@]} > 40 )) && break
+    distrobox enter "$n" -- distrobox-export --bin "$f" --export-path "$HOME/.local/bin" >/dev/null 2>&1 && exported+=("bin:$f") && msg2 "command: $(basename "$f")"
+  done <<<"$files"
+  local tmp; tmp=$(mktemp -d "${TMPDIR:-/tmp}/gurt-box.XXXXXX")
+  { printf 'pkgname = %s\npkgver = box\npkgdesc = %s inside the %s container\ngurtsource = box-%s\nbox = %s\n' "$pkg" "$pkg" "$n" "$src" "$n"
+    for f in "${exported[@]}"; do printf 'export = %s\n' "$f"; done; } > "$tmp/info"
+  : > "$tmp/files"; : > "$tmp/dirs"; echo "$reason" > "$tmp/reason"
+  asroot mkdir -p "$DB/$key"; for f in info files dirs reason; do asroot cp "$tmp/$f" "$DB/$key/$f"; done; rm -rf "$tmp"
+  (( ${#exported[@]} )) || warn "$pkg didn't have any apps or commands to export — use it with: distrobox enter $n"
+  [[ ":$PATH:" == *":$HOME/.local/bin:"* ]] || warn "$HOME/.local/bin isn't in your PATH — add this to ~/.bashrc:  export PATH=\"\$HOME/.local/bin:\$PATH\""
+  msg "$(pretty "$key") installed ✅ (it runs inside $n, so it can't touch your real system's files)"
+}
+box_remove() { # key
+  local key=$1 src pkg n e
+  src=${key%%:*}; src=${src#box-}; pkg=${key#*:}; n=$(box_name "$src")
+  msg "removing $(pretty "$key")"
+  if command -v distrobox >/dev/null; then
+    while IFS= read -r e; do
+      case $e in
+        app:*) distrobox enter "$n" -- distrobox-export --app "${e#app:}" --delete >/dev/null 2>&1 || true ;;
+        bin:*) distrobox enter "$n" -- distrobox-export --bin "${e#bin:}" --export-path "$HOME/.local/bin" --delete >/dev/null 2>&1 || true ;;
+      esac
+    done < <(info_get "$DB/$key/info" export)
+    distrobox enter "$n" -- sh -c "$(box_cmd "$src" remove "$pkg")" || warn "couldn't uninstall it inside $n"
+  fi
+  asroot rm -rf -- "$DB/$key"
+  msg "$(pretty "$key") removed 🗑️ (the $n box itself stays — delete it with: distrobox rm $n)"
+}
+
 # ── AUR ──
 aur_rpc() { local t; t=$(mktemp); fetch_quiet "$AUR_URL/rpc/v5/$1" "$t" 2>/dev/null || { rm -f "$t"; return 1; }; cat "$t"; rm -f "$t"; }
 urlenc() { python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$1" 2>/dev/null || echo "$1"; }
@@ -1460,7 +1563,7 @@ find_outdated() {
     case $src in
       gurt) is_gurt_pkg "$name" && new=$(repo_ver "$name") ;;
       aur)  dir=$(aur_clone "$name" 2>/dev/null) && new=$(aur_srcinfo_ver "$dir/.SRCINFO") ;;
-      flatpak|snap) ;;   # they update themselves (see upgrade_containers)
+      flatpak|snap|box-*) ;;   # they update themselves (see upgrade_containers)
       *)    new=$(idx_lookup "$src" "$name" | cut -f2 || true) ;;
     esac
     if [[ -n $new ]] && vnewer "$(inst_ver "$k")" "$new"; then
@@ -1481,7 +1584,7 @@ refresh_all() {
   local s
   sync_main
   for s in $(used_sources); do
-    [[ $s == aur || $s == flatpak || $s == snap ]] && continue
+    [[ $s == aur || $s == flatpak || $s == snap || $s == box-* ]] && continue
     ( sync_source "$s" ) || warn "couldn't refresh $s, skipping"
   done
 }
@@ -1519,6 +1622,12 @@ upgrade_containers() {   # flatpak + snap update their own apps
   local d
   d=("$DB"/flatpak:*/); if (( ${#d[@]} )) && command -v flatpak >/dev/null; then msg "updating flatpaks"; flatpak update --user -y --noninteractive || warn "flatpak update had problems"; fi
   d=("$DB"/snap:*/);    if (( ${#d[@]} )) && command -v snap >/dev/null;    then msg "updating snaps";    asroot snap refresh || warn "snap refresh had problems"; fi
+  local s; for s in apt dnf zypper pacman; do
+    d=("$DB"/box-"$s":*/)
+    if (( ${#d[@]} )) && command -v distrobox >/dev/null; then
+      msg "updating the $(box_name "$s") box"; distrobox enter "$(box_name "$s")" -- sh -c "$(box_cmd "$s" upgrade)" || warn "$(box_name "$s") update had problems"
+    fi
+  done
   return 0
 }
 
@@ -1801,6 +1910,8 @@ ${B}options${R0}
   -y, --noconfirm      don't ask, just send it
   -f, --force          reinstall / overwrite / ignore reverse deps
   -r, --repo SRC       use this source for bare names, e.g.  gurt install htop --repo apt
+  --box                install apt/ dnf/ zypper/ pacman/ stuff inside a real container of that
+                       distro (distrobox) — for system tools that need the real package manager
   -a, --all            search every source
   --nodeps             don't install distro deps
   --nocheck            skip check()
@@ -1817,6 +1928,7 @@ main() {
       -y|--noconfirm) NOCONFIRM=true ;;
       -f|--force)     FORCE=true ;;
       -a|--all)       ALLSRC=true ;;
+      --box|--container) BOX=true ;;
       -r|--repo|--from) shift; REPO=${1:?--repo needs a source (gurt aur apt dnf zypper pacman)} ;;
       --repo=*|--from=*)  REPO=${1#*=} ;;
       --key)          shift; KEYSRC=${1:?--key needs a url or file} ;;

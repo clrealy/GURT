@@ -42,6 +42,20 @@ It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine,
 
 Mirrors and releases are set in [`gurt.conf`](gurt.conf), so apt can point at Ubuntu instead of Debian, for example.
 
+### System tools? Use a box 📦
+
+Regular `apt/` `dnf/` `zypper/` `pacman/` installs are for **apps**. System tools (package managers, GUIs for them, daemons) need their real distro around them, so put them in a **box**:
+
+```sh
+gurt install --box dnf/dnfdragora      # real Fedora, in a container
+gurt install --box apt/synaptic        # real Debian
+gurt install --box zypper/yast2        # real openSUSE
+```
+
+gurt installs podman + [distrobox](https://distrobox.it) if you need them, creates the box (`gurt-fedora`, `gurt-debian`, `gurt-opensuse`, `gurt-arch`), installs with the **real** package manager inside it, and puts the app in your menu and its commands in `~/.local/bin`. `gurt upgrade` updates the boxes, and `gurt remove` cleans up the exports too.
+
+Things inside a box manage **the box**, not your host. dnfdragora in `gurt-fedora` manages Fedora packages inside that box, and your Arch/Mint system stays untouched 🛡️
+
 ### How cross-distro deps work
 
 When a foreign package needs something, gurt looks in this order:
