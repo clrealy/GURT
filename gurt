@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.4.0"
+GURT_VERSION="0.4.1"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -885,7 +885,7 @@ LDCACHE=""
 ld_has() {
   [[ -n $LDCACHE ]] || LDCACHE=$( { ldconfig -p || /sbin/ldconfig -p; } 2>/dev/null || true)
   local re; re=$(sed 's/[][\.*^$+?(){}|/]/\\&/g' <<<"$1")
-  grep -qE "^[[:space:]]+$re " <<<"$LDCACHE"
+  grep -qiE "^[[:space:]]+$re " <<<"$LDCACHE"      # -i: debian says libxss1, the lib is libXss.so.1
 }
 host_has() {
   local d=$1
@@ -897,9 +897,12 @@ host_has() {
   pm_has "$d" && return 0
   command -v "$d" >/dev/null 2>&1 && return 0
   # debian lib names encode the soname: libfoo6 → libfoo.so.6, libfoo-1.0-0 → libfoo-1.0.so.0, libfoo6t64 → libfoo.so.6
-  if [[ $d =~ ^(lib.*[a-z+_])([0-9]+)(t64)?$ ]] || [[ $d =~ ^(lib.*[0-9])-([0-9]+)(t64)?$ ]]; then
+  local b=${d%t64}
+  if [[ $b =~ ^(lib.*[a-z+_])([0-9]+)$ ]] || [[ $b =~ ^(lib.*[0-9])-([0-9]+)$ ]]; then
     ld_has "${BASH_REMATCH[1]}.so.${BASH_REMATCH[2]}" && return 0
   fi
+  # some libs keep the number in the name: libnss3 → libnss3.so
+  [[ $b == lib* ]] && ld_has "$b.so" && return 0
   return 1
 }
 # does the host's package manager have a package with this exact name?
