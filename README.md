@@ -79,7 +79,9 @@ gurt search aur/fetch     # search one source
 gurt search -a fetch      # search EVERYTHING
 gurt info apt/htop        # details
 gurt install aur/yay      # shows you the PKGBUILD, asks, builds, installs
-gurt upgrade              # update everything gurt installed, from every source
+gurt update               # refresh package lists + show what's outdated (installs nothing)
+gurt upgrade              # actually install the new versions, from every source
+gurt self-update          # update gurt itself
 gurt remove yay           # clean uninstall (say aur/yay if it's in 2 sources)
 gurt autoremove           # yeet deps nothing needs anymore
 gurt list                 # what you've installed
