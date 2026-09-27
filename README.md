@@ -55,6 +55,14 @@ gurt checks every binary after installing it and tells you if something is missi
 
 Maintainer scripts (postinst, .install hooks) are **not** run.
 
+## Tested in the wild ✅
+
+| what | where | how |
+|---|---|---|
+| **Claude Desktop** (Debian/Ubuntu-only app) | Arch Linux + niri + DankMaterialShell | `gurt repo add claude-desktop apt https://downloads.claude.ai/claude-desktop/apt/stable stable main --key https://downloads.claude.ai/claude-desktop/key.asc` then `gurt install claude-desktop --repo claude-desktop` |
+
+Got something working on a weird setup? PR it into this table 🙏
+
 ## Add your own repos
 
 PPAs, vendor apt repos, Fedora COPRs, custom pacman repos: add them once and install from them on **any** distro.
