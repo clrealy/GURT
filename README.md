@@ -2,23 +2,49 @@
 
 # gurt 🦆
 
-**G**URT **U**niversal **R**epository **T**hingy. It's a community build repo like the AUR, but it works on **every** distro.
-
-Arch has the AUR. Everyone else gets PPAs, COPRs, OBS, random `.sh` installers, or compiling from source by hand. gurt is one repo and one command that works the same everywhere:
+**G**URT **U**niversal **R**epository **T**hingy. With it, you can install **any distro's packages on any distro**, and use **Main GURT**, a community repo of its own.
 
 ```sh
-gurt install fastfetch
+gurt install btop           # Main GURT: community recipes, built for your distro
+gurt install aur/yay        # the AUR... on Mint
+gurt install apt/cowsay     # Debian's apt repos... on openSUSE
+gurt install zypper/htop    # openSUSE's repos... on Red Star OS, if you're brave
+gurt install dnf/fastfetch  # Fedora's repos... on Arch
+gurt install pacman/btop    # Arch's official repos... on Ubuntu
 ```
 
 It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine, Void, Gentoo, Solus, Devuan and anything else built on those.
 
-## How it works
+## Sources
 
-1. Every package is a **recipe** (`packages/<name>/GURTBUILD`). If you've seen a PKGBUILD, this is basically the same thing.
-2. Recipes list deps with **generic names** like `cc`, `cmake` or `openssl`. [`deps.map`](deps.map) turns those into each distro's real package names, so `openssl` becomes `libssl-dev` on Debian, `openssl-devel` on Fedora, and `openssl` on Arch.
-3. gurt detects your package manager (apt, dnf, yum, pacman, zypper, apk, xbps, emerge or eopkg) and installs the build deps through it.
-4. It builds as **your user, never as root**. It packs the result into a `.gurt` file and installs it into **`/usr/local`**, so it never fights your distro's own packages.
-5. It tracks every file it installs, so `gurt remove` deletes exactly those files and only the directories it created.
+| prefix | what it is | how it installs |
+|---|---|---|
+| *(none)* or `gurt/` | **Main GURT**: community recipes ([`packages/`](packages)) | builds from source into `/usr/local` |
+| `aur/` | the **Arch User Repository** | runs the real PKGBUILD (makepkg-compatible) |
+| `apt/` `debian/` `ubuntu/` | **Debian** (or Ubuntu) repos | downloads the `.deb`, checks it, unpacks it |
+| `dnf/` `fedora/` | **Fedora** repos | downloads the `.rpm`, checks it, unpacks it |
+| `zypper/` `suse/` | **openSUSE Tumbleweed** repos | downloads the `.rpm`, checks it, unpacks it |
+| `pacman/` `arch/` | **Arch** official repos | downloads the `.pkg.tar.zst`, checks it, unpacks it |
+
+Mirrors and releases are set in [`gurt.conf`](gurt.conf), so apt can point at Ubuntu instead of Debian, for example.
+
+### How cross-distro deps work
+
+When a foreign package needs something, gurt looks in this order:
+
+1. **Does your system already have it?** It checks package names, commands and **shared libraries by soname**. For example, Debian's `libncurses6` counts as installed if `libncurses.so.6` is on your system, whatever your distro calls the package.
+2. **Can your distro install it?** It translates the name through [`deps.map`](deps.map) and installs it with your own package manager.
+3. **Otherwise it pulls the dep from the same foreign source.** For the AUR, it tries Arch's official repos first and then the AUR.
+
+It **never** pulls another distro's glibc, systemd, bash, coreutils, package manager or other core stuff, because that would wreck your install 💀
+
+### The honest part
+
+Main GURT and `aur/` build from source, so they work pretty much everywhere. Binary sources (`apt/` `dnf/` `zypper/` `pacman/`) are **vibes-based**. A binary built for a distro with a newer glibc than yours won't run.
+
+gurt checks every binary after installing it and tells you if something is missing. If it says your glibc is too old, try the `aur/` version, which builds on your system.
+
+Maintainer scripts (postinst, .install hooks) are **not** run.
 
 ## Install
 
@@ -26,32 +52,50 @@ It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine,
 curl -fsSL https://raw.githubusercontent.com/clrealy/GURT/main/install.sh | sh
 ```
 
-You need `bash`, `git`, GNU `tar`, and `curl` or `wget`. Run `gurt doctor` to check your setup.
+You need `bash`, `git`, GNU `tar`, and `curl` or `wget`. The foreign sources also need:
+
+- `python3` for AUR search and rpm repos
+- `zstd` for Fedora, openSUSE and Arch
+- `ar` or `bsdtar` for `.deb` files
+
+`gurt doctor` shows which sources are ready on your system.
 
 ## Usage
 
 ```sh
-gurt sync                 # pull the latest recipes
-gurt search fetch         # find stuff
-gurt info btop            # details
-gurt install btop         # shows you the GURTBUILD, asks, then builds + installs
-gurt upgrade              # rebuild anything that got a new version
-gurt remove btop          # clean uninstall
+gurt sync                 # pull the latest Main GURT recipes
+gurt sync all             # + download the apt/dnf/zypper/pacman indexes
+gurt search fetch         # search Main GURT
+gurt search aur/fetch     # search one source
+gurt search -a fetch      # search EVERYTHING
+gurt info apt/htop        # details
+gurt install aur/yay      # shows you the PKGBUILD, asks, builds, installs
+gurt upgrade              # update everything gurt installed, from every source
+gurt remove yay           # clean uninstall (say aur/yay if it's in 2 sources)
+gurt autoremove           # yeet deps nothing needs anymore
 gurt list                 # what you've installed
-gurt files btop           # what files a package owns
-gurt owns /usr/local/bin/btop
+gurt files apt/htop       # what files a package owns
+gurt owns /usr/bin/htop
 ```
 
-Flags: `-y` (don't ask), `-f` (force), `--nodeps`, `--nocheck`, `--keep` (keep build dir), `--root DIR` (install into a chroot/test dir).
+Flags: `-y` (don't ask), `-f` (force), `-a` (all sources), `--nodeps`, `--nocheck`, `--keep` (keep build dir), `--root DIR` (install into a chroot/test dir).
 
-⚠️ **Recipes are user-submitted. Read the GURTBUILD before you hit `y`.** gurt shows it to you on purpose.
+⚠️ **AUR PKGBUILDs and GURTBUILDs are user-submitted. Read them before you hit `y`.** gurt shows them to you on purpose.
+
+## Safety rails
+
+- **Nothing gets overwritten.** gurt refuses to overwrite any file it didn't install, including files owned by your distro or by a package from another source.
+- **It builds as your user, never as root.**
+- **Checksums are checked for everything it downloads.**
+- **Core system packages from other distros are blocked.**
+- **Every file is tracked**, so `remove` takes out exactly what went in.
 
 ## Repo layout
 
 ```
 gurt                  the CLI (one bash script)
-deps.map              generic dep name → distro package names
-packages/<name>/      one folder per package
+deps.map              generic dep name → every distro's package names
+packages/<name>/      Main GURT, one folder per package
   GURTBUILD           the recipe
   .gurtinfo           generated metadata (so search/info never run recipe code)
 site/                 the package-browser website (GitHub Pages)
@@ -65,6 +109,6 @@ Fork it, then set `GURT_REPO_URL` in `/etc/gurt.conf` to your fork. Turn on GitH
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Make a recipe, open a PR, and CI builds it on Debian, Fedora, Arch, Alpine and openSUSE.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Make a recipe, open a PR, and CI builds it on Debian, Fedora, Arch, Alpine and openSUSE. Adding lines to `deps.map` makes the cross-distro dep matching smarter for everyone 🙏
 
 MIT © clearly124

@@ -14,6 +14,7 @@ for d in packages/*/; do
   if [[ ! -f $d/.gurtinfo ]]; then bad "$n" "missing .gurtinfo — run: ./gurt srcinfo $d > $d.gurtinfo"
   elif ! diff -q <(echo "$info") "$d/.gurtinfo" >/dev/null; then bad "$n" ".gurtinfo is stale — run: ./gurt srcinfo $d > $d.gurtinfo"; fi
   for dep in $(awk -F' = ' '$1=="depends"||$1=="makedepends"{print $2}' <<<"$info"); do
+    [[ $dep == */* ]] && continue   # cross-source dep (aur/…, apt/…)
     awk -v d="$dep" '$1==d{f=1} END{exit !f}' deps.map || [[ -d packages/$dep ]] ||
       echo "⚠️  $n: dep '$dep' isn't in deps.map or gurt — it'll be passed to the distro as-is"
   done

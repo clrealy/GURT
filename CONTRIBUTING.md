@@ -49,6 +49,8 @@ package() { ...; }        # REQUIRED: install into "$pkgdir"
 
 Use the **generic names** from [`deps.map`](deps.map). If a dep isn't there, add a line mapping it for as many distros as you can. That's the most useful PR you can make. A dep that's another gurt package gets built from gurt automatically.
 
+You can also depend on another source directly with `depends=(aur/some-pkg apt/some-lib)`. Only do that when your distro-agnostic options run out.
+
 ## 3. Test it
 
 ```sh

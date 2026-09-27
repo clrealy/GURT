@@ -35,6 +35,12 @@ header{padding:48px 0 24px}
 .tag{color:var(--muted);margin:4px 0 0}
 .tag b{color:var(--ink)}
 .install{margin-top:20px;background:var(--code);border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow-x:auto;font-size:14px;white-space:pre}
+.install .c{color:var(--muted)}
+.srcs{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.src{font-family:"JetBrains Mono",monospace;font-size:13px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+.src small{font-family:"Space Grotesk",sans-serif;color:var(--muted);margin-left:4px}
+.src.main{border-color:var(--accent)}
+.sect{font-size:20px;margin:28px 0 0}
 .search{position:sticky;top:0;background:var(--bg);padding:16px 0;z-index:2}
 .search input{width:100%;padding:14px 16px;font:inherit;font-size:17px;border-radius:12px;border:2px solid var(--line);background:var(--panel);color:var(--ink);outline:none}
 .search input:focus{border-color:var(--accent)}
@@ -72,21 +78,33 @@ footer a{color:inherit}
 <div class="wrap">
   <header>
     <h1 class="logo"><img src="assets/gurt-logo.png" alt="gurt" width="894" height="562"></h1>
-    <p class="tag"><b>G</b>URT <b>U</b>niversal <b>R</b>epository <b>T</b>hingy — community build recipes for <b>every</b> Linux distro. Like the AUR, minus the gatekeeping.</p>
+    <p class="tag"><b>G</b>URT <b>U</b>niversal <b>R</b>epository <b>T</b>hingy — <b>every</b> distro's packages on <b>every</b> distro. The AUR on Mint, apt on SUSE, zypper on Red Star OS… plus <b>Main GURT</b>, the community repo below.</p>
     <div class="install mono">curl -fsSL https://raw.githubusercontent.com/clrealy/GURT/main/install.sh | sh
-gurt install fastfetch</div>
+gurt install btop          <span class="c"># Main GURT</span>
+gurt install aur/yay       <span class="c"># the AUR, anywhere</span>
+gurt install apt/cowsay    <span class="c"># Debian's repos, anywhere</span>
+gurt install zypper/htop   <span class="c"># openSUSE's repos, anywhere</span></div>
+    <div class="srcs">
+      <span class="src main">gurt/ <small>Main GURT</small></span>
+      <span class="src">aur/ <small>Arch User Repo</small></span>
+      <span class="src">apt/ <small>Debian · Ubuntu</small></span>
+      <span class="src">dnf/ <small>Fedora</small></span>
+      <span class="src">zypper/ <small>openSUSE</small></span>
+      <span class="src">pacman/ <small>Arch</small></span>
+    </div>
+    <h2 class="sect">Main GURT packages</h2>
   </header>
 
   <div class="search">
-    <input id="q" type="search" placeholder="search packages…" autocomplete="off" aria-label="Search packages">
+    <input id="q" type="search" placeholder="search Main GURT…" autocomplete="off" aria-label="Search packages">
     <div class="meta" id="count">loading…</div>
   </div>
 
   <div class="list" id="list"></div>
 
   <footer>
-    Works on Debian, Ubuntu, Fedora, Arch, openSUSE, Alpine, Void, Gentoo, Solus and friends.
-    Recipes are user-submitted — always read the GURTBUILD before you install. ·
+    Works on Debian, Ubuntu, Mint, Fedora, Arch, openSUSE, Alpine, Void, Gentoo, Solus and friends. Other sources are searched from the CLI: <code>gurt search -a &lt;term&gt;</code>.
+    Recipes are user-submitted — always read the GURTBUILD (or PKGBUILD) before you install. ·
     <a href="https://github.com/clrealy/GURT">source</a> ·
     <a href="https://github.com/clrealy/GURT/blob/main/CONTRIBUTING.md">submit a package</a>
   </footer>
