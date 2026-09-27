@@ -1090,6 +1090,19 @@ box_reason() { # src name deps files(newline list, may be empty)
   return 0
 }
 
+# system stuff: your distro's own version beats a box, a box beats stomping on your system
+system_route() { # src name reason why
+  local src=$1 name=$2 reason=$3 why=$4
+  if pm_available "$name"; then
+    msg "⚙️  $src/$name is system stuff ($why) — your distro has its own $name, installing that instead ($PM)"
+    install_native "$name"
+    pm_has "$name" && msg "$name installed from $PM ✅" || die "$PM couldn't install $name"
+    return 0
+  fi
+  msg "📦 $src/$name goes in a box — $why"
+  box_install "$src" "$name" "$reason"
+}
+
 WARNED_FOREIGN=false
 foreign_banner() {
   $WARNED_FOREIGN && return 0; WARNED_FOREIGN=true
@@ -1161,7 +1174,7 @@ foreign_install() { # src name reason
   fi
   if [[ $reason == explicit ]] && ! $NOBOX; then
     why=$(box_reason "$src" "$name" "$deps")
-    if [[ -n $why ]]; then msg "📦 $src/$name goes in a box — $why"; box_install "$src" "$name" "$reason"; return; fi
+    if [[ -n $why ]]; then system_route "$src" "$name" "$reason" "$why"; return; fi
   fi
   if [[ $reason == explicit ]]; then
     foreign_banner
@@ -1172,7 +1185,7 @@ foreign_install() { # src name reason
   local built=$BUILT_PKG
   if [[ $reason == explicit ]] && ! $NOBOX; then
     why=$(box_reason "$src" "$name" "" "$(tar -xzf "$built" -O .FILES 2>/dev/null || true)")
-    if [[ -n $why ]]; then msg "📦 $src/$name goes in a box — $why"; NOCONFIRM=true box_install "$src" "$name" "$reason"; return; fi
+    if [[ -n $why ]]; then NOCONFIRM=true system_route "$src" "$name" "$reason" "$why"; return; fi
   fi
   local d dl=()
   IFS=, read -ra dl <<<"$deps"

@@ -51,7 +51,7 @@ Regular `apt/` `dnf/` `zypper/` `pacman/` installs are for **apps**. **System ut
 - it installs system services or hooks (systemd units, udev rules, PAM, polkit helpers…)
 - it would overwrite files your distro owns
 
-Kernels, bootloaders and init systems are **refused**, because those have to come from your own distro. If you already have a package from your distro, gurt just tells you. `--box` forces a box, and `--no-box` turns auto-boxing off.
+If your own distro packages the same system tool (like flatpak, podman or cron), gurt installs **your distro's version** instead of boxing it, since that's always better. Kernels, bootloaders and init systems are **refused**, because those have to come from your own distro. If you already have a package from your distro, gurt just tells you. `--box` forces a box, and `--no-box` turns auto-boxing off.
 
 ```sh
 gurt install --box dnf/dnfdragora      # real Fedora, in a container
