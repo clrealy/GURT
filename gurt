@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.8.2"
+GURT_VERSION="0.8.3"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -129,7 +129,9 @@ pm_install() {
     apt)    asroot apt-get install -y "$@" ;;
     dnf)    asroot dnf install -y "$@" ;;
     yum)    asroot yum install -y "$@" ;;
-    pacman) asroot pacman -S --needed --noconfirm "$@" ;;
+    # Arch doesn't support partial upgrades: installing something against a newer package list than the rest
+    # of the system can break it (Qt/KDE/desktop). so deps come with a full upgrade, and pacman shows you it.
+    pacman) if $NOCONFIRM; then asroot pacman -Syu --needed --noconfirm "$@"; else asroot pacman -Syu --needed "$@"; fi ;;
     zypper) asroot zypper --non-interactive install "$@" ;;
     apk)    asroot apk add "$@" ;;
     xbps)   asroot xbps-install -Sy "$@" ;;
