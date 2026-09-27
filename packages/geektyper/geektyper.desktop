@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=GeekTyper
+Comment=Look like a movie hacker (opens geektyper.com)
+Exec=geektyper
+Icon=utilities-terminal
+Terminal=false
+Categories=Game;Amusement;
+Keywords=hacker;typer;prank;

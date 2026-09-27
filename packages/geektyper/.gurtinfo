@@ -1,0 +1,11 @@
+pkgname = geektyper
+pkgver = 1.0.0
+pkgrel = 1
+pkgdesc = Launcher for GeekTyper — mash your keyboard, look like a movie hacker 💻
+url = https://geektyper.com
+license = MIT
+maintainer = clrealy
+arch = any
+depends = xdg-utils
+source = geektyper.sh
+source = geektyper.desktop
