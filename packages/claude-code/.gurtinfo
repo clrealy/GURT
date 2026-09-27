@@ -1,0 +1,17 @@
+pkgname = claude-code
+pkgver = repo
+pkgrel = 1
+pkgdesc = Claude Code — Anthropic's agentic coding tool in your terminal (official repo)
+url = https://code.claude.com
+license = custom
+maintainer = clearly124
+arch = x86_64
+arch = aarch64
+via_repo = claude
+via_type = apt
+via_url = https://downloads.claude.ai/claude-code/apt/stable
+via_suite = stable
+via_components = main
+via_key = https://downloads.claude.ai/keys/claude-code.asc
+via_fingerprint = 31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE
+via_pkg = claude-code

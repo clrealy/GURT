@@ -135,21 +135,22 @@ function render(){
   $("#count").textContent = `${hits.length} of ${PKGS.length} packages`;
   $("#list").innerHTML = hits.length ? hits.map(p => `
     <button class="pkg" data-n="${esc(p.pkgname)}">
-      <div class="row"><span class="name">${esc(p.pkgname)}</span><span class="ver mono">${esc(p.pkgver)}-${esc(p.pkgrel)}</span></div>
+      <div class="row"><span class="name">${esc(p.pkgname)}</span><span class="ver mono">${p.via_repo?"latest":esc(p.pkgver)+"-"+esc(p.pkgrel)}</span></div>
       <div class="desc">${esc(p.pkgdesc)}</div>
       <div class="chips">${(p.arch||[]).map(a=>`<span class="chip mono">${esc(a)}</span>`).join("")}
-        ${p.maintainer?`<span class="chip">by ${esc(p.maintainer)}</span>`:""}<span class="chip">updated ${ago(p.updated)}</span></div>
+        ${p.via_repo?`<span class="chip">official repo 🔏</span>`:""}${p.maintainer?`<span class="chip">by ${esc(p.maintainer)}</span>`:""}<span class="chip">updated ${ago(p.updated)}</span></div>
     </button>`).join("") : `<div class="empty">nothing matched 😔 womp womp — <a href="https://github.com/${REPO}/blob/${BRANCH}/CONTRIBUTING.md">package it yourself?</a></div>`;
 }
 
 async function showPkg(name){
   const p = PKGS.find(x => x.pkgname === name); if(!p) return;
-  $("#dname").textContent = p.pkgname + " " + p.pkgver + "-" + p.pkgrel;
+  $("#dname").textContent = p.pkgname + (p.via_repo ? "" : " " + p.pkgver + "-" + p.pkgrel);
   $("#ddesc").textContent = p.pkgdesc || "";
   $("#dcmd").textContent = "gurt install " + p.pkgname;
   const row = (k,v) => v && (Array.isArray(v) ? v.length : true) ? `<tr><td>${k}</td><td>${v}</td></tr>` : "";
   $("#dtable").innerHTML =
     row("upstream", p.url ? `<a href="${esc(p.url)}" rel="noopener">${esc(p.url)}</a>` : "") +
+    row("comes from", p.via_url ? `${esc(p.via_url)} <span class="mono">(key ${esc((p.via_fingerprint||"").replace(/(.{4})/g,"$1 ").trim())})</span>` : "") +
     row("license", esc(p.license)) + row("maintainer", esc(p.maintainer)) +
     row("arch", esc((p.arch||[]).join(", "))) +
     row("depends", esc((p.depends||[]).join(", "))) +

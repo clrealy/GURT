@@ -1,0 +1,20 @@
+# Claude Desktop — straight from Anthropic's official signed apt repo.
+# Officially Debian/Ubuntu only (beta); gurt gets it running elsewhere (tested on Arch + niri + DMS).
+# fingerprint source: https://code.claude.com/docs/en/desktop-linux
+pkgname=claude-desktop
+pkgver=repo
+pkgrel=1
+pkgdesc="Claude Desktop — Chat, Cowork and Claude Code in one app (official repo, Linux beta)"
+url="https://claude.com/download"
+license="custom"
+maintainer="clearly124"
+arch=(x86_64 aarch64)
+
+via_repo=claude-desktop
+via_type=apt
+via_url=https://downloads.claude.ai/claude-desktop/apt/stable
+via_suite=stable
+via_components=main
+via_key=https://downloads.claude.ai/claude-desktop/key.asc
+via_fingerprint=31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE
+via_pkg=claude-desktop

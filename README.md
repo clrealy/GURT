@@ -6,6 +6,7 @@
 
 ```sh
 gurt install btop           # Main GURT: community recipes, built for your distro
+gurt install claude-desktop # Main GURT: official vendor apps from their signed repos 🔏
 gurt install aur/yay        # the AUR... on Mint
 gurt install apt/cowsay     # Debian's apt repos... on openSUSE
 gurt install zypper/htop    # openSUSE's repos... on Red Star OS, if you're brave
@@ -62,6 +63,19 @@ Maintainer scripts (postinst, .install hooks) are **not** run.
 | **Claude Desktop** (Debian/Ubuntu-only app) | Arch Linux + niri + DankMaterialShell | `gurt repo add claude-desktop apt https://downloads.claude.ai/claude-desktop/apt/stable stable main --key https://downloads.claude.ai/claude-desktop/key.asc` then `gurt install claude-desktop --repo claude-desktop` |
 
 Got something working on a weird setup? PR it into this table 🙏
+
+## Official-repo recipes 🔏
+
+Some Main GURT packages aren't built by gurt at all. They point straight at the vendor's **official signed repo**, and the key fingerprint is pinned in the recipe:
+
+```sh
+gurt install claude-code      # Anthropic's apt repo
+gurt install claude-desktop   # Anthropic's apt repo (Linux beta)
+```
+
+gurt adds the repo, refuses if the key's fingerprint doesn't match the pinned one, checks the repo signature, then installs. Updates come straight from the vendor with `gurt upgrade`.
+
+To make one, write a GURTBUILD with `via_repo`, `via_type`, `via_url`, `via_suite`, `via_components`, `via_key` and `via_fingerprint` instead of a `package()` function. See [`packages/claude-desktop`](packages/claude-desktop/GURTBUILD).
 
 ## Add your own repos
 

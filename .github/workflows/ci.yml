@@ -28,11 +28,11 @@ jobs:
     steps:
       - name: bootstrap
         run: |
-          if command -v apt-get; then apt-get update && apt-get install -y git bash sudo
-          elif command -v dnf; then dnf install -y git bash sudo tar gzip findutils
-          elif command -v pacman; then pacman -Syu --noconfirm git bash sudo
-          elif command -v apk; then apk add git bash sudo tar coreutils findutils
-          elif command -v zypper; then zypper -n install git bash sudo tar gzip findutils; fi
+          if command -v apt-get; then apt-get update && apt-get install -y git bash sudo curl gnupg gpgv xz-utils binutils zstd python3
+          elif command -v dnf; then dnf install -y git bash sudo tar gzip findutils gnupg2 xz bsdtar zstd python3
+          elif command -v pacman; then pacman -Syu --noconfirm git bash sudo gnupg xz libarchive zstd python
+          elif command -v apk; then apk add git bash sudo curl tar coreutils findutils gnupg gpgv xz binutils zstd python3
+          elif command -v zypper; then zypper -n install git bash sudo curl tar gzip findutils gpg2 xz bsdtar zstd python3; fi
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       - name: build changed packages

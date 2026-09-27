@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.4.1"
+GURT_VERSION="0.5.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -42,7 +42,7 @@ FOREIGN_SOURCES="aur apt dnf zypper pacman"
 IDX_DIR="$GURT_CACHE/index"
 IDX_MAX_AGE="${IDX_MAX_AGE:-86400}"   # re-download foreign indexes after a day
 
-NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT=""
+NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT="" EXPECT_FPR=""
 
 # ───────────────────────── pretty output ─────────────────────────
 if [[ -t 2 && -z ${NO_COLOR:-} ]]; then
@@ -196,6 +196,7 @@ load_recipe() {
   [[ -f $f ]] || die "no GURTBUILD or PKGBUILD in $PWD"
   RECIPE=$f
   pkgname="" pkgbase="" pkgver="" pkgrel=1 epoch="" pkgdesc="" url="" license="" maintainer="" install=""
+  via_repo="" via_type="" via_url="" via_suite="" via_components="" via_key="" via_fingerprint="" via_pkg=""
   arch=() depends=() makedepends=() checkdepends=() source=() noextract=() sums=() SUMALGO=sha256
   local a v fn
   for a in $SUM_ALGOS; do unset "${a}sums" "${a}sums_$CARCH"; done
@@ -233,7 +234,12 @@ load_recipe() {
   [[ $pkgname =~ ^[a-z0-9@_+][a-z0-9@._+-]*$ ]] || die "bad pkgname '$pkgname' (lowercase, digits, . _ + - only)"
   [[ -n $pkgver && $pkgver =~ ^[A-Za-z0-9._+~]+$ ]] || die "bad pkgver '$pkgver' (no dashes/spaces)"
   [[ $pkgrel =~ ^[0-9]+(\.[0-9]+)?$ ]]           || die "bad pkgrel '$pkgrel'"
-  declare -F package >/dev/null                   || die "$f needs a package() function"
+  if [[ -n $via_repo ]]; then       # "official repo" recipe: no build, just a pinned pointer
+    [[ -n $via_type && -n $via_url ]] || die "via_repo recipes need via_type and via_url"
+    [[ -z $via_key || $via_fingerprint =~ ^[0-9A-F]{40}$ ]] || die "via_key needs a pinned via_fingerprint (40 hex chars, uppercase)"
+  else
+    declare -F package >/dev/null || die "$f needs a package() function"
+  fi
   (( ${#arch[@]} )) || arch=(any)
   (( ${#source[@]} == ${#sums[@]} ))              || die "source has ${#source[@]} entries but ${SUMALGO}sums has ${#sums[@]}"
   if [[ $f == GURTBUILD ]]; then
@@ -252,6 +258,10 @@ print_srcinfo() {
   for x in "${depends[@]}";     do printf 'depends = %s\n' "$x"; done
   for x in "${makedepends[@]}"; do printf 'makedepends = %s\n' "$x"; done
   for x in "${source[@]}";      do printf 'source = %s\n' "$x"; done
+  for x in via_repo via_type via_url via_suite via_components via_key via_fingerprint via_pkg; do
+    [[ -n ${!x} ]] && printf '%s = %s\n' "$x" "${!x}"
+  done
+  return 0
 }
 
 arch_ok() {
@@ -594,6 +604,21 @@ resolve_and_install() { # name reason
   local rdir="$GURT_REPO_DIR/packages/$name" info
   info=$(repo_info "$name")
   [[ -f $info ]] || die "no package '$name' in main GURT (try: gurt search $name, or gurt search -a $name for every source)"
+
+  # official-repo recipe → add the vendor's repo (key fingerprint pinned by the recipe), install from it
+  local via; via=$(info_get "$info" via_repo)
+  if [[ -n $via ]]; then
+    if ! repo_file "$via" >/dev/null; then
+      msg "$name comes from its official repo — adding '$via' 🔏"
+      local g; g() { info_get "$info" "$1"; }
+      # shellcheck disable=SC2046
+      KEYSRC=$(g via_key) EXPECT_FPR=$(g via_fingerprint) SUITE_OPT="" \
+        repo_add "$via" "$(g via_type)" "$(g via_url)" "$(g via_suite)" $(g via_components)
+    fi
+    local vp; vp=$(info_get "$info" via_pkg)
+    foreign_install "$via" "${vp:-$name}" "$reason"
+    return
+  fi
 
   if is_installed "$name" && ! $FORCE && ! vnewer "$(inst_ver "$name")" "$(repo_ver "$name")"; then
     [[ $reason == explicit ]] && msg "$name $(inst_ver "$name") is already installed and up to date 👍"
@@ -1142,6 +1167,7 @@ search_main() {
     name=$(info_get "$f" pkgname); desc=$(info_get "$f" pkgdesc)
     if [[ -z $term ]] || grep -qiF -- "$term" <<<"$name $desc"; then
       ver=$(repo_ver "$name"); tag=""
+      [[ -n $(info_get "$f" via_repo) ]] && ver="official repo 🔏"
       is_installed "$name" && tag=" ${GRN}[installed]${R0}"
       printf '%sgurt/%s%s%s%s %s%s%s%s\n    %s\n' "$MAG" "$R0" "$B" "$name" "$R0" "$GRN" "$ver" "$R0" "$tag" "$desc"
       found=1
@@ -1420,6 +1446,13 @@ repo_add() {
   fi
   if [[ -n $KEYSRC ]]; then
     key=$(fetch_key "$name" "$KEYSRC")
+    if [[ -n ${EXPECT_FPR:-} ]]; then
+      local got_fpr; got_fpr=$(gpg --show-keys --with-colons "$key" 2>/dev/null | awk -F: '$1 == "fpr" {print $10; exit}')
+      if [[ ${got_fpr^^} != "${EXPECT_FPR^^}" ]]; then
+        rm -f "$key"; die "🚩 key fingerprint mismatch for $name: expected $EXPECT_FPR, got ${got_fpr:-nothing} — NOT adding it"
+      fi
+      msg2 "key fingerprint matches the pinned one ✅"
+    fi
     msg2 "signing key saved — make sure this fingerprint is legit:"; show_fpr "$key"
   else
     warn "no signing key (--key) — packages are still checksum-checked, but the repo's index itself isn't signature-verified"
@@ -1573,6 +1606,7 @@ main() {
       --key)          shift; KEYSRC=${1:?--key needs a url or file} ;;
       --key=*)        KEYSRC=${1#*=} ;;
       --suite)        shift; SUITE_OPT=${1:?--suite needs a value} ;;
+      --fingerprint)  shift; EXPECT_FPR=${1:?--fingerprint needs a value}; EXPECT_FPR=${EXPECT_FPR// /} ;;
       --suite=*)      SUITE_OPT=${1#*=} ;;
       --nodeps)       NODEPS=true ;;
       --nocheck)      NOCHECK=true ;;
