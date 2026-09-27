@@ -19,6 +19,7 @@ git         emerge=dev-vcs/git
 curl        emerge=net-misc/curl
 unzip       emerge=app-arch/unzip
 xdg-utils   emerge=x11-misc/xdg-utils
+flatpak     emerge=sys-apps/flatpak
 
 # ── languages ──
 python3     pacman=python  emerge=dev-lang/python

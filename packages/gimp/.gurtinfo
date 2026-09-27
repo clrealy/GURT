@@ -1,0 +1,12 @@
+pkgname = gimp
+pkgver = flathub
+pkgrel = 1
+pkgdesc = GIMP — free & open source image editor (official Flathub build)
+url = https://www.gimp.org
+license = GPL-3.0-or-later
+maintainer = clrealy
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.gimp.GIMP

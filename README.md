@@ -12,6 +12,8 @@ gurt install apt/cowsay     # Debian's apt repos... on openSUSE
 gurt install zypper/htop    # openSUSE's repos... on Red Star OS, if you're brave
 gurt install dnf/fastfetch  # Fedora's repos... on Arch
 gurt install pacman/btop    # Arch's official repos... on Ubuntu
+gurt install flatpak/gimp   # Flathub, flatpak set up for you
+gurt install snap/spotify   # the Snap Store
 ```
 
 Prefer flags? `--repo` works too, and `aur/yay` and `yay --repo aur` do the exact same thing:
@@ -35,6 +37,8 @@ It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine,
 | `dnf/` `fedora/` | **Fedora** repos | downloads the `.rpm`, checks it, unpacks it |
 | `zypper/` `suse/` | **openSUSE Tumbleweed** repos | downloads the `.rpm`, checks it, unpacks it |
 | `pacman/` `arch/` | **Arch** official repos | downloads the `.pkg.tar.zst`, checks it, unpacks it |
+| `flatpak/` `flathub/` | **Flathub** | runs `flatpak install` for you (sets up flatpak + Flathub the first time) |
+| `snap/` | **Snap Store** | runs `snap install` for you (sets up snapd the first time; asks before `--classic`) |
 
 Mirrors and releases are set in [`gurt.conf`](gurt.conf), so apt can point at Ubuntu instead of Debian, for example.
 

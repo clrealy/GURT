@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.5.3"
+GURT_VERSION="0.6.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -38,7 +38,7 @@ DNF_MIRROR="${DNF_MIRROR:-https://dl.fedoraproject.org/pub/fedora/linux/releases
 ZYPPER_MIRROR="${ZYPPER_MIRROR:-https://download.opensuse.org/tumbleweed/repo/oss}"
 PACMAN_MIRROR="${PACMAN_MIRROR:-https://geo.mirror.pkgbuild.com}"
 PACMAN_REPOS="${PACMAN_REPOS:-core extra}"
-FOREIGN_SOURCES="aur apt dnf zypper pacman"
+FOREIGN_SOURCES="aur apt dnf zypper pacman flatpak snap"
 IDX_DIR="$GURT_CACHE/index"
 IDX_MAX_AGE="${IDX_MAX_AGE:-86400}"   # re-download foreign indexes after a day
 
@@ -262,7 +262,10 @@ load_recipe() {
   [[ -n $pkgver && $pkgver =~ ^[A-Za-z0-9._+~]+$ ]] || die "bad pkgver '$pkgver' (no dashes/spaces)"
   [[ $pkgrel =~ ^[0-9]+(\.[0-9]+)?$ ]]           || die "bad pkgrel '$pkgrel'"
   if [[ -n $via_repo ]]; then       # "official repo" recipe: no build, just a pinned pointer
-    [[ -n $via_type && -n $via_url ]] || die "via_repo recipes need via_type and via_url"
+    case $via_type in
+      flatpak|snap) [[ -n $via_pkg ]] || die "$via_type recipes need via_pkg (the app id / snap name)" ;;
+      *) [[ -n $via_type && -n $via_url ]] || die "via_repo recipes need via_type and via_url" ;;
+    esac
     [[ -z $via_key || $via_fingerprint =~ ^[0-9A-F]{40}$ ]] || die "via_key needs a pinned via_fingerprint (40 hex chars, uppercase)"
   else
     declare -F package >/dev/null || die "$f needs a package() function"
@@ -570,6 +573,8 @@ resolve_key() { # user spec (name or src/name) -> installed db key
   is_installed "$spec" && { echo "$spec"; return; }
   local hits=() d
   for d in "$DB"/*:"$spec"/; do hits+=("$(basename "$d")"); done
+  local lo
+  for d in "$DB"/flatpak:*/; do d=$(basename "$d"); lo=${d,,}; [[ ${lo##*.} == "${spec,,}" || $lo == "flatpak:${spec,,}" ]] && hits+=("$d"); done
   (( ${#hits[@]} == 1 )) && { echo "${hits[0]}"; return; }
   (( ${#hits[@]} > 1 )) && die "$spec is installed from multiple sources: $(for k in "${hits[@]}"; do printf '%s ' "$(pretty "$k")"; done)— say which one"
   return 1
@@ -611,6 +616,12 @@ remove_pkg() {
   local key name o
   key=$(resolve_key "$1") || die "$1 isn't installed"
   name=${key#*:}
+  case $key in
+    flatpak:*) msg "removing $(pretty "$key")"; flatpak uninstall --user -y --noninteractive "$name" || warn "flatpak couldn't remove it (already gone?)"
+               asroot rm -rf -- "$DB/$key"; msg "$(pretty "$key") removed 🗑️"; return ;;
+    snap:*)    msg "removing $(pretty "$key")"; asroot snap remove "$name" || warn "snap couldn't remove it (already gone?)"
+               asroot rm -rf -- "$DB/$key"; msg "$(pretty "$key") removed 🗑️"; return ;;
+  esac
   local dbd="$DB/$key" rdeps=()
   mapfile -t rdeps < <(rdeps_of "$key")
   if (( ${#rdeps[@]} )) && ! $FORCE; then die "$(pretty "$key") is needed by: ${rdeps[*]} (use --force to yeet it anyway)"; fi
@@ -650,6 +661,10 @@ resolve_and_install() { # name reason
 
   # official-repo recipe → add the vendor's repo (key fingerprint pinned by the recipe), install from it
   local via; via=$(info_get "$info" via_repo)
+  case $(info_get "$info" via_type) in
+    flatpak) flatpak_install "$(info_get "$info" via_pkg)" "$reason"; return ;;
+    snap)    snap_install "$(info_get "$info" via_pkg)" "$reason"; return ;;
+  esac
   if [[ -n $via ]]; then
     if ! repo_file "$via" >/dev/null; then
       msg "$name comes from its official repo — adding '$via' 🔏"
@@ -698,6 +713,8 @@ install_any() { # spec reason
   case $src in
     gurt) ensure_repo; resolve_and_install "$name" "$reason" ;;
     aur)  aur_install "$name" "$reason" ;;
+    flatpak) flatpak_install "$name" "$reason" ;;
+    snap)    snap_install "$name" "$reason" ;;
     *) is_binary_src "$src" || die "unknown source '$src' — pick one of: gurt $(all_sources) (or add one: gurt repo add)"
        foreign_install "$src" "$name" "$reason" ;;
   esac
@@ -721,6 +738,8 @@ norm_src() {
     zypper|suse|opensuse)           echo zypper ;;
     pacman|arch|archlinux)          echo pacman ;;
     aur)                            echo aur ;;
+    flatpak|flathub)                echo flatpak ;;
+    snap|snapcraft|snapd)           echo snap ;;
     *)                              echo "$1" ;;
   esac
 }
@@ -737,6 +756,7 @@ all_sources()  { echo "$FOREIGN_SOURCES $(custom_repos | tr '\n' ' ')"; }
 src_kind() {
   case $1 in
     gurt) echo gurt ;; aur) echo aur ;; apt) echo apt ;; dnf|zypper) echo rpm ;; pacman) echo pacman ;;
+    flatpak) echo flatpak ;; snap) echo snap ;;
     *) if repo_file "$1" >/dev/null; then repo_get "$1" type; else echo unknown; fi ;;
   esac
 }
@@ -780,6 +800,7 @@ sync_source() {
   local s=$1 tmp out
   case $(src_kind "$s") in
     aur) msg2 "aur is searched live, nothing to sync"; return 0 ;;
+    flatpak|snap) msg2 "$s keeps its own index, nothing to sync"; return 0 ;;
     apt|rpm|pacman) ;;
     *) die "unknown source '$s' (have: gurt $(all_sources))" ;;
   esac
@@ -1112,6 +1133,135 @@ foreign_install() { # src name reason
   install_file "$BUILT_PKG" "$reason"
 }
 
+# ── flatpak + snap: they manage their own installs, gurt drives them and remembers what it put there ──
+record_meta() { # key name version desc reason source
+  local dbd="$DB/$1" tmp; tmp=$(mktemp -d "${TMPDIR:-/tmp}/gurt-meta.XXXXXX")
+  printf 'pkgname = %s\npkgver = %s\npkgdesc = %s\ngurtsource = %s\n' "$2" "$3" "$4" "$6" > "$tmp/info"
+  : > "$tmp/files"; : > "$tmp/dirs"; echo "$5" > "$tmp/reason"
+  asroot mkdir -p "$dbd"
+  local f; for f in info files dirs reason; do asroot cp "$tmp/$f" "$dbd/$f"; done
+  rm -rf "$tmp"
+}
+
+ensure_flatpak() {
+  if ! command -v flatpak >/dev/null; then
+    $NODEPS && die "flatpak isn't installed (and --nodeps is on)"
+    msg "flatpak isn't installed — getting it from your distro"
+    # shellcheck disable=SC2046
+    install_native $(map_dep flatpak)
+    command -v flatpak >/dev/null || die "couldn't install flatpak — install it with your package manager, then try again"
+  fi
+  if ! flatpak remotes --user --columns=name 2>/dev/null | grep -qx flathub; then
+    msg2 "adding Flathub (for your user, no sudo needed)"
+    flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || die "couldn't add Flathub"
+  fi
+}
+flatpak_resolve() { # "gimp" or "org.gimp.GIMP" → app id
+  local q=$1
+  if [[ $q == *.*.* ]]; then echo "$q"; return; fi
+  flatpak search --columns=application,name "$q" 2>/dev/null | awk -F'\t' -v q="${q,,}" '
+    { id=$1; n=tolower($2); c=split(id, a, "."); last=tolower(a[c])
+      if (best == "" && (last == q || n == q)) best=id
+      if (first == "") first=id }
+    END { print (best != "" ? best : first) }'
+}
+flatpak_install() { # name reason
+  ensure_flatpak
+  local id; id=$(flatpak_resolve "$1")
+  [[ -n $id ]] || die "nothing on Flathub matches '$1' (try: gurt search flatpak/$1)"
+  local key="flatpak:$id"
+  if is_installed "$key" && ! $FORCE; then
+    [[ ${2:-explicit} == explicit ]] && msg "$(pretty "$key") is already installed — flatpak updates it with: gurt upgrade 👍"
+    return 0
+  fi
+  [[ ${2:-explicit} == explicit ]] && { ask "install $id from Flathub?" || die "aborted, no cap"; }
+  msg "installing $id from Flathub 📦"
+  flatpak install --user -y --noninteractive flathub "$id" || die "flatpak couldn't install $id"
+  local ver; ver=$(flatpak info --user "$id" 2>/dev/null | awk -F': *' '/^ *Version:/ {print $2; exit}')
+  record_meta "$key" "$id" "${ver:-latest}" "Flathub app" "${2:-explicit}" flatpak
+  msg "$(pretty "$key") installed ✅  (it's in your app menu, or run: flatpak run $id)"
+}
+
+ensure_snap() {
+  command -v snap >/dev/null && return 0
+  $NODEPS && die "snap isn't installed (and --nodeps is on)"
+  msg "snap isn't installed — setting up snapd"
+  case $PM in
+    apt)
+      [[ -f /etc/apt/preferences.d/nosnap.pref ]] &&
+        die "your distro blocks snap on purpose (Linux Mint does this). to allow it: sudo rm /etc/apt/preferences.d/nosnap.pref && sudo apt update — then try again"
+      install_native snapd ;;
+    pacman) msg2 "snapd isn't in Arch's repos — building it from the AUR"; aur_install snapd dep ;;
+    dnf|yum|zypper|xbps|eopkg) install_native snapd ;;
+    *) die "install snapd with your package manager first" ;;
+  esac
+  command -v snap >/dev/null || die "snapd didn't install right"
+  if command -v systemctl >/dev/null; then
+    asroot systemctl enable --now snapd.socket 2>/dev/null || true
+    asroot systemctl enable --now snapd.apparmor.service 2>/dev/null || true
+  fi
+  [[ -e /snap ]] || asroot ln -s /var/lib/snapd/snap /snap 2>/dev/null || true
+  warn "first time using snap: if it acts weird, log out and back in (or reboot) once"
+}
+snap_install() { # name reason
+  local name=$1 key="snap:$1" out
+  ensure_snap
+  if is_installed "$key" && ! $FORCE; then
+    [[ ${2:-explicit} == explicit ]] && msg "$(pretty "$key") is already installed — snap updates it with: gurt upgrade 👍"
+    return 0
+  fi
+  [[ ${2:-explicit} == explicit ]] && { ask "install $name from the Snap Store?" || die "aborted, no cap"; }
+  msg "installing $name from the Snap Store 📦"
+  if ! out=$(asroot snap install "$name" 2>&1); then
+    if grep -qi 'classic' <<<"$out"; then
+      warn "$name needs 'classic' mode — that means it runs WITHOUT snap's sandbox (full access, like a normal app)"
+      ask "install $name in classic mode?" || die "aborted"
+      asroot snap install --classic "$name" || die "snap couldn't install $name"
+    else
+      printf '%s\n' "$out" >&2; die "snap couldn't install $name"
+    fi
+  fi
+  local ver; ver=$(snap list "$name" 2>/dev/null | awk 'NR == 2 {print $2}')
+  record_meta "$key" "$name" "${ver:-latest}" "Snap Store app" "${2:-explicit}" snap
+  msg "$(pretty "$key") installed ✅"
+}
+
+# search helpers (use the CLI if you have it, else the public store APIs)
+flatpak_search() {
+  if command -v flatpak >/dev/null && flatpak remotes --columns=name 2>/dev/null | grep -qx flathub; then
+    flatpak search --columns=application,version,description "$1" 2>/dev/null | head -n 30 | awk -F'\t' '{ print $1 "\t" $2 "\t\t\t\t" $3 }'
+  else
+    need_tool python3 flatpak
+    local t; t=$(mktemp)
+    curl -fsSL -m 20 -H 'Content-Type: application/json' -d "{\"query\": $(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$1")}" \
+      https://flathub.org/api/v2/search > "$t" 2>/dev/null || { rm -f "$t"; return 1; }
+    python3 - "$t" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+for h in (d.get("hits") or [])[:30]:
+    print("\t".join([h.get("app_id", ""), "", "", "", "", (h.get("summary") or "").replace("\t", " ")]))
+PY
+    rm -f "$t"
+  fi
+}
+snap_search() {
+  if command -v snap >/dev/null; then
+    snap find "$1" 2>/dev/null | awk 'NR > 1 { n=$1; v=$2; $1=$2=$3=$4=""; sub(/^ +/, ""); print n "\t" v "\t\t\t\t" $0 }' | head -n 30
+  else
+    need_tool python3 snap
+    local t; t=$(mktemp)
+    curl -fsSL -m 20 -H 'Snap-Device-Series: 16' "https://api.snapcraft.io/v2/snaps/find?q=$(urlenc "$1")&fields=title,summary,version" > "$t" 2>/dev/null || { rm -f "$t"; return 1; }
+    python3 - "$t" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+for r in (d.get("results") or [])[:30]:
+    s = r.get("snap") or {}
+    print("\t".join([r.get("name", ""), (s.get("version") or ""), "", "", "", (s.get("summary") or "").replace("\t", " ")]))
+PY
+    rm -f "$t"
+  fi
+}
+
 # ── AUR ──
 aur_rpc() { local t; t=$(mktemp); fetch_quiet "$AUR_URL/rpc/v5/$1" "$t" 2>/dev/null || { rm -f "$t"; return 1; }; cat "$t"; rm -f "$t"; }
 urlenc() { python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$1" 2>/dev/null || echo "$1"; }
@@ -1220,7 +1370,11 @@ search_main() {
 }
 search_foreign() { # src term
   local src=$1 term=$2 rows
-  if [[ $src == aur ]]; then
+  if [[ $src == flatpak ]]; then
+    rows=$(flatpak_search "$term") || { warn "couldn't search Flathub"; return 1; }
+  elif [[ $src == snap ]]; then
+    rows=$(snap_search "$term") || { warn "couldn't search the Snap Store"; return 1; }
+  elif [[ $src == aur ]]; then
     (( ${#term} >= 2 )) || die "aur search needs at least 2 characters"
     rows=$(aur_search "$term") || { warn "couldn't reach the AUR"; return 1; }
     rows=$(awk -F'\t' '{ print $1 "\t" $2 "\t\t\t\t" $4 ($5 ? " [out of date]" : "") }' <<<"$rows")
@@ -1244,7 +1398,7 @@ cmd_search() { # [-a] [src/]term
   if $ALLSRC; then
     search_main "$term" && found=1
     for src in $(all_sources); do
-      [[ $src == aur ]] && { search_foreign aur "$term" 2>/dev/null && found=1; continue; }
+      [[ $src == aur || $src == flatpak || $src == snap ]] && { search_foreign "$src" "$term" 2>/dev/null && found=1; continue; }
       ( idx_fresh "$src" || sync_source "$src" ) >/dev/null 2>&1 || { warn "$src unreachable, skipped"; continue; }
       search_foreign "$src" "$term" && found=1
     done
@@ -1269,6 +1423,12 @@ cmd_info() {
       local F v b d o; tsv "$row"; v=${F[1]:-}; b=${F[2]:-}; d=${F[3]:-}; o=${F[4]:-}
       printf '%-14s: %s\n' source "aur (built from source)" pkgname "$name" version "$v" pkgbase "$b" pkgdesc "$d" url "$AUR_URL/packages/$name"
       [[ -n $o ]] && printf '%-14s: %s\n' "out of date" yes ;;
+    flatpak)
+      ensure_flatpak; local id; id=$(flatpak_resolve "$name"); [[ -n $id ]] || die "nothing on Flathub matches '$name'"
+      key="flatpak:$id"; flatpak remote-info flathub "$id" 2>/dev/null || die "couldn't get info for $id" ;;
+    snap)
+      command -v snap >/dev/null || die "snap isn't installed yet (gurt install snap/<name> sets it up)"
+      snap info "$name" 2>/dev/null | head -n 20 || die "no snap called $name" ;;
     *)
       is_binary_src "$src" || die "unknown source '$src'"
       ensure_idx "$src"
@@ -1300,7 +1460,8 @@ find_outdated() {
     case $src in
       gurt) is_gurt_pkg "$name" && new=$(repo_ver "$name") ;;
       aur)  dir=$(aur_clone "$name" 2>/dev/null) && new=$(aur_srcinfo_ver "$dir/.SRCINFO") ;;
-      *)    new=$(idx_lookup "$src" "$name" | cut -f2) ;;
+      flatpak|snap) ;;   # they update themselves (see upgrade_containers)
+      *)    new=$(idx_lookup "$src" "$name" | cut -f2 || true) ;;
     esac
     if [[ -n $new ]] && vnewer "$(inst_ver "$k")" "$new"; then
       msg2 "$(pretty "$k")  $(inst_ver "$k") -> $new"; TODO+=("$k")
@@ -1320,7 +1481,7 @@ refresh_all() {
   local s
   sync_main
   for s in $(used_sources); do
-    [[ $s == aur ]] && continue
+    [[ $s == aur || $s == flatpak || $s == snap ]] && continue
     ( sync_source "$s" ) || warn "couldn't refresh $s, skipping"
   done
 }
@@ -1347,11 +1508,18 @@ cmd_upgrade() {  # refresh + actually install the new versions
   refresh_all
   find_outdated
   check_self
+  upgrade_containers
   (( ${#TODO[@]} )) || { msg "everything's up to date, you're chillin 😎"; return 0; }
   ask "upgrade ${#TODO[@]} package(s)?" || die "aborted"
   local k todo=("${TODO[@]}") was=$NOCONFIRM; NOCONFIRM=true   # already said yes
   for k in "${todo[@]}"; do install_any "$(pretty "$k")" "$(cat "$DB/$k/reason")"; done
   NOCONFIRM=$was
+}
+upgrade_containers() {   # flatpak + snap update their own apps
+  local d
+  d=("$DB"/flatpak:*/); if (( ${#d[@]} )) && command -v flatpak >/dev/null; then msg "updating flatpaks"; flatpak update --user -y --noninteractive || warn "flatpak update had problems"; fi
+  d=("$DB"/snap:*/);    if (( ${#d[@]} )) && command -v snap >/dev/null;    then msg "updating snaps";    asroot snap refresh || warn "snap refresh had problems"; fi
+  return 0
 }
 
 cmd_self_update() {
@@ -1572,6 +1740,8 @@ cmd_doctor() {
   srcline dnf "$(has python3 && has zstd && { has bsdtar || { has rpm2cpio && has cpio; }; } && echo 1)" "$(src_base dnf)  (needs python3, zstd, bsdtar or rpm2cpio+cpio)"
   srcline zypper "$(has python3 && has zstd && { has bsdtar || { has rpm2cpio && has cpio; }; } && echo 1)" "$(src_base zypper)  (needs python3, zstd, bsdtar or rpm2cpio+cpio)"
   srcline pacman "$(has zstd && echo 1)" "$PACMAN_MIRROR [$PACMAN_REPOS]  (needs zstd)"
+  srcline flatpak "$(has flatpak && echo 1)" "Flathub$(has flatpak || echo '  (gurt installs flatpak the first time you use it)')"
+  srcline snap "$(has snap && echo 1)" "Snap Store$(has snap || echo '  (gurt sets up snapd the first time you use it)')"
   local r; for r in $(custom_repos); do
     srcline "$r" "$( { [[ -z $(repo_get "$r" key) ]] || has gpgv; } && echo 1)" "$(repo_get "$r" type) · $(repo_get "$r" url)$([[ -n $(repo_get "$r" key) ]] && echo ' 🔏')"
   done
@@ -1592,6 +1762,8 @@ ${B}sources${R0}   (no prefix = main GURT · write it as aur/yay OR  yay --repo 
   dnf/htop             Fedora binary packages             (aliases: fedora/ yum/ rpm/)
   zypper/htop          openSUSE binary packages           (aliases: suse/ opensuse/)
   pacman/htop          Arch official binary packages      (aliases: arch/)
+  flatpak/gimp         Flathub apps (gurt sets up flatpak for you)  (alias: flathub/)
+  snap/spotify         Snap Store apps (gurt sets up snapd for you)
 
 ${B}your own repos${R0}   (PPAs, vendor apt/rpm repos, COPRs, custom pacman repos)
   repo list                      every source gurt knows
