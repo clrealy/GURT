@@ -4,6 +4,6 @@ pkgrel = 1
 pkgdesc = The hello world of gurt. Prints 'gurt: yo'
 url = https://github.com/clrealy/GURT
 license = MIT
-maintainer = clearly124
+maintainer = clrealy
 arch = any
 source = hello-gurt.sh

@@ -103,6 +103,20 @@ gurt repo remove claude
 - 🧩 **Deps:** anything a custom repo's package needs but doesn't ship gets pulled from its parent distro. A PPA's missing libs come from Ubuntu/Debian, for example
 - Repo files live in `~/.config/gurt/repos.d/` (or `/etc/gurt/repos.d/` for everyone on the machine)
 
+## Accounts 👤
+
+Your **GitHub account is your GURT account**. There are no new passwords, and GURT never sees your login.
+
+- **Profiles:** every maintainer gets a page at `clrealy.github.io/GURT/?u=<github-username>` with their packages. The `maintainer=` field in a recipe is a GitHub username
+- **Votes 👍 + comments 💬:** every package has them. You sign in with GitHub through [giscus](https://giscus.app), and everything is stored in this repo's GitHub Discussions
+- **🚩 Flag out of date:** opens a pre-filled GitHub issue
+
+**Turning on votes + comments (one-time, repo owner):**
+1. Repo → **Settings** → **General** → **Features**, then check **Discussions**
+2. **Discussions** tab → add a category called **Packages** (type: *Announcement*, so only giscus creates threads)
+3. Install the giscus app on this repo: <https://github.com/apps/giscus>
+4. On <https://giscus.app>, enter `clrealy/GURT` and pick the **Packages** category. Copy the `data-category-id` into `GISCUS.categoryId` in `site/index.html`
+
 ## Install
 
 ```sh

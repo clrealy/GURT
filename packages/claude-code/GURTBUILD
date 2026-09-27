@@ -7,7 +7,7 @@ pkgrel=1
 pkgdesc="Claude Code — Anthropic's agentic coding tool in your terminal (official repo)"
 url="https://code.claude.com"
 license="custom"
-maintainer="clearly124"
+maintainer="clrealy"
 arch=(x86_64 aarch64)
 
 via_repo=claude

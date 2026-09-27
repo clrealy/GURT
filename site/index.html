@@ -99,6 +99,17 @@ pre{background:var(--code);border:1px solid var(--line);border-radius:10px;paddi
 .drop{border:2px dashed var(--line);border-radius:12px;padding:26px;text-align:center;color:var(--muted);cursor:pointer}
 .drop.hot{border-color:var(--accent);color:var(--ink)}
 @media (max-width:600px){.grid{grid-template-columns:1fr}}
+.small{padding:6px 12px;font-size:13px;text-decoration:none;display:inline-block}
+.social{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.social .row2{justify-content:space-between;margin-bottom:10px}
+.h3{font-size:16px;margin:0}
+.who{cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:2px}
+.who:hover{text-decoration-color:var(--muted)}
+#profile{padding:18px 0 40px}
+.pcard{display:flex;gap:18px;align-items:center;margin:18px 0 22px}
+.pcard img{border-radius:50%;border:2px solid var(--line);background:var(--panel)}
+.pcard h2{margin:0;font-size:26px}
+.pcard .hint{text-decoration:none}
 footer{color:var(--muted);font-size:13px;padding:24px 0 40px;border-top:1px solid var(--line)}
 footer a{color:inherit}
 .empty{color:var(--muted);text-align:center;padding:40px 0}
@@ -134,6 +145,16 @@ gurt install htop --repo apt  <span class="c"># same thing, flag style</span></d
 
   <div class="list" id="list"></div>
 
+  <section id="profile" hidden>
+    <button class="btn ghost small" id="pback">← all packages</button>
+    <div class="pcard">
+      <img id="pav" alt="" width="96" height="96">
+      <div><h2 id="pname"></h2><div class="desc" id="pmeta"></div>
+        <a class="hint" id="plink" target="_blank" rel="noopener"></a></div>
+    </div>
+    <div class="list" id="plist"></div>
+  </section>
+
   <section id="srcpanel" hidden>
     <p class="srcblurb" id="srcblurb"></p>
     <div class="search"><input id="sq" type="search" placeholder="search…" autocomplete="off" aria-label="Search this source"></div>
@@ -157,6 +178,10 @@ gurt install htop --repo apt  <span class="c"># same thing, flag style</span></d
     <div class="cmd"><code id="dcmd"></code><button class="btn" id="copy">copy</button></div>
     <table id="dtable"></table>
     <pre id="dsrc">loading GURTBUILD…</pre>
+    <div class="social">
+      <div class="row2"><h3 class="h3">votes & comments</h3><a class="btn ghost small" id="dflag" target="_blank" rel="noopener">🚩 flag out of date</a></div>
+      <div id="giscus"></div>
+    </div>
   </div>
 </dialog>
 
@@ -176,7 +201,7 @@ gurt install htop --repo apt  <span class="c"># same thing, flag style</span></d
       <div class="f"><label>license</label><input id="u-lic" placeholder="MIT" autocomplete="off"></div>
       <div class="f full"><label>description *</label><input id="u-desc" placeholder="does cool stuff" autocomplete="off"></div>
       <div class="f"><label>homepage</label><input id="u-url" placeholder="https://github.com/someone/cool-app" autocomplete="off"></div>
-      <div class="f"><label>your GitHub handle</label><input id="u-me" placeholder="clearly124" autocomplete="off"></div>
+      <div class="f"><label>your GitHub username</label><input id="u-me" placeholder="your-github-username" autocomplete="off"></div>
       <div class="f full"><label>source (tarball URL, or git+https://…#tag=v1.2.0)</label><input id="u-src" placeholder="git+https://github.com/someone/cool-app.git#tag=v$pkgver" autocomplete="off"></div>
       <div class="f full"><label>sha256 of the tarball (SKIP for git — run <code>gurt checksum</code> to get it)</label><input id="u-sum" placeholder="SKIP" autocomplete="off"></div>
       <div class="f"><label>runtime deps (generic names, spaces)</label><input id="u-dep" placeholder="ncurses openssl" autocomplete="off"></div>
@@ -208,18 +233,20 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ago = t => { const d = (Date.now()/1000 - t)/86400; return d < 1 ? "today" : d < 2 ? "yesterday" : d < 60 ? Math.floor(d)+" days ago" : new Date(t*1000).toLocaleDateString(); };
 
+const card = p => `
+    <button class="pkg" data-n="${esc(p.pkgname)}">
+      <div class="row"><span class="name">${esc(p.pkgname)}</span><span class="ver mono">${p.via_repo?"latest":esc(p.pkgver)+"-"+esc(p.pkgrel)}</span></div>
+      <div class="desc">${esc(p.pkgdesc)}</div>
+      <div class="chips">${(p.arch||[]).map(a=>`<span class="chip mono">${esc(a)}</span>`).join("")}
+        ${p.via_repo?`<span class="chip">official repo 🔏</span>`:""}${p.maintainer?`<span class="chip who" data-u="${esc(p.maintainer)}">by ${esc(p.maintainer)}</span>`:""}<span class="chip">updated ${ago(p.updated)}</span></div>
+    </button>`;
+
 function render(){
   const q = $("#q").value.trim().toLowerCase();
   const hits = PKGS.filter(p => !q || (p.pkgname + " " + (p.pkgdesc||"")).toLowerCase().includes(q))
     .sort((a,b) => (b.pkgname.toLowerCase()===q) - (a.pkgname.toLowerCase()===q) || a.pkgname.localeCompare(b.pkgname));
   $("#count").textContent = `${hits.length} of ${PKGS.length} packages`;
-  $("#list").innerHTML = hits.length ? hits.map(p => `
-    <button class="pkg" data-n="${esc(p.pkgname)}">
-      <div class="row"><span class="name">${esc(p.pkgname)}</span><span class="ver mono">${p.via_repo?"latest":esc(p.pkgver)+"-"+esc(p.pkgrel)}</span></div>
-      <div class="desc">${esc(p.pkgdesc)}</div>
-      <div class="chips">${(p.arch||[]).map(a=>`<span class="chip mono">${esc(a)}</span>`).join("")}
-        ${p.via_repo?`<span class="chip">official repo 🔏</span>`:""}${p.maintainer?`<span class="chip">by ${esc(p.maintainer)}</span>`:""}<span class="chip">updated ${ago(p.updated)}</span></div>
-    </button>`).join("") : `<div class="empty">nothing matched 😔 womp womp — <a href="https://github.com/${REPO}/blob/${BRANCH}/CONTRIBUTING.md">package it yourself?</a></div>`;
+  $("#list").innerHTML = hits.length ? hits.map(card).join("") : `<div class="empty">nothing matched 😔 womp womp — <a href="https://github.com/${REPO}/blob/${BRANCH}/CONTRIBUTING.md">package it yourself?</a></div>`;
 }
 
 async function showPkg(name){
@@ -231,18 +258,67 @@ async function showPkg(name){
   $("#dtable").innerHTML =
     row("upstream", p.url ? `<a href="${esc(p.url)}" rel="noopener">${esc(p.url)}</a>` : "") +
     row("comes from", p.via_url ? `${esc(p.via_url)} <span class="mono">(key ${esc((p.via_fingerprint||"").replace(/(.{4})/g,"$1 ").trim())})</span>` : "") +
-    row("license", esc(p.license)) + row("maintainer", esc(p.maintainer)) +
+    row("license", esc(p.license)) + row("maintainer", p.maintainer ? `<span class="who" data-u="${esc(p.maintainer)}">${esc(p.maintainer)}</span>` : "") +
     row("arch", esc((p.arch||[]).join(", "))) +
     row("depends", esc((p.depends||[]).join(", "))) +
     row("makedepends", esc((p.makedepends||[]).join(", "))) +
     row("recipe", `<a href="https://github.com/${REPO}/tree/${BRANCH}/packages/${encodeURIComponent(p.pkgname)}">packages/${esc(p.pkgname)}</a>`);
   $("#dsrc").textContent = "loading GURTBUILD…";
+  $("#dflag").href = `https://github.com/${REPO}/issues/new?` + new URLSearchParams({
+    title: `[out of date] ${p.pkgname}`, labels: "out-of-date",
+    body: `**${p.pkgname}** looks out of date on GURT.\n\nGURT has: ${p.via_repo ? "official repo" : p.pkgver + "-" + p.pkgrel}\nNewest upstream version: \nUpstream: ${p.url || ""}\n`,
+  });
+  loadComments(p.pkgname);
   dlg.showModal();
   try {
     const r = await fetch(`https://raw.githubusercontent.com/${REPO}/${BRANCH}/packages/${encodeURIComponent(p.pkgname)}/GURTBUILD`);
     $("#dsrc").textContent = r.ok ? await r.text() : "couldn't load the GURTBUILD (repo not pushed yet?)";
   } catch { $("#dsrc").textContent = "couldn't load the GURTBUILD"; }
 }
+
+// ── accounts: GitHub is your GURT account ──
+// votes + comments = giscus (GitHub Discussions). fill in categoryId after turning on Discussions + installing giscus (see README)
+const GISCUS = { repo: REPO, repoId: "R_kgDOUtoT3g", category: "Packages", categoryId: "" };
+function loadComments(name) {
+  const box = $("#giscus"); box.innerHTML = "";
+  if (!GISCUS.categoryId) { box.innerHTML = `<p class="hint">👍 votes + 💬 comments with your GitHub account are coming soon.</p>`; return; }
+  const sc = document.createElement("script");
+  Object.entries({ src: "https://giscus.app/client.js", "data-repo": GISCUS.repo, "data-repo-id": GISCUS.repoId,
+    "data-category": GISCUS.category, "data-category-id": GISCUS.categoryId, "data-mapping": "specific", "data-term": `pkg/${name}`,
+    "data-strict": "1", "data-reactions-enabled": "1", "data-emit-metadata": "0", "data-input-position": "top",
+    "data-theme": "preferred_color_scheme", "data-lang": "en", "data-loading": "lazy", crossorigin: "anonymous" })
+    .forEach(([k, v]) => sc.setAttribute(k, v));
+  sc.async = true; box.appendChild(sc);
+}
+
+// profiles: ?u=<github handle>
+function showProfile(u, push = true) {
+  const mine = PKGS.filter(p => (p.maintainer || "").toLowerCase() === u.toLowerCase());
+  $("#pav").src = `https://github.com/${encodeURIComponent(u)}.png?size=192`;
+  $("#pname").textContent = u;
+  $("#pmeta").textContent = `${mine.length} package${mine.length === 1 ? "" : "s"} on Main GURT`;
+  $("#plink").href = `https://github.com/${encodeURIComponent(u)}`; $("#plink").textContent = `github.com/${u} ↗`;
+  $("#plist").innerHTML = mine.length ? mine.map(card).join("") : `<div class="empty">no packages yet 👀</div>`;
+  fetch(`https://api.github.com/users/${encodeURIComponent(u)}`).then(r => r.ok ? r.json() : null)
+    .then(d => { if (d && d.name) $("#pname").textContent = `${d.name} (${u})`; }).catch(() => {});
+  ["header .srcs", ".secthead", ".search", "#list", "#srcpanel"].forEach(q => document.querySelector(q).hidden = true);
+  $("#profile").hidden = false; dlg.open && dlg.close();
+  if (push) try { history.pushState({ u }, "", "?u=" + encodeURIComponent(u)); } catch {}
+  window.scrollTo({ top: $("#profile").offsetTop - 20, behavior: "smooth" });
+}
+function hideProfile(push = true) {
+  $("#profile").hidden = true;
+  ["header .srcs", ".secthead"].forEach(q => document.querySelector(q).hidden = false);
+  setSrc(CUR);
+  if (push) try { history.pushState({}, "", location.pathname); } catch {}
+}
+document.addEventListener("click", e => {
+  const w = e.target.closest("[data-u]"); if (!w) return;
+  e.preventDefault(); e.stopPropagation(); showProfile(w.dataset.u);
+}, true);
+$("#pback").addEventListener("click", () => hideProfile());
+window.addEventListener("popstate", () => { const u = new URLSearchParams(location.search).get("u"); u ? showProfile(u, false) : hideProfile(false); });
+$("#plist").addEventListener("click", e => { const b = e.target.closest(".pkg"); if (b) showPkg(b.dataset.n); });
 
 $("#list").addEventListener("click", e => { const b = e.target.closest(".pkg"); if (b) showPkg(b.dataset.n); });
 $("#q").addEventListener("input", () => { render(); try { history.replaceState(null, "", $("#q").value ? "?q=" + encodeURIComponent($("#q").value) : location.pathname); } catch {} });
@@ -381,7 +457,7 @@ $("#u-dl").addEventListener("click", () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });
 
-fetch("packages.json").then(r => r.json()).then(d => { PKGS = d.packages; render(); })
+fetch("packages.json").then(r => r.json()).then(d => { PKGS = d.packages; render(); const u = new URLSearchParams(location.search).get("u"); if (u) showProfile(u, false); })
   .catch(() => { $("#count").textContent = "couldn't load packages.json"; });
 </script>
 </body>
