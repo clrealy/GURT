@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.5.1"
+GURT_VERSION="0.5.2"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -163,10 +163,12 @@ sys_owned() {
   declare -A back=()
   while IFS= read -r p; do
     [[ -n $p && ( -e $p || -L $p ) ]] || continue
-    paths+=("$p"); back[$p]=$p
-    # the real folder + same name (/usr/lib64/x → /usr/lib/x on Arch), and the fully resolved file
-    for c in "$(readlink -f -- "$(dirname -- "$p")" 2>/dev/null)/$(basename -- "$p")" "$(readlink -f -- "$p" 2>/dev/null)"; do
-      if [[ -n $c && $c != "$p" && -z ${back[$c]:-} ]]; then paths+=("$c"); back[$c]=$p; fi
+    # every spelling of this file maps back to it (several gurt paths can land on the same real file —
+    # e.g. libfoo.so.1 → libfoo.so.1.2 — and ALL of them must be protected)
+    for c in "$p" "$(readlink -f -- "$(dirname -- "$p")" 2>/dev/null)/$(basename -- "$p")" "$(readlink -f -- "$p" 2>/dev/null)"; do
+      [[ -n $c ]] || continue
+      [[ -n ${back[$c]:-} ]] || paths+=("$c")
+      back[$c]+="$p"$'\n'
     done
   done
   (( ${#paths[@]} )) || return 0
@@ -177,7 +179,7 @@ sys_owned() {
     xbps)   for p in "${paths[@]}"; do xbps-query -o "$p" >/dev/null 2>&1 && echo "$p"; done ;;
     apk)    for p in "${paths[@]}"; do apk info -qW "$p" 2>/dev/null | grep -q . && echo "$p"; done ;;
     *)      return 0 ;;
-  esac | while IFS= read -r line; do if [[ -n ${back[$line]:-} ]]; then echo "${back[$line]}"; fi; done | sort -u; } || true
+  esac | while IFS= read -r line; do if [[ -n ${back[$line]:-} ]]; then printf '%s' "${back[$line]}"; fi; done | sed '/^$/d' | sort -u; } || true
   return 0
 }
 
