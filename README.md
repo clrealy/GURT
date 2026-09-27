@@ -120,4 +120,8 @@ Fork it, then set `GURT_REPO_URL` in `/etc/gurt.conf` to your fork. Turn on GitH
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Make a recipe, open a PR, and CI builds it on Debian, Fedora, Arch, Alpine and openSUSE. Adding lines to `deps.map` makes the cross-distro dep matching smarter for everyone 🙏
 
+## Disclaimer
+
+GURT is an independent project and is **not affiliated with, endorsed by, or sponsored by** Arch Linux, the AUR, Debian, Ubuntu/Canonical, Fedora/Red Hat, openSUSE/SUSE, or any other distro. Their names are only used to say which repos gurt can talk to, and all trademarks belong to their owners. Packages from other sources are downloaded straight from those projects' official mirrors and keep their original licenses.
+
 MIT © clearly124
