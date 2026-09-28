@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.8.3"
+GURT_VERSION="0.9.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -42,7 +42,7 @@ FOREIGN_SOURCES="aur apt dnf zypper pacman flatpak snap"
 IDX_DIR="$GURT_CACHE/index"
 IDX_MAX_AGE="${IDX_MAX_AGE:-86400}"   # re-download foreign indexes after a day
 
-NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT="" EXPECT_FPR="" BOX=false NOBOX=false
+NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT="" EXPECT_FPR="" BOX=false NOBOX=false SCAN=false
 
 # ───────────────────────── pretty output ─────────────────────────
 if [[ -t 2 && -z ${NO_COLOR:-} ]]; then
@@ -1450,6 +1450,85 @@ box_remove() { # key
   msg "$(pretty "$key") removed 🗑️ (the $n box itself stays — delete it with: distrobox rm $n)"
 }
 
+# ── --scanrepos: find a package everywhere, then pick ──
+pm_version() { # what version would your distro install?
+  case $PM in
+    apt)    apt-cache policy "$1" 2>/dev/null | awk '/Candidate:/ {print $2; exit}' ;;
+    pacman) pacman -Si "$1" 2>/dev/null | awk -F': ' '/^Version/ {print $2; exit}' ;;
+    dnf|yum) dnf -q info "$1" 2>/dev/null | awk -F': ' '/^Version/ {v=$2} /^Release/ {print v "-" $2; exit}' ;;
+    zypper) zypper -q info "$1" 2>/dev/null | awk -F': ' '/^Version/ {print $2; exit}' ;;
+    *)      true ;;
+  esac
+}
+SCAN_HITS=()   # "rank|source|name|version|note"
+scan_add() { SCAN_HITS+=("$1|$2|$3|${4:-?}|${5:-}"); }
+scan_sources() { # name
+  local q=$1 lo=${1,,} row v s F
+  SCAN_HITS=()
+  msg "scanning every repo for '$q' 🔍"
+  # 1. Main GURT
+  if [[ -d $GURT_REPO_DIR/packages ]] || ( sync_main ) >/dev/null 2>&1; then
+    if is_gurt_pkg "$q"; then
+      local via; via=$(info_get "$(repo_info "$q")" via_type)
+      scan_add 1 gurt "$q" "$(repo_ver "$q")" "Main GURT${via:+ (official $via)}"
+    fi
+  fi
+  # 2. your own distro
+  if [[ $PM != none ]] && pm_available "$q"; then
+    scan_add 2 native "$q" "$(pm_version "$q" || true)" "your distro's own package — usually the best pick"
+  fi
+  # 3. Flathub
+  if command -v flatpak >/dev/null || command -v python3 >/dev/null; then
+    row=$(flatpak_search "$q" 2>/dev/null | awk -F'\t' -v q="$lo" '{ c=split($1, a, "."); if (tolower(a[c]) == q) { print; exit } }' || true)
+    [[ -n $row ]] && { tsv "$row"; scan_add 3 flatpak "${F[0]}" "${F[1]:-latest}" "Flathub — sandboxed"; }
+  fi
+  # 4. AUR
+  row=$(aur_info "$q" 2>/dev/null | head -n1 || true)
+  [[ -n $row ]] && { tsv "$row"; scan_add 4 aur "$q" "${F[1]}" "AUR — built from source"; }
+  # 5/6. binary repos (same family as you first) + your custom repos
+  for s in apt dnf zypper pacman $(custom_repos); do
+    is_binary_src "$s" || continue
+    ( ensure_idx "$s" ) >/dev/null 2>&1 || continue
+    row=$(idx_lookup "$s" "$q" || true)
+    [[ -n $row ]] || continue
+    tsv "$row"
+    if [[ $(src_pm "$s") == "$PM" ]]; then
+      printf '%s\n' "${SCAN_HITS[@]}" | grep -q '^2|native|' && continue   # same thing as "your distro"
+      scan_add 5 "$s" "$q" "${F[1]}" "binary, same family as your distro"
+    elif [[ " apt dnf zypper pacman " == *" $s "* ]]; then scan_add 6 "$s" "$q" "${F[1]}" "binary from another distro"
+    else scan_add 5 "$s" "$q" "${F[1]}" "your custom repo"; fi
+  done
+  # 7. Snap Store
+  row=$(snap_search "$q" 2>/dev/null | awk -F'\t' -v q="$lo" 'tolower($1) == q { print; exit }' || true)
+  [[ -n $row ]] && { tsv "$row"; scan_add 7 snap "$q" "${F[1]:-latest}" "Snap Store"; }
+  mapfile -t SCAN_HITS < <(printf '%s\n' "${SCAN_HITS[@]}" | sed '/^$/d' | sort -t'|' -k1,1n)
+}
+scan_install() { # name
+  local q=$1 i h pick
+  scan_sources "$q"
+  (( ${#SCAN_HITS[@]} )) || die "'$q' isn't in ANY repo gurt knows 😔 (try: gurt search -a $q)"
+  printf '\n%sfound %s in %d place(s):%s\n' "$B" "$q" "${#SCAN_HITS[@]}" "$R0" >&2
+  for i in "${!SCAN_HITS[@]}"; do
+    IFS='|' read -r _ s n v note <<<"${SCAN_HITS[$i]}"
+    printf '  %s%2d)%s %-26s %s%-18s%s %s\n' "$B" $((i + 1)) "$R0" "$( [[ $s == native ]] && echo "$n (your $PM)" || echo "$s/$n")" "$GRN" "$v" "$R0" "$note" >&2
+  done
+  if $NOCONFIRM; then pick=1
+  else
+    printf '%s::%s pick one [1-%d] (enter = 1, q = cancel): ' "$MAG" "$R0" "${#SCAN_HITS[@]}" >&2
+    { read -r pick 2>/dev/null </dev/tty; } 2>/dev/null || read -r pick || pick=q
+    [[ -z $pick ]] && pick=1
+  fi
+  [[ $pick =~ ^[0-9]+$ ]] && (( pick >= 1 && pick <= ${#SCAN_HITS[@]} )) || die "cancelled"
+  IFS='|' read -r _ s n _ _ <<<"${SCAN_HITS[$((pick - 1))]}"
+  if [[ $s == native ]]; then
+    msg "installing $n from your distro ($PM)"; pm_install "$n"
+  else
+    local was=$NOCONFIRM; [[ $s == gurt ]] || NOCONFIRM=true   # you already picked — gurt recipes still show their build script
+    install_any "$s/$n" explicit
+    NOCONFIRM=$was
+  fi
+}
+
 # ── AUR ──
 aur_rpc() { local t; t=$(mktemp); fetch_quiet "$AUR_URL/rpc/v5/$1" "$t" 2>/dev/null || { rm -f "$t"; return 1; }; cat "$t"; rm -f "$t"; }
 urlenc() { python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$1" 2>/dev/null || echo "$1"; }
@@ -1999,6 +2078,7 @@ ${B}options${R0}
                        (system utilities go there automatically)
   --no-box             never auto-box (you know what you're doing)
   -a, --all            search every source
+  --scanrepos          install: look for the package in EVERY source, then pick where to get it
   --nodeps             don't install distro deps
   --nocheck            skip check()
   --keep               keep the build dir
@@ -2016,6 +2096,7 @@ main() {
       -a|--all)       ALLSRC=true ;;
       --box|--container) BOX=true ;;
       --no-box)       NOBOX=true ;;
+      --scanrepos|--scan) SCAN=true ;;
       -r|--repo|--from) shift; REPO=${1:?--repo needs a source (gurt aur apt dnf zypper pacman)} ;;
       --repo=*|--from=*)  REPO=${1#*=} ;;
       --key)          shift; KEYSRC=${1:?--key needs a url or file} ;;
@@ -2054,7 +2135,8 @@ main() {
     sync)              cmd_sync "$@" ;;
     search|s)          cmd_search "$@" ;;
     info)              cmd_info "$@" ;;
-    install|i|get)     (( $# )) || die "install what tho"; for p; do install_any "$p" explicit; done ;;
+    install|i|get)     (( $# )) || die "install what tho"
+                       for p; do if $SCAN && [[ $p != */* ]]; then scan_install "$p"; else install_any "$p" explicit; fi; done ;;
     update|refresh)    cmd_update ;;
     upgrade|up)        cmd_upgrade ;;
     self-update|selfupdate) cmd_self_update ;;

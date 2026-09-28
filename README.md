@@ -161,6 +161,21 @@ You need `bash`, `git`, GNU `tar`, and `curl` or `wget`. The foreign sources als
 
 `gurt doctor` shows which sources are ready on your system.
 
+## Not sure where to get something? `--scanrepos` 🔍
+
+```sh
+gurt install gimp --scanrepos
+```
+```
+found gimp in 3 place(s):
+   1) gurt/gimp                  flathub-1          Main GURT (official flatpak)
+   2) gimp (your pacman)         3.0.6-1            your distro's own package — usually the best pick
+   3) flatpak/org.gimp.GIMP      3.0.6              Flathub — sandboxed
+:: pick one [1-3] (enter = 1, q = cancel):
+```
+
+It checks Main GURT, your own distro, Flathub, the AUR, apt/dnf/zypper/pacman, your custom repos and the Snap Store, then lets you pick. With `-y` it takes the top one.
+
 ## Usage
 
 ```sh
