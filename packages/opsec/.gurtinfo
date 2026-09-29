@@ -1,6 +1,6 @@
 pkgname = opsec
 pkgver = balls
-pkgrel = 2
+pkgrel = 0
 pkgdesc = Geektyper + NordVPN = HOLY OPSEC
 url = https://geektyper.com
 license = MIT
