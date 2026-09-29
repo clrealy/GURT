@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.13.0"
+GURT_VERSION="0.13.1"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -787,6 +787,11 @@ install_any() { # spec reason
   local spec=$1 reason=${2:-explicit} src name
   if [[ $spec == */* ]]; then src=$(norm_src "${spec%%/*}"); name=${spec#*/}; else src=gurt; name=$spec; fi
   [[ -n $name ]] || die "install what from $src tho"
+  if [[ $src == mac || $src == macos || $src == osx ]]; then   # 👁️
+    printf '\n%s        👁️      👁️%s\n\n' "$RED" "$R0" >&2
+    printf '%s  Linus Torvalds is here. He sees you.%s\n\n' "$B" "$R0" >&2
+    exit 1
+  fi
   if $BOX || [[ $src == box-* ]]; then
     src=${src#box-}
     case $src in apt|dnf|zypper|pacman) box_install "$src" "$name" "$reason"; return ;;
