@@ -26,6 +26,7 @@ patchelf    emerge=dev-util/patchelf
 
 # ── languages ──
 python3     pacman=python  emerge=dev-lang/python
+gzip        emerge=app-arch/gzip
 rust        apt=cargo  dnf=cargo  pacman=rust  zypper=cargo  apk=cargo  xbps=cargo  emerge=dev-lang/rust
 go          apt=golang-go  dnf=golang  pacman=go  zypper=go  apk=go  xbps=go  emerge=dev-lang/go
 nodejs      apt=nodejs,npm  dnf=nodejs,npm  pacman=nodejs,npm  zypper=nodejs-default,npm-default  apk=nodejs,npm  xbps=nodejs  emerge=net-libs/nodejs

@@ -1,0 +1,17 @@
+pkgname=ddgr
+pkgver=2.2
+pkgrel=1
+pkgdesc="Search DuckDuckGo from the terminal 🦆🔍"
+url="https://github.com/jarun/ddgr"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+arch=(any)
+depends=(python3)
+makedepends=(make git gzip)
+source=("git+https://github.com/jarun/ddgr.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+package() {
+  cd ddgr
+  make install PREFIX="$prefix" DESTDIR="$pkgdir"
+}
