@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.10.0"
+GURT_VERSION="0.11.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -2081,6 +2081,58 @@ cmd_doctor() {
   (( ok == 0 )) && msg "all good bestie ✨"
 }
 
+# ───────────────────────── the banner ─────────────────────────
+# "gurt" in the logo's colors: g = your terminal's text color (black on light, white on dark), u red, r green, t blue
+GURT_ART_G=('           ' '           ' ' .oooooooo ' "888' \`88b  " '888   888  ' "\`88bod8P'  " '`8oooooo.  ' 'd"     YD  ' "\"Y88888P'  ")
+GURT_ART_U=('            ' '            ' 'oooo  oooo  ' '`888  `888  ' ' 888   888  ' ' 888   888  ' " \`V88V\"V8P' " '            ' '            ')
+GURT_ART_R=('         ' '         ' 'oooo d8b ' '`888""8P ' ' 888     ' ' 888     ' 'd888b    ' '         ' '         ')
+GURT_ART_T=('    .   ' '  .o8   ' '.o888oo ' '  888   ' '  888   ' '  888 . ' '  "888" ' '        ' '        ')
+cmd_version() {
+  if [[ ! -t 1 ]]; then echo "gurt $GURT_VERSION"; return; fi   # scripts get the plain line
+  local c0='' c1='' c2='' c3='' c4='' b='' d='' r=''
+  if [[ -z ${NO_COLOR:-} ]]; then
+    c1=$'\e[1m' c2=$'\e[1;91m' c3=$'\e[1;92m' c4=$'\e[1;94m' b=$'\e[1m' d=$'\e[2m' r=$'\e[0m'
+  fi
+  local distro="unknown" k n=0 dirt="off 🔒" line i
+  [[ -r /etc/os-release ]] && distro=$(. /etc/os-release; echo "${PRETTY_NAME:-${ID:-unknown}}")
+  declare -A per=()
+  for k in "$DB"/*/; do
+    [[ -d $k ]] || continue; k=$(basename "$k"); n=$((n + 1))
+    if [[ $k == *:* ]]; then per[${k%%:*}]=$(( ${per[${k%%:*}]:-0} + 1 )); else per[gurt]=$(( ${per[gurt]:-0} + 1 )); fi
+  done
+  local breakdown="" s
+  for s in "${!per[@]}"; do breakdown+="$s ${per[$s]}, "; done
+  breakdown=${breakdown%, }
+  dirt_on && dirt="on 🔞"
+  local recipes="not synced yet (gurt sync)"
+  [[ -d $GURT_REPO_DIR/packages ]] && recipes="$(find "$GURT_REPO_DIR/packages" -mindepth 1 -maxdepth 1 -type d | wc -l) in Main GURT"
+  local info=(
+    "${b}gurt${r}@${b}${GURT_VERSION}${r}"
+    "${d}──────────────────────────${r}"
+    "${c2}GURT${r}     GURT Universal Repository Thingy"
+    "${c3}version${r}  $GURT_VERSION"
+    "${c4}distro${r}   $distro"
+    "${c2}host pm${r}  $PM"
+    "${c3}arch${r}     $CARCH"
+    "${c4}packages${r} $n installed${breakdown:+ ($breakdown)}"
+    "${c2}recipes${r}  $recipes"
+    "${c3}sources${r}  gurt aur apt dnf zypper pacman flatpak snap"
+    "${c4}DIRT${r}     $dirt"
+    "${c2}site${r}     https://clrealy.github.io/GURT"
+    ""
+    "\e[40m   \e[41m   \e[42m   \e[43m   \e[44m   \e[45m   \e[46m   \e[47m   ${r}"
+  )
+  [[ -z $r ]] && info[13]=""
+  echo
+  for (( i = 0; i < 14; i++ )); do
+    if (( i < 9 )); then
+      line="  ${c1}${GURT_ART_G[i]}${r}${c2}${GURT_ART_U[i]}${r}${c3}${GURT_ART_R[i]}${r}${c4}${GURT_ART_T[i]}${r}   "
+    else line=$(printf '%*s' 45 ''); fi
+    printf '%s%b\n' "$line" "${info[i]:-}"
+  done
+  echo
+}
+
 usage() {
   cat <<EOF
 ${B}gurt${R0} $GURT_VERSION — GURT Universal Repository Thingy 🦆
@@ -2131,6 +2183,7 @@ ${B}making packages${R0}
 
 ${B}misc${R0}
   doctor               check your setup + which sources work
+  version              the gurt banner + your setup (also just: gurt)
   yo                   gurt
 
 ${B}options${R0}
@@ -2179,7 +2232,7 @@ main() {
     shift
   done
   set -- "${args[@]}"
-  local cmd=${1:-help}; shift || true
+  local cmd=${1:-hi}; shift || true
   local p
   # --repo X  →  every bare package name becomes X/name
   if [[ -n $REPO ]]; then
@@ -2217,7 +2270,8 @@ main() {
     dirt)              cmd_dirt "$@" ;;
     doctor)            cmd_doctor ;;
     yo)                echo "gurt: yo 🦆" ;;
-    version)           echo "gurt $GURT_VERSION" ;;
+    version)           cmd_version ;;
+    hi)                cmd_version; [[ -t 1 ]] && echo "  gurt help  → all the commands 🦆" && echo ;;
     help)              usage ;;
     *)                 die "unknown command '$cmd' (try: gurt help)" ;;
   esac
