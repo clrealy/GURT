@@ -2,7 +2,7 @@
 """Builds site/packages.json from every packages/*/.gurtinfo (never executes recipes)."""
 import json, pathlib, subprocess, time
 root = pathlib.Path(__file__).resolve().parent.parent
-LIST = {"arch", "depends", "makedepends", "source"}
+LIST = {"arch", "depends", "makedepends", "source", "alias"}
 pkgs = []
 for info in sorted(root.glob("packages/*/.gurtinfo")):
     p = {k: [] for k in LIST}
@@ -17,6 +17,8 @@ for info in sorted(root.glob("packages/*/.gurtinfo")):
         p["updated"] = int(ts) if ts else int(time.time())
     except Exception:
         p["updated"] = int(time.time())
+    if p.get("hidden") == "true":
+        continue   # hidden = installable by name, but not listed in the store
     pkgs.append(p)
 out = root / "site" / "packages.json"
 out.write_text(json.dumps({"generated": int(time.time()), "packages": pkgs}, indent=1))

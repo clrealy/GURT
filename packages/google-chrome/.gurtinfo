@@ -6,6 +6,7 @@ url = https://www.google.com/chrome/
 license = custom
 maintainer = clrealy
 arch = x86_64
+alias = chrome
 via_repo = google-chrome
 via_type = apt
 via_url = https://dl.google.com/linux/chrome/deb

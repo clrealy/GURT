@@ -161,6 +161,15 @@ You need `bash`, `git`, GNU `tar`, and `curl` or `wget`. The foreign sources als
 
 `gurt doctor` shows which sources are ready on your system.
 
+## Aliases + hidden packages
+
+In a GURTBUILD:
+```bash
+aliases=(code visual-studio-code)   # gurt install code  → installs vscode
+hidden=true                         # not listed on the site or in gurt search, still installable by exact name
+```
+The linter makes sure aliases never collide with other packages or aliases.
+
 ## Not sure where to get something? `--scanrepos` 🔍
 
 ```sh

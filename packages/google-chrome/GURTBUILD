@@ -8,6 +8,7 @@ url="https://www.google.com/chrome/"
 license="custom"
 maintainer="clrealy"
 arch=(x86_64)
+aliases=(chrome)
 
 via_repo=google-chrome
 via_type=apt

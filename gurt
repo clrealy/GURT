@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.9.0"
+GURT_VERSION="0.9.1"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -202,6 +202,15 @@ is_installed()  { [[ -f $DB/$1/info ]]; }
 inst_ver()      { local r; r=$(info_get "$DB/$1/info" pkgrel); echo "$(info_get "$DB/$1/info" pkgver)${r:+-$r}"; }
 repo_info()     { echo "$GURT_REPO_DIR/packages/$1/.gurtinfo"; }
 is_gurt_pkg()   { [[ -f $(repo_info "$1") ]]; }
+# download alias → real Main GURT package name
+alias_lookup()  {
+  local f
+  for f in "$GURT_REPO_DIR"/packages/*/.gurtinfo; do
+    grep -qxF "alias = $1" "$f" && { basename "$(dirname "$f")"; return 0; }
+  done
+  return 1
+}
+is_hidden()     { grep -qx 'hidden = true' "$(repo_info "$1")" 2>/dev/null; }
 repo_ver()      { local f; f=$(repo_info "$1"); echo "$(info_get "$f" pkgver)-$(info_get "$f" pkgrel)"; }
 # is $2 newer than $1?
 vnewer() { [[ $1 != "$2" && $(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1) == "$2" ]]; }
@@ -226,6 +235,7 @@ load_recipe() {
   RECIPE=$f
   pkgname="" pkgbase="" pkgver="" pkgrel=1 epoch="" pkgdesc="" url="" license="" maintainer="" install=""
   via_repo="" via_type="" via_url="" via_suite="" via_components="" via_key="" via_fingerprint="" via_pkg=""
+  aliases=() hidden=""
   arch=() depends=() makedepends=() checkdepends=() source=() noextract=() sums=() SUMALGO=sha256
   local a v fn
   for a in $SUM_ALGOS; do unset "${a}sums" "${a}sums_$CARCH"; done
@@ -274,6 +284,8 @@ load_recipe() {
   fi
   (( ${#arch[@]} )) || arch=(any)
   (( ${#source[@]} == ${#sums[@]} ))              || die "source has ${#source[@]} entries but ${SUMALGO}sums has ${#sums[@]}"
+  local al
+  for al in "${aliases[@]}"; do [[ $al =~ ^[a-z0-9][a-z0-9._+-]*$ ]] || die "bad alias '$al' (same rules as pkgname)"; done
   if [[ $f == GURTBUILD ]]; then
     [[ -n $pkgdesc ]] || die "pkgdesc is empty"
     [[ $SUMALGO == sha256 ]] || die "GURTBUILDs use sha256sums"
@@ -290,6 +302,8 @@ print_srcinfo() {
   for x in "${depends[@]}";     do printf 'depends = %s\n' "$x"; done
   for x in "${makedepends[@]}"; do printf 'makedepends = %s\n' "$x"; done
   for x in "${source[@]}";      do printf 'source = %s\n' "$x"; done
+  for x in "${aliases[@]}"; do printf 'alias = %s\n' "$x"; done
+  case ${hidden,,} in 1|true|yes) printf 'hidden = true\n' ;; esac
   for x in via_repo via_type via_url via_suite via_components via_key via_fingerprint via_pkg; do
     [[ -n ${!x} ]] && printf '%s = %s\n' "$x" "${!x}"
   done
@@ -680,7 +694,8 @@ flush_native() {
 
 # ── main GURT repo ──
 resolve_and_install() { # name reason
-  local name=$1 reason=${2:-dep}
+  local name=$1 reason=${2:-dep} real
+  if ! is_gurt_pkg "$name" && real=$(alias_lookup "$name"); then msg2 "$name is an alias → $real"; name=$real; fi
   [[ -n ${VISITED[$name]:-} ]] && return 0
   VISITED[$name]=1
   local rdir="$GURT_REPO_DIR/packages/$name" info
@@ -1468,9 +1483,11 @@ scan_sources() { # name
   msg "scanning every repo for '$q' 🔍"
   # 1. Main GURT
   if [[ -d $GURT_REPO_DIR/packages ]] || ( sync_main ) >/dev/null 2>&1; then
-    if is_gurt_pkg "$q"; then
-      local via; via=$(info_get "$(repo_info "$q")" via_type)
-      scan_add 1 gurt "$q" "$(repo_ver "$q")" "Main GURT${via:+ (official $via)}"
+    local gq="$q" real
+    if ! is_gurt_pkg "$gq" && real=$(alias_lookup "$gq"); then gq=$real; fi
+    if is_gurt_pkg "$gq"; then
+      local via; via=$(info_get "$(repo_info "$gq")" via_type)
+      scan_add 1 gurt "$gq" "$(repo_ver "$gq")" "Main GURT${via:+ (official $via)}"
     fi
   fi
   # 2. your own distro
@@ -1623,10 +1640,14 @@ cmd_sync() { # [source...|all]
 search_main() {
   local term=$1 f name desc ver tag found=0
   ensure_repo
+  local aka
   for f in "$GURT_REPO_DIR"/packages/*/.gurtinfo; do
     name=$(info_get "$f" pkgname); desc=$(info_get "$f" pkgdesc)
-    if [[ -z $term ]] || grep -qiF -- "$term" <<<"$name $desc"; then
+    aka=$(info_get "$f" alias | paste -sd, - | sed 's/,/, /g')
+    if grep -qx 'hidden = true' "$f" && [[ ${term,,} != "${name,,}" ]] && ! grep -qxiF "alias = $term" "$f"; then continue; fi
+    if [[ -z $term ]] || grep -qiF -- "$term" <<<"$name $desc $aka"; then
       ver=$(repo_ver "$name"); tag=""
+      [[ -n $aka ]] && desc+="  (aka $aka)"
       [[ -n $(info_get "$f" via_repo) ]] && ver="official repo 🔏"
       is_installed "$name" && tag=" ${GRN}[installed]${R0}"
       printf '%sgurt/%s%s%s%s %s%s%s%s\n    %s\n' "$MAG" "$R0" "$B" "$name" "$R0" "$GRN" "$ver" "$R0" "$tag" "$desc"
@@ -1681,6 +1702,7 @@ cmd_info() {
   case $src in
     gurt)
       ensure_repo
+      local real; if ! is_gurt_pkg "$name" && real=$(alias_lookup "$name"); then name=$real; key=$name; fi
       if [[ -f $(repo_info "$name") ]]; then awk -F' = ' '{ printf "%-14s: %s\n", $1, substr($0, length($1)+4) }' "$(repo_info "$name")"
       elif is_installed "$key"; then awk -F' = ' '{ printf "%-14s: %s\n", $1, substr($0, length($1)+4) }' "$DB/$key/info"
       else die "no package '$name' in main GURT"; fi ;;

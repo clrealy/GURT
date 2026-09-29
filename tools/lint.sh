@@ -23,4 +23,8 @@ for d in packages/*/; do
   grep -qE 'curl[^|]*\|[[:space:]]*(ba)?sh' "$d/GURTBUILD" && bad "$n" "no curl | sh in recipes 💀"
   (( fail )) || echo "✅ $n"
 done
+# aliases can't collide with package names or each other
+dupes=$( { for d in packages/*/; do basename "$d"; done
+           for d in packages/*/; do ./gurt srcinfo "$d" 2>/dev/null | awk -F' = ' '$1 == "alias" {print $2}'; done; } | sort | uniq -d )
+if [[ -n $dupes ]]; then echo "❌ these names are used more than once (package names + aliases must be unique): $dupes"; fail=1; fi
 exit $fail

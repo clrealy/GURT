@@ -8,6 +8,7 @@ url="https://code.visualstudio.com"
 license="custom"
 maintainer="clrealy"
 arch=(x86_64 aarch64 armv7l)
+aliases=(code visual-studio-code)
 
 via_repo=vscode
 via_type=apt

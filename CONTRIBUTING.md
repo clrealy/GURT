@@ -23,6 +23,9 @@ makedepends=(cc cmake)    # build-only deps, GENERIC names
 source=("my-app-$pkgver.tar.gz::https://example.com/my-app-$pkgver.tar.gz")
 sha256sums=("abc123...")  # gurt checksum my-app
 
+aliases=(my-app-cli ma)   # optional: other names that install this (gurt install ma)
+hidden=true               # optional: keep it out of the store/search — still installable by exact name
+
 prepare() { ...; }        # optional: patches
 build()   { ...; }        # optional: compile
 check()   { ...; }        # optional: tests (skipped with --nocheck)

@@ -104,6 +104,7 @@ pre{background:var(--code);border:1px solid var(--line);border-radius:10px;paddi
 .social{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
 .social .row2{justify-content:space-between;margin-bottom:10px}
 .h3{font-size:16px;margin:0}
+.aka{font-size:13px;opacity:.75}
 .who{cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:2px}
 .who:hover{text-decoration-color:var(--muted)}
 #profile{padding:18px 0 40px}
@@ -211,6 +212,8 @@ gurt install snap/spotify  <span class="c"># Snap Store too</span></div>
       <div class="f full"><label>sha256 of the tarball (SKIP for git — run <code>gurt checksum</code> to get it)</label><input id="u-sum" placeholder="SKIP" autocomplete="off"></div>
       <div class="f"><label>runtime deps (generic names, spaces)</label><input id="u-dep" placeholder="ncurses openssl" autocomplete="off"></div>
       <div class="f"><label>build deps</label><input id="u-mdep" placeholder="(filled from build type)" autocomplete="off"></div>
+      <div class="f"><label>download aliases (other names, spaces)</label><input id="u-alias" placeholder="code vs-code" autocomplete="off"></div>
+      <div class="f"><label>store visibility</label><div class="checks"><label><input type="checkbox" id="u-hidden"> hide from the store (still installable by name)</label></div></div>
       <div class="f full"><label>arch</label><div class="checks">
         <label><input type="checkbox" class="u-arch" value="x86_64" checked> x86_64</label>
         <label><input type="checkbox" class="u-arch" value="aarch64" checked> aarch64</label>
@@ -241,14 +244,14 @@ const ago = t => { const d = (Date.now()/1000 - t)/86400; return d < 1 ? "today"
 const card = p => `
     <button class="pkg" data-n="${esc(p.pkgname)}">
       <div class="row"><span class="name">${esc(p.pkgname)}</span><span class="ver mono">${p.via_repo?"latest":esc(p.pkgver)+"-"+esc(p.pkgrel)}</span></div>
-      <div class="desc">${esc(p.pkgdesc)}</div>
+      <div class="desc">${esc(p.pkgdesc)}${(p.alias||[]).length ? ` <span class="aka">aka ${esc(p.alias.join(", "))}</span>` : ""}</div>
       <div class="chips">${(p.arch||[]).map(a=>`<span class="chip mono">${esc(a)}</span>`).join("")}
         ${p.via_repo?`<span class="chip">official repo 🔏</span>`:""}${p.maintainer?`<span class="chip who" data-u="${esc(p.maintainer)}">by ${esc(p.maintainer)}</span>`:""}<span class="chip">updated ${ago(p.updated)}</span></div>
     </button>`;
 
 function render(){
   const q = $("#q").value.trim().toLowerCase();
-  const hits = PKGS.filter(p => !q || (p.pkgname + " " + (p.pkgdesc||"")).toLowerCase().includes(q))
+  const hits = PKGS.filter(p => !q || (p.pkgname + " " + (p.pkgdesc||"") + " " + (p.alias||[]).join(" ")).toLowerCase().includes(q))
     .sort((a,b) => (b.pkgname.toLowerCase()===q) - (a.pkgname.toLowerCase()===q) || a.pkgname.localeCompare(b.pkgname));
   $("#count").textContent = `${hits.length} of ${PKGS.length} packages`;
   $("#list").innerHTML = hits.length ? hits.map(card).join("") : `<div class="empty">nothing matched 😔 womp womp — <a href="https://github.com/${REPO}/blob/${BRANCH}/CONTRIBUTING.md">package it yourself?</a></div>`;
@@ -263,6 +266,7 @@ async function showPkg(name){
   $("#dtable").innerHTML =
     row("upstream", p.url ? `<a href="${esc(p.url)}" rel="noopener">${esc(p.url)}</a>` : "") +
     row("comes from", p.via_url ? `${esc(p.via_url)} <span class="mono">(key ${esc((p.via_fingerprint||"").replace(/(.{4})/g,"$1 ").trim())})</span>` : "") +
+    row("also installs as", esc((p.alias||[]).map(a => "gurt install " + a).join(" · "))) +
     row("license", esc(p.license)) + row("maintainer", p.maintainer ? `<span class="who" data-u="${esc(p.maintainer)}">${esc(p.maintainer)}</span>` : "") +
     row("arch", esc((p.arch||[]).join(", "))) +
     row("depends", esc((p.depends||[]).join(", "))) +
@@ -415,6 +419,8 @@ function genRecipe() {
     `url=${q(val("#u-url"))}`, `license=${q(val("#u-lic") || "unknown")}`, `maintainer=${q(val("#u-me") || "your-handle")}`,
     `arch=(${(arch.length ? arch : ["x86_64"]).join(" ")})`,
     `depends=(${val("#u-dep")})`, `makedepends=(${md})`,
+    ...(val("#u-alias") ? [`aliases=(${val("#u-alias")})`] : []),
+    ...($("#u-hidden").checked ? ["hidden=true"] : []),
     src ? `source=(${q(src)})` : `source=()`,
     src ? `sha256sums=(${q(val("#u-sum") || "SKIP")})` : `sha256sums=()`, "",
   ];
@@ -442,8 +448,9 @@ document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () =>
   document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x === b));
   $("#t-make").hidden = b.dataset.t !== "make"; $("#t-file").hidden = b.dataset.t !== "file";
 }));
-["#u-tpl","#u-name","#u-ver","#u-lic","#u-desc","#u-url","#u-me","#u-src","#u-sum","#u-dep","#u-mdep"].forEach(id => $(id).addEventListener("input", refresh));
+["#u-tpl","#u-name","#u-ver","#u-lic","#u-desc","#u-url","#u-me","#u-src","#u-sum","#u-dep","#u-mdep","#u-alias"].forEach(id => $(id).addEventListener("input", refresh));
 document.querySelectorAll(".u-arch").forEach(c => c.addEventListener("change", refresh));
+$("#u-hidden").addEventListener("change", refresh);
 R.addEventListener("input", () => { recipeTouched = true; check(); });
 function loadFile(f) {
   if (!f) return;
