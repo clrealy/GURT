@@ -1,3 +1,5 @@
+<p align="center"><img src="../assets/dirt-logo.png" alt="dirt." width="260"></p>
+
 # DIRT 🔞
 
 **D**IRT is GURT's opt-in section for mature (18+) stuff. It's **off by default** in the CLI, sits behind an "Are you sure?" 18+ gate on the website, and `gurt search -a` skips it.
