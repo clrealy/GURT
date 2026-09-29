@@ -183,6 +183,26 @@ gurt clones it and builds it with the repo's own **GURTBUILD**, then its **PKGBU
 
 ⚠️ This runs code from whatever repo you point it at. Only outsource repos you trust.
 
+## Oops buttons: rollback, hold, export/import ⏪
+
+```sh
+gurt rollback btop        # update broke it? go back to the version before (and hold it there)
+gurt hold btop            # upgrade skips it
+gurt unhold btop          # back to getting updates
+gurt export gurt-list.txt # everything you installed on purpose
+gurt import gurt-list.txt # …reinstalled on a new PC in one go
+```
+
+gurt keeps the last 3 versions of each package it installs in `~/.cache/gurt/rollback/` (change with `GURT_ROLLBACK_KEEP`).
+
+## Tab completion ⌨️
+
+bash and fish set themselves up the first time you run gurt; open a new terminal and `gurt install bt<TAB>` just works. zsh: add `eval "$(gurt completions zsh)"` to your `~/.zshrc`.
+
+## Bump bot 🤖
+
+Every day `.github/workflows/bump.yml` runs `tools/bump.py`, which checks every recipe with a GitHub source that uses `$pkgver`. When upstream has a newer release, it opens a PR with the new pkgver, pkgrel reset to 1, and fresh checksums + `.gurtinfo`. Add `nobump=true` to a recipe to opt out. Run it yourself with `python3 tools/bump.py` (dry run) or `--write`.
+
 ## Desktop shortcuts 🖥️
 
 Put `desktop_icon=true` in a GURTBUILD and gurt copies the package's `.desktop` file onto your desktop when it installs (and cleans it up on `gurt remove`). Don't want that? `--no-desktop` or `GURT_DESKTOP_ICONS=0`.

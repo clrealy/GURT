@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.12.0"
+GURT_VERSION="0.13.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -273,6 +273,7 @@ load_recipe() {
 
   [[ $pkgname =~ ^[a-z0-9@_+][a-z0-9@._+-]*$ ]] || die "bad pkgname '$pkgname' (lowercase, digits, . _ + - only)"
   [[ -n $pkgver && $pkgver =~ ^[A-Za-z0-9._+~]+$ ]] || die "bad pkgver '$pkgver' (no dashes/spaces)"
+  pkgrel=${pkgrel:-1}   # left blank → 1
   [[ $pkgrel =~ ^[0-9]+(\.[0-9]+)?$ ]]           || die "bad pkgrel '$pkgrel'"
   if [[ -n $via_repo ]]; then       # "official repo" recipe: no build, just a pinned pointer
     case $via_type in
@@ -537,11 +538,13 @@ install_file() { # file.gurt [reason]
   fi
 
   echo "$reason" > "$tmp/reason"
+  stash_pkg "$key" "$f" > "$tmp/pkgfile"
   asroot mkdir -p "$dbd"
   asroot cp "$tmp/.PKGINFO" "$dbd/info"
   asroot cp "$tmp/.FILES"   "$dbd/files"
   asroot cp "$tmp/newdirs"  "$dbd/dirs"
   asroot cp "$tmp/reason"   "$dbd/reason"
+  asroot cp "$tmp/pkgfile"  "$dbd/pkgfile"
   rm -rf "$tmp"
   post_install "$key"
   msg "$(pretty "$key") installed ✅"
@@ -1676,6 +1679,90 @@ aur_install() { # name reason
   install_file "$BUILT_PKG" "$reason"
 }
 
+# ───────────────────────── rollback / hold ─────────────────────────
+# every package gurt installs gets a copy in ~/.cache/gurt/rollback/<pkg>/ (last 3 versions)
+ROLLBACK_KEEP=${GURT_ROLLBACK_KEEP:-3}
+stash_pkg() { # key file → prints the stashed path
+  local d="$GURT_CACHE/rollback/${1//\//_}" out
+  mkdir -p "$d" 2>/dev/null || { echo "$2"; return 0; }
+  out="$d/$(basename "$2")"
+  [[ $2 -ef $out ]] || cp -f -- "$2" "$out" 2>/dev/null || { echo "$2"; return 0; }
+  touch "$out"
+  # shellcheck disable=SC2012
+  ls -1t "$d"/*.gurt 2>/dev/null | tail -n +$((ROLLBACK_KEEP + 1)) | while IFS= read -r x; do rm -f -- "$x"; done
+  echo "$out"
+}
+cmd_rollback() {
+  local k cur d f pick="" list=()
+  k=$(resolve_key "${1:?usage: gurt rollback <pkg>}") || die "$1 isn't installed"
+  case $k in flatpak:*|snap:*|box-*) die "$(pretty "$k") is managed by ${k%%:*} — roll it back there" ;; esac
+  d="$GURT_CACHE/rollback/${k//\//_}"
+  cur=$(cat "$DB/$k/pkgfile" 2>/dev/null || true)
+  # shellcheck disable=SC2012
+  mapfile -t list < <(ls -1t "$d"/*.gurt 2>/dev/null)
+  for f in "${list[@]}"; do [[ $f -ef $cur ]] || { pick=$f; break; }; done
+  [[ -n $pick ]] || die "no older version of $(pretty "$k") saved 😔 (gurt keeps the last $ROLLBACK_KEEP versions it installs, starting from 0.13.0)"
+  local v; v=$(tar -xzOf "$pick" .PKGINFO 2>/dev/null | awk -F' = ' '$1=="pkgver"{v=$2} $1=="pkgrel"{r=$2} END{print v (r ? "-" r : "")}')
+  ask "roll $(pretty "$k") back $(inst_ver "$k") -> $v?" || die "aborted"
+  install_file "$pick" "$(cat "$DB/$k/reason" 2>/dev/null || echo explicit)"
+  echo held | asroot tee "$DB/$k/held" >/dev/null
+  msg2 "held at $v so gurt upgrade won't undo it 📌 (gurt unhold $(pretty "$k") when you want updates again)"
+}
+cmd_hold() { local k; for p in "$@"; do k=$(resolve_key "$p") || die "$p isn't installed"; echo held | asroot tee "$DB/$k/held" >/dev/null; msg "$(pretty "$k") held 📌 — upgrade will skip it"; done; }
+cmd_unhold() { local k; for p in "$@"; do k=$(resolve_key "$p") || die "$p isn't installed"; asroot rm -f "$DB/$k/held"; msg "$(pretty "$k") unheld — back to getting updates"; done; }
+is_held() { [[ -f $DB/$1/held ]]; }
+
+# ───────────────────────── export / import ─────────────────────────
+# a plain text list of what you installed on purpose → reinstall it all on another machine
+cmd_export() {
+  local d k out=${1:--}
+  {
+    echo "# gurt export — $(date +%F) — reinstall with: gurt import <this file>"
+    for d in "$DB"/*/; do
+      [[ -d $d ]] || continue; k=$(basename "$d")
+      [[ $(cat "$d/reason" 2>/dev/null) == explicit ]] || continue
+      if [[ $k == git:* ]]; then echo "outsource $(info_get "$d/info" outsource_url)"
+      else pretty "$k"; fi
+    done
+  } > "$( [[ $out == - ]] && echo /dev/stdout || echo "$out")"
+  [[ $out == - ]] || msg "saved your package list to $out 📋 — on the other machine: gurt import $out"
+}
+cmd_import() {
+  local f=${1:?usage: gurt import <file>} line specs=() ok=0 bad=()
+  [[ -r $f ]] || die "can't read $f"
+  while IFS= read -r line; do
+    line=${line%%#*}; line=$(echo "$line" | xargs 2>/dev/null || true)
+    [[ -n $line ]] && specs+=("$line")
+  done < "$f"
+  (( ${#specs[@]} )) || die "$f has no packages in it"
+  printf '  %s\n' "${specs[@]}" >&2
+  ask "install these ${#specs[@]} package(s)?" || die "aborted"
+  local was=$NOCONFIRM; NOCONFIRM=true
+  for line in "${specs[@]}"; do
+    if [[ $line == outsource\ * ]]; then ( outsource_install "${line#outsource }" explicit ) && ok=$((ok+1)) || bad+=("$line")
+    else ( install_any "$line" explicit ) && ok=$((ok+1)) || bad+=("$line"); fi
+  done
+  NOCONFIRM=$was
+  msg "imported $ok/${#specs[@]} ✅"
+  (( ${#bad[@]} )) && { warn "these didn't work:"; printf '   %s\n' "${bad[@]}" >&2; return 1; }
+  return 0
+}
+
+# ───────────────────────── tab completion helper ─────────────────────────
+# gurt __complete installed|available|commands  (used by the bash/zsh/fish completions)
+cmd_complete() {
+  local d f
+  case ${1:-} in
+    installed) for d in "$DB"/*/; do [[ -d $d ]] && pretty "$(basename "$d")"; done ;;
+    available) for f in "$GURT_REPO_DIR"/packages/*/.gurtinfo; do [[ -f $f ]] || continue
+                 info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
+    commands)  printf '%s\n' sync search info install update upgrade self-update remove autoremove list files owns \
+                 build add srcinfo checksum new repo dirt outsource rollback hold unhold export import completions doctor version help yo ;;
+    sources)   printf '%s/\n' aur apt dnf zypper pacman flatpak snap dirt ;;
+  esac
+  return 0
+}
+
 # ───────────────────────── outsource: build any git repo ─────────────────────────
 # gurt outsource https://github.com/you/thing   → clone, build, install (tracked, so gurt remove/upgrade work)
 # uses the repo's own GURTBUILD, then its PKGBUILD, then guesses: make / cmake / meson / cargo / go
@@ -1947,6 +2034,7 @@ find_outdated() {
     k=$(basename "$d")
     if [[ $k == *:* ]]; then src=${k%%:*}; name=${k#*:}; else src=gurt; name=$k; fi
     new=""
+    if is_held "$k"; then msg2 "$(pretty "$k") is held 📌 skipping"; continue; fi
     case $src in
       gurt) is_gurt_pkg "$name" && new=$(repo_ver "$name") ;;
       dirt) if PKG_TREE=dirt is_gurt_pkg "$name"; then new=$(PKG_TREE=dirt repo_ver "$name"); fi ;;
@@ -2023,6 +2111,75 @@ upgrade_containers() {   # flatpak + snap update their own apps
   return 0
 }
 
+# tab completion — scripts live right here, so there's nothing extra to install
+completion_script() {
+  case $1 in
+    bash) cat <<'EOF'
+_gurt() {
+  local cur=${COMP_WORDS[COMP_CWORD]} cmd=${COMP_WORDS[1]}
+  if (( COMP_CWORD == 1 )); then COMPREPLY=($(compgen -W "$(gurt __complete commands)" -- "$cur")); return; fi
+  case $cmd in
+    remove|rm|yeet|files|rollback|undo|hold|unhold|pin|unpin) COMPREPLY=($(compgen -W "$(gurt __complete installed)" -- "$cur")) ;;
+    install|i|get|info|search|s) compopt -o nospace 2>/dev/null
+      COMPREPLY=($(compgen -W "$(gurt __complete available; gurt __complete sources)" -- "$cur"))
+      [[ ${#COMPREPLY[@]} == 1 && ${COMPREPLY[0]} != */ ]] && COMPREPLY[0]+=" " ;;
+    dirt) COMPREPLY=($(compgen -W "on off status list" -- "$cur")) ;;
+    repo|repos) COMPREPLY=($(compgen -W "add list remove" -- "$cur")) ;;
+    sync) COMPREPLY=($(compgen -W "all aur apt dnf zypper pacman" -- "$cur")) ;;
+    import|add|export|build) COMPREPLY=($(compgen -f -- "$cur")) ;;
+    completions) COMPREPLY=($(compgen -W "bash zsh fish" -- "$cur")) ;;
+  esac
+}
+complete -F _gurt gurt
+EOF
+;;
+    zsh) cat <<'EOF'
+#compdef gurt
+_gurt() {
+  if (( CURRENT == 2 )); then compadd -- ${(f)"$(gurt __complete commands)"}; return; fi
+  case $words[2] in
+    remove|rm|yeet|files|rollback|undo|hold|unhold|pin|unpin) compadd -- ${(f)"$(gurt __complete installed)"} ;;
+    install|i|get|info|search|s) compadd -- ${(f)"$(gurt __complete available)"}; compadd -S '' -- ${(f)"$(gurt __complete sources)"} ;;
+    dirt) compadd on off status list ;;
+    repo|repos) compadd add list remove ;;
+    sync) compadd all aur apt dnf zypper pacman ;;
+    import|add|export|build) _files ;;
+    completions) compadd bash zsh fish ;;
+  esac
+}
+compdef _gurt gurt
+EOF
+;;
+    fish) cat <<'EOF'
+complete -c gurt -f
+complete -c gurt -n '__fish_is_first_arg' -a '(gurt __complete commands)'
+complete -c gurt -n '__fish_seen_subcommand_from remove rm yeet files rollback undo hold unhold pin unpin' -a '(gurt __complete installed)'
+complete -c gurt -n '__fish_seen_subcommand_from install i get info search s' -a '(gurt __complete available; gurt __complete sources)'
+complete -c gurt -n '__fish_seen_subcommand_from dirt' -a 'on off status list'
+complete -c gurt -n '__fish_seen_subcommand_from repo repos' -a 'add list remove'
+complete -c gurt -n '__fish_seen_subcommand_from sync' -a 'all aur apt dnf zypper pacman'
+complete -c gurt -n '__fish_seen_subcommand_from import add export build' -F
+complete -c gurt -n '__fish_seen_subcommand_from completions' -a 'bash zsh fish'
+EOF
+;;
+    *) die "completions for: bash, zsh, fish" ;;
+  esac
+}
+# drop bash + fish completions into your home the first time a new gurt runs (no sudo, no setup)
+ensure_completions() {
+  (( EUID == 0 )) && return 0
+  [[ -n ${HOME:-} && -w $HOME ]] || return 0
+  local data="${XDG_DATA_HOME:-$HOME/.local/share}" stamp
+  stamp="$data/gurt/completions-version"
+  [[ $(cat "$stamp" 2>/dev/null) == "$GURT_VERSION" ]] && return 0
+  {
+    mkdir -p "$data/bash-completion/completions" "$data/gurt" &&
+    completion_script bash > "$data/bash-completion/completions/gurt" &&
+    if command -v fish >/dev/null; then mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/fish/completions" &&
+      completion_script fish > "${XDG_CONFIG_HOME:-$HOME/.config}/fish/completions/gurt.fish"; fi &&
+    echo "$GURT_VERSION" > "$stamp"
+  } 2>/dev/null || true
+}
 cmd_self_update() {
   local self new tmp dir
   self=$(readlink -f "$0")
@@ -2352,6 +2509,11 @@ ${B}making packages${R0}
 ${B}misc${R0}
   doctor               check your setup + which sources work
   outsource <git url>  clone + build + install any repo (github user/repo works too) → git/<name>
+  rollback <pkg>       go back to the version before (gurt keeps the last 3) + hold it there
+  hold / unhold <pkg>  stop / resume upgrades for a package
+  export [file]        save the list of stuff you installed
+  import <file>        install everything from an export (new PC speedrun)
+  completions <shell>  print tab completion for bash/zsh/fish (bash+fish set themselves up)
   version              the gurt banner + your setup (also just: gurt)
   yo                   gurt
 
@@ -2404,6 +2566,7 @@ main() {
   done
   set -- "${args[@]}"
   local cmd=${1:-hi}; shift || true
+  [[ $cmd == __complete ]] || ensure_completions
   local p
   # --repo X  →  every bare package name becomes X/name
   if [[ -n $REPO ]]; then
@@ -2439,6 +2602,13 @@ main() {
     new)               cmd_new "$@" ;;
     repo|repos)        cmd_repo "$@" ;;
     dirt)              cmd_dirt "$@" ;;
+    rollback|undo)     cmd_rollback "$@" ;;
+    hold|pin)          (( $# )) || die "hold what tho"; cmd_hold "$@" ;;
+    unhold|unpin)      (( $# )) || die "unhold what tho"; cmd_unhold "$@" ;;
+    export)            cmd_export "$@" ;;
+    import)            cmd_import "$@" ;;
+    __complete)        cmd_complete "$@" ;;
+    completions)       completion_script "${1:?usage: gurt completions bash|zsh|fish}" ;;
     outsource|os|clone) (( $# )) || die "outsource what tho — gurt outsource https://github.com/user/repo"
                        for p; do outsource_install "$p" explicit; done ;;
     doctor)            cmd_doctor ;;

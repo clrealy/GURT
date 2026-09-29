@@ -1,0 +1,20 @@
+name: bump bot
+# every day: check each recipe's GitHub project for a new release and open a PR bumping it
+on:
+  schedule: [{ cron: "23 13 * * *" }]
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          git config user.name "gurt-bump-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - run: python3 tools/bump.py --pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
