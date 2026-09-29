@@ -54,7 +54,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: regenerate .gurtinfo + CODEOWNERS
         run: |
-          for d in packages/*/ dirt/*/; do [ -d "$d" ] && ./gurt srcinfo "$d" > "$d/.gurtinfo"; done
+          for d in packages/*/ dirt/*/; do if [ -d "$d" ]; then ./gurt srcinfo "$d" > "$d/.gurtinfo"; fi; done
           ./tools/gen-codeowners.sh
           if [ -n "$(git status --porcelain packages .github/CODEOWNERS)" ]; then
             git config user.name "gurt-bot"
@@ -72,7 +72,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - run: for d in packages/*/ dirt/*/; do [ -d "$d" ] && ./gurt srcinfo "$d" > "$d/.gurtinfo"; done
+      - run: for d in packages/*/ dirt/*/; do if [ -d "$d" ]; then ./gurt srcinfo "$d" > "$d/.gurtinfo"; fi; done
       - run: python3 tools/gen-index.py
       - name: serve the installer + script from the site too
         run: cp install.sh gurt deps.map site/
