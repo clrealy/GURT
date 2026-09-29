@@ -1,19 +1,19 @@
-# tsudo — tsundere root. it's not like it wants to help you or anything
+# tsudore — tsundere root. it's not like it wants to help you or anything
 # nyarch exclusive (refuses to run anywhere else, baka)
-pkgname=tsudo
+pkgname=tsudore
 pkgver=1.0.0
 pkgrel=1
 pkgdesc="Tsundere privilege escalation for Nyarch Linux. It's not like it WANTS to give you root or anything..."
-aliases=(tsundere tsudore)
+aliases=(tsudo tsundere)
 url="https://github.com/clrealy/GURT"
 license="MIT"
 maintainer="clrealy"
 arch=(any)
 depends=()
 makedepends=()
-source=("tsudo.sh")
-sha256sums=("102e5fdfd131aeddbfeec8577e2a6881592148f2a0902b3daaa07bc5366dfc58")
+source=("tsudore.sh")
+sha256sums=("bfa9316fa08f31d04e0aef5cdefa09d28f1efdc1b707745c5736ba3eaea7f7a2")
 
 package() {
-  install -Dm755 "$srcdir/tsudo.sh" "$pkgdir$prefix/bin/tsudo"
+  install -Dm755 "$srcdir/tsudore.sh" "$pkgdir$prefix/bin/tsudore"
 }

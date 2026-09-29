@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tsudo — tsundere sudo. it's not like it wants to help you or anything.
+# tsudore — tsundere sudo. it's not like it wants to help you or anything.
 # nyarch exclusive. baka.
 
 set -u
@@ -26,7 +26,7 @@ if [ $# -eq 0 ]; then
   say "$(pick \
     "you called me for NOTHING?? unbelievable." \
     "...you just wanted to talk to me? w-whatever. 😳" \
-    "usage: tsudo <command>. not that i care if you learn it.")"
+    "usage: tsudore <command>. not that i care if you learn it.")"
   exit 1
 fi
 
@@ -75,5 +75,5 @@ else
     "don't look at me like that, your command was just bad.")"
 fi
 
-printf '%s(tsudo exited %s)%s\n' "$dim" "$status" "$reset"
+printf '%s(tsudore exited %s)%s\n' "$dim" "$status" "$reset"
 exit $status
