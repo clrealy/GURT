@@ -1,0 +1,11 @@
+pkgname = tsudo
+pkgver = 1.0.0
+pkgrel = 1
+pkgdesc = Tsundere privilege escalation for Nyarch Linux. It's not like it WANTS to give you root or anything...
+url = https://github.com/clrealy/GURT
+license = MIT
+maintainer = clrealy
+arch = any
+source = tsudo.sh
+alias = tsundere
+alias = tsudore
