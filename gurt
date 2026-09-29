@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.11.1"
+GURT_VERSION="0.12.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -397,7 +397,8 @@ fetch_sources() {
         if [[ -f $dest ]] && ! verify "$dest" "$sum" "$SUMALGO"; then rm -f "$dest"; fi
         if [[ ! -f $dest ]]; then
           msg2 "downloading $name"
-          download "$loc" "$dest.part" && mv "$dest.part" "$dest"
+          download "$loc" "$dest.part" || { rm -f "$dest.part"; die "couldn't download $name from $loc"; }
+          mv "$dest.part" "$dest"
         fi
         verify "$dest" "$sum" "$SUMALGO" || die "${SUMALGO} mismatch on $name — source changed or got tampered with 🚩"
         [[ $sum == SKIP ]] && warn "$name has no checksum (SKIP)"
@@ -464,7 +465,8 @@ build_pkg() {
       warn "this package installs files outside $prefix — could clash with your distro's own packages"
     fi
     local a=any; [[ ${arch[*]} == any ]] || a=$CARCH
-    { print_srcinfo; printf 'builddate = %s\nprefix = %s\ngurtsource = %s\n' "$(date +%s)" "$prefix" "$src"; } > "$work/.PKGINFO"
+    { print_srcinfo; printf 'builddate = %s\nprefix = %s\ngurtsource = %s\n' "$(date +%s)" "$prefix" "$src"
+      [[ -n ${GURT_EXTRA_INFO:-} ]] && printf '%s\n' "$GURT_EXTRA_INFO"; } > "$work/.PKGINFO"
     local out="$outdir/$pkgname-$pkgver-$pkgrel-$a.gurt"
     pack_pkgdir "$work" "$out"
     echo "$out" > "$work/.out"
@@ -790,6 +792,9 @@ install_any() { # spec reason
   case $src in
     gurt) ensure_repo; PKG_TREE=packages TREE_SRC=gurt resolve_and_install "$name" "$reason" ;;
     dirt) dirt_install "$name" "$reason" ;;
+    git)  local u; u=$(info_get "$DB/git:$name/info" outsource_url 2>/dev/null)
+          [[ -n $u ]] || die "git/ packages come from a url: gurt outsource https://github.com/user/repo"
+          outsource_install "$u" "$reason" ;;
     aur)  aur_install "$name" "$reason" ;;
     flatpak) flatpak_install "$name" "$reason" ;;
     snap)    snap_install "$name" "$reason" ;;
@@ -812,6 +817,7 @@ norm_src() {
   case ${1,,} in
     gurt|main)                      echo gurt ;;
     dirt)                           echo dirt ;;
+    git|outsource)                  echo git ;;
     apt|deb|debian|ubuntu|mint)     echo apt ;;
     dnf|yum|rpm|fedora)             echo dnf ;;
     zypper|suse|opensuse)           echo zypper ;;
@@ -1670,6 +1676,140 @@ aur_install() { # name reason
   install_file "$BUILT_PKG" "$reason"
 }
 
+# ───────────────────────── outsource: build any git repo ─────────────────────────
+# gurt outsource https://github.com/you/thing   → clone, build, install (tracked, so gurt remove/upgrade work)
+# uses the repo's own GURTBUILD, then its PKGBUILD, then guesses: make / cmake / meson / cargo / go
+norm_git_url() {
+  local u=$1
+  case $u in
+    git@*|http://*|https://*|git://*|ssh://*|file://*) ;;
+    github.com/*|gitlab.com/*|codeberg.org/*) u="https://$u" ;;
+    */*) [[ $u =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] && u="https://github.com/$u" || die "that doesn't look like a git url: $1" ;;
+    *) die "that doesn't look like a git url: $1 (try: gurt outsource https://github.com/user/repo)" ;;
+  esac
+  u=${u%/}; u=${u%.git}
+  echo "$u"
+}
+os_build_kind() { # dir → make|cmake|meson|cargo|go|autotools
+  local d=$1
+  if   [[ -f $d/CMakeLists.txt ]]; then echo cmake
+  elif [[ -f $d/meson.build ]]; then echo meson
+  elif [[ -f $d/Cargo.toml ]]; then echo cargo
+  elif [[ -f $d/go.mod ]]; then echo go
+  elif [[ -x $d/configure || -f $d/configure.ac || -f $d/autogen.sh ]]; then echo autotools
+  elif [[ -f $d/Makefile || -f $d/makefile || -f $d/GNUmakefile ]]; then echo make
+  else return 1; fi
+}
+# write a GURTBUILD for a repo that doesn't have one
+os_gen_recipe() { # dir name url sha kind ver → GURTBUILD in dir/.gurt-outsource/
+  local dir=$1 name=$2 url=$3 sha=$4 kind=$5 ver=$6 out="$1/.gurt-outsource" md="cc make" b p
+  mkdir -p "$out"
+  case $kind in
+    make)      b='make PREFIX="$prefix"'
+               p='make PREFIX="$prefix" DESTDIR="$pkgdir" install' ;;
+    autotools) b='[ -x configure ] || { [ -x autogen.sh ] && ./autogen.sh || autoreconf -fi; }; ./configure --prefix="$prefix"; make'
+               p='make DESTDIR="$pkgdir" install'; md="cc make autoconf automake libtool pkg-config" ;;
+    cmake)     b='cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$prefix"; cmake --build build'
+               p='DESTDIR="$pkgdir" cmake --install build'; md="cc cmake make pkg-config" ;;
+    meson)     b='meson setup build --prefix="$prefix" --buildtype=release; meson compile -C build'
+               p='meson install -C build --destdir "$pkgdir"'; md="cc meson ninja pkg-config" ;;
+    cargo)     b='cargo build --release --locked || cargo build --release'
+               p='find target/release -maxdepth 1 -type f -perm -u+x ! -name "*.d" -exec install -Dm755 -t "$pkgdir$prefix/bin" {} +'; md="rust" ;;
+    go)        b='mkdir -p out && go build -trimpath -o out/ ./...'
+               p='install -Dm755 -t "$pkgdir$prefix/bin" out/*'; md="go" ;;
+  esac
+  cat > "$out/GURTBUILD" <<EOF
+# made by gurt outsource from $url
+pkgname=$name
+pkgver=$ver
+pkgrel=1
+pkgdesc="$name (built from $url)"
+url="$url"
+arch=($CARCH)
+makedepends=($md)
+source=("src::git+$url#commit=$sha")
+sha256sums=('SKIP')
+
+build() {
+  cd "\$srcdir/src"
+  $b
+}
+
+package() {
+  cd "\$srcdir/src"
+  $p
+  # no .desktop/icon from the build? ship the repo's own if it has one
+  if [ ! -d "\$pkgdir\$prefix/share/applications" ]; then
+    for f in *.desktop; do [ -f "\$f" ] && install -Dm644 "\$f" "\$pkgdir\$prefix/share/applications/\$f"; done
+  fi
+  for i in icon.svg "\$pkgname.svg"; do [ -f "\$i" ] && { install -Dm644 "\$i" "\$pkgdir\$prefix/share/icons/hicolor/scalable/apps/\$pkgname.svg"; break; }; done
+  [ -f LICENSE ] && install -Dm644 LICENSE "\$pkgdir\$prefix/share/licenses/\$pkgname/LICENSE"
+  true
+}
+EOF
+  echo "$out"
+}
+# a PKGBUILD's deps are Arch names — on other distros building needs the -dev/-devel flavor
+os_dep() {
+  local d=${1%%[<>=]*} c
+  [[ -n $d ]] || return 0
+  # shellcheck disable=SC2207
+  if in_depmap "$d"; then NATIVE_Q+=($(map_dep "$d")); return 0; fi
+  [[ $PM == pacman ]] && { foreign_dep aur "$d"; return; }
+  case $PM in
+    apt)        for c in "lib$d-dev" "$d-dev" "lib${d%-*}-dev" "$d"; do pm_available "$c" && { NATIVE_Q+=("$c"); return 0; }; done ;;
+    dnf|zypper) for c in "$d-devel" "lib$d-devel" "$d"; do pm_available "$c" && { NATIVE_Q+=("$c"); return 0; }; done ;;
+    apk)        for c in "$d-dev" "$d"; do pm_available "$c" && { NATIVE_Q+=("$c"); return 0; }; done ;;
+  esac
+  foreign_dep aur "$d"
+}
+outsource_install() { # url reason
+  local url name dir sha ver kind rdir recipe src_kind d reason=${2:-explicit}
+  need_tool git outsource
+  url=$(norm_git_url "$1")
+  name=${url##*/}; name=${name,,}; name=${name//[^a-z0-9._+-]/-}
+  dir="$GURT_CACHE/outsource/$name"
+  msg "cloning $url"
+  rm -rf "$dir"; mkdir -p "$GURT_CACHE/outsource"
+  git clone -q --depth 1 "$url" "$dir" 2>/dev/null || die "couldn't clone $url (typo? private repo?)"
+  sha=$(git -C "$dir" rev-parse HEAD)
+  if [[ -f $dir/GURTBUILD ]]; then rdir=$dir; recipe=GURTBUILD; src_kind="the repo's own GURTBUILD 🦆"
+  elif [[ -f $dir/PKGBUILD ]]; then rdir=$dir; recipe=PKGBUILD; src_kind="the repo's own PKGBUILD"
+  elif kind=$(os_build_kind "$dir"); then
+    ver="r$(git -C "$dir" log -1 --format=%cd --date=format:%Y%m%d).g${sha:0:7}"
+    rdir=$(os_gen_recipe "$dir" "$name" "$url" "$sha" "$kind" "$ver"); recipe=GURTBUILD; src_kind="$kind (auto-detected)"
+  else
+    die "no Makefile/CMake/meson/cargo/go/GURTBUILD/PKGBUILD in $url — dunno how to build it 😔 (write a GURTBUILD: gurt new $name)"
+  fi
+  # what's it called + what does it need?
+  local info; info=$(cd "$rdir" && load_recipe && print_srcinfo) || die "couldn't read $recipe"
+  name=$(awk -F' = ' '$1=="pkgname"{print $2; exit}' <<<"$info")
+  local key="git:$name"
+  if is_installed "$key" && ! $FORCE && [[ $(info_get "$DB/$key/info" outsource_commit) == "$sha" ]]; then
+    [[ $reason == explicit ]] && msg "git/$name is already installed from the latest commit 👍 (--force to rebuild)"
+    return 0
+  fi
+  msg2 "how it builds: $src_kind"
+  # shellcheck disable=SC2207
+  NATIVE_Q+=($(map_dep cc) $(map_dep make))
+  # shellcheck disable=SC2207
+  for d in $(awk -F' = ' '$1=="depends"||$1=="makedepends"{print $2}' <<<"$info"); do
+    if [[ $recipe == PKGBUILD ]]; then os_dep "$d"
+    else case $d in */*) install_any "$d" dep ;; *) NATIVE_Q+=($(map_dep "$d")) ;; esac; fi
+  done
+  if ! $NOCONFIRM; then
+    printf '\n%s──── %s (%s) ────%s\n' "$B" "$recipe" "$url" "$R0" >&2
+    cat "$rdir/$recipe" >&2
+    printf '%s──────────────────%s\n' "$B" "$R0" >&2
+    warn "this builds + runs code straight from a random git repo — only do it if you trust $url"
+    ask "build + install git/$name?" || die "aborted, no cap"
+  fi
+  flush_native
+  GURT_SRC=git GURT_EXTRA_INFO="outsource_url = $url"$'\n'"outsource_commit = $sha" build_pkg "$rdir" "$GURT_CACHE/pkg"
+  install_file "$BUILT_PKG" "$reason"
+  msg2 "remove it with: gurt remove git/$name · update it with: gurt upgrade"
+}
+
 # ───────────────────────── commands ─────────────────────────
 sync_main() {
   command -v git >/dev/null || die "need git to sync"
@@ -1812,6 +1952,10 @@ find_outdated() {
       dirt) if PKG_TREE=dirt is_gurt_pkg "$name"; then new=$(PKG_TREE=dirt repo_ver "$name"); fi ;;
       aur)  dir=$(aur_clone "$name" 2>/dev/null) && new=$(aur_srcinfo_ver "$dir/.SRCINFO") ;;
       flatpak|snap|box-*) ;;   # they update themselves (see upgrade_containers)
+      git)  local u c h; u=$(info_get "$d/info" outsource_url); c=$(info_get "$d/info" outsource_commit)
+            h=$(git ls-remote "$u" HEAD 2>/dev/null | cut -f1)
+            if [[ -n $h && $h != "$c" ]]; then msg2 "git/$name  ${c:0:7} -> ${h:0:7}"; TODO+=("$k"); fi
+            continue ;;
       *)    new=$(idx_lookup "$src" "$name" | cut -f2 || true) ;;
     esac
     if [[ -n $new ]] && vnewer "$(inst_ver "$k")" "$new"; then
@@ -2207,6 +2351,7 @@ ${B}making packages${R0}
 
 ${B}misc${R0}
   doctor               check your setup + which sources work
+  outsource <git url>  clone + build + install any repo (github user/repo works too) → git/<name>
   version              the gurt banner + your setup (also just: gurt)
   yo                   gurt
 
@@ -2294,6 +2439,8 @@ main() {
     new)               cmd_new "$@" ;;
     repo|repos)        cmd_repo "$@" ;;
     dirt)              cmd_dirt "$@" ;;
+    outsource|os|clone) (( $# )) || die "outsource what tho — gurt outsource https://github.com/user/repo"
+                       for p; do outsource_install "$p" explicit; done ;;
     doctor)            cmd_doctor ;;
     yo)                echo "gurt: yo 🦆" ;;
     version)           cmd_version ;;

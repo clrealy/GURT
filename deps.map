@@ -39,6 +39,8 @@ libcurl     apt=libcurl4-openssl-dev  dnf=libcurl-devel  pacman=curl  zypper=lib
 sqlite      apt=libsqlite3-dev  dnf=sqlite-devel  pacman=sqlite  zypper=sqlite3-devel  apk=sqlite-dev  xbps=sqlite-devel  emerge=dev-db/sqlite
 sdl2        apt=libsdl2-dev  dnf=SDL2-devel  pacman=sdl2  zypper=SDL2-devel  apk=sdl2-dev  xbps=SDL2-devel  emerge=media-libs/libsdl2
 gtk3        apt=libgtk-3-dev  dnf=gtk3-devel  pacman=gtk3  zypper=gtk3-devel  apk=gtk+3.0-dev  xbps=gtk+3-devel  emerge=x11-libs/gtk+:3
+gtk-layer-shell  apt=libgtk-layer-shell-dev  dnf=gtk-layer-shell-devel  pacman=gtk-layer-shell  zypper=gtk-layer-shell-devel  apk=gtk-layer-shell-dev  xbps=gtk-layer-shell-devel
+json-c      apt=libjson-c-dev  dnf=json-c-devel  pacman=json-c  zypper=libjson-c-devel  apk=json-c-dev  xbps=json-c-devel  emerge=dev-libs/json-c
 x11         apt=libx11-dev  dnf=libX11-devel  pacman=libx11  zypper=libX11-devel  apk=libx11-dev  xbps=libX11-devel  emerge=x11-libs/libX11
 wayland     apt=libwayland-dev  dnf=wayland-devel  pacman=wayland  zypper=wayland-devel  apk=wayland-dev  xbps=wayland-devel  emerge=dev-libs/wayland
 vulkan      apt=libvulkan-dev  dnf=vulkan-loader-devel  pacman=vulkan-icd-loader  zypper=vulkan-devel  apk=vulkan-loader-dev  xbps=vulkan-loader-devel  emerge=media-libs/vulkan-loader

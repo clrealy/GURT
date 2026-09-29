@@ -170,6 +170,19 @@ hidden=true                         # not listed on the site or in gurt search, 
 ```
 The linter makes sure aliases never collide with other packages or aliases.
 
+## Build any git repo: `gurt outsource` 🛠️
+
+Instead of `git clone … && cd … && make && sudo make install`:
+
+```sh
+gurt outsource https://github.com/Cyanidenjoyers/Crosshair-W
+gurt outsource Cyanidenjoyers/Crosshair-W     # GitHub user/repo works too
+```
+
+gurt clones it and builds it with the repo's own **GURTBUILD**, then its **PKGBUILD**, and otherwise guesses from **make / cmake / meson / autotools / cargo / go**. It pulls in build deps (using `-dev`/`-devel` packages on non-Arch distros), shows you the recipe and asks before running anything, then installs it as `git/<name>`, so `gurt remove git/<name>` removes it cleanly and `gurt upgrade` rebuilds it when the repo gets new commits.
+
+⚠️ This runs code from whatever repo you point it at. Only outsource repos you trust.
+
 ## Desktop shortcuts 🖥️
 
 Put `desktop_icon=true` in a GURTBUILD and gurt copies the package's `.desktop` file onto your desktop when it installs (and cleans it up on `gurt remove`). Don't want that? `--no-desktop` or `GURT_DESKTOP_ICONS=0`.
