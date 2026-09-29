@@ -1,6 +1,6 @@
 # DIRT 🔞
 
-**D**IRT is GURT's opt-in section for mature (18+) stuff. It's **off by default**, never shows on the website, and `gurt search -a` skips it.
+**D**IRT is GURT's opt-in section for mature (18+) stuff. It's **off by default** in the CLI, sits behind an "Are you sure?" 18+ gate on the website, and `gurt search -a` skips it.
 
 ```sh
 gurt dirt on           # asks you to confirm you're 18+

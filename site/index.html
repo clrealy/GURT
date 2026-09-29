@@ -116,6 +116,30 @@ footer{color:var(--muted);font-size:13px;padding:24px 0 40px;border-top:1px soli
 footer a{color:inherit}
 .empty{color:var(--muted);text-align:center;padding:40px 0}
 @media (max-width:520px){.logo img{height:80px}td:first-child{width:100px}}
+/* ── DIRT: forced dark + red, behind the 18+ gate ── */
+:root.dirt{
+  --bg:#0a0708; --panel:#140d0f; --ink:#f1e9ea; --muted:#a3898d;
+  --line:#332226; --accent:#e0314b; --accent-ink:#fff; --tag:#24161a; --code:#1a1013; --good:#ff7a8c;
+  color-scheme:dark;
+}
+:root.dirt .logo img{filter:drop-shadow(0 0 1px rgba(255,255,255,.35)) brightness(1.15)}
+.src.dirtbtn{background:#141012;color:#f1e9ea;border-color:#3a2a2e}
+.src.dirtbtn small{color:#e0314b}
+.src.dirtbtn:hover{border-color:#e0314b}
+.src.dirtbtn.on{background:#e0314b;border-color:#e0314b;color:#fff}
+.src.dirtbtn.on small{color:#fff}
+#gate{max-width:420px;background:#120b0d;color:#f1e9ea;text-align:center;border:1px solid #3a2226}
+#gate::backdrop{background:rgba(0,0,0,.85);backdrop-filter:blur(4px)}
+#gate .gbody{padding:28px 24px 24px}
+#gate h2{margin:0 0 6px;font-size:28px}
+#gate .g18{display:inline-block;font-weight:700;border:2px solid #e0314b;color:#e0314b;border-radius:999px;padding:2px 12px;margin-bottom:14px;font-size:14px}
+#gate p{color:#c9b3b7;margin:0 0 22px}
+#gate .gbtns{display:flex;gap:10px;justify-content:center}
+#gate .gbtns button{font:inherit;font-weight:700;border-radius:10px;padding:10px 26px;cursor:pointer;border:1px solid #3a2a2e}
+#gate .yeah{background:#e0314b;border-color:#e0314b;color:#fff}
+#gate .nah{background:#1d1417;color:#f1e9ea}
+#gate .gbtns button:focus-visible{outline:3px solid #ff9aa8;outline-offset:2px}
+.dirtnote{color:var(--muted);font-size:14px;margin:10px 0 0}
 </style>
 </head>
 <body>
@@ -140,8 +164,10 @@ gurt install snap/spotify  <span class="c"># Snap Store too</span></div>
       <button class="src" role="tab" aria-selected="false" data-src="pacman">pacman/ <small>Arch</small></button>
       <button class="src" role="tab" aria-selected="false" data-src="flatpak">flatpak/ <small>Flathub</small></button>
       <button class="src" role="tab" aria-selected="false" data-src="snap">snap/ <small>Snap Store</small></button>
+      <button class="src dirtbtn" role="tab" aria-selected="false" data-src="dirt">dirt/ <small>18+</small></button>
     </div>
     <div class="secthead"><h2 class="sect" id="secttitle">Main GURT packages</h2><button class="btn" id="upbtn">＋ upload a package</button></div>
+    <p class="dirtnote" id="dirtnote" hidden>🔞 DIRT is GURT's mature section. It's off in the CLI until you run <code>gurt dirt on</code>, then <code>gurt install dirt/&lt;name&gt;</code>. <a href="https://github.com/clrealy/GURT/blob/main/dirt/README.md" style="color:inherit">rules</a></p>
   </header>
 
   <div class="search">
@@ -177,6 +203,15 @@ gurt install snap/spotify  <span class="c"># Snap Store too</span></div>
     GURT is independent and not affiliated with or endorsed by Arch Linux, Debian, Ubuntu, Fedora, openSUSE or any other distro. All trademarks belong to their owners.
   </footer>
 </div>
+
+<dialog id="gate" aria-labelledby="gtitle">
+  <div class="gbody">
+    <div class="g18">18+</div>
+    <h2 id="gtitle">Are you sure?</h2>
+    <p>This section of the GURT Repository is 18+ ONLY. Explore at your own risk.</p>
+    <div class="gbtns"><button class="nah" id="gnah">Nah</button><button class="yeah" id="gyeah">Yeah</button></div>
+  </div>
+</dialog>
 
 <dialog id="dlg">
   <div class="dhead"><div><h2 id="dname"></h2><div class="desc" id="ddesc"></div></div><button class="x" onclick="dlg.close()" aria-label="Close">×</button></div>
@@ -236,7 +271,9 @@ gurt install snap/spotify  <span class="c"># Snap Store too</span></div>
 
 <script>
 const REPO = "clrealy/GURT", BRANCH = "main";
-let PKGS = [];
+let PKGS = [], DPKGS = [];
+const TREE = () => CUR === "dirt" ? "dirt" : "packages";
+const LISTED = () => CUR === "dirt" ? DPKGS : PKGS;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ago = t => { const d = (Date.now()/1000 - t)/86400; return d < 1 ? "today" : d < 2 ? "yesterday" : d < 60 ? Math.floor(d)+" days ago" : new Date(t*1000).toLocaleDateString(); };
@@ -251,37 +288,41 @@ const card = p => `
 
 function render(){
   const q = $("#q").value.trim().toLowerCase();
-  const hits = PKGS.filter(p => !q || (p.pkgname + " " + (p.pkgdesc||"") + " " + (p.alias||[]).join(" ")).toLowerCase().includes(q))
+  const ALL = LISTED(), dirt = CUR === "dirt";
+  const hits = ALL.filter(p => !q || (p.pkgname + " " + (p.pkgdesc||"") + " " + (p.alias||[]).join(" ")).toLowerCase().includes(q))
     .sort((a,b) => (b.pkgname.toLowerCase()===q) - (a.pkgname.toLowerCase()===q) || a.pkgname.localeCompare(b.pkgname));
-  $("#count").textContent = `${hits.length} of ${PKGS.length} packages`;
-  $("#list").innerHTML = hits.length ? hits.map(card).join("") : `<div class="empty">nothing matched 😔 womp womp — <a href="https://github.com/${REPO}/blob/${BRANCH}/CONTRIBUTING.md">package it yourself?</a></div>`;
+  $("#count").textContent = `${hits.length} of ${ALL.length} packages`;
+  $("#list").innerHTML = hits.length ? hits.map(card).join("")
+    : dirt && !ALL.length ? `<div class="empty">DIRT is empty rn 🫥</div>`
+    : `<div class="empty">nothing matched 😔 womp womp — <a href="https://github.com/${REPO}/blob/${BRANCH}/CONTRIBUTING.md">package it yourself?</a></div>`;
 }
 
 async function showPkg(name){
-  const p = PKGS.find(x => x.pkgname === name); if(!p) return;
+  const p = LISTED().find(x => x.pkgname === name) || PKGS.find(x => x.pkgname === name); if(!p) return;
+  const tree = DPKGS.includes(p) ? "dirt" : "packages", pre = tree === "dirt" ? "dirt/" : "";
   $("#dname").textContent = p.pkgname + (p.via_repo ? "" : " " + p.pkgver + "-" + p.pkgrel);
   $("#ddesc").textContent = p.pkgdesc || "";
-  $("#dcmd").textContent = "gurt install " + p.pkgname;
+  $("#dcmd").textContent = "gurt install " + pre + p.pkgname;
   const row = (k,v) => v && (Array.isArray(v) ? v.length : true) ? `<tr><td>${k}</td><td>${v}</td></tr>` : "";
   $("#dtable").innerHTML =
     row("upstream", p.url ? `<a href="${esc(p.url)}" rel="noopener">${esc(p.url)}</a>` : "") +
     row("comes from", p.via_url ? `${esc(p.via_url)} <span class="mono">(key ${esc((p.via_fingerprint||"").replace(/(.{4})/g,"$1 ").trim())})</span>` : "") +
-    row("also installs as", esc((p.alias||[]).map(a => "gurt install " + a).join(" · "))) +
+    row("also installs as", esc((p.alias||[]).map(a => "gurt install " + pre + a).join(" · "))) +
     row("license", esc(p.license)) + row("maintainer", p.maintainer ? `<span class="who" data-u="${esc(p.maintainer)}">${esc(p.maintainer)}</span>` : "") +
     row("arch", esc((p.arch||[]).join(", "))) +
     row("depends", esc((p.depends||[]).join(", "))) +
     row("makedepends", esc((p.makedepends||[]).join(", "))) +
-    row("recipe", `<a href="https://github.com/${REPO}/tree/${BRANCH}/packages/${encodeURIComponent(p.pkgname)}">packages/${esc(p.pkgname)}</a>`);
+    row("recipe", `<a href="https://github.com/${REPO}/tree/${BRANCH}/${tree}/${encodeURIComponent(p.pkgname)}">${tree}/${esc(p.pkgname)}</a>`);
   $("#dsrc").textContent = "loading GURTBUILD…";
   $("#dflag").href = `https://github.com/${REPO}/issues/new?` + new URLSearchParams({
-    title: `[out of date] ${p.pkgname}`, labels: "out-of-date",
+    title: `[out of date] ${pre}${p.pkgname}`, labels: "out-of-date",
     body: `**${p.pkgname}** looks out of date on GURT.\n\nGURT has: ${p.via_repo ? "official repo" : p.pkgver + "-" + p.pkgrel}\nNewest upstream version: \nUpstream: ${p.url || ""}\n`,
   });
-  $("#dedit").href = `https://github.com/${REPO}/edit/${BRANCH}/packages/${encodeURIComponent(p.pkgname)}/GURTBUILD`;
-  loadComments(p.pkgname);
+  $("#dedit").href = `https://github.com/${REPO}/edit/${BRANCH}/${tree}/${encodeURIComponent(p.pkgname)}/GURTBUILD`;
+  loadComments(pre + p.pkgname);
   dlg.showModal();
   try {
-    const r = await fetch(`https://raw.githubusercontent.com/${REPO}/${BRANCH}/packages/${encodeURIComponent(p.pkgname)}/GURTBUILD`);
+    const r = await fetch(`https://raw.githubusercontent.com/${REPO}/${BRANCH}/${tree}/${encodeURIComponent(p.pkgname)}/GURTBUILD`);
     $("#dsrc").textContent = r.ok ? await r.text() : "couldn't load the GURTBUILD (repo not pushed yet?)";
   } catch { $("#dsrc").textContent = "couldn't load the GURTBUILD"; }
 }
@@ -351,6 +392,7 @@ const SRC = {
             web: t => `https://archlinux.org/packages/?q=${encodeURIComponent(t)}`, webName: "archlinux.org" },
   flatpak:{ title: "flatpak · Flathub", blurb: "Flathub apps, sandboxed. gurt installs flatpak + adds Flathub for you the first time. Use the app id or just the name (gurt install flatpak/gimp).",
             web: t => `https://flathub.org/apps/search?q=${encodeURIComponent(t)}`, webName: "flathub.org" },
+  dirt:   { title: "DIRT 🔞 · mature section" },
   snap:   { title: "snap · Snap Store", blurb: "Snap Store apps. gurt sets up snapd for you (on Mint it tells you how to unblock snaps first).",
             web: t => `https://snapcraft.io/search?q=${encodeURIComponent(t)}`, webName: "snapcraft.io" },
 };
@@ -358,8 +400,12 @@ let CUR = "gurt", aurTimer = 0, aurSeq = 0;
 function setSrc(src) {
   CUR = src;
   document.querySelectorAll(".src").forEach(b => { const on = b.dataset.src === src; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); });
-  const main = src === "gurt";
+  const main = src === "gurt" || src === "dirt";
+  document.documentElement.classList.toggle("dirt", src === "dirt");
+  $("#dirtnote").hidden = src !== "dirt";
   $("#secttitle").textContent = SRC[src].title;
+  $("#q").placeholder = src === "dirt" ? "search DIRT…" : "search Main GURT…";
+  if (main) render();
   $("#upbtn").hidden = !main;
   document.querySelector(".search").hidden = !main; $("#list").hidden = !main;
   $("#srcpanel").hidden = main;
@@ -387,7 +433,18 @@ async function aurSearch(t) {
       </div>`).join("") : `<div class="empty">nothing on the AUR matched 😔</div>`;
   } catch { if (seq === aurSeq) $("#slist").innerHTML = `<div class="empty">couldn't reach the AUR from here — use the command above</div>`; }
 }
-document.querySelectorAll(".src").forEach(b => b.addEventListener("click", () => setSrc(b.dataset.src)));
+// DIRT is behind an "Are you sure?" gate every time you open it
+const gate = $("#gate");
+document.querySelectorAll(".src").forEach(b => b.addEventListener("click", () => {
+  if (b.dataset.src === "dirt" && CUR !== "dirt") { gate.showModal(); $("#gnah").focus(); return; }
+  setSrc(b.dataset.src);
+}));
+$("#gnah").addEventListener("click", () => gate.close());
+$("#gyeah").addEventListener("click", () => {
+  gate.close(); setSrc("dirt");
+  if (!DPKGS.loaded) fetch("dirt.json").then(r => r.json()).then(d => { DPKGS = d.packages; DPKGS.loaded = true; if (CUR === "dirt") render(); })
+    .catch(() => { DPKGS.loaded = true; if (CUR === "dirt") render(); });
+});
 $("#sq").addEventListener("input", srcUpdate);
 $("#scopy").addEventListener("click", async () => { try { await navigator.clipboard.writeText($("#scmd").textContent); $("#scopy").textContent = "copied ✓"; setTimeout(() => $("#scopy").textContent = "copy", 1200); } catch {} });
 
@@ -438,7 +495,7 @@ function check() {
   else if (!/^package\(\)|^via_repo=/m.test(txt)) e = "needs a package() function";
   else if (/\b(sudo|doas)\b/.test(txt)) e = "recipes can't use sudo/doas";
   else if (/curl[^|\n]*\|\s*(ba)?sh/.test(txt)) e = "no curl | sh in recipes 💀";
-  else if (PKGS.some(p => p.pkgname === name)) e = `heads up: ${name} already exists — this will be an update to it`;
+  else if (LISTED().some(p => p.pkgname === name)) e = `heads up: ${name} already exists — this will be an update to it`;
   $("#u-err").textContent = e;
   return { name, ok: !e || e.startsWith("heads up") };
 }
@@ -464,7 +521,7 @@ const drop = $("#drop");
 drop.addEventListener("drop", e => loadFile(e.dataTransfer.files[0]));
 $("#u-send").addEventListener("click", () => {
   const c = check(); if (!c.ok) return;
-  const url = `https://github.com/${REPO}/new/${BRANCH}?filename=${encodeURIComponent(`packages/${c.name}/GURTBUILD`)}&value=${encodeURIComponent(R.value)}`;
+  const url = `https://github.com/${REPO}/new/${BRANCH}?filename=${encodeURIComponent(`${TREE()}/${c.name}/GURTBUILD`)}&value=${encodeURIComponent(R.value)}`;
   if (url.length > 7500) { $("#u-err").textContent = "recipe's too long to send through the browser — download it and open a PR by hand"; return; }
   window.open(url, "_blank", "noopener");
 });

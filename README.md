@@ -187,7 +187,7 @@ It checks Main GURT, your own distro, Flathub, the AUR, apt/dnf/zypper/pacman, y
 
 ## DIRT 🔞 (opt-in mature section)
 
-`dirt/` is a separate, **off-by-default** section for 18+ stuff. It never shows on the website, and normal/`-a` searches skip it.
+`dirt/` is a separate, **off-by-default** section for 18+ stuff. On the website it's the dark `dirt/` tab behind an "Are you sure?" 18+ gate. In the CLI, normal/`-a` searches skip it.
 
 ```sh
 gurt dirt on              # confirm you're 18+ (per-user, ~/.config/gurt/dirt-enabled)
