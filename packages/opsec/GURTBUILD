@@ -2,8 +2,9 @@
 # holy opsec
 pkgname=opsec
 pkgver=balls
-pkgrel=1
+pkgrel=2
 pkgdesc="Geektyper + NordVPN = HOLY OPSEC"
+aliases=(opsec.exe geektyper)
 url="https://geektyper.com"
 license="MIT"
 maintainer="clrealy"

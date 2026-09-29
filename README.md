@@ -185,6 +185,19 @@ found gimp in 3 place(s):
 
 It checks Main GURT, your own distro, Flathub, the AUR, apt/dnf/zypper/pacman, your custom repos and the Snap Store, then lets you pick. With `-y` it takes the top one.
 
+## DIRT 🔞 (opt-in mature section)
+
+`dirt/` is a separate, **off-by-default** section for 18+ stuff. It never shows on the website, and normal/`-a` searches skip it.
+
+```sh
+gurt dirt on              # confirm you're 18+ (per-user, ~/.config/gurt/dirt-enabled)
+gurt dirt list
+gurt install dirt/<name>
+gurt dirt off
+```
+
+Rules are in [`dirt/README.md`](dirt/README.md) — legal, labeled, and **nothing involving minors, ever**.
+
 ## Usage
 
 ```sh

@@ -4,7 +4,8 @@ set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 fail=0
 bad() { echo "❌ $1: $2"; fail=1; }
-for d in packages/*/; do
+for d in packages/*/ dirt/*/; do
+  [[ -d $d ]] || continue
   n=$(basename "$d")
   [[ -f $d/GURTBUILD ]] || { bad "$n" "no GURTBUILD"; continue; }
   bash -n "$d/GURTBUILD" 2>/dev/null || { bad "$n" "GURTBUILD has a syntax error"; continue; }
@@ -25,6 +26,6 @@ for d in packages/*/; do
 done
 # aliases can't collide with package names or each other
 dupes=$( { for d in packages/*/; do basename "$d"; done
-           for d in packages/*/; do ./gurt srcinfo "$d" 2>/dev/null | awk -F' = ' '$1 == "alias" {print $2}'; done; } | sort | uniq -d )
+           for d in packages/*/ dirt/*/; do [[ -d $d ]] || continue; ./gurt srcinfo "$d" 2>/dev/null | awk -F' = ' '$1 == "alias" {print $2}'; done; } | sort | uniq -d )
 if [[ -n $dupes ]]; then echo "❌ these names are used more than once (package names + aliases must be unique): $dupes"; fail=1; fi
 exit $fail

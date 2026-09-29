@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.9.1"
+GURT_VERSION="0.10.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -200,12 +200,13 @@ pkey()   { if [[ $1 == gurt ]]; then echo "$2"; else echo "$1:$2"; fi; }
 pretty() { if [[ $1 == *:* ]]; then echo "${1%%:*}/${1#*:}"; else echo "$1"; fi; }
 is_installed()  { [[ -f $DB/$1/info ]]; }
 inst_ver()      { local r; r=$(info_get "$DB/$1/info" pkgrel); echo "$(info_get "$DB/$1/info" pkgver)${r:+-$r}"; }
-repo_info()     { echo "$GURT_REPO_DIR/packages/$1/.gurtinfo"; }
+PKG_TREE=packages TREE_SRC=gurt   # packages/ = Main GURT, dirt/ = DIRT (opt-in, 18+)
+repo_info()     { echo "$GURT_REPO_DIR/$PKG_TREE/$1/.gurtinfo"; }
 is_gurt_pkg()   { [[ -f $(repo_info "$1") ]]; }
 # download alias → real Main GURT package name
 alias_lookup()  {
   local f
-  for f in "$GURT_REPO_DIR"/packages/*/.gurtinfo; do
+  for f in "$GURT_REPO_DIR/$PKG_TREE"/*/.gurtinfo; do
     grep -qxF "alias = $1" "$f" && { basename "$(dirname "$f")"; return 0; }
   done
   return 1
@@ -696,11 +697,15 @@ flush_native() {
 resolve_and_install() { # name reason
   local name=$1 reason=${2:-dep} real
   if ! is_gurt_pkg "$name" && real=$(alias_lookup "$name"); then msg2 "$name is an alias → $real"; name=$real; fi
-  [[ -n ${VISITED[$name]:-} ]] && return 0
-  VISITED[$name]=1
-  local rdir="$GURT_REPO_DIR/packages/$name" info
+  local key; key=$(pkey "$TREE_SRC" "$name")
+  [[ -n ${VISITED[$key]:-} ]] && return 0
+  VISITED[$key]=1
+  local rdir="$GURT_REPO_DIR/$PKG_TREE/$name" info
   info=$(repo_info "$name")
-  [[ -f $info ]] || die "no package '$name' in main GURT (try: gurt search $name, or gurt search -a $name for every source)"
+  if [[ ! -f $info ]]; then
+    [[ $TREE_SRC == dirt ]] && die "no package '$name' in DIRT"
+    die "no package '$name' in main GURT (try: gurt search $name, or gurt search -a $name for every source)"
+  fi
 
   # official-repo recipe → add the vendor's repo (key fingerprint pinned by the recipe), install from it
   local via; via=$(info_get "$info" via_repo)
@@ -721,8 +726,8 @@ resolve_and_install() { # name reason
     return
   fi
 
-  if is_installed "$name" && ! $FORCE && ! vnewer "$(inst_ver "$name")" "$(repo_ver "$name")"; then
-    [[ $reason == explicit ]] && msg "$name $(inst_ver "$name") is already installed and up to date 👍"
+  if is_installed "$key" && ! $FORCE && ! vnewer "$(inst_ver "$key")" "$(repo_ver "$name")"; then
+    [[ $reason == explicit ]] && msg "$(pretty "$key") $(inst_ver "$key") is already installed and up to date 👍"
     return 0
   fi
 
@@ -745,7 +750,7 @@ resolve_and_install() { # name reason
     printf '%s───────────────────────%s\n' "$B" "$R0" >&2
     ask "read that GURTBUILD? build + install $name $(repo_ver "$name")?" || die "aborted, no cap"
   fi
-  GURT_SRC=gurt build_pkg "$rdir" "$GURT_CACHE/pkg"
+  GURT_SRC=$TREE_SRC build_pkg "$rdir" "$GURT_CACHE/pkg"
   install_file "$BUILT_PKG" "$reason"
 }
 
@@ -759,7 +764,8 @@ install_any() { # spec reason
       *) die "--box works with apt/ dnf/ zypper/ pacman/ (gurt, aur, flatpak and snap already run fine without it)" ;; esac
   fi
   case $src in
-    gurt) ensure_repo; resolve_and_install "$name" "$reason" ;;
+    gurt) ensure_repo; PKG_TREE=packages TREE_SRC=gurt resolve_and_install "$name" "$reason" ;;
+    dirt) dirt_install "$name" "$reason" ;;
     aur)  aur_install "$name" "$reason" ;;
     flatpak) flatpak_install "$name" "$reason" ;;
     snap)    snap_install "$name" "$reason" ;;
@@ -781,6 +787,7 @@ install_any() { # spec reason
 norm_src() {
   case ${1,,} in
     gurt|main)                      echo gurt ;;
+    dirt)                           echo dirt ;;
     apt|deb|debian|ubuntu|mint)     echo apt ;;
     dnf|yum|rpm|fedora)             echo dnf ;;
     zypper|suse|opensuse)           echo zypper ;;
@@ -1465,6 +1472,35 @@ box_remove() { # key
   msg "$(pretty "$key") removed 🗑️ (the $n box itself stays — delete it with: distrobox rm $n)"
 }
 
+# ── DIRT: opt-in section for mature packages (18+). off by default, never on the website ──
+DIRT_FLAG="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/dirt-enabled"
+dirt_on() { [[ -f $DIRT_FLAG ]]; }
+dirt_install() { # name reason
+  dirt_on || die "DIRT is off 🔒 — it's the mature section. turn it on with: gurt dirt on (18+ only)"
+  ensure_repo
+  [[ -d $GURT_REPO_DIR/dirt ]] || die "DIRT is empty right now"
+  PKG_TREE=dirt TREE_SRC=dirt resolve_and_install "$1" "${2:-explicit}"
+}
+cmd_dirt() {
+  case ${1:-status} in
+    on|enable)
+      dirt_on && { msg "DIRT is already on"; return 0; }
+      printf '%s⚠️  DIRT is the mature section of GURT — packages with mature/explicit themes.%s\n' "$YLW" "$R0" >&2
+      printf '%s::%s are you 18 or older? type "yes" to turn it on: ' "$MAG" "$R0" >&2
+      local a; { read -r a 2>/dev/null </dev/tty; } 2>/dev/null || read -r a || a=""
+      [[ ${a,,} == yes ]] || die "DIRT stays off 👍"
+      mkdir -p "$(dirname "$DIRT_FLAG")"; date +%s > "$DIRT_FLAG"
+      msg "DIRT is on for your user. install with: gurt install dirt/<name> · list: gurt dirt list · off: gurt dirt off" ;;
+    off|disable) rm -f "$DIRT_FLAG"; msg "DIRT is off 🔒 (already-installed DIRT packages stay until you remove them)" ;;
+    status) if dirt_on; then msg "DIRT is on"; else msg "DIRT is off 🔒 (gurt dirt on — 18+ only)"; fi ;;
+    list|ls)
+      dirt_on || die "DIRT is off 🔒 (gurt dirt on — 18+ only)"
+      ensure_repo
+      PKG_TREE=dirt TREE_SRC=dirt search_main "" || msg "DIRT is empty right now" ;;
+    *) die "usage: gurt dirt [on|off|status|list]" ;;
+  esac
+}
+
 # ── --scanrepos: find a package everywhere, then pick ──
 pm_version() { # what version would your distro install?
   case $PM in
@@ -1641,7 +1677,7 @@ search_main() {
   local term=$1 f name desc ver tag found=0
   ensure_repo
   local aka
-  for f in "$GURT_REPO_DIR"/packages/*/.gurtinfo; do
+  for f in "$GURT_REPO_DIR/$PKG_TREE"/*/.gurtinfo; do
     name=$(info_get "$f" pkgname); desc=$(info_get "$f" pkgdesc)
     aka=$(info_get "$f" alias | paste -sd, - | sed 's/,/, /g')
     if grep -qx 'hidden = true' "$f" && [[ ${term,,} != "${name,,}" ]] && ! grep -qxiF "alias = $term" "$f"; then continue; fi
@@ -1649,8 +1685,8 @@ search_main() {
       ver=$(repo_ver "$name"); tag=""
       [[ -n $aka ]] && desc+="  (aka $aka)"
       [[ -n $(info_get "$f" via_repo) ]] && ver="official repo 🔏"
-      is_installed "$name" && tag=" ${GRN}[installed]${R0}"
-      printf '%sgurt/%s%s%s%s %s%s%s%s\n    %s\n' "$MAG" "$R0" "$B" "$name" "$R0" "$GRN" "$ver" "$R0" "$tag" "$desc"
+      is_installed "$(pkey "$TREE_SRC" "$name")" && tag=" ${GRN}[installed]${R0}"
+      printf '%s%s/%s%s%s%s %s%s%s%s\n    %s\n' "$MAG" "$TREE_SRC" "$R0" "$B" "$name" "$R0" "$GRN" "$ver" "$R0" "$tag" "$desc"
       found=1
     fi
   done
@@ -1691,6 +1727,7 @@ cmd_search() { # [-a] [src/]term
       search_foreign "$src" "$term" && found=1
     done
   elif [[ $src == gurt ]]; then search_main "$term" && found=1
+  elif [[ $src == dirt ]]; then dirt_on || die "DIRT is off 🔒 (gurt dirt on — 18+ only)"; PKG_TREE=dirt TREE_SRC=dirt search_main "$term" && found=1
   else search_foreign "$src" "$term" && found=1; fi
   (( found )) || { echo "nothing matched '$term' 😔 womp womp"; [[ $src == gurt ]] && ! $ALLSRC && echo "try: gurt search -a $term   (searches aur, apt, dnf, zypper, pacman too)"; return 1; }
 }
@@ -1748,6 +1785,7 @@ find_outdated() {
     new=""
     case $src in
       gurt) is_gurt_pkg "$name" && new=$(repo_ver "$name") ;;
+      dirt) if PKG_TREE=dirt is_gurt_pkg "$name"; then new=$(PKG_TREE=dirt repo_ver "$name"); fi ;;
       aur)  dir=$(aur_clone "$name" 2>/dev/null) && new=$(aur_srcinfo_ver "$dir/.SRCINFO") ;;
       flatpak|snap|box-*) ;;   # they update themselves (see upgrade_containers)
       *)    new=$(idx_lookup "$src" "$name" | cut -f2 || true) ;;
@@ -2060,6 +2098,9 @@ ${B}sources${R0}   (no prefix = main GURT · write it as aur/yay OR  yay --repo 
   flatpak/gimp         Flathub apps (gurt sets up flatpak for you)  (alias: flathub/)
   snap/spotify         Snap Store apps (gurt sets up snapd for you)
 
+${B}DIRT${R0}   (the mature section — off by default, 18+, never on the website)
+  dirt on | off | status | list        then: gurt install dirt/<name>
+
 ${B}your own repos${R0}   (PPAs, vendor apt/rpm repos, COPRs, custom pacman repos)
   repo list                      every source gurt knows
   repo add ppa:owner/name        add an Ubuntu PPA (key fetched automatically)
@@ -2173,6 +2214,7 @@ main() {
     checksum)          cmd_checksum "$@" ;;
     new)               cmd_new "$@" ;;
     repo|repos)        cmd_repo "$@" ;;
+    dirt)              cmd_dirt "$@" ;;
     doctor)            cmd_doctor ;;
     yo)                echo "gurt: yo 🦆" ;;
     version)           echo "gurt $GURT_VERSION" ;;
