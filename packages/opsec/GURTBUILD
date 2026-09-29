@@ -2,7 +2,7 @@
 # holy opsec
 pkgname=opsec
 pkgver=balls
-pkgrel=2
+pkgrel=
 pkgdesc="Geektyper + NordVPN = HOLY OPSEC"
 aliases=(opsec.exe geektyper)
 url="https://geektyper.com"
@@ -19,7 +19,7 @@ package() {
 
   cat > "$pkgdir$prefix/bin/opsec" <<'SCRIPT'
 #!/bin/sh
-# Opsec.exe — opens GeekTyper in its own app window
+# Opsec.exe
 URL="https://geektyper.com/"
 for b in chromium chromium-browser google-chrome-stable google-chrome brave brave-browser microsoft-edge-stable vivaldi-stable; do
   command -v "$b" >/dev/null 2>&1 && exec "$b" --app="$URL" "$@"
