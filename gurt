@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.11.0"
+GURT_VERSION="0.11.1"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -42,7 +42,7 @@ FOREIGN_SOURCES="aur apt dnf zypper pacman flatpak snap"
 IDX_DIR="$GURT_CACHE/index"
 IDX_MAX_AGE="${IDX_MAX_AGE:-86400}"   # re-download foreign indexes after a day
 
-NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT="" EXPECT_FPR="" BOX=false NOBOX=false SCAN=false
+NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT="" EXPECT_FPR="" BOX=false NOBOX=false SCAN=false NO_DESKTOP=false
 
 # ───────────────────────── pretty output ─────────────────────────
 if [[ -t 2 && -z ${NO_COLOR:-} ]]; then
@@ -236,7 +236,7 @@ load_recipe() {
   RECIPE=$f
   pkgname="" pkgbase="" pkgver="" pkgrel=1 epoch="" pkgdesc="" url="" license="" maintainer="" install=""
   via_repo="" via_type="" via_url="" via_suite="" via_components="" via_key="" via_fingerprint="" via_pkg=""
-  aliases=() hidden=""
+  aliases=() hidden="" desktop_icon=""
   arch=() depends=() makedepends=() checkdepends=() source=() noextract=() sums=() SUMALGO=sha256
   local a v fn
   for a in $SUM_ALGOS; do unset "${a}sums" "${a}sums_$CARCH"; done
@@ -305,6 +305,7 @@ print_srcinfo() {
   for x in "${source[@]}";      do printf 'source = %s\n' "$x"; done
   for x in "${aliases[@]}"; do printf 'alias = %s\n' "$x"; done
   case ${hidden,,} in 1|true|yes) printf 'hidden = true\n' ;; esac
+  case ${desktop_icon,,} in 1|true|yes) printf 'desktop_icon = true\n' ;; esac
   for x in via_repo via_type via_url via_suite via_components via_key via_fingerprint via_pkg; do
     [[ -n ${!x} ]] && printf '%s = %s\n' "$x" "${!x}"
   done
@@ -544,6 +545,27 @@ install_file() { # file.gurt [reason]
   msg "$(pretty "$key") installed ✅"
 }
 
+# recipes with desktop_icon=true get a shortcut on your desktop (skip with --no-desktop or GURT_DESKTOP_ICONS=0)
+desktop_dir() { local d; d=$(xdg-user-dir DESKTOP 2>/dev/null) || d=""; [[ -n $d && $d != "$HOME" ]] || d="$HOME/Desktop"; echo "$d"; }
+add_desktop_icons() {
+  local key=$1 desk rel f out made=()
+  { $NO_DESKTOP || [[ ${GURT_DESKTOP_ICONS:-1} == 0 ]]; } && return 0
+  (( EUID == 0 )) && return 0   # root's desktop isn't yours
+  desk=$(desktop_dir); mkdir -p "$desk" 2>/dev/null || return 0
+  while IFS= read -r rel; do
+    f="$R/$rel"; out="$desk/${rel##*/}"
+    [[ -f $f ]] || continue
+    if [[ -e $out ]] && ! grep -qxF "$out" "$DB/$key/desktop" 2>/dev/null; then warn "there's already a $out on your desktop, left it alone"; continue; fi
+    cp -f -- "$f" "$out" && chmod 755 "$out" || continue
+    command -v gio >/dev/null && gio set "$out" metadata::trusted true 2>/dev/null || true   # GNOME: no "untrusted launcher" nag
+    made+=("$out")
+  done < <(grep -E '(^|/)share/applications/[^/]+\.desktop$' "$DB/$key/files")
+  (( ${#made[@]} )) || return 0
+  printf '%s\n' "${made[@]}" | asroot tee "$DB/$key/desktop" >/dev/null
+  msg2 "put a shortcut on your desktop 🖥️"
+}
+rm_desktop_icons() { local f; [[ -f $DB/$1/desktop ]] || return 0; while IFS= read -r f; do [[ -n $f ]] && rm -f -- "$f"; done < "$DB/$1/desktop"; }
+
 # after install: refresh the linker cache, teach it about foreign lib dirs, sanity-check binaries
 post_install() {
   local key=$1 files="$DB/$1/files" f
@@ -558,6 +580,7 @@ post_install() {
     grep -qE '(^|/)lib[^/]*\.so(\.[0-9.]+)?$' "$files" && { asroot ldconfig 2>/dev/null || true; }
     LDCACHE=""
     fix_rpaths "$key"
+    [[ $(info_get "$DB/$key/info" desktop_icon) == true ]] && add_desktop_icons "$key"
   fi
   # do the binaries actually have what they need?
   command -v ldd >/dev/null || return 0
@@ -676,6 +699,7 @@ remove_pkg() {
     if [[ -n $keep ]] && grep -qxF -- "/$rel" <<<"$keep"; then warn "kept /$rel — your distro owns it"; continue; fi
     asroot rm -f -- "$R/$rel"
   done < "$dbd/files"
+  rm_desktop_icons "$key"
   LC_ALL=C sort -r "$dbd/dirs" | while IFS= read -r rel; do
     [[ -n $rel ]] && asroot rmdir -- "$R/$rel" 2>/dev/null || true
   done
@@ -2197,6 +2221,7 @@ ${B}options${R0}
   --scanrepos          install: look for the package in EVERY source, then pick where to get it
   --nodeps             don't install distro deps
   --nocheck            skip check()
+  --no-desktop         don't put desktop shortcuts on your desktop (or GURT_DESKTOP_ICONS=0)
   --keep               keep the build dir
   --root DIR           install into another root (testing, chroots)
 EOF
@@ -2222,6 +2247,7 @@ main() {
       --suite=*)      SUITE_OPT=${1#*=} ;;
       --nodeps)       NODEPS=true ;;
       --nocheck)      NOCHECK=true ;;
+      --no-desktop)   NO_DESKTOP=true ;;
       --keep)         KEEP=true ;;
       --root)         shift; GURT_ROOT=${1:?--root needs a dir}; R="${GURT_ROOT%/}"; DB="$R/var/lib/gurt/local" ;;
       --root=*)       GURT_ROOT=${1#*=}; R="${GURT_ROOT%/}"; DB="$R/var/lib/gurt/local" ;;

@@ -170,6 +170,10 @@ hidden=true                         # not listed on the site or in gurt search, 
 ```
 The linter makes sure aliases never collide with other packages or aliases.
 
+## Desktop shortcuts 🖥️
+
+Put `desktop_icon=true` in a GURTBUILD and gurt copies the package's `.desktop` file onto your desktop when it installs (and cleans it up on `gurt remove`). Don't want that? `--no-desktop` or `GURT_DESKTOP_ICONS=0`.
+
 ## Not sure where to get something? `--scanrepos` 🔍
 
 ```sh
