@@ -63,6 +63,17 @@ gurt installs podman + [distrobox](https://distrobox.it) if you need them, creat
 
 Things inside a box manage **the box**, not your host. dnfdragora in `gurt-fedora` manages Fedora packages inside that box, and your Arch/Mint system stays untouched 🛡️
 
+### Got a `.deb` or `.rpm` file? Just install it 📥
+
+```sh
+gurt install ./google-chrome-stable_current_amd64.deb   # on Fedora, Arch, openSUSE, whatever
+gurt install ~/Downloads/some-app.rpm                   # on Debian/Ubuntu/Mint
+gurt install ./thing-1.0-1-x86_64.pkg.tar.zst           # Arch packages too
+gurt install https://example.com/app.deb                # urls work
+```
+
+gurt reads the name, version and deps out of the file, repacks it and installs it **straight onto your system — no box**. It shows up as `file/<name>` (`gurt remove file/<name>`, `gurt info file/<name>`). Deps get resolved the same way as below: your system first, then your distro, then the distro the file was made for. If the file is already your distro's own kind (a `.deb` on Ubuntu, an `.rpm` on Fedora), gurt just hands it to your package manager. The same safety rails apply: it won't install something built for a different CPU, it refuses kernels/bootloaders/core system packages, and it never overwrites files your distro owns. To update one, install the newer file.
+
 ### How cross-distro deps work
 
 When a foreign package needs something, gurt looks in this order:
