@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.16.1"
+GURT_VERSION="0.16.2"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -123,11 +123,23 @@ pm_has() {
   esac
 }
 
+apt_install() { # apt with the usual fresh-Debian gotchas handled
+  local o=(-o DPkg::Lock::Timeout=300)   # another apt/updater running? wait for it instead of failing
+  if grep -qsE '^[[:space:]]*deb[[:space:]]+cdrom:' /etc/apt/sources.list /etc/apt/sources.list.d/*.list; then
+    warn "your apt sources still have the install DVD/USB (a 'deb cdrom:' line) — that can make installs fail. fix: sudo sed -i '/^deb cdrom:/s/^/#/' /etc/apt/sources.list && sudo apt update"
+  fi
+  asroot apt-get "${o[@]}" install -y "$@" && return 0
+  msg2 "apt failed — refreshing its package lists and trying once more"
+  asroot apt-get "${o[@]}" update || true
+  asroot apt-get "${o[@]}" install -y "$@" && return 0
+  asroot apt-get "${o[@]}" -f install -y >/dev/null 2>&1 || true   # finish any half-done install
+  asroot apt-get "${o[@]}" install -y "$@"
+}
 pm_install() {
   (( $# )) || return 0
   msg "installing distro deps via $PM: $*"
   case $PM in
-    apt)    asroot apt-get install -y "$@" ;;
+    apt)    apt_install "$@" ;;
     dnf)    asroot dnf install -y "$@" ;;
     yum)    asroot yum install -y "$@" ;;
     # Arch doesn't support partial upgrades: installing something against a newer package list than the rest
