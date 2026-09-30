@@ -1,5 +1,5 @@
 pkgname=btop
-pkgver=1.4.4
+pkgver=1.4.7
 pkgrel=1
 pkgdesc="A monitor of resources (CPU, memory, disks, network, processes) that looks sick"
 url="https://github.com/aristocratos/btop"
