@@ -1,0 +1,21 @@
+# 🔍 you found it. don't tell anyone.
+pkgname=hpa2
+pkgver=1.0
+pkgrel=1
+pkgdesc="???"
+url="https://clrealy.github.io/GURT"
+license="MIT"
+maintainer="clrealy"
+arch=(any)
+hidden=true
+source=()
+sha256sums=()
+
+package() {
+  install -d "$pkgdir$prefix/bin"
+  cat > "$pkgdir$prefix/bin/hpa2" <<'SCRIPT'
+#!/bin/sh
+printf '\n\033[1;31m  H E Y O\033[0m\n\n  you found HPA2 🔍🏆\n\n'
+SCRIPT
+  chmod 755 "$pkgdir$prefix/bin/hpa2"
+}

@@ -1,0 +1,9 @@
+pkgname = hpa2
+pkgver = 1.0
+pkgrel = 1
+pkgdesc = ???
+url = https://clrealy.github.io/GURT
+license = MIT
+maintainer = clrealy
+arch = any
+hidden = true
