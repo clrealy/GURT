@@ -170,8 +170,11 @@ class H(BaseHTTPRequestHandler):
             if not self._host_ok() or not secrets.compare_digest((q.get("t") or [""])[0], TOKEN):
                 return self._send(403, "nope 🔒 open GURT with: gurt gui", "text/plain")
             return self._send(200, PAGE.replace("__TOKEN__", TOKEN), "text/html")
-        if u.path == "/icon.png":
-            for f in ICONS:
+        if u.path in ("/icon.png", "/logo.png"):
+            repo = paths().get("repo", "")
+            want = "gurt-logo.png" if u.path == "/logo.png" else "apple-touch-icon.png"
+            for f in [os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "site", "assets", want),
+                      os.path.join(repo, "site", "assets", want)] + (ICONS if want != "gurt-logo.png" else []):
                 if os.path.isfile(f):
                     return self._send(200, open(f, "rb").read(), "image/png")
             return self._send(404, b"", "image/png")
@@ -308,6 +311,15 @@ body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,"Se
 code,.mono{font-family:ui-monospace,"JetBrains Mono","DejaVu Sans Mono",monospace}
 header{display:flex;align-items:center;gap:18px;padding:14px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
 .logo{font:700 30px/1 Georgia,"Times New Roman",serif;letter-spacing:-.5px}
+.logoimg{display:block;height:64px;width:auto;margin:-10px -8px -8px -10px}
+@media (prefers-color-scheme: dark){.logoimg{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.9)) drop-shadow(0 0 1px rgba(255,255,255,.9))}}
+.srcs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.srcs button{font:13px ui-monospace,monospace;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer}
+.srcs button small{font-family:system-ui,sans-serif;color:var(--muted);margin-left:4px}
+.srcs button:hover{border-color:var(--muted)}
+.srcs button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.srcs button.on small{color:var(--accent-ink);opacity:.75}
+.blurb{color:var(--muted);margin:0 2px 12px}
 .logo .g{color:var(--g)}.logo .u{color:var(--u)}.logo .r{color:var(--r)}.logo .t{color:var(--t)}
 .ver{color:var(--muted);font-size:12px}
 nav{display:flex;gap:6px;margin-left:8px}
@@ -353,7 +365,7 @@ dialog .row{justify-content:flex-end}
 @media (max-width:640px){header{flex-wrap:wrap}nav{margin-left:0}}
 </style></head><body>
 <header>
-  <div><div class="logo"><span class="g">g</span><span class="u">u</span><span class="r">r</span><span class="t">t</span></div><div class="ver" id="ver"></div></div>
+  <div><img class="logoimg" src="/logo.png" alt="gurt" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="logo" hidden><span class="g">g</span><span class="u">u</span><span class="r">r</span><span class="t">t</span></div><div class="ver" id="ver"></div></div>
   <nav>
     <button data-tab="discover" class="on">🔍 Discover</button>
     <button data-tab="installed">📦 Installed</button>
@@ -364,11 +376,23 @@ dialog .row{justify-content:flex-end}
 </header>
 <main>
   <section id="t-discover">
+    <div class="srcs" id="srcs" role="tablist" aria-label="sources">
+      <button data-src="gurt" class="on">gurt/ <small>Main GURT</small></button>
+      <button data-src="aur">aur/ <small>Arch User Repo</small></button>
+      <button data-src="apt">apt/ <small>Debian · Ubuntu</small></button>
+      <button data-src="dnf">dnf/ <small>Fedora</small></button>
+      <button data-src="zypper">zypper/ <small>openSUSE</small></button>
+      <button data-src="pacman">pacman/ <small>Arch</small></button>
+      <button data-src="flatpak">flatpak/ <small>Flathub</small></button>
+      <button data-src="snap">snap/ <small>Snap Store</small></button>
+    </div>
+    <p class="blurb" id="blurb" hidden></p>
     <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button></div>
     <p class="hint">tip: <code>aur/yay</code>, <code>apt/cowsay</code>, <code>flatpak/gimp</code>… type a full name with a source and hit install</p>
     <div id="direct" hidden class="row" style="margin-bottom:12px"><button class="btn" id="directbtn"></button></div>
     <div id="allres" hidden><h2>everywhere</h2><div class="grid" id="allgrid"></div><h2 style="margin-top:18px">Main GURT</h2></div>
     <div class="grid" id="maingrid"></div>
+    <div class="grid" id="srcgrid" hidden></div>
   </section>
   <section id="t-installed" hidden>
     <div class="search"><input id="iq" placeholder="filter installed…" autocomplete="off"></div>
@@ -464,21 +488,58 @@ $("#chide").addEventListener("click", () => $("#console").classList.toggle("open
 document.addEventListener("click", e => { const b = e.target.closest("[data-cmd]"); if (b && !b.disabled) run(b.dataset.cmd, b.dataset.arg); });
 
 // ── search everywhere (parses `gurt search -a`) ──
-async function searchAll(){
-  const t = $("#q").value.trim(); if (!t) return;
-  if (/^(https?:\/\/|git@)/.test(t)) { run("outsource", t); return; }
-  $("#allres").hidden = false; $("#allgrid").innerHTML = `<div class="empty">searching every source… 🔎</div>`;
-  const r = await run("search", t, {all:true, quiet:true, confirm:false}); if (!r) return;
+// ── source tabs: search one distro's repos ──
+const BLURB = {
+  aur: "The Arch User Repository — PKGBUILDs gurt builds from source, on any distro.",
+  apt: "Debian's packages (.deb). gurt downloads, checks and installs them on whatever you run.",
+  dnf: "Fedora's packages (.rpm), installable anywhere.",
+  zypper: "openSUSE Tumbleweed's packages — yes, even on Red Star OS 💀",
+  pacman: "Arch's official binary packages, installable on non-Arch distros.",
+  flatpak: "Flathub apps, sandboxed. gurt sets up flatpak + Flathub for you.",
+  snap: "Snap Store apps. gurt sets up snapd for you."};
+let SRC = "gurt";
+function setSrc(src){
+  SRC = src;
+  document.querySelectorAll("#srcs button").forEach(b => b.classList.toggle("on", b.dataset.src === src));
+  const main = src === "gurt";
+  $("#maingrid").hidden = !main; $("#srcgrid").hidden = main; $("#allres").hidden = true; $("#qall").hidden = !main;
+  $("#blurb").hidden = main; $("#blurb").textContent = BLURB[src] || "";
+  $("#q").placeholder = main ? "search Main GURT… (Enter searches every source)" : `search ${src}/… and hit Enter`;
+  if (!main) $("#srcgrid").innerHTML = `<div class="empty">type something and hit Enter to search ${esc(src)} 🔎</div>`;
+  if (!main && $("#q").value.trim()) searchSrc();
+  renderMain();
+}
+function parseSearch(lines){
   const res = []; let last = null;
-  for (const l of r.lines) {
+  for (const l of lines) {
     const m = l.match(/^([a-z0-9-]+)\/(\S+) (\S+)(?: \[installed\])?$/);
     if (m) { last = {src:m[1], name:m[2], ver:m[3]}; res.push(last); }
     else if (last && /^ {4}/.test(l)) { last.desc = l.trim(); last = null; }
   }
+  return res;
+}
+async function searchSrc(){
+  const t = $("#q").value.trim().replace(/^[a-z]+\//, ""); if (!t) return;
+  $("#srcgrid").innerHTML = `<div class="empty">searching ${esc(SRC)}… 🔎</div>`;
+  const r = await run("search", `${SRC}/${t}`, {quiet:true, confirm:false}); if (!r) return;
+  const res = parseSearch(r.lines);
+  $("#srcgrid").innerHTML = res.length ? res.slice(0, 120).map(p => card({name:p.name, src:p.src, ver:p.ver, desc:p.desc,
+      actions: installBtns(`${p.src}/${p.name}`)})).join("")
+    : `<div class="empty">nothing on ${esc(SRC)} matched "${esc(t)}" 😔 ${r.lines.some(l => /unreachable|couldn.t|==> nah:|no package index/.test(l)) ? "(couldn't reach it — check your internet)" : "womp womp"}</div>`;
+}
+document.querySelectorAll("#srcs button").forEach(b => b.addEventListener("click", () => setSrc(b.dataset.src)));
+
+async function searchAll(){
+  if (SRC !== "gurt") return searchSrc();
+  const t = $("#q").value.trim(); if (!t) return;
+  if (/^(https?:\/\/|git@)/.test(t)) { run("outsource", t); return; }
+  $("#allres").hidden = false; $("#allgrid").innerHTML = `<div class="empty">searching every source… 🔎</div>`;
+  const r = await run("search", t, {all:true, quiet:true, confirm:false}); if (!r) return;
+  const res = parseSearch(r.lines);
   $("#allgrid").innerHTML = res.length ? res.slice(0, 120).map(p => card({name:p.name, src:p.src, ver:p.ver, desc:p.desc,
       actions: installBtns(p.src === "gurt" ? p.name : `${p.src}/${p.name}`)})).join("") : `<div class="empty">nothing anywhere matched "${esc(t)}" 😔 womp womp</div>`;
 }
-$("#q").addEventListener("input", () => { renderMain(); if (!$("#q").value) $("#allres").hidden = true; });
+$("#q").addEventListener("input", () => { if (SRC === "gurt") renderMain(); if (!$("#q").value) $("#allres").hidden = true; });
 $("#q").addEventListener("keydown", e => { if (e.key === "Enter") searchAll(); });
 $("#qall").addEventListener("click", searchAll);
 $("#directbtn").addEventListener("click", () => run("install", $("#q").value.trim()));
