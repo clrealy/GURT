@@ -215,6 +215,9 @@ class H(BaseHTTPRequestHandler):
         body = self._body()
         if u.path == "/api/run":
             cmd, arg = body.get("cmd"), (body.get("arg") or "").strip()
+            if cmd == "gui-setup":
+                job = start_job([GURT, "-y", "gui", "--setup"])
+                return self._send(200, {"job": job.id})
             if cmd == "dirt":
                 if arg not in ("on", "off"):
                     return self._send(400, {"error": "not allowed"})
@@ -233,6 +236,11 @@ class H(BaseHTTPRequestHandler):
                 argv.append(arg)
             job = start_job(argv)
             return self._send(200, {"job": job.id})
+        if u.path == "/api/relaunch":   # reopen as a real app window, then this browser copy bows out
+            subprocess.Popen([GURT, "gui"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             stdin=subprocess.DEVNULL, start_new_session=True)
+            threading.Timer(3, lambda: os._exit(0)).start()
+            return self._send(200, {"ok": True})
         m = re.fullmatch(r"/api/job/([0-9a-f]+)/(pass|cancel)", u.path)
         if m:
             job = JOBS.get(m.group(1))
@@ -520,7 +528,7 @@ dialog .row{justify-content:flex-end}
   <div class="spacer"></div>
   <button class="btn ghost small" id="syncbtn" title="gurt sync">↻ sync</button>
 </header>
-<div id="appbar" hidden>running in your browser 🌐 for a real GURT app window, run <code>gurt gui --setup</code> once <button class="btn ghost small" id="appbarx">×</button></div>
+<div id="appbar" hidden><span id="appbartxt">GURT is running in your browser 🌐 want it as a real app window?</span><button class="btn small" id="appbarinst">install app window</button><button class="btn ghost small" id="appbarx">×</button></div>
 <main>
   <section id="t-discover">
     <div class="srcs" id="srcs" role="tablist" aria-label="sources">
@@ -736,7 +744,17 @@ document.querySelectorAll("nav button").forEach(b => b.addEventListener("click",
 }));
 
 setInterval(() => api("/api/ping").catch(() => {}), 5000); api("/api/ping");
-if (MODE === "browser") { $("#appbar").hidden = false; $("#appbarx").onclick = () => $("#appbar").hidden = true; }
+if (MODE === "browser") {
+  $("#appbar").hidden = false; $("#appbarx").onclick = () => $("#appbar").hidden = true;
+  $("#appbarinst").onclick = async () => {
+    const r = await run("gui-setup", "", {confirm:false}); if (!r) return;
+    if (r.rc === 0) {
+      $("#appbartxt").textContent = "app window installed ✅ reopening GURT as a real app…"; $("#appbarinst").hidden = true;
+      await api("/api/relaunch", {});
+      setTimeout(() => { document.body.innerHTML = `<div class="empty" style="padding:80px 20px">GURT reopened in its own window 🦆 you can close this tab</div>`; }, 1500);
+    } else { $("#appbartxt").textContent = "couldn't install the app window 😔 check the activity log below"; }
+  };
+}
 load();
 </script></body></html>"""
 

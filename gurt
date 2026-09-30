@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.15.0"
+GURT_VERSION="0.15.1"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -1792,7 +1792,7 @@ gui_desktop_entry() { # add "GURT" to your app menu (just for you, no sudo)
     "Comment=every distro's packages, on every distro" "Exec=$(readlink -f "$0") gui" "Icon=gurt" "Terminal=false" "StartupWMClass=gurt" \
     "Categories=System;PackageManager;" "Keywords=packages;install;aur;apt;flatpak;" > "$data/applications/gurt.desktop"
 }
-gui_setup() { # install what a real app window needs (GTK + WebKit for python) from your distro
+gui_pkgs() { # the distro packages a real app window needs (python GObject + WebKit2GTK)
   local pkgs
   # shellcheck disable=SC2207
   pkgs=($(map_dep gui-webview))
@@ -1803,21 +1803,35 @@ gui_setup() { # install what a real app window needs (GTK + WebKit for python) f
       *) pkgs=() ;;
     esac
   fi
-  (( ${#pkgs[@]} )) || die "don't know the app-window packages for $PM yet — install python GObject + WebKit2GTK yourself (or pywebview)"
-  msg "installing the app window bits from $PM: ${pkgs[*]}"
-  ask "install ${pkgs[*]}?" || die "aborted"
-  install_native "${pkgs[@]}"
-  if python3 "$1" --probe >/dev/null 2>&1; then msg "done ✅ gurt gui opens as a real app now 🖥️"
-  else warn "installed, but python still can't open an app window — log out and back in, then try gurt gui again"; fi
+  echo "${pkgs[*]}"
 }
+gui_setup() { # py-script — install the app window bits (no questions: you asked for the app)
+  local pkgs
+  read -ra pkgs <<<"$(gui_pkgs)"
+  (( ${#pkgs[@]} )) || { warn "don't know the app-window packages for $PM yet — install python GObject + WebKit2GTK yourself (or pywebview)"; return 1; }
+  msg "installing what GURT needs to be a real app: ${pkgs[*]}"
+  install_native "${pkgs[@]}" || return 1
+  if python3 "$1" --probe >/dev/null 2>&1; then msg "done ✅ GURT opens as a real app now 🖥️"; return 0; fi
+  warn "installed, but python still can't open an app window — log out and back in, then try gurt gui again"; return 1
+}
+has_display() { [[ -n ${DISPLAY:-} || -n ${WAYLAND_DISPLAY:-} ]]; }
 cmd_gui() {
-  command -v python3 >/dev/null || die "gurt gui needs python3 (install it from your distro)"
+  if ! command -v python3 >/dev/null; then   # step 1: python itself
+    msg "GURT's app needs python3 — installing it from $PM"
+    # shellcheck disable=SC2046
+    install_native $(map_dep python3) || die "couldn't install python3 — install it yourself, then run gurt gui again"
+  fi
   [[ -d $GURT_REPO_DIR/.git ]] || sync_main >/dev/null
   local py; py=$(gui_script) || { sync_main >/dev/null; py=$(gui_script) || die "couldn't find gurt-gui.py (try: gurt sync)"; }
   gui_desktop_entry
   if [[ ${1:-} == --setup ]]; then gui_setup "$py"; return; fi
-  if ! python3 "$py" --probe >/dev/null 2>&1 && [[ -t 0 && -t 1 ]]; then
-    msg2 "tip: for a real app window instead of a browser tab, run: gurt gui --setup"
+  # step 2: the app window. first time from a terminal → just install it. from the app menu → the app offers a button
+  local tried="$GURT_CACHE/gui-setup-tried"
+  if has_display && ! python3 "$py" --probe >/dev/null 2>&1; then
+    if [[ -t 0 && -t 1 && ! -f $tried ]]; then
+      mkdir -p "$GURT_CACHE"; touch "$tried"
+      gui_setup "$py" || warn "no app window this time — opening GURT in your browser instead"
+    fi
   fi
   msg "opening GURT 🦆 (close the window to quit)"
   exec python3 "$py" --gurt "$(readlink -f "$0")" "$@"
