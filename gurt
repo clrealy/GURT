@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.16.2"
+GURT_VERSION="0.16.3"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -128,8 +128,13 @@ apt_install() { # apt with the usual fresh-Debian gotchas handled
   if grep -qsE '^[[:space:]]*deb[[:space:]]+cdrom:' /etc/apt/sources.list /etc/apt/sources.list.d/*.list; then
     warn "your apt sources still have the install DVD/USB (a 'deb cdrom:' line) — that can make installs fail. fix: sudo sed -i '/^deb cdrom:/s/^/#/' /etc/apt/sources.list && sudo apt update"
   fi
+  if [[ -n $(ls -A /var/lib/dpkg/updates 2>/dev/null) ]]; then   # "dpkg was interrupted" — finish it first
+    msg2 "a previous install got interrupted — finishing it first (dpkg --configure -a)"
+    asroot dpkg --configure -a || true
+  fi
   asroot apt-get "${o[@]}" install -y "$@" && return 0
   msg2 "apt failed — refreshing its package lists and trying once more"
+  asroot dpkg --configure -a >/dev/null 2>&1 || true
   asroot apt-get "${o[@]}" update || true
   asroot apt-get "${o[@]}" install -y "$@" && return 0
   asroot apt-get "${o[@]}" -f install -y >/dev/null 2>&1 || true   # finish any half-done install
