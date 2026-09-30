@@ -24,8 +24,8 @@ ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 
 # ───────────────────────── jobs ─────────────────────────
 class Job:
-    def __init__(self, jid, argv):
-        self.id, self.argv = jid, argv
+    def __init__(self, jid, argv, stdin_text=None):
+        self.id, self.argv, self.stdin_text = jid, argv, stdin_text
         self.lines, self.done, self.rc = [], False, None
         self.ask = None                 # sudo password prompt waiting for the browser
         self.answer, self.answered = None, threading.Event()
@@ -37,8 +37,12 @@ class Job:
         self.lines.append("$ " + " ".join(["gurt"] + self.argv[1:]))
         try:
             self.proc = subprocess.Popen(self.argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                         stdin=subprocess.DEVNULL, env=env, text=True, bufsize=1,
+                                         stdin=subprocess.PIPE if self.stdin_text else subprocess.DEVNULL,
+                                         env=env, text=True, bufsize=1,
                                          start_new_session=True)   # no controlling tty → sudo uses askpass
+            if self.stdin_text:
+                self.proc.stdin.write(self.stdin_text)
+                self.proc.stdin.close()
             for line in self.proc.stdout:
                 self.lines.append(ANSI.sub("", line.rstrip("\n")))
             self.rc = self.proc.wait()
@@ -48,9 +52,9 @@ class Job:
         self.done = True
 
 
-def start_job(argv):
+def start_job(argv, stdin_text=None):
     jid = secrets.token_hex(6)
-    job = Job(jid, argv)
+    job = Job(jid, argv, stdin_text)
     with JOBS_LOCK:
         JOBS[jid] = job
     threading.Thread(target=job.run, args=(ASKPASS,), daemon=True).start()
@@ -114,6 +118,15 @@ def state():
             main.append({"name": info.get("pkgname", name), "ver": "latest" if info.get("via_repo") else f"{info.get('pkgver','')}-{info.get('pkgrel','')}",
                          "desc": info.get("pkgdesc", ""), "alias": info.get("alias", []), "maintainer": info.get("maintainer", ""),
                          "official": bool(info.get("via_repo"))})
+    dirt = []
+    dirtdir = os.path.join(repo, "dirt")
+    if os.path.isdir(dirtdir):
+        for name in sorted(os.listdir(dirtdir)):
+            info = kv(os.path.join(dirtdir, name, ".gurtinfo"))
+            if not info or info.get("hidden") == "true" or info.get("secret") == "true":
+                continue
+            dirt.append({"name": info.get("pkgname", name), "ver": f"{info.get('pkgver','')}-{info.get('pkgrel','')}",
+                         "desc": info.get("pkgdesc", ""), "alias": info.get("alias", []), "maintainer": info.get("maintainer", "")})
     installed = []
     if os.path.isdir(db):
         for key in sorted(os.listdir(db)):
@@ -128,7 +141,7 @@ def state():
                               "ver": info.get("pkgver", "?") + (f"-{rel}" if rel else ""), "desc": info.get("pkgdesc", ""),
                               "reason": reason, "held": os.path.exists(os.path.join(db, key, "held"))})
     return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on",
-            "main": main, "installed": installed}
+            "main": main, "dirtpkgs": dirt, "installed": installed}
 
 
 # ───────────────────────── http ─────────────────────────
@@ -170,11 +183,11 @@ class H(BaseHTTPRequestHandler):
             if not self._host_ok() or not secrets.compare_digest((q.get("t") or [""])[0], TOKEN):
                 return self._send(403, "nope 🔒 open GURT with: gurt gui", "text/plain")
             return self._send(200, PAGE.replace("__TOKEN__", TOKEN), "text/html")
-        if u.path in ("/icon.png", "/logo.png"):
+        if u.path in ("/icon.png", "/logo.png", "/dirt-logo.png"):
             repo = paths().get("repo", "")
-            want = "gurt-logo.png" if u.path == "/logo.png" else "apple-touch-icon.png"
+            want = {"/logo.png": "gurt-logo.png", "/dirt-logo.png": "dirt-logo.png"}.get(u.path, "apple-touch-icon.png")
             for f in [os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "site", "assets", want),
-                      os.path.join(repo, "site", "assets", want)] + (ICONS if want != "gurt-logo.png" else []):
+                      os.path.join(repo, "site", "assets", want)] + (ICONS if want == "apple-touch-icon.png" else []):
                 if os.path.isfile(f):
                     return self._send(200, open(f, "rb").read(), "image/png")
             return self._send(404, b"", "image/png")
@@ -202,6 +215,11 @@ class H(BaseHTTPRequestHandler):
         body = self._body()
         if u.path == "/api/run":
             cmd, arg = body.get("cmd"), (body.get("arg") or "").strip()
+            if cmd == "dirt":
+                if arg not in ("on", "off"):
+                    return self._send(400, {"error": "not allowed"})
+                job = start_job([GURT, "dirt", arg], "yes\n" if arg == "on" else None)
+                return self._send(200, {"job": job.id})
             if cmd not in ALLOWED:
                 return self._send(400, {"error": "not allowed"})
             argv = [GURT, "-y"]
@@ -320,6 +338,19 @@ header{display:flex;align-items:center;gap:18px;padding:14px 20px;border-bottom:
 .srcs button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
 .srcs button.on small{color:var(--accent-ink);opacity:.75}
 .blurb{color:var(--muted);margin:0 2px 12px}
+.srcs button.dirtbtn{background:#141012;color:#f1e9ea;border-color:#3a2a2e}
+.srcs button.dirtbtn small{color:#e0314b}
+.srcs button.dirtbtn:hover{border-color:#e0314b}
+.srcs button.dirtbtn.on{background:#e0314b;border-color:#e0314b;color:#fff}
+.srcs button.dirtbtn.on small{color:#fff}
+:root.dirt{--bg:#0a0708;--panel:#140d0f;--ink:#f1e9ea;--muted:#a3898d;--line:#332226;--tag:#24161a;--code:#1a1013;--accent:#e0314b;--accent-ink:#fff;--good:#ff7a8c;color-scheme:dark}
+.dirtlogo{display:none;height:40px;width:auto;margin:4px 0 6px}
+:root.dirt .logoimg{display:none}:root.dirt .dirtlogo{display:block}
+#gate .box{background:#120b0d;color:#f1e9ea;text-align:center;border:1px solid #3a2226}
+#gate .g18{display:inline-block;font-weight:700;border:2px solid #e0314b;color:#e0314b;border-radius:999px;padding:2px 12px;margin-bottom:12px;font-size:14px}
+#gate p{color:#c9b3b7}
+#gate .row{justify-content:center}
+#gate .yeah{background:#e0314b;color:#fff}#gate .nah{background:#1d1417;color:#f1e9ea}
 .logo .g{color:var(--g)}.logo .u{color:var(--u)}.logo .r{color:var(--r)}.logo .t{color:var(--t)}
 .ver{color:var(--muted);font-size:12px}
 nav{display:flex;gap:6px;margin-left:8px}
@@ -365,7 +396,7 @@ dialog .row{justify-content:flex-end}
 @media (max-width:640px){header{flex-wrap:wrap}nav{margin-left:0}}
 </style></head><body>
 <header>
-  <div><img class="logoimg" src="/logo.png" alt="gurt" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="logo" hidden><span class="g">g</span><span class="u">u</span><span class="r">r</span><span class="t">t</span></div><div class="ver" id="ver"></div></div>
+  <div><img class="logoimg" src="/logo.png" alt="gurt" onerror="this.hidden=true;this.nextElementSibling.nextElementSibling.hidden=false"><img class="dirtlogo" src="/dirt-logo.png" alt="dirt."><div class="logo" hidden><span class="g">g</span><span class="u">u</span><span class="r">r</span><span class="t">t</span></div><div class="ver" id="ver"></div></div>
   <nav>
     <button data-tab="discover" class="on">🔍 Discover</button>
     <button data-tab="installed">📦 Installed</button>
@@ -385,6 +416,7 @@ dialog .row{justify-content:flex-end}
       <button data-src="pacman">pacman/ <small>Arch</small></button>
       <button data-src="flatpak">flatpak/ <small>Flathub</small></button>
       <button data-src="snap">snap/ <small>Snap Store</small></button>
+      <button data-src="dirt" class="dirtbtn">dirt/ <small>18+</small></button>
     </div>
     <p class="blurb" id="blurb" hidden></p>
     <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button></div>
@@ -406,6 +438,9 @@ dialog .row{justify-content:flex-end}
 <div id="console"><div class="bar"><span class="dot" id="cdot"></span><b id="ctitle">activity</b><span class="spacer"></span><button class="btn ghost small" id="cstop" hidden>stop</button><button class="btn ghost small" id="chide">hide</button></div><pre id="cout"></pre></div>
 
 <dialog id="confirm"><h3 id="ctitle2"></h3><p id="cbody"></p><div class="row"><button class="btn ghost" id="cno">Nah</button><button class="btn" id="cyes">Yeah</button></div></dialog>
+<dialog id="gate" style="padding:0;background:transparent"><div class="box" style="padding:26px 22px"><div class="g18">18+</div><h3>Are you sure?</h3>
+  <p>This section of the GURT Repository is 18+ ONLY. Explore at your own risk.</p>
+  <div class="row"><button class="btn nah" id="gnah">Nah</button><button class="btn yeah" id="gyeah">Yeah</button></div></div></dialog>
 <dialog id="pw"><h3>🔒 password needed</h3><p id="pwprompt">gurt needs your password (sudo) to put files in system folders.</p>
   <form id="pwform"><input type="password" id="pwin" autocomplete="current-password" placeholder="your password"><div class="row"><button type="button" class="btn ghost" id="pwno">cancel</button><button class="btn" type="submit">ok</button></div></form></dialog>
 
@@ -417,7 +452,7 @@ const api = (p, body) => fetch(p, body ? {method:"POST", headers:{"X-Gurt-Token"
 let S = {main:[], installed:[]}, busy = false, cur = null;
 
 // ── state ──
-async function load(){ S = await api("/api/state"); $("#ver").textContent = `v${S.version} · ${S.pm}`; renderMain(); renderInstalled(); }
+async function load(){ S = await api("/api/state"); $("#ver").textContent = `v${S.version} · ${S.pm}`; renderMain(); renderInstalled(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt(); }
 const inst = spec => S.installed.find(i => i.spec === spec || i.key === spec || (i.src === "gurt" && i.name === spec));
 
 function card({name, src="gurt", ver, desc, extra="", actions=""}){
@@ -497,14 +532,31 @@ const BLURB = {
   pacman: "Arch's official binary packages, installable on non-Arch distros.",
   flatpak: "Flathub apps, sandboxed. gurt sets up flatpak + Flathub for you.",
   snap: "Snap Store apps. gurt sets up snapd for you."};
+BLURB.dirt = "DIRT is GURT's mature section (18+). Packages here install with gurt install dirt/<name>.";
 let SRC = "gurt";
-function setSrc(src){
+function renderDirt(){
+  const q = $("#q").value.trim().toLowerCase().replace(/^dirt\//, "");
+  const list = (S.dirtpkgs || []).filter(p => !q || (p.name + " " + p.desc + " " + (p.alias||[]).join(" ")).toLowerCase().includes(q));
+  $("#srcgrid").innerHTML = list.length ? list.map(p => card({name:p.name, src:"dirt", ver:p.ver, desc:p.desc, actions: installBtns(`dirt/${p.name}`)})).join("")
+    : `<div class="empty">${(S.dirtpkgs || []).length ? "nothing in DIRT matched" : "DIRT is empty rn 🫥"}</div>`;
+}
+async function openDirt(){
+  const g = $("#gate"); g.showModal(); $("#gnah").focus();
+  const yes = await new Promise(res => { $("#gyeah").onclick = () => res(true); $("#gnah").onclick = () => res(false); g.oncancel = () => res(false); });
+  g.close(); if (!yes) return;
+  if (!S.dirt) { const r = await run("dirt", "on", {quiet:true, confirm:false}); if (!r || r.rc !== 0) return; }
+  setSrc("dirt", true);
+}
+function setSrc(src, gated){
+  if (src === "dirt" && !gated) return openDirt();
   SRC = src;
+  document.documentElement.classList.toggle("dirt", src === "dirt");
   document.querySelectorAll("#srcs button").forEach(b => b.classList.toggle("on", b.dataset.src === src));
   const main = src === "gurt";
   $("#maingrid").hidden = !main; $("#srcgrid").hidden = main; $("#allres").hidden = true; $("#qall").hidden = !main;
   $("#blurb").hidden = main; $("#blurb").textContent = BLURB[src] || "";
   $("#q").placeholder = main ? "search Main GURT… (Enter searches every source)" : `search ${src}/… and hit Enter`;
+  if (src === "dirt") { renderDirt(); renderMain(); return; }
   if (!main) $("#srcgrid").innerHTML = `<div class="empty">type something and hit Enter to search ${esc(src)} 🔎</div>`;
   if (!main && $("#q").value.trim()) searchSrc();
   renderMain();
@@ -519,6 +571,7 @@ function parseSearch(lines){
   return res;
 }
 async function searchSrc(){
+  if (SRC === "dirt") return renderDirt();
   const t = $("#q").value.trim().replace(/^[a-z]+\//, ""); if (!t) return;
   $("#srcgrid").innerHTML = `<div class="empty">searching ${esc(SRC)}… 🔎</div>`;
   const r = await run("search", `${SRC}/${t}`, {quiet:true, confirm:false}); if (!r) return;
@@ -539,7 +592,7 @@ async function searchAll(){
   $("#allgrid").innerHTML = res.length ? res.slice(0, 120).map(p => card({name:p.name, src:p.src, ver:p.ver, desc:p.desc,
       actions: installBtns(p.src === "gurt" ? p.name : `${p.src}/${p.name}`)})).join("") : `<div class="empty">nothing anywhere matched "${esc(t)}" 😔 womp womp</div>`;
 }
-$("#q").addEventListener("input", () => { if (SRC === "gurt") renderMain(); if (!$("#q").value) $("#allres").hidden = true; });
+$("#q").addEventListener("input", () => { if (SRC === "dirt") renderDirt(); if (SRC === "gurt") renderMain(); if (!$("#q").value) $("#allres").hidden = true; });
 $("#q").addEventListener("keydown", e => { if (e.key === "Enter") searchAll(); });
 $("#qall").addEventListener("click", searchAll);
 $("#directbtn").addEventListener("click", () => run("install", $("#q").value.trim()));
