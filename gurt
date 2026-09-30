@@ -1879,6 +1879,7 @@ cmd_de() {
       d=${2:?usage: gurt de remove <name>}; d=${d,,}
       case $d in plasma) d=kde ;; xfce4) d=xfce ;; hypr) d=hyprland ;; esac
       [[ " $DE_NAMES " == *" $d "* ]] || die "don't know a desktop called '$d' — see: gurt de list"
+      de_installed "$d" || die "$d isn't installed"
       local others=0 o; for o in $DE_NAMES; do [[ $o != "$d" ]] && de_installed "$o" && others=1; done
       (( others )) || warn "$d is your only desktop — after this you'll only have a text login (install another first: gurt de install <name>)"
       de_running "$d" && die "you're logged into $d right now — log into another desktop first, then remove it"
