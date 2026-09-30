@@ -543,7 +543,7 @@ $("#u-dl").addEventListener("click", () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });
 
-$("#heyo").addEventListener("click", () => { $("#heyo-found").hidden = false $("#heyo").style.opacity = 1; });
+$("#heyo").addEventListener("click", () => { $("#heyo-found").hidden = false; $("#heyo").style.opacity = 1; });
 fetch("packages.json").then(r => r.json()).then(d => { PKGS = d.packages; render(); const u = new URLSearchParams(location.search).get("u"); if (u) showProfile(u, false); })
   .catch(() => { $("#count").textContent = "couldn't load packages.json"; });
 </script>
