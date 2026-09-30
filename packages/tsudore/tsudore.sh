@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # tsudore — tsundere sudo. it's not like it wants to help you or anything.
-# nyarch exclusive. baka.
+# works on every distro. not that it cares which one you use. baka.
 
 set -u
 
@@ -14,10 +14,32 @@ mad() { printf '%s%s%s\n' "$red" "$1" "$reset"; }
 
 pick() { local arr=("$@"); printf '%s' "${arr[RANDOM % ${#arr[@]}]}"; }
 
-# --- nyarch check ---
-if ! grep -qi 'nyarch' /etc/os-release 2>/dev/null; then
-  mad "h-huh?? you're not even on nyarch?!"
-  mad "i only give root to catgirl distros. go use regular sudo, baka 😤"
+# --- which distro are you even on ---
+distro="linux"
+if [ -r /etc/os-release ]; then
+  distro=$(. /etc/os-release; printf '%s' "${ID:-linux}")
+fi
+case "$distro" in
+  nyarch)             chan="nyarch-chan" ;;
+  arch|endeavouros|manjaro|cachyos) chan="arch-chan" ;;
+  ubuntu|pop|linuxmint|elementary)  chan="ubuntu-chan" ;;
+  debian)             chan="debian-chan" ;;
+  fedora|nobara|bazzite) chan="fedora-chan" ;;
+  opensuse*|suse*)    chan="suse-chan" ;;
+  alpine)             chan="alpine-chan" ;;
+  gentoo)             chan="gentoo-chan" ;;
+  nixos)              chan="nixos-chan" ;;
+  void)               chan="void-chan" ;;
+  *)                  chan="${distro}-chan" ;;
+esac
+
+# --- sudo or doas, whatever you've got ---
+if command -v sudo >/dev/null 2>&1; then
+  esc=sudo
+elif command -v doas >/dev/null 2>&1; then
+  esc=doas
+else
+  mad "you don't even have sudo OR doas?? what am i supposed to do with that. 🙄"
   exit 1
 fi
 
@@ -35,10 +57,11 @@ say "$(pick \
   "ugh, fine. it's not like i WANTED to give you root or anything..." \
   "you again?? ...okay but only this once. baka." \
   "d-don't get the wrong idea! i'm only doing this bc the system needs it." \
-  "hmph. you better not rm -rf anything, dummy.")"
+  "hmph. you better not rm -rf anything, dummy." \
+  "$chan told me to be nice to you. ...don't make it weird.")"
 
 # --- password check ---
-if ! sudo -v 2>/dev/null; then
+if [ "$esc" = sudo ] && ! sudo -v 2>/dev/null; then
   mad "$(pick \
     "you forgot your OWN password?? i can't believe you. 🙄" \
     "wrong. obviously. do you even know who you are??" \
@@ -51,16 +74,16 @@ case "$*" in
   *"rm -rf /"*|*"rm -rf /*"*)
     mad "ABSOLUTELY NOT. i'm not letting you delete me. i-i mean the system!!"
     exit 1 ;;
-  *pacman*-Syu*|*yay*|*paru*)
+  *pacman*-Syu*|*yay*|*paru*|*"apt upgrade"*|*"apt full-upgrade"*|*"dnf upgrade"*|*"zypper dup"*|*"zypper up"*|*"apk upgrade"*|*"xbps-install -Su"*|*"emerge -uDN"*|*nixos-rebuild*)
     say "updating? ...fine. at least you take care of me. n-not that i noticed. 😳" ;;
   *reboot*|*shutdown*|*poweroff*)
     say "you're LEAVING?? ...w-whatever. see if i care. come back soon. 🥺" ;;
   *nano*|*vim*|*nvim*)
-    say "editing system files? don't mess it up or i'm telling arch-chan." ;;
+    say "editing system files? don't mess it up or i'm telling $chan." ;;
 esac
 
 # --- actually run it ---
-sudo -- "$@"
+"$esc" -- "$@"
 status=$?
 
 if [ $status -eq 0 ]; then

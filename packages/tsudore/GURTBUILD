@@ -1,9 +1,9 @@
 # tsudore — tsundere root. it's not like it wants to help you or anything
-# nyarch exclusive (refuses to run anywhere else, baka)
+# works on every distro now, not just nyarch
 pkgname=tsudore
-pkgver=1.0.0
+pkgver=1.1.0
 pkgrel=1
-pkgdesc="Tsundere privilege escalation for Nyarch Linux. It's not like it WANTS to give you root or anything..."
+pkgdesc="Tsundere privilege escalation for every distro. It's not like it WANTS to give you root or anything..."
 aliases=(tsudo tsundere)
 url="https://github.com/clrealy/GURT"
 license="MIT"
@@ -12,7 +12,7 @@ arch=(any)
 depends=()
 makedepends=()
 source=("tsudore.sh")
-sha256sums=("bfa9316fa08f31d04e0aef5cdefa09d28f1efdc1b707745c5736ba3eaea7f7a2")
+sha256sums=("703a3be8556753ac1214131c872062b4138565873a3379c9081d0079f646b1e8")
 
 package() {
   install -Dm755 "$srcdir/tsudore.sh" "$pkgdir$prefix/bin/tsudore"
