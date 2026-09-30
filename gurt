@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.13.1"
+GURT_VERSION="0.14.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -73,7 +73,8 @@ depmap_file() {
 
 asroot() {
   if (( EUID == 0 )) || { [[ -n $R ]] && [[ -w $R ]]; }; then "$@"
-  elif command -v sudo >/dev/null; then sudo "$@"
+  elif command -v sudo >/dev/null; then
+    if [[ -n ${SUDO_ASKPASS:-} && -n ${GURT_GUI:-} ]]; then sudo -A "$@"; else sudo "$@"; fi
   elif command -v doas >/dev/null; then doas "$@"
   else die "need root for that (install sudo or doas)"; fi
 }
@@ -1766,10 +1767,38 @@ cmd_complete() {
     available) for f in "$GURT_REPO_DIR"/packages/*/.gurtinfo; do [[ -f $f ]] || continue
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
     commands)  printf '%s\n' sync search info install update upgrade self-update remove autoremove list files owns \
-                 build add srcinfo checksum new repo dirt outsource rollback hold unhold export import completions doctor version help yo ;;
+                 build add srcinfo checksum new repo dirt gui outsource rollback hold unhold export import completions doctor version help yo ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman flatpak snap dirt ;;
   esac
   return 0
+}
+
+# ───────────────────────── gurt gui ─────────────────────────
+# a local app window (python3 + your browser, nothing else to install). server only listens on 127.0.0.1
+gui_script() {
+  local self d f
+  self=$(readlink -f "$0"); d=$(dirname "$self")
+  for f in "$d/../share/gurt/gurt-gui.py" /usr/local/share/gurt/gurt-gui.py /usr/share/gurt/gurt-gui.py "$GURT_REPO_DIR/gui/gurt-gui.py"; do
+    [[ -f $f ]] && { echo "$f"; return 0; }
+  done
+  return 1
+}
+gui_desktop_entry() { # add "GURT" to your app menu (just for you, no sudo)
+  (( EUID == 0 )) && return 0
+  local data="${XDG_DATA_HOME:-$HOME/.local/share}" icon="$GURT_REPO_DIR/site/assets/apple-touch-icon.png"
+  mkdir -p "$data/applications" "$data/icons/hicolor/256x256/apps" 2>/dev/null || return 0
+  [[ -f $icon ]] && cp -f "$icon" "$data/icons/hicolor/256x256/apps/gurt.png" 2>/dev/null
+  printf '%s\n' "[Desktop Entry]" "Type=Application" "Name=GURT" "GenericName=Package Manager" \
+    "Comment=every distro's packages, on every distro" "Exec=$(readlink -f "$0") gui" "Icon=gurt" "Terminal=false" \
+    "Categories=System;PackageManager;" "Keywords=packages;install;aur;apt;flatpak;" > "$data/applications/gurt.desktop"
+}
+cmd_gui() {
+  command -v python3 >/dev/null || die "gurt gui needs python3 (install it from your distro)"
+  [[ -d $GURT_REPO_DIR/.git ]] || sync_main >/dev/null
+  local py; py=$(gui_script) || { sync_main >/dev/null; py=$(gui_script) || die "couldn't find gurt-gui.py (try: gurt sync)"; }
+  gui_desktop_entry
+  msg "opening GURT 🦆 (close the window to quit)"
+  exec python3 "$py" --gurt "$(readlink -f "$0")" "$@"
 }
 
 # ───────────────────────── outsource: build any git repo ─────────────────────────
@@ -2211,6 +2240,9 @@ cmd_self_update() {
   for f in /usr/local/share/gurt/deps.map /usr/share/gurt/deps.map; do
     [[ -f $f ]] && asroot cp "$GURT_REPO_DIR/deps.map" "$f"
   done
+  for f in /usr/local/share/gurt /usr/share/gurt; do
+    [[ -d $f && -f $GURT_REPO_DIR/gui/gurt-gui.py ]] && asroot cp "$GURT_REPO_DIR/gui/gurt-gui.py" "$f/gurt-gui.py"
+  done
   msg "gurt updated to $new ✅"
   exit 0
 }
@@ -2525,6 +2557,7 @@ ${B}misc${R0}
   export [file]        save the list of stuff you installed
   import <file>        install everything from an export (new PC speedrun)
   completions <shell>  print tab completion for bash/zsh/fish (bash+fish set themselves up)
+  gui                  open the GURT app 🖥️ (also in your app menu after the first run)
   version              the gurt banner + your setup (also just: gurt)
   yo                   gurt
 
@@ -2619,6 +2652,8 @@ main() {
     export)            cmd_export "$@" ;;
     import)            cmd_import "$@" ;;
     __complete)        cmd_complete "$@" ;;
+    __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" ;;
+    gui)               cmd_gui "$@" ;;
     completions)       completion_script "${1:?usage: gurt completions bash|zsh|fish}" ;;
     outsource|os|clone) (( $# )) || die "outsource what tho — gurt outsource https://github.com/user/repo"
                        for p; do outsource_install "$p" explicit; done ;;

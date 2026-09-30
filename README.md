@@ -170,6 +170,16 @@ hidden=true                         # not listed on the site or in gurt search, 
 ```
 The linter makes sure aliases never collide with other packages or aliases.
 
+## GURT app 🖥️
+
+```sh
+gurt gui
+```
+
+Opens GURT as an app: browse Main GURT, search every source, install or remove with one click, and see updates, holds and rollbacks, with gurt's output live at the bottom. When something needs sudo, it asks for your password in the app. After the first run, **GURT** is in your app menu.
+
+It only needs python3 and a browser. It runs a tiny server that only your own machine can reach (127.0.0.1, with a random secret token), opens it in a Chromium-style app window if you have one (otherwise your default browser), and quits by itself after you close the window.
+
 ## Build any git repo: `gurt outsource` 🛠️
 
 Instead of `git clone … && cd … && make && sudo make install`:

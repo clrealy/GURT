@@ -15,7 +15,8 @@ say "grabbing gurt"
 git clone -q --depth 1 "$REPO" "$tmp/gurt"
 $SUDO install -Dm755 "$tmp/gurt/gurt" "$BIN/gurt"
 $SUDO install -Dm644 "$tmp/gurt/deps.map" "$SHARE/deps.map"
+$SUDO install -Dm644 "$tmp/gurt/gui/gurt-gui.py" "$SHARE/gurt-gui.py"
 [ -f /etc/gurt.conf ] || $SUDO install -Dm644 "$tmp/gurt/gurt.conf" /etc/gurt.conf
 say "gurt installed to $BIN/gurt 🦆"
 "$BIN/gurt" yo
-echo "next: gurt sync && gurt search"
+echo "next: gurt sync && gurt search   (or open the app: gurt gui)"
