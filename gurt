@@ -10,6 +10,7 @@ set -euo pipefail
 shopt -s nullglob
 
 GURT_VERSION="0.18.0"
+GURT_VERSION="0.17.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -123,8 +124,64 @@ pm_has() {
   esac
 }
 
+# ───────────────────────── pretty progress for big installs ─────────────────────────
+# instead of 5000 lines of apt spam: one live progress bar, full output saved to a log
+fancy_on() { [[ -t 2 && -z ${GURT_GUI:-} && -z ${GURT_PLAIN:-} && ${TERM:-dumb} != dumb ]]; }
+fancy_draw() { # label logfile  (reads the command's output on stdin)
+  local label=$1 log=$2 line phase="starting" pct=0 item="" spin='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏' i=0 cols bar n w t0=$SECONDS last=0 now
+  cols=$(tput cols 2>/dev/null || echo 80)
+  draw() {
+    now=$SECONDS
+    w=24; n=$(( pct * w / 100 )); (( n > w )) && n=$w
+    bar=$(printf '%*s' "$n" '' | tr ' ' '█')$(printf '%*s' $(( w - n )) '' | tr ' ' '░')
+    local el=$(( now - t0 )) out
+    printf -v out '  %s %s %-11s %s%s%s %3d%%  %dm%02ds  %s' "${spin:i%10:1}" "$label" "$phase" "$GRN" "$bar" "$R0" "$pct" $(( el / 60 )) $(( el % 60 )) "$item"
+    printf '\r\033[K%s' "${out:0:$(( cols + ${#GRN} + ${#R0} - 1 ))}" >&2
+    i=$(( i + 1 ))
+  }
+  while IFS= read -r line; do
+    printf '%s\n' "$line" >> "$log"
+    line=${line//$'\r'/}
+    case $line in
+      dlstatus:*) IFS=: read -r _ _ pct item <<<"$line"; pct=${pct%%.*}; phase="downloading"; item=${item#Retrieving file * of * }; item=${item#Downloading } ;;
+      pmstatus:*) IFS=: read -r _ item pct _ <<<"$line"; pct=${pct%%.*}; phase="installing"; item=${item%%:*} ;;
+      *)
+        if [[ $line =~ \(\ *([0-9]+)/([0-9]+)\)\ *([A-Za-z]+)[a-z]*:?\ +([^ ]+) ]] || [[ $line =~ \[\ *([0-9]+)/([0-9]+)\]\ *([A-Za-z]+)\ +([^ ]+) ]]; then
+          pct=$(( BASH_REMATCH[1] * 100 / (BASH_REMATCH[2] > 0 ? BASH_REMATCH[2] : 1) ))
+          phase=${BASH_REMATCH[3],,}; item=${BASH_REMATCH[4]}
+        elif [[ $line =~ ^(Get|Hit):[0-9]+ ]]; then phase="downloading"
+        elif [[ $line =~ ^Setting\ up\ ([^ ]+) ]]; then phase="setting up"; item=${BASH_REMATCH[1]}
+        fi ;;
+    esac
+    [[ $pct =~ ^[0-9]+$ ]] || pct=0
+    (( SECONDS != last )) || [[ $line == *status:* ]] && { draw; last=$SECONDS; }
+  done
+  printf '\r\033[K' >&2
+}
+fancy() { # label cmd… — run a big install with a progress bar
+  if ! fancy_on; then shift; "$@"; return; fi
+  local label=$1; shift
+  local log start=$SECONDS rc el
+  mkdir -p "$GURT_CACHE/logs"
+  log="$GURT_CACHE/logs/$(date +%Y%m%d-%H%M%S)-${label//[^A-Za-z0-9]/-}.log"
+  (( EUID == 0 )) || asroot true || return 1   # get the sudo password out of the way before the bar starts
+  if "$@" < /dev/null 2>&1 | fancy_draw "$label" "$log"; then rc=0; else rc=$?; fi
+  el=$(( SECONDS - start ))
+  if (( rc == 0 )); then
+    msg2 "done in $(( el / 60 ))m$(printf '%02d' $(( el % 60 )))s ✅ ${B}(full log: $log)${R0}"
+  else
+    printf '%s──── last lines of the log ────%s\n' "$YLW" "$R0" >&2
+    grep -av '^\(dl\|pm\)status:' "$log" | tail -n 15 >&2
+    printf '%s──── full log: %s ────%s\n' "$YLW" "$log" "$R0" >&2
+  fi
+  return "$rc"
+}
+
 apt_install() { # apt with the usual fresh-Debian gotchas handled
   local o=(-o DPkg::Lock::Timeout=300)   # another apt/updater running? wait for it instead of failing
+  local lbl="$1"; (( $# > 1 )) && lbl+=" +$(( $# - 1 ))"
+  local ag=(apt-get)
+  fancy_on && { o+=(-o APT::Status-Fd=1 -o Dpkg::Use-Pty=0); ag=(env DEBIAN_FRONTEND=noninteractive apt-get); }   # no hidden prompts behind the bar
   if grep -qsE '^[[:space:]]*deb[[:space:]]+cdrom:' /etc/apt/sources.list /etc/apt/sources.list.d/*.list; then
     warn "your apt sources still have the install DVD/USB (a 'deb cdrom:' line) — that can make installs fail. fix: sudo sed -i '/^deb cdrom:/s/^/#/' /etc/apt/sources.list && sudo apt update"
   fi
@@ -132,25 +189,25 @@ apt_install() { # apt with the usual fresh-Debian gotchas handled
     msg2 "a previous install got interrupted — finishing it first (dpkg --configure -a)"
     asroot dpkg --configure -a || true
   fi
-  asroot apt-get "${o[@]}" install -y "$@" && return 0
+  fancy "$lbl" asroot "${ag[@]}" "${o[@]}" install -y "$@" && return 0
   msg2 "apt failed — refreshing its package lists and trying once more"
   asroot dpkg --configure -a >/dev/null 2>&1 || true
-  asroot apt-get "${o[@]}" update || true
-  asroot apt-get "${o[@]}" install -y "$@" && return 0
+  fancy "refresh" asroot "${ag[@]}" "${o[@]}" update || true
+  fancy "$lbl" asroot "${ag[@]}" "${o[@]}" install -y "$@" && return 0
   asroot apt-get "${o[@]}" -f install -y >/dev/null 2>&1 || true   # finish any half-done install
-  asroot apt-get "${o[@]}" install -y "$@"
+  fancy "$lbl" asroot "${ag[@]}" "${o[@]}" install -y "$@"
 }
 pm_install() {
   (( $# )) || return 0
   msg "installing distro deps via $PM: $*"
   case $PM in
     apt)    apt_install "$@" ;;
-    dnf)    asroot dnf install -y "$@" ;;
+    dnf)    fancy "${1}" asroot dnf install -y "$@" ;;
     yum)    asroot yum install -y "$@" ;;
     # Arch doesn't support partial upgrades: installing something against a newer package list than the rest
     # of the system can break it (Qt/KDE/desktop). so deps come with a full upgrade, and pacman shows you it.
-    pacman) if $NOCONFIRM; then asroot pacman -Syu --needed --noconfirm "$@"; else asroot pacman -Syu --needed "$@"; fi ;;
-    zypper) asroot zypper --non-interactive install "$@" ;;
+    pacman) if $NOCONFIRM; then fancy "${1}" asroot pacman -Syu --needed --noconfirm "$@"; else asroot pacman -Syu --needed "$@"; fi ;;
+    zypper) fancy "${1}" asroot zypper --non-interactive install "$@" ;;
     apk)    asroot apk add "$@" ;;
     xbps)   asroot xbps-install -Sy "$@" ;;
     emerge) asroot emerge --noreplace "$@" ;;
@@ -2204,8 +2261,8 @@ de_pkgs() { # de → this distro's packages/groups, or nothing if your distro do
   local k="$1:$PM"
   [[ $PM == yum ]] && k="$1:dnf"
   case $k in
-    kde:pacman) echo "plasma-meta konsole dolphin" ;;       kde:apt) echo "kde-plasma-desktop" ;;
-    kde:dnf) echo "@kde-desktop-environment" ;;              kde:zypper) echo "pattern:kde pattern:kde_plasma" ;;
+    kde:pacman) echo "plasma-meta konsole dolphin" ;;       kde:apt) echo "kde-plasma-desktop konsole dolphin" ;;
+    kde:dnf) echo "@kde-desktop-environment konsole dolphin" ;;              kde:zypper) echo "pattern:kde pattern:kde_plasma konsole dolphin" ;;
     gnome:pacman) echo "gnome" ;;                            gnome:apt) echo "gnome-core" ;;
     gnome:dnf) echo "@gnome-desktop" ;;                      gnome:zypper) echo "pattern:gnome" ;;
     xfce:pacman) echo "xfce4 xfce4-goodies" ;;               xfce:apt) echo "xfce4 xfce4-goodies" ;;
@@ -2339,7 +2396,9 @@ cmd_de() {
       msg2 "from your distro ($PM): ${pkgs[*]}"
       [[ $PM == pacman ]] && msg2 "Arch does a full system upgrade with it (no partial upgrades)"
       ask "install the $d desktop?" || die "aborted"
-      pm_install "${pkgs[@]}" || die "$PM couldn't install $d"
+      local was=$NOCONFIRM; NOCONFIRM=true
+      pm_install "${pkgs[@]}" || { NOCONFIRM=$was; die "$PM couldn't install $d"; }
+      NOCONFIRM=$was
       msg "$d installed ✅"
       local dm; dm=$(de_dm)
       if [[ -n $dm ]]; then
