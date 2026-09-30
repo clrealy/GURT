@@ -8,3 +8,4 @@ maintainer = clrealy
 arch = any
 alias = skav°7
 hidden = true
+secret = true

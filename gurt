@@ -236,7 +236,7 @@ load_recipe() {
   RECIPE=$f
   pkgname="" pkgbase="" pkgver="" pkgrel=1 epoch="" pkgdesc="" url="" license="" maintainer="" install=""
   via_repo="" via_type="" via_url="" via_suite="" via_components="" via_key="" via_fingerprint="" via_pkg=""
-  aliases=() hidden="" desktop_icon=""
+  aliases=() hidden="" desktop_icon="" secret=""
   arch=() depends=() makedepends=() checkdepends=() source=() noextract=() sums=() SUMALGO=sha256
   local a v fn
   for a in $SUM_ALGOS; do unset "${a}sums" "${a}sums_$CARCH"; done
@@ -307,6 +307,7 @@ print_srcinfo() {
   for x in "${aliases[@]}"; do printf 'alias = %s\n' "$x"; done
   case ${hidden,,} in 1|true|yes) printf 'hidden = true\n' ;; esac
   case ${desktop_icon,,} in 1|true|yes) printf 'desktop_icon = true\n' ;; esac
+  case ${secret,,} in 1|true|yes) printf 'secret = true\n' ;; esac
   for x in via_repo via_type via_url via_suite via_components via_key via_fingerprint via_pkg; do
     [[ -n ${!x} ]] && printf '%s = %s\n' "$x" "${!x}"
   done
@@ -725,7 +726,10 @@ flush_native() {
 # ── main GURT repo ──
 resolve_and_install() { # name reason
   local name=$1 reason=${2:-dep} real
-  if ! is_gurt_pkg "$name" && real=$(alias_lookup "$name"); then msg2 "$name is an alias → $real"; name=$real; fi
+  if ! is_gurt_pkg "$name" && real=$(alias_lookup "$name"); then msg2 "$name is an alias → $real"; name=$real
+  elif is_gurt_pkg "$name" && grep -qx 'secret = true' "$(repo_info "$name")" && ! is_installed "$(pkey "$TREE_SRC" "$name")"; then
+    die "no package '$name' in main GURT (try: gurt search $name, or gurt search -a $name for every source)"   # 🤫 only the secret alias works
+  fi
   local key; key=$(pkey "$TREE_SRC" "$name")
   [[ -n ${VISITED[$key]:-} ]] && return 0
   VISITED[$key]=1
@@ -1937,6 +1941,7 @@ search_main() {
     name=$(info_get "$f" pkgname); desc=$(info_get "$f" pkgdesc)
     aka=$(info_get "$f" alias | paste -sd, - | sed 's/,/, /g')
     if grep -qx 'hidden = true' "$f" && [[ ${term,,} != "${name,,}" ]] && ! grep -qxiF "alias = $term" "$f"; then continue; fi
+    if grep -qx 'secret = true' "$f" && ! grep -qxiF "alias = $term" "$f"; then continue; fi
     if [[ -z $term ]] || grep -qiF -- "$term" <<<"$name $desc $aka"; then
       ver=$(repo_ver "$name"); tag=""
       [[ -n $aka ]] && desc+="  (aka $aka)"
@@ -1995,7 +2000,8 @@ cmd_info() {
   case $src in
     gurt)
       ensure_repo
-      local real; if ! is_gurt_pkg "$name" && real=$(alias_lookup "$name"); then name=$real; key=$name; fi
+      local real; if ! is_gurt_pkg "$name" && real=$(alias_lookup "$name"); then name=$real; key=$name
+      elif grep -qx 'secret = true' "$(repo_info "$name")" 2>/dev/null && ! is_installed "$key"; then die "no package '$name' in main GURT"; fi
       if [[ -f $(repo_info "$name") ]]; then awk -F' = ' '{ printf "%-14s: %s\n", $1, substr($0, length($1)+4) }' "$(repo_info "$name")"
       elif is_installed "$key"; then awk -F' = ' '{ printf "%-14s: %s\n", $1, substr($0, length($1)+4) }' "$DB/$key/info"
       else die "no package '$name' in main GURT"; fi ;;
