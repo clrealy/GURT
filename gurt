@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.16.3"
+GURT_VERSION="0.16.4"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -42,7 +42,7 @@ FOREIGN_SOURCES="aur apt dnf zypper pacman flatpak snap"
 IDX_DIR="$GURT_CACHE/index"
 IDX_MAX_AGE="${IDX_MAX_AGE:-86400}"   # re-download foreign indexes after a day
 
-NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT="" EXPECT_FPR="" BOX=false NOBOX=false SCAN=false NO_DESKTOP=false
+NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT="" EXPECT_FPR="" BOX=false NOBOX=false SCAN=false NO_DESKTOP=false QUIET_YEET=false
 
 # ───────────────────────── pretty output ─────────────────────────
 if [[ -t 2 && -z ${NO_COLOR:-} ]]; then
@@ -589,6 +589,26 @@ add_desktop_icons() {
   msg2 "put a shortcut on your desktop 🖥️"
 }
 rm_desktop_icons() { local f; [[ -f $DB/$1/desktop ]] || return 0; while IFS= read -r f; do [[ -n $f ]] && rm -f -- "$f"; done < "$DB/$1/desktop"; }
+
+# gurt remove plays the Wilhelm scream 😱 (skip with --quiet-yeet or GURT_SOUNDS=0)
+play_scream() {
+  { $QUIET_YEET || [[ ${GURT_SOUNDS:-1} == 0 ]]; } && return 0
+  (( EUID == 0 )) && return 0   # root has no speakers, your user session does
+  local f snd=""
+  for f in "$SELF_DIR/assets/wilhelm.mp3" "$SELF_DIR/../share/gurt/wilhelm.mp3" /usr/local/share/gurt/wilhelm.mp3 /usr/share/gurt/wilhelm.mp3 "$GURT_REPO_DIR/assets/wilhelm.mp3"; do
+    [[ -r $f ]] && { snd=$f; break; }
+  done
+  [[ -n $snd ]] || return 0
+  local -a play
+  if   command -v pw-play >/dev/null; then play=(pw-play "$snd")
+  elif command -v paplay >/dev/null;  then play=(paplay "$snd")
+  elif command -v mpg123 >/dev/null;  then play=(mpg123 -q "$snd")
+  elif command -v ffplay >/dev/null;  then play=(ffplay -nodisp -autoexit -loglevel quiet "$snd")
+  elif command -v mpv >/dev/null;     then play=(mpv --no-video --really-quiet "$snd")
+  else return 0; fi
+  # in the background + detached so it finishes screaming after gurt exits
+  (setsid "${play[@]}" </dev/null >/dev/null 2>&1 &) 2>/dev/null || true
+}
 
 # after install: refresh the linker cache, teach it about foreign lib dirs, sanity-check binaries
 post_install() {
@@ -2504,6 +2524,7 @@ cmd_self_update() {
   done
   for f in /usr/local/share/gurt /usr/share/gurt; do
     [[ -d $f && -f $GURT_REPO_DIR/gui/gurt-gui.py ]] && asroot cp "$GURT_REPO_DIR/gui/gurt-gui.py" "$f/gurt-gui.py"
+    [[ -d $f && -f $GURT_REPO_DIR/assets/wilhelm.mp3 ]] && asroot cp "$GURT_REPO_DIR/assets/wilhelm.mp3" "$f/wilhelm.mp3"
   done
   msg "gurt updated to $new ✅"
   exit 0
@@ -2839,6 +2860,7 @@ ${B}options${R0}
   --nodeps             don't install distro deps
   --nocheck            skip check()
   --no-desktop         don't put desktop shortcuts on your desktop (or GURT_DESKTOP_ICONS=0)
+  --quiet-yeet         no Wilhelm scream when you remove stuff 😱 (or GURT_SOUNDS=0)
   --keep               keep the build dir
   --root DIR           install into another root (testing, chroots)
 EOF
@@ -2865,6 +2887,7 @@ main() {
       --nodeps)       NODEPS=true ;;
       --nocheck)      NOCHECK=true ;;
       --no-desktop)   NO_DESKTOP=true ;;
+      --quiet-yeet)   QUIET_YEET=true ;;
       --keep)         KEEP=true ;;
       --root)         shift; GURT_ROOT=${1:?--root needs a dir}; R="${GURT_ROOT%/}"; DB="$R/var/lib/gurt/local" ;;
       --root=*)       GURT_ROOT=${1#*=}; R="${GURT_ROOT%/}"; DB="$R/var/lib/gurt/local" ;;
@@ -2900,7 +2923,7 @@ main() {
     update|refresh)    cmd_update ;;
     upgrade|up)        cmd_upgrade ;;
     self-update|selfupdate) cmd_self_update ;;
-    remove|rm|yeet)    (( $# )) || die "remove what tho"; for p; do remove_pkg "$p"; done ;;
+    remove|rm|yeet)    (( $# )) || die "remove what tho"; for p; do remove_pkg "$p"; done; play_scream ;;
     autoremove|clean)  cmd_autoremove ;;
     list|ls)           cmd_list ;;
     files)             cmd_files "$@" ;;

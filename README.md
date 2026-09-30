@@ -229,6 +229,8 @@ Every day `.github/workflows/bump.yml` runs `tools/bump.py`, which checks every 
 
 Put `desktop_icon=true` in a GURTBUILD and gurt copies the package's `.desktop` file onto your desktop when it installs (and cleans it up on `gurt remove`). Don't want that? `--no-desktop` or `GURT_DESKTOP_ICONS=0`.
 
+`gurt remove` plays the Wilhelm scream when it deletes something 😱 (uses whatever you have: `pw-play`, `paplay`, `mpg123`, `ffplay` or `mpv`). Too much? `--quiet-yeet` or `GURT_SOUNDS=0`.
+
 ## Not sure where to get something? `--scanrepos` 🔍
 
 ```sh
