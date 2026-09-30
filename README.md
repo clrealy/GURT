@@ -170,6 +170,15 @@ hidden=true                         # not listed on the site or in gurt search, 
 ```
 The linter makes sure aliases never collide with other packages or aliases.
 
+## Desktop environments 🖥️
+
+```sh
+gurt de list            # what your distro can install: kde, gnome, xfce, cinnamon, mate, lxqt, budgie, cosmic, hyprland, niri, sway, i3
+gurt de install gnome   # installs it from YOUR distro's repos, then tells you how to pick it at login
+```
+
+Desktops are system software, so gurt **only** installs them from your own distro's repos, never from another distro (that's how systems break). It uses the real group or pattern for each distro: `plasma-meta` on Arch, `@kde-desktop-environment` on Fedora, `pattern:kde` on openSUSE, `kde-plasma-desktop` on Debian/Ubuntu. On Arch it comes with a full `-Syu` (no partial upgrades). It's also in the app under the **🖥️ Desktops** tab.
+
 ## GURT app 🖥️
 
 ```sh

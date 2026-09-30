@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.15.2"
+GURT_VERSION="0.16.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -1691,6 +1691,105 @@ aur_install() { # name reason
   install_file "$BUILT_PKG" "$reason"
 }
 
+# ───────────────────────── desktop environments ─────────────────────────
+# DEs are system software, so they ONLY come from your own distro's repos (never apt-on-arch style) 🛡️
+DE_NAMES="kde gnome xfce cinnamon mate lxqt budgie cosmic hyprland niri sway i3"
+de_desc() {
+  case $1 in
+    kde) echo "KDE Plasma — full-featured, super customizable" ;;
+    gnome) echo "GNOME — clean and simple, very polished" ;;
+    xfce) echo "Xfce — light and classic, great on older PCs" ;;
+    cinnamon) echo "Cinnamon — Linux Mint's desktop, Windows-like" ;;
+    mate) echo "MATE — old-school GNOME 2 vibes, lightweight" ;;
+    lxqt) echo "LXQt — super lightweight Qt desktop" ;;
+    budgie) echo "Budgie — modern and simple" ;;
+    cosmic) echo "COSMIC — System76's new Rust desktop" ;;
+    hyprland) echo "Hyprland — animated tiling Wayland compositor (config needed)" ;;
+    niri) echo "niri — scrolling tiling Wayland compositor (config needed)" ;;
+    sway) echo "Sway — i3-style tiling for Wayland (config needed)" ;;
+    i3) echo "i3 — classic tiling window manager for X11 (config needed)" ;;
+  esac
+}
+de_pkgs() { # de → this distro's packages/groups, or nothing if your distro doesn't ship it
+  local k="$1:$PM"
+  [[ $PM == yum ]] && k="$1:dnf"
+  case $k in
+    kde:pacman) echo "plasma-meta konsole dolphin" ;;       kde:apt) echo "kde-plasma-desktop" ;;
+    kde:dnf) echo "@kde-desktop-environment" ;;              kde:zypper) echo "pattern:kde pattern:kde_plasma" ;;
+    gnome:pacman) echo "gnome" ;;                            gnome:apt) echo "gnome-core" ;;
+    gnome:dnf) echo "@gnome-desktop" ;;                      gnome:zypper) echo "pattern:gnome" ;;
+    xfce:pacman) echo "xfce4 xfce4-goodies" ;;               xfce:apt) echo "xfce4 xfce4-goodies" ;;
+    xfce:dnf) echo "@xfce-desktop-environment" ;;            xfce:zypper) echo "pattern:xfce" ;;
+    cinnamon:pacman) echo "cinnamon" ;;                      cinnamon:apt) echo "cinnamon-desktop-environment" ;;
+    cinnamon:dnf) echo "@cinnamon-desktop-environment" ;;    cinnamon:zypper) echo "pattern:cinnamon" ;;
+    mate:pacman) echo "mate mate-extra" ;;                   mate:apt) echo "mate-desktop-environment" ;;
+    mate:dnf) echo "@mate-desktop-environment" ;;            mate:zypper) echo "pattern:mate" ;;
+    lxqt:pacman) echo "lxqt" ;;                              lxqt:apt) echo "lxqt" ;;
+    lxqt:dnf) echo "@lxqt-desktop-environment" ;;            lxqt:zypper) echo "pattern:lxqt" ;;
+    budgie:pacman) echo "budgie-desktop" ;;                  budgie:apt) echo "budgie-desktop" ;;
+    budgie:dnf) echo "@budgie-desktop-environment" ;;        budgie:zypper) echo "pattern:budgie" ;;
+    cosmic:pacman) echo "cosmic" ;;                          cosmic:dnf) echo "@cosmic-desktop-environment" ;;
+    hyprland:pacman) echo "hyprland kitty" ;;                hyprland:apt) echo "hyprland kitty" ;;
+    hyprland:dnf) echo "hyprland kitty" ;;                   hyprland:zypper) echo "hyprland kitty" ;;
+    niri:pacman) echo "niri alacritty fuzzel" ;;             niri:dnf) echo "niri alacritty fuzzel" ;;
+    niri:zypper) echo "niri alacritty fuzzel" ;;
+    sway:pacman) echo "sway swaybg foot wmenu" ;;            sway:apt) echo "sway swaybg foot" ;;
+    sway:dnf) echo "@sway-desktop-environment" ;;            sway:zypper) echo "pattern:sway" ;;
+    i3:pacman) echo "i3-wm i3status dmenu xterm" ;;          i3:apt) echo "i3" ;;
+    i3:dnf) echo "@i3-desktop-environment" ;;                i3:zypper) echo "pattern:i3" ;;
+    kde:apk) echo "plasma" ;; gnome:apk) echo "gnome" ;; xfce:apk) echo "xfce4" ;; sway:apk) echo "sway foot" ;;
+    kde:xbps) echo "kde-plasma" ;; gnome:xbps) echo "gnome" ;; xfce:xbps) echo "xfce4" ;; sway:xbps) echo "sway foot" ;;
+  esac
+}
+de_available() { # are this DE's packages actually in your repos? (groups/patterns are trusted)
+  local p; p=$(de_pkgs "$1"); [[ -n $p ]] || return 1
+  for p in $p; do
+    [[ $p == @* || $p == pattern:* ]] && continue
+    pm_available "$p" || return 1
+  done
+}
+de_dm() { # which login screen is on (if any)
+  local l; l=$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null || true)
+  [[ -n $l && -e $l ]] && basename "$l" .service
+}
+cmd_de() {
+  local sub=${1:-list} d
+  case $sub in
+    list|ls)
+      printf '%sdesktops you can install on %s (%s):%s\n' "$B" "$(. /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-this distro}")" "$PM" "$R0"
+      for d in $DE_NAMES; do
+        if ! de_available "$d"; then printf '  %s%-9s%s %s  %s(not in your distro'"'"'s repos)%s\n' "$YLW" "$d" "$R0" "$(de_desc "$d")" "$YLW" "$R0"
+        else printf '  %s%-9s%s %s\n' "$GRN" "$d" "$R0" "$(de_desc "$d")"; fi
+      done
+      echo; echo "install one: gurt de install <name>   (your login screen: $(de_dm || echo "none found"))" ;;
+    install|i|add)
+      d=${2:?usage: gurt de install <$(echo "$DE_NAMES" | tr ' ' '|')>}; d=${d,,}
+      case $d in plasma) d=kde ;; xfce4) d=xfce ;; hypr) d=hyprland ;; esac
+      [[ " $DE_NAMES " == *" $d "* ]] || die "don't know a desktop called '$d' — see: gurt de list"
+      local pkgs; read -ra pkgs <<<"$(de_pkgs "$d")"
+      (( ${#pkgs[@]} )) && de_available "$d" || die "$d isn't in $PM's repos for your distro 😔 (gurt only installs desktops from your own distro — mixing distros for a desktop breaks stuff)"
+      msg "$(de_desc "$d")"
+      msg2 "from your distro ($PM): ${pkgs[*]}"
+      [[ $PM == pacman ]] && msg2 "Arch does a full system upgrade with it (no partial upgrades)"
+      ask "install the $d desktop?" || die "aborted"
+      pm_install "${pkgs[@]}" || die "$PM couldn't install $d"
+      msg "$d installed ✅"
+      local dm; dm=$(de_dm)
+      if [[ -n $dm ]]; then
+        msg2 "log out → on the $dm login screen pick the \"$d\" session (usually a menu in a corner) → log in 🖥️"
+      else
+        msg2 "you don't have a login screen enabled. easiest fix:"
+        case $d in
+          gnome|cosmic) msg2 "  sudo systemctl enable gdm   (or cosmic-greeter for COSMIC)" ;;
+          kde|lxqt) msg2 "  sudo systemctl enable sddm   (install sddm first if needed)" ;;
+          *) msg2 "  install + enable sddm, gdm or lightdm, or start it from a TTY" ;;
+        esac
+      fi
+      case $d in hyprland|niri|sway|i3) msg2 "heads up: $d starts pretty bare — it's a tiling setup you configure yourself (keybinds are in its config file)" ;; esac ;;
+    *) die "usage: gurt de [list | install <name>]" ;;
+  esac
+}
+
 # ───────────────────────── rollback / hold ─────────────────────────
 # every package gurt installs gets a copy in ~/.cache/gurt/rollback/<pkg>/ (last 3 versions)
 ROLLBACK_KEEP=${GURT_ROLLBACK_KEEP:-3}
@@ -1769,7 +1868,7 @@ cmd_complete() {
     available) for f in "$GURT_REPO_DIR"/packages/*/.gurtinfo; do [[ -f $f ]] || continue
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
     commands)  printf '%s\n' sync search info install update upgrade self-update remove autoremove list files owns \
-                 build add srcinfo checksum new repo dirt gui outsource rollback hold unhold export import completions doctor version help yo ;;
+                 build add srcinfo checksum new repo dirt gui de outsource rollback hold unhold export import completions doctor version help yo ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman flatpak snap dirt ;;
   esac
   return 0
@@ -2599,6 +2698,8 @@ ${B}making packages${R0}
 ${B}misc${R0}
   doctor               check your setup + which sources work
   outsource <git url>  clone + build + install any repo (github user/repo works too) → git/<name>
+  de list              desktop environments you can install (kde, gnome, xfce, hyprland, niri…)
+  de install <name>    install a desktop from YOUR distro's repos
   rollback <pkg>       go back to the version before (gurt keeps the last 3) + hold it there
   hold / unhold <pkg>  stop / resume upgrades for a package
   export [file]        save the list of stuff you installed
@@ -2694,6 +2795,7 @@ main() {
     new)               cmd_new "$@" ;;
     repo|repos)        cmd_repo "$@" ;;
     dirt)              cmd_dirt "$@" ;;
+    de|desktop|desktops) cmd_de "$@" ;;
     rollback|undo)     cmd_rollback "$@" ;;
     hold|pin)          (( $# )) || die "hold what tho"; cmd_hold "$@" ;;
     unhold|unpin)      (( $# )) || die "unhold what tho"; cmd_unhold "$@" ;;

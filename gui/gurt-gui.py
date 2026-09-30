@@ -215,6 +215,14 @@ class H(BaseHTTPRequestHandler):
         body = self._body()
         if u.path == "/api/run":
             cmd, arg = body.get("cmd"), (body.get("arg") or "").strip()
+            if cmd == "de-list":
+                job = start_job([GURT, "de", "list"])
+                return self._send(200, {"job": job.id})
+            if cmd == "de":
+                if not re.fullmatch(r"[a-z0-9]{1,20}", arg):
+                    return self._send(400, {"error": "that desktop name looks sus"})
+                job = start_job([GURT, "-y", "de", "install", arg])
+                return self._send(200, {"job": job.id})
             if cmd == "gui-setup":
                 job = start_job([GURT, "-y", "gui", "--setup"])
                 return self._send(200, {"job": job.id})
@@ -524,6 +532,7 @@ dialog .row{justify-content:flex-end}
     <button data-tab="discover" class="on">🔍 Discover</button>
     <button data-tab="installed">📦 Installed</button>
     <button data-tab="updates">⬆️ Updates<span class="badge" id="ubadge" hidden></span></button>
+    <button data-tab="desktops">🖥️ Desktops</button>
   </nav>
   <div class="spacer"></div>
   <button class="btn ghost small" id="syncbtn" title="gurt sync">↻ sync</button>
@@ -557,6 +566,10 @@ dialog .row{justify-content:flex-end}
   <section id="t-updates" hidden>
     <div class="row" style="margin-bottom:14px"><button class="btn ghost" id="checkbtn">check for updates</button><button class="btn" id="upbtn">⬆️ update everything</button><button class="btn ghost" id="selfbtn">update gurt itself</button></div>
     <div class="grid" id="ugrid"><div class="empty">hit "check for updates" 👆</div></div>
+  </section>
+  <section id="t-desktops" hidden>
+    <p class="blurb">Desktop environments come straight from your own distro's repos (never from another distro, that breaks stuff). After installing, log out and pick it on the login screen.</p>
+    <div class="grid" id="dgrid"><div class="empty">loading desktops… 🖥️</div></div>
   </section>
 </main>
 <div id="console"><div class="bar"><span class="dot" id="cdot"></span><b id="ctitle">activity</b><span class="spacer"></span><button class="btn ghost small" id="cstop" hidden>stop</button><button class="btn ghost small" id="chide">hide</button></div><pre id="cout"></pre></div>
@@ -607,7 +620,7 @@ function renderInstalled(){
 }
 
 // ── running gurt ──
-const VERB = {install:"Install", remove:"Remove", rollback:"Roll back", hold:"Hold", unhold:"Unhold", upgrade:"Update everything", "self-update":"Update gurt", outsource:"Build + install"};
+const VERB = {de:"Install the desktop", install:"Install", remove:"Remove", rollback:"Roll back", hold:"Hold", unhold:"Unhold", upgrade:"Update everything", "self-update":"Update gurt", outsource:"Build + install"};
 function ask(title, body){ return new Promise(res => { $("#ctitle2").textContent = title; $("#cbody").textContent = body; const d=$("#confirm");
   const done = v => { d.close(); $("#cyes").onclick = $("#cno").onclick = null; res(v); };
   $("#cyes").onclick = () => done(true); $("#cno").onclick = () => done(false); d.onclose = () => res(false); d.showModal(); }); }
@@ -740,8 +753,23 @@ $("#syncbtn").addEventListener("click", () => run("sync", "", {confirm:false}));
 // ── tabs ──
 document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x === b));
-  for (const t of ["discover","installed","updates"]) $("#t-"+t).hidden = b.dataset.tab !== t;
+  for (const t of ["discover","installed","updates","desktops"]) $("#t-"+t).hidden = b.dataset.tab !== t;
+  if (b.dataset.tab === "desktops" && !deLoaded) loadDesktops();
 }));
+
+// ── desktops (gurt de) ──
+let deLoaded = false;
+async function loadDesktops(){
+  deLoaded = true;
+  const r = await run("de-list", "", {quiet:true, confirm:false}); if (!r) { deLoaded = false; return; }
+  const des = r.lines.map(l => l.match(/^  (\S+)\s+(.+?)(  \(not in your distro's repos\))?$/)).filter(Boolean)
+    .map(m => { const [title, ...rest] = m[2].split(" — "); return {name:m[1], title, desc:rest.join(" — "), ok:!m[3]}; });
+  const dm = (r.lines.find(l => /your login screen:/.test(l)) || "").replace(/.*your login screen: /, "").replace(/\)$/, "");
+  $("#dgrid").innerHTML = des.length ? des.map(d => card({name:d.title, src:d.name, ver:"", desc:d.desc,
+      actions: d.ok ? actBtn("install","de",d.name) : `<span class="chip">not in your distro's repos</span>`})).join("") +
+      `<div class="empty" style="grid-column:1/-1;padding:14px 0">your login screen: <b>${esc(dm || "none found")}</b></div>`
+    : `<div class="empty">couldn't list desktops 😔</div>`;
+}
 
 setInterval(() => api("/api/ping").catch(() => {}), 5000); api("/api/ping");
 if (MODE === "browser") {
