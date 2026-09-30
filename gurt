@@ -10,7 +10,6 @@ set -euo pipefail
 shopt -s nullglob
 
 GURT_VERSION="0.18.0"
-GURT_VERSION="0.17.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
