@@ -1,0 +1,14 @@
+# Zoom — video meetings
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=zoom
+pkgver=flathub
+pkgrel=1
+pkgdesc="Zoom — video meetings (Flathub)"
+url="https://flathub.org/apps/us.zoom.Zoom"
+license="Proprietary"
+maintainer="clrealy"
+arch=(x86_64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=us.zoom.Zoom

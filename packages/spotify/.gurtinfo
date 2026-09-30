@@ -1,0 +1,12 @@
+pkgname = spotify
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Spotify — music streaming (Flathub)
+url = https://flathub.org/apps/com.spotify.Client
+license = Proprietary
+maintainer = clrealy
+arch = x86_64
+alias = spotify-client
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.spotify.Client

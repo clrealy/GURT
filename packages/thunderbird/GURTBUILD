@@ -1,0 +1,14 @@
+# Thunderbird — email, calendar and contacts
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=thunderbird
+pkgver=flathub
+pkgrel=1
+pkgdesc="Thunderbird — email, calendar and contacts (Flathub)"
+url="https://flathub.org/apps/org.mozilla.Thunderbird"
+license="MPL-2.0"
+maintainer="clrealy"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.mozilla.Thunderbird

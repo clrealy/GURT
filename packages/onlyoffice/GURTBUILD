@@ -1,0 +1,15 @@
+# ONLYOFFICE — office suite that's very compatible with Word/Excel/PowerPoint
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=onlyoffice
+pkgver=flathub
+pkgrel=1
+pkgdesc="ONLYOFFICE — office suite that's very compatible with Word/Excel/PowerPoint (Flathub)"
+url="https://flathub.org/apps/org.onlyoffice.desktopeditors"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+arch=(x86_64 aarch64)
+aliases=(onlyoffice-desktopeditors)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.onlyoffice.desktopeditors

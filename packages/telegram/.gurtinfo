@@ -1,0 +1,13 @@
+pkgname = telegram
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Telegram — messaging app (Flathub)
+url = https://flathub.org/apps/org.telegram.desktop
+license = GPL-3.0-or-later
+maintainer = clrealy
+arch = x86_64
+arch = aarch64
+alias = telegram-desktop
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.telegram.desktop

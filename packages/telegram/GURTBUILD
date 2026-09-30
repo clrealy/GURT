@@ -1,0 +1,15 @@
+# Telegram — messaging app
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=telegram
+pkgver=flathub
+pkgrel=1
+pkgdesc="Telegram — messaging app (Flathub)"
+url="https://flathub.org/apps/org.telegram.desktop"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+arch=(x86_64 aarch64)
+aliases=(telegram-desktop)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.telegram.desktop

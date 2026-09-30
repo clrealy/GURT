@@ -1,0 +1,13 @@
+pkgname = torbrowser
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Tor Browser — browse privately over the Tor network (Flathub)
+url = https://flathub.org/apps/org.torproject.torbrowser-launcher
+license = MIT
+maintainer = clrealy
+arch = x86_64
+arch = aarch64
+alias = tor-browser
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.torproject.torbrowser-launcher

@@ -1,0 +1,12 @@
+pkgname = dolphin-emu
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Dolphin — GameCube and Wii emulator (Flathub)
+url = https://flathub.org/apps/org.DolphinEmu.dolphin-emu
+license = GPL-2.0-or-later
+maintainer = clrealy
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.DolphinEmu.dolphin-emu

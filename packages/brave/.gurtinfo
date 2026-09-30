@@ -1,0 +1,12 @@
+pkgname = brave
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Brave — Chromium-based browser with ad blocking built in (Flathub)
+url = https://flathub.org/apps/com.brave.Browser
+license = MPL-2.0
+maintainer = clrealy
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.brave.Browser

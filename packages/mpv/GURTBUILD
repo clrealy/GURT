@@ -1,0 +1,14 @@
+# mpv — minimal, fast video player
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=mpv
+pkgver=flathub
+pkgrel=1
+pkgdesc="mpv — minimal, fast video player (Flathub)"
+url="https://flathub.org/apps/io.mpv.Mpv"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.mpv.Mpv

@@ -1,0 +1,14 @@
+pkgname = prismlauncher
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Prism Launcher — Minecraft launcher with mods, modpacks and multiple instances (Flathub)
+url = https://flathub.org/apps/org.prismlauncher.PrismLauncher
+license = GPL-3.0-only
+maintainer = clrealy
+arch = x86_64
+arch = aarch64
+alias = prism
+alias = minecraft
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.prismlauncher.PrismLauncher

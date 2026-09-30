@@ -1,0 +1,14 @@
+# Firefox — Mozilla's web browser
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=firefox
+pkgver=flathub
+pkgrel=1
+pkgdesc="Firefox — Mozilla's web browser (Flathub)"
+url="https://flathub.org/apps/org.mozilla.firefox"
+license="MPL-2.0"
+maintainer="clrealy"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.mozilla.firefox

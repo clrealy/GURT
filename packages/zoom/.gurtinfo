@@ -1,0 +1,11 @@
+pkgname = zoom
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Zoom — video meetings (Flathub)
+url = https://flathub.org/apps/us.zoom.Zoom
+license = Proprietary
+maintainer = clrealy
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = us.zoom.Zoom

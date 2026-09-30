@@ -1,0 +1,14 @@
+# Discord — voice, video and text chat
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=discord
+pkgver=flathub
+pkgrel=1
+pkgdesc="Discord — voice, video and text chat (Flathub)"
+url="https://flathub.org/apps/com.discordapp.Discord"
+license="Proprietary"
+maintainer="clrealy"
+arch=(x86_64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.discordapp.Discord

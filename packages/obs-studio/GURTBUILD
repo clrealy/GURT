@@ -1,0 +1,15 @@
+# OBS Studio — screen recording and live streaming
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=obs-studio
+pkgver=flathub
+pkgrel=1
+pkgdesc="OBS Studio — screen recording and live streaming (Flathub)"
+url="https://flathub.org/apps/com.obsproject.Studio"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+arch=(x86_64 aarch64)
+aliases=(obs)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.obsproject.Studio

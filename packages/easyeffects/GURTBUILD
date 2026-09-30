@@ -1,0 +1,14 @@
+# Easy Effects — audio effects, EQ and mic noise removal
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=easyeffects
+pkgver=flathub
+pkgrel=1
+pkgdesc="Easy Effects — audio effects, EQ and mic noise removal (Flathub)"
+url="https://flathub.org/apps/com.github.wwmm.easyeffects"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.wwmm.easyeffects

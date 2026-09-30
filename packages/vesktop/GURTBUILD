@@ -1,0 +1,14 @@
+# Vesktop — Discord with Vencord built in, better screenshare on Linux
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=vesktop
+pkgver=flathub
+pkgrel=1
+pkgdesc="Vesktop — Discord with Vencord built in, better screenshare on Linux (Flathub)"
+url="https://flathub.org/apps/dev.vencord.Vesktop"
+license="GPL-3.0-only"
+maintainer="clrealy"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.vencord.Vesktop

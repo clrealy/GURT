@@ -1,0 +1,12 @@
+pkgname = godot
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Godot — free game engine (Flathub)
+url = https://flathub.org/apps/org.godotengine.Godot
+license = MIT
+maintainer = clrealy
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.godotengine.Godot

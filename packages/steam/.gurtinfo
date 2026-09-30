@@ -1,0 +1,11 @@
+pkgname = steam
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Steam — Valve's game store and launcher (Flathub)
+url = https://flathub.org/apps/com.valvesoftware.Steam
+license = Proprietary
+maintainer = clrealy
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.valvesoftware.Steam

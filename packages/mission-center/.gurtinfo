@@ -1,0 +1,13 @@
+pkgname = mission-center
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Mission Center — task manager with CPU/GPU/RAM graphs (Flathub)
+url = https://flathub.org/apps/io.missioncenter.MissionCenter
+license = GPL-3.0-or-later
+maintainer = clrealy
+arch = x86_64
+arch = aarch64
+alias = missioncenter
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.missioncenter.MissionCenter

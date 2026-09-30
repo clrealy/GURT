@@ -1,0 +1,12 @@
+pkgname = audacity
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Audacity — audio recording and editing (Flathub)
+url = https://flathub.org/apps/org.audacityteam.Audacity
+license = GPL-3.0-or-later
+maintainer = clrealy
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.audacityteam.Audacity

@@ -1,0 +1,15 @@
+# Prism Launcher — Minecraft launcher with mods, modpacks and multiple instances
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=prismlauncher
+pkgver=flathub
+pkgrel=1
+pkgdesc="Prism Launcher — Minecraft launcher with mods, modpacks and multiple instances (Flathub)"
+url="https://flathub.org/apps/org.prismlauncher.PrismLauncher"
+license="GPL-3.0-only"
+maintainer="clrealy"
+arch=(x86_64 aarch64)
+aliases=(prism minecraft)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.prismlauncher.PrismLauncher

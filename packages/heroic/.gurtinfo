@@ -1,0 +1,13 @@
+pkgname = heroic
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Heroic — Epic, GOG and Amazon games on Linux (Flathub)
+url = https://flathub.org/apps/com.heroicgameslauncher.hgl
+license = GPL-3.0-only
+maintainer = clrealy
+arch = x86_64
+arch = aarch64
+alias = heroic-games-launcher
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.heroicgameslauncher.hgl
