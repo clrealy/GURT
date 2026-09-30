@@ -1,0 +1,12 @@
+pkgname = konsole
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Konsole — KDE's terminal emulator (Flathub)
+url = https://flathub.org/apps/org.kde.konsole
+license = GPL-2.0-or-later
+maintainer = clrealy
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.kde.konsole
