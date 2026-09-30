@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.16.0"
+GURT_VERSION="0.16.1"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -1750,7 +1750,84 @@ de_available() { # are this DE's packages actually in your repos? (groups/patter
 }
 de_dm() { # which login screen is on (if any)
   local l; l=$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null || true)
-  [[ -n $l && -e $l ]] && basename "$l" .service
+  if [[ -n $l && -e $l ]]; then basename "$l" .service; fi
+}
+de_marker() { # one package that tells us a DE is installed
+  case $1 in
+    kde) [[ $PM == zypper ]] && echo plasma6-workspace || echo plasma-workspace ;;
+    gnome) echo gnome-shell ;; xfce) echo xfce4-session ;; cinnamon) echo cinnamon ;; mate) echo mate-session-manager ;;
+    lxqt) echo lxqt-session ;; budgie) echo budgie-desktop ;; cosmic) echo cosmic-session ;;
+    hyprland) echo hyprland ;; niri) echo niri ;; sway) echo sway ;; i3) [[ $PM == dnf || $PM == zypper ]] && echo i3 || echo i3-wm ;;
+  esac
+}
+de_installed() { local m; m=$(de_marker "$1"); [[ -n $m ]] && pm_has "$m"; }
+de_running() { # is this the desktop you're logged into right now?
+  local cur="${XDG_CURRENT_DESKTOP:-}:${XDG_SESSION_DESKTOP:-}:${DESKTOP_SESSION:-}"; cur=${cur,,}
+  case $1 in
+    kde) [[ $cur == *kde* || $cur == *plasma* ]] ;; xfce) [[ $cur == *xfce* ]] ;; cinnamon) [[ $cur == *cinnamon* ]] ;;
+    lxqt) [[ $cur == *lxqt* ]] ;; budgie) [[ $cur == *budgie* ]] ;; *) [[ $cur == *"$1"* ]] ;;
+  esac
+}
+dm_pkg() { # the package that owns your login screen, so removing a desktop never takes it along
+  local unit bin
+  unit=$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null) || return 0
+  [[ -f $unit ]] || return 0
+  bin=$(sed -n 's/^ExecStart=-\{0,1\}\([^ ]*\).*/\1/p' "$unit" | head -n1)
+  [[ -n $bin ]] || return 0
+  case $PM in
+    apt) dpkg -S "$bin" 2>/dev/null | head -n1 | cut -d: -f1 ;;
+    pacman) pacman -Qoq "$bin" 2>/dev/null ;;
+    dnf|yum|zypper) rpm -qf --qf '%{NAME}\n' "$bin" 2>/dev/null | head -n1 ;;
+  esac
+}
+ask_really() { # like ask, but -y never says yes for you (used for deleting desktops)
+  local a
+  [[ -t 0 ]] || [[ -r /dev/tty ]] || return 1
+  printf '%s::%s %s [y/N] ' "$MAG" "$R0" "$1" >&2
+  { read -r a </dev/tty; } 2>/dev/null || return 1
+  [[ $a == [yY]* ]]
+}
+de_remove() { # name — removes a desktop through your package manager, which shows exactly what goes and asks
+  local d=$1 dm list=() p g
+  de_installed "$d" || { warn "$d isn't installed"; return 0; }
+  if de_running "$d"; then
+    warn "you're logged into $d right now — log into your other desktop first, then run: gurt de remove $d"; return 1
+  fi
+  dm=$(dm_pkg)
+  read -ra list <<<"$(de_pkgs "$d") $(de_marker "$d")"
+  msg "removing the $d desktop${dm:+ (keeping your login screen: $dm)}"
+  case $PM in
+    apt)
+      [[ -n $dm ]] && asroot apt-mark manual "$dm" >/dev/null
+      local have=(); for p in "${list[@]}"; do pm_has "$p" && have+=("$p"); done
+      asroot apt-get remove "${have[@]}" || return 1
+      msg2 "cleaning up the leftovers $d pulled in (apt shows the list first)"
+      asroot apt-get autoremove || true ;;
+    pacman)
+      local have=()
+      for p in "${list[@]}"; do
+        if g=$(pacman -Qgq "$p" 2>/dev/null) && [[ -n $g ]]; then read -ra g <<<"$(echo $g)"; have+=("${g[@]}")
+        elif pacman -Qq "$p" >/dev/null 2>&1; then have+=("$p"); fi
+      done
+      [[ $d == kde ]] && { g=$(pacman -Qgq plasma 2>/dev/null) && read -ra g <<<"$(echo $g)" && have+=("${g[@]}"); }
+      local keep=() x; for x in "${have[@]}"; do [[ $x == "$dm" ]] || keep+=("$x"); done
+      (( ${#keep[@]} )) || { warn "nothing to remove"; return 0; }
+      # -Rns refuses if something else still needs it, so this can't break other apps
+      mapfile -t keep < <(printf '%s\n' "${keep[@]}" | sort -u)
+      asroot pacman -Rns "${keep[@]}" || return 1 ;;
+    dnf|yum)
+      for p in "${list[@]}"; do
+        if [[ $p == @* ]]; then asroot dnf group remove "${p#@}" || return 1
+        elif pm_has "$p"; then asroot dnf remove "$p" || return 1; fi
+      done ;;
+    zypper)
+      for p in "${list[@]}"; do
+        if [[ $p == pattern:* ]]; then asroot zypper remove --clean-deps -t pattern "${p#pattern:}" || return 1
+        elif pm_has "$p"; then asroot zypper remove --clean-deps "$p" || return 1; fi
+      done ;;
+    *) warn "gurt can't remove desktops on $PM yet — use your package manager"; return 1 ;;
+  esac
+  msg "$d removed 🗑️"
 }
 cmd_de() {
   local sub=${1:-list} d
@@ -1759,7 +1836,7 @@ cmd_de() {
       printf '%sdesktops you can install on %s (%s):%s\n' "$B" "$(. /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-this distro}")" "$PM" "$R0"
       for d in $DE_NAMES; do
         if ! de_available "$d"; then printf '  %s%-9s%s %s  %s(not in your distro'"'"'s repos)%s\n' "$YLW" "$d" "$R0" "$(de_desc "$d")" "$YLW" "$R0"
-        else printf '  %s%-9s%s %s\n' "$GRN" "$d" "$R0" "$(de_desc "$d")"; fi
+        else printf '  %s%-9s%s %s%s\n' "$GRN" "$d" "$R0" "$(de_desc "$d")" "$(de_installed "$d" && { de_running "$d" && echo "  [installed, running]" || echo "  [installed]"; })"; fi
       done
       echo; echo "install one: gurt de install <name>   (your login screen: $(de_dm || echo "none found"))" ;;
     install|i|add)
@@ -1785,8 +1862,29 @@ cmd_de() {
           *) msg2 "  install + enable sddm, gdm or lightdm, or start it from a TTY" ;;
         esac
       fi
-      case $d in hyprland|niri|sway|i3) msg2 "heads up: $d starts pretty bare — it's a tiling setup you configure yourself (keybinds are in its config file)" ;; esac ;;
-    *) die "usage: gurt de [list | install <name>]" ;;
+      case $d in hyprland|niri|sway|i3) msg2 "heads up: $d starts pretty bare — it's a tiling setup you configure yourself (keybinds are in its config file)" ;; esac
+      # your old desktop(s): offer to delete them (always asks, even with -y)
+      local old; for old in $DE_NAMES; do
+        [[ $old == "$d" ]] && continue
+        de_installed "$old" || continue
+        if de_running "$old"; then
+          msg2 "you're using $old right now — log into $d first, then delete $old with: gurt de remove $old"
+        elif ask_really "delete your old desktop ($old)?"; then
+          de_remove "$old" || warn "$old wasn't removed"
+        else
+          msg2 "keeping $old (delete it later with: gurt de remove $old)"
+        fi
+      done ;;
+    remove|rm|uninstall|yeet)
+      d=${2:?usage: gurt de remove <name>}; d=${d,,}
+      case $d in plasma) d=kde ;; xfce4) d=xfce ;; hypr) d=hyprland ;; esac
+      [[ " $DE_NAMES " == *" $d "* ]] || die "don't know a desktop called '$d' — see: gurt de list"
+      local others=0 o; for o in $DE_NAMES; do [[ $o != "$d" ]] && de_installed "$o" && others=1; done
+      (( others )) || warn "$d is your only desktop — after this you'll only have a text login (install another first: gurt de install <name>)"
+      de_running "$d" && die "you're logged into $d right now — log into another desktop first, then remove it"
+      ask_really "delete the $d desktop?" || die "keeping it"
+      de_remove "$d" ;;
+    *) die "usage: gurt de [list | install <name> | remove <name>]" ;;
   esac
 }
 
@@ -2699,7 +2797,8 @@ ${B}misc${R0}
   doctor               check your setup + which sources work
   outsource <git url>  clone + build + install any repo (github user/repo works too) → git/<name>
   de list              desktop environments you can install (kde, gnome, xfce, hyprland, niri…)
-  de install <name>    install a desktop from YOUR distro's repos
+  de install <name>    install a desktop from YOUR distro's repos (then offers to delete your old one)
+  de remove <name>     delete a desktop (never the one you're logged into, keeps your login screen)
   rollback <pkg>       go back to the version before (gurt keeps the last 3) + hold it there
   hold / unhold <pkg>  stop / resume upgrades for a package
   export [file]        save the list of stuff you installed
