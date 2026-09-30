@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.15.1"
+GURT_VERSION="0.15.2"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -853,6 +853,7 @@ custom_repos() { local d f; for d in "${REPO_DIRS[@]}"; do for f in "$d"/*.conf;
 all_sources()  { echo "$FOREIGN_SOURCES $(custom_repos | tr '\n' ' ')"; }
 src_kind() {
   case $1 in
+    git|dirt|box-*) echo "$1" ;;
     gurt) echo gurt ;; aur) echo aur ;; apt) echo apt ;; dnf|zypper) echo rpm ;; pacman) echo pacman ;;
     flatpak) echo flatpak ;; snap) echo snap ;;
     *) if repo_file "$1" >/dev/null; then repo_get "$1" type; else echo unknown; fi ;;
@@ -900,6 +901,7 @@ sync_source() {
     aur) msg2 "aur is searched live, nothing to sync"; return 0 ;;
     flatpak|snap) msg2 "$s keeps its own index, nothing to sync"; return 0 ;;
     apt|rpm|pacman) ;;
+    gurt|git|dirt|box-*) return 0 ;;   # nothing to download for these
     *) die "unknown source '$s' (have: gurt $(all_sources))" ;;
   esac
   mkdir -p "$IDX_DIR"; tmp=$(mktemp -d "${TMPDIR:-/tmp}/gurt-idx.XXXXXX"); out=$(idx_file "$s")
@@ -2079,6 +2081,15 @@ cmd_info() {
     flatpak)
       ensure_flatpak; local id; id=$(flatpak_resolve "$name"); [[ -n $id ]] || die "nothing on Flathub matches '$name'"
       key="flatpak:$id"; flatpak remote-info flathub "$id" 2>/dev/null || die "couldn't get info for $id" ;;
+    git)
+      is_installed "$key" || die "git/$name isn't installed (git/ packages come from: gurt outsource <url>)"
+      awk -F' = ' '{ printf "%-14s: %s\n", $1, substr($0, length($1)+4) }' "$DB/$key/info" ;;
+    dirt)
+      dirt_on || die "DIRT is off 🔒 (gurt dirt on — 18+ only)"
+      ensure_repo
+      if [[ -f $GURT_REPO_DIR/dirt/$name/.gurtinfo ]]; then awk -F' = ' '{ printf "%-14s: %s\n", $1, substr($0, length($1)+4) }' "$GURT_REPO_DIR/dirt/$name/.gurtinfo"
+      elif is_installed "$key"; then awk -F' = ' '{ printf "%-14s: %s\n", $1, substr($0, length($1)+4) }' "$DB/$key/info"
+      else die "no package '$name' in DIRT"; fi ;;
     snap)
       command -v snap >/dev/null || die "snap isn't installed yet (gurt install snap/<name> sets it up)"
       snap info "$name" 2>/dev/null | head -n 20 || die "no snap called $name" ;;
@@ -2117,7 +2128,7 @@ find_outdated() {
       aur)  dir=$(aur_clone "$name" 2>/dev/null) && new=$(aur_srcinfo_ver "$dir/.SRCINFO") ;;
       flatpak|snap|box-*) ;;   # they update themselves (see upgrade_containers)
       git)  local u c h; u=$(info_get "$d/info" outsource_url); c=$(info_get "$d/info" outsource_commit)
-            h=$(git ls-remote "$u" HEAD 2>/dev/null | cut -f1)
+            h=$( [[ -n $u ]] && git ls-remote "$u" HEAD 2>/dev/null | cut -f1 || true)
             if [[ -n $h && $h != "$c" ]]; then msg2 "git/$name  ${c:0:7} -> ${h:0:7}"; TODO+=("$k"); fi
             continue ;;
       *)    new=$(idx_lookup "$src" "$name" | cut -f2 || true) ;;
@@ -2140,7 +2151,7 @@ refresh_all() {
   local s
   sync_main
   for s in $(used_sources); do
-    [[ $s == aur || $s == flatpak || $s == snap || $s == box-* ]] && continue
+    [[ $s == aur || $s == flatpak || $s == snap || $s == git || $s == dirt || $s == box-* ]] && continue
     ( sync_source "$s" ) || warn "couldn't refresh $s, skipping"
   done
 }
