@@ -145,7 +145,7 @@ footer a{color:inherit}
 #gate .nah{background:#1d1417;color:#f1e9ea}
 #gate .gbtns button:focus-visible{outline:3px solid #ff9aa8;outline-offset:2px}
 .dirtnote{color:var(--muted);font-size:14px;margin:10px 0 0}
-#heyo{display:block;margin:60px auto 30px;background:none;border:none;color:#ff1a1a;font:700 11px "JetBrains Mono",monospace;letter-spacing:.3em;opacity:.14;cursor:pointer;transition:opacity .3s}
+#heyo{display:block;margin:60px auto 30px;background:none;border:none;color:#ff1a1a;font:700 8px "JetBrains Mono",monospace;opacity:.2;cursor:pointer;transition:opacity .3s}
 #heyo:hover,#heyo:focus-visible{opacity:1;outline:none;text-shadow:0 0 8px #ff1a1a}
 #heyo-found{text-align:center;color:var(--muted);font-size:14px;padding-bottom:40px}
 #heyo-found b{color:#ff1a1a}
@@ -543,7 +543,7 @@ $("#u-dl").addEventListener("click", () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });
 
-$("#heyo").addEventListener("click", () => { $("#heyo-found").hidden = false; $("#heyo").textContent = "H E Y O"; $("#heyo").style.opacity = 1; });
+$("#heyo").addEventListener("click", () => { $("#heyo-found").hidden = false $("#heyo").style.opacity = 1; });
 fetch("packages.json").then(r => r.json()).then(d => { PKGS = d.packages; render(); const u = new URLSearchParams(location.search).get("u"); if (u) showProfile(u, false); })
   .catch(() => { $("#count").textContent = "couldn't load packages.json"; });
 </script>
