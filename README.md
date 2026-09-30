@@ -63,6 +63,19 @@ gurt installs podman + [distrobox](https://distrobox.it) if you need them, creat
 
 Things inside a box manage **the box**, not your host. dnfdragora in `gurt-fedora` manages Fedora packages inside that box, and your Arch/Mint system stays untouched 🛡️
 
+### Got a `.deb` or `.rpm` file? Just install it 📥
+
+(For AppImages, tarballs, `.exe`s, `.dmg`s and more, see [`gurt outsource`](#outsource-any-file-you-downloaded-).)
+
+```sh
+gurt install ./google-chrome-stable_current_amd64.deb   # on Fedora, Arch, openSUSE, whatever
+gurt install ~/Downloads/some-app.rpm                   # on Debian/Ubuntu/Mint
+gurt install ./thing-1.0-1-x86_64.pkg.tar.zst           # Arch packages too
+gurt install https://example.com/app.deb                # urls work
+```
+
+gurt reads the name, version and deps out of the file, repacks it and installs it **straight onto your system — no box**. It shows up as `file/<name>` (`gurt remove file/<name>`, `gurt info file/<name>`). Deps get resolved the same way as below: your system first, then your distro, then the distro the file was made for. If the file is already your distro's own kind (a `.deb` on Ubuntu, an `.rpm` on Fedora), gurt just hands it to your package manager. The same safety rails apply: it won't install something built for a different CPU, it refuses kernels/bootloaders/core system packages, and it never overwrites files your distro owns. To update one, install the newer file.
+
 ### How cross-distro deps work
 
 When a foreign package needs something, gurt looks in this order:
@@ -205,6 +218,29 @@ gurt clones it and builds it with the repo's own **GURTBUILD**, then its **PKGBU
 
 ⚠️ This runs code from whatever repo you point it at. Only outsource repos you trust.
 
+### Outsource any file you downloaded 📥
+
+`gurt outsource` also takes **files** (or links to them). Whatever you downloaded, on whatever distro you run, **no box**:
+
+```sh
+gurt outsource ./google-chrome-stable_current_amd64.deb   # on Fedora? sure
+gurt outsource ~/Downloads/Some-App-2.1.0-linux-x64.tar.gz
+gurt outsource https://example.com/cool-thing.AppImage
+gurt outsource ./Photoshop.dmg                            # yes, we went that far 🍎
+```
+
+| you give it | what gurt does |
+|---|---|
+| `.deb` `.rpm` `.pkg.tar.zst` `.apk` (Alpine) `.xbps` (Void) `.eopkg` (Solus) | reads the name/version/deps out of it, repacks it and installs it straight onto your system. If it's your own distro's format, your package manager does it |
+| `.tar.gz` `.tar.xz` `.tar.zst` `.zip` `.7z` … with **source code** inside | builds it like a git repo (make / cmake / meson / cargo / go / GURTBUILD / PKGBUILD), keeping the tarball's version |
+| `.tar.*` `.zip` `.7z` `.zst` … with a **prebuilt app** inside, or a lone program | puts it in `/usr/local/lib/gurt-apps/<name>`, links its programs into `/usr/local/bin` and adds a menu entry |
+| `.AppImage` | installs it with its own menu entry + icon (runs even without FUSE 2) |
+| `.snap` `.flatpak` `.flatpakref` | hands it to snap / flatpak |
+| `.exe` `.msi` 🪟 | Wine. Installers (`setup.exe`, `.msi`) run in Wine; portable `.exe`s get installed with a launcher + menu entry |
+| `.dmg` 🍎 | pulls the `.app` out with 7-Zip and gives it a launcher that runs it through [Darling](https://darlinghq.org). Real talk: Darling mostly runs command-line Mac apps; GUI ones usually don't work yet |
+
+Everything tracked shows up as `file/<name>` (`gurt remove file/<name>`). Same safety rails as always: files for another CPU get refused, so do Alpine/musl builds on a glibc system, kernels/bootloaders/core packages, and anything that would overwrite files your distro owns. `gurt install ./thing.deb` works too for package files.
+
 ## Oops buttons: rollback, hold, export/import ⏪
 
 ```sh
@@ -228,6 +264,8 @@ Every day `.github/workflows/bump.yml` runs `tools/bump.py`, which checks every 
 ## Desktop shortcuts 🖥️
 
 Put `desktop_icon=true` in a GURTBUILD and gurt copies the package's `.desktop` file onto your desktop when it installs (and cleans it up on `gurt remove`). Don't want that? `--no-desktop` or `GURT_DESKTOP_ICONS=0`.
+
+`gurt remove` plays the Wilhelm scream when it deletes something 😱 (uses whatever you have: `pw-play`, `paplay`, `mpg123`, `ffplay` or `mpv`). Too much? `--quiet-yeet` or `GURT_SOUNDS=0`.
 
 ## Not sure where to get something? `--scanrepos` 🔍
 
