@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.18.0"
+GURT_VERSION="0.18.1"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -2533,12 +2533,25 @@ gui_script() {
 }
 gui_desktop_entry() { # add "GURT" to your app menu (just for you, no sudo)
   (( EUID == 0 )) && return 0
-  local data="${XDG_DATA_HOME:-$HOME/.local/share}" icon="$GURT_REPO_DIR/site/assets/apple-touch-icon.png"
-  mkdir -p "$data/applications" "$data/icons/hicolor/256x256/apps" 2>/dev/null || return 0
-  [[ -f $icon ]] && cp -f "$icon" "$data/icons/hicolor/256x256/apps/gurt.png" 2>/dev/null
-  printf '%s\n' "[Desktop Entry]" "Type=Application" "Name=GURT" "GenericName=Package Manager" \
-    "Comment=every distro's packages, on every distro" "Exec=$(readlink -f "$0") gui" "Icon=gurt" "Terminal=false" "StartupWMClass=gurt" \
-    "Categories=System;PackageManager;" "Keywords=packages;install;aur;apt;flatpak;" > "$data/applications/gurt.desktop"
+  local data="${XDG_DATA_HOME:-$HOME/.local/share}" f icon="" png entry
+  png="$data/icons/hicolor/256x256/apps/gurt.png"
+  mkdir -p "$data/applications" "${png%/*}" 2>/dev/null || return 0
+  for f in /usr/local/share/gurt/gurt.png /usr/share/gurt/gurt.png "$SELF_DIR/../share/gurt/gurt.png" \
+           "$SELF_DIR/site/assets/apple-touch-icon.png" "$GURT_REPO_DIR/site/assets/apple-touch-icon.png"; do
+    [[ -f $f ]] && { icon=$f; break; }
+  done
+  [[ -n $icon ]] && ! cmp -s "$icon" "$png" && cp -f "$icon" "$png" 2>/dev/null
+  # full path, not just "gurt" — KDE (and some others) won't find a freshly added icon by name until their cache rebuilds
+  [[ -f $png ]] && icon=$png || icon=gurt
+  entry=$(printf '%s\n' "[Desktop Entry]" "Type=Application" "Name=GURT" "GenericName=Package Manager" \
+    "Comment=every distro's packages, on every distro" "Exec=$(readlink -f "$0") gui" "Icon=$icon" "Terminal=false" "StartupWMClass=gurt" \
+    "Categories=System;PackageManager;" "Keywords=packages;install;aur;apt;flatpak;")
+  [[ $entry == "$(cat "$data/applications/gurt.desktop" 2>/dev/null)" ]] && return 0
+  printf '%s\n' "$entry" > "$data/applications/gurt.desktop"
+  # tell the app menu (KDE caches it)
+  command -v update-desktop-database >/dev/null && update-desktop-database -q "$data/applications" 2>/dev/null
+  for f in kbuildsycoca6 kbuildsycoca5; do command -v "$f" >/dev/null && { "$f" >/dev/null 2>&1 & break; }; done
+  return 0
 }
 gui_pkgs() { # the distro packages a real app window needs (python GObject + WebKit2GTK)
   local pkgs
@@ -3041,6 +3054,7 @@ cmd_self_update() {
   for f in /usr/local/share/gurt /usr/share/gurt; do
     [[ -d $f && -f $GURT_REPO_DIR/gui/gurt-gui.py ]] && asroot cp "$GURT_REPO_DIR/gui/gurt-gui.py" "$f/gurt-gui.py"
     [[ -d $f && -f $GURT_REPO_DIR/assets/wilhelm.mp3 ]] && asroot cp "$GURT_REPO_DIR/assets/wilhelm.mp3" "$f/wilhelm.mp3"
+    [[ -d $f && -f $GURT_REPO_DIR/site/assets/apple-touch-icon.png ]] && asroot cp "$GURT_REPO_DIR/site/assets/apple-touch-icon.png" "$f/gurt.png"
   done
   msg "gurt updated to $new ✅"
   exit 0

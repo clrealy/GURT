@@ -199,7 +199,7 @@ Desktops are system software, so gurt **only** installs them from your own distr
 gurt gui
 ```
 
-Opens GURT as an app: browse Main GURT, search every source, install or remove with one click, and see updates, holds and rollbacks, with gurt's output live at the bottom. When something needs sudo, it asks for your password in the app. After the first run, **GURT** is in your app menu.
+Opens GURT as an app: browse Main GURT, search every source, install or remove with one click, and see updates, holds and rollbacks, with gurt's output live at the bottom. When something needs sudo, it asks for your password in the app. After the first run, **GURT** is in your app menu (with its icon 🦆). The ☀️/🌙 button up top flips between light and dark. It starts on your system theme and remembers what you pick (`~/.config/gurt/gui.json`).
 
 Run `gurt gui --setup` once and it opens in its own real app window (GTK + WebKit, or Qt WebEngine if you have it on KDE). Without that it still works, it just uses a browser window.
 

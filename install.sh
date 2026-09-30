@@ -17,6 +17,7 @@ $SUDO install -Dm755 "$tmp/gurt/gurt" "$BIN/gurt"
 $SUDO install -Dm644 "$tmp/gurt/deps.map" "$SHARE/deps.map"
 $SUDO install -Dm644 "$tmp/gurt/gui/gurt-gui.py" "$SHARE/gurt-gui.py"
 $SUDO install -Dm644 "$tmp/gurt/assets/wilhelm.mp3" "$SHARE/wilhelm.mp3"
+$SUDO install -Dm644 "$tmp/gurt/site/assets/apple-touch-icon.png" "$SHARE/gurt.png"
 [ -f /etc/gurt.conf ] || $SUDO install -Dm644 "$tmp/gurt/gurt.conf" /etc/gurt.conf
 say "gurt installed to $BIN/gurt 🦆"
 "$BIN/gurt" yo
