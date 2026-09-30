@@ -8,6 +8,7 @@ license="MIT"
 maintainer="clrealy"
 arch=(any)
 hidden=true
+aliases=(skav°7)
 source=()
 sha256sums=()
 

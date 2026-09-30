@@ -287,7 +287,7 @@ load_recipe() {
   (( ${#arch[@]} )) || arch=(any)
   (( ${#source[@]} == ${#sums[@]} ))              || die "source has ${#source[@]} entries but ${SUMALGO}sums has ${#sums[@]}"
   local al
-  for al in "${aliases[@]}"; do [[ $al =~ ^[a-z0-9][a-z0-9._+-]*$ ]] || die "bad alias '$al' (same rules as pkgname)"; done
+  for al in "${aliases[@]}"; do [[ ${al//°/} =~ ^[a-z0-9][a-z0-9._+-]*$ ]] || die "bad alias '$al' (same rules as pkgname, plus ° for secrets)"; done
   if [[ $f == GURTBUILD ]]; then
     [[ -n $pkgdesc ]] || die "pkgdesc is empty"
     [[ $SUMALGO == sha256 ]] || die "GURTBUILDs use sha256sums"
