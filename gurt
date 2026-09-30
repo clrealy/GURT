@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.14.0"
+GURT_VERSION="0.15.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -1789,14 +1789,36 @@ gui_desktop_entry() { # add "GURT" to your app menu (just for you, no sudo)
   mkdir -p "$data/applications" "$data/icons/hicolor/256x256/apps" 2>/dev/null || return 0
   [[ -f $icon ]] && cp -f "$icon" "$data/icons/hicolor/256x256/apps/gurt.png" 2>/dev/null
   printf '%s\n' "[Desktop Entry]" "Type=Application" "Name=GURT" "GenericName=Package Manager" \
-    "Comment=every distro's packages, on every distro" "Exec=$(readlink -f "$0") gui" "Icon=gurt" "Terminal=false" \
+    "Comment=every distro's packages, on every distro" "Exec=$(readlink -f "$0") gui" "Icon=gurt" "Terminal=false" "StartupWMClass=gurt" \
     "Categories=System;PackageManager;" "Keywords=packages;install;aur;apt;flatpak;" > "$data/applications/gurt.desktop"
+}
+gui_setup() { # install what a real app window needs (GTK + WebKit for python) from your distro
+  local pkgs
+  # shellcheck disable=SC2207
+  pkgs=($(map_dep gui-webview))
+  if [[ ${pkgs[*]} == gui-webview ]]; then   # older deps.map → built-in list
+    case $PM in
+      pacman) pkgs=(python-gobject webkit2gtk-4.1) ;;  apt) pkgs=(python3-gi gir1.2-webkit2-4.1) ;;
+      dnf|yum) pkgs=(python3-gobject webkit2gtk4.1) ;; zypper) pkgs=(python3-gobject-Gdk typelib-1_0-WebKit2-4_1) ;;
+      *) pkgs=() ;;
+    esac
+  fi
+  (( ${#pkgs[@]} )) || die "don't know the app-window packages for $PM yet — install python GObject + WebKit2GTK yourself (or pywebview)"
+  msg "installing the app window bits from $PM: ${pkgs[*]}"
+  ask "install ${pkgs[*]}?" || die "aborted"
+  install_native "${pkgs[@]}"
+  if python3 "$1" --probe >/dev/null 2>&1; then msg "done ✅ gurt gui opens as a real app now 🖥️"
+  else warn "installed, but python still can't open an app window — log out and back in, then try gurt gui again"; fi
 }
 cmd_gui() {
   command -v python3 >/dev/null || die "gurt gui needs python3 (install it from your distro)"
   [[ -d $GURT_REPO_DIR/.git ]] || sync_main >/dev/null
   local py; py=$(gui_script) || { sync_main >/dev/null; py=$(gui_script) || die "couldn't find gurt-gui.py (try: gurt sync)"; }
   gui_desktop_entry
+  if [[ ${1:-} == --setup ]]; then gui_setup "$py"; return; fi
+  if ! python3 "$py" --probe >/dev/null 2>&1 && [[ -t 0 && -t 1 ]]; then
+    msg2 "tip: for a real app window instead of a browser tab, run: gurt gui --setup"
+  fi
   msg "opening GURT 🦆 (close the window to quit)"
   exec python3 "$py" --gurt "$(readlink -f "$0")" "$@"
 }
@@ -2558,6 +2580,7 @@ ${B}misc${R0}
   import <file>        install everything from an export (new PC speedrun)
   completions <shell>  print tab completion for bash/zsh/fish (bash+fish set themselves up)
   gui                  open the GURT app 🖥️ (also in your app menu after the first run)
+  gui --setup          install what's needed for a real app window (instead of a browser tab)
   version              the gurt banner + your setup (also just: gurt)
   yo                   gurt
 

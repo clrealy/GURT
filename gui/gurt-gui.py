@@ -182,7 +182,7 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/":
             if not self._host_ok() or not secrets.compare_digest((q.get("t") or [""])[0], TOKEN):
                 return self._send(403, "nope 🔒 open GURT with: gurt gui", "text/plain")
-            return self._send(200, PAGE.replace("__TOKEN__", TOKEN), "text/html")
+            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE), "text/html")
         if u.path in ("/icon.png", "/logo.png", "/dirt-logo.png"):
             repo = paths().get("repo", "")
             want = {"/logo.png": "gurt-logo.png", "/dirt-logo.png": "dirt-logo.png"}.get(u.path, "apple-touch-icon.png")
@@ -262,6 +262,93 @@ class H(BaseHTTPRequestHandler):
         return self._send(404, {"error": "not found"})
 
 
+# ───────────────────────── a real app window ─────────────────────────
+# tries Qt (KDE) → GTK WebKit → pywebview. returns a function that opens the window and blocks until it closes.
+def find_toolkit():
+    kde = "KDE" in os.environ.get("XDG_CURRENT_DESKTOP", "").upper()
+    order = ["qt", "gtk", "pywebview"] if kde else ["gtk", "qt", "pywebview"]
+    for tk in order:
+        try:
+            if tk == "qt":
+                try:
+                    from PyQt6.QtWidgets import QApplication  # noqa
+                    from PyQt6.QtWebEngineWidgets import QWebEngineView  # noqa
+                    return "qt6"
+                except ImportError:
+                    from PySide6.QtWidgets import QApplication  # noqa
+                    from PySide6.QtWebEngineWidgets import QWebEngineView  # noqa
+                    return "pyside6"
+            if tk == "gtk":
+                import gi
+                gi.require_version("Gtk", "3.0")
+                for v in ("4.1", "4.0"):
+                    try:
+                        gi.require_version("WebKit2", v)
+                        break
+                    except ValueError:
+                        continue
+                else:
+                    raise ImportError("no WebKit2")
+                from gi.repository import Gtk, WebKit2  # noqa
+                return "gtk"
+            if tk == "pywebview":
+                import webview  # noqa
+                return "pywebview"
+        except Exception:  # missing bindings, no display, etc
+            continue
+    return None
+
+
+def native_window(tk, url, icon):
+    title, w, h = "GURT", 1100, 760
+    if tk == "gtk":
+        import gi
+        gi.require_version("Gtk", "3.0")
+        from gi.repository import Gtk, WebKit2, GLib
+        GLib.set_prgname("gurt")
+        GLib.set_application_name(title)
+        win = Gtk.Window(title=title)
+        win.set_default_size(w, h)
+        if icon:
+            try:
+                win.set_icon_from_file(icon)
+            except Exception:
+                pass
+        view = WebKit2.WebView()
+        view.get_settings().set_enable_developer_extras(False)
+        view.load_uri(url)
+        win.add(view)
+        win.connect("destroy", Gtk.main_quit)
+        win.show_all()
+        Gtk.main()
+    elif tk in ("qt6", "pyside6"):
+        if tk == "qt6":
+            from PyQt6.QtWidgets import QApplication
+            from PyQt6.QtWebEngineWidgets import QWebEngineView
+            from PyQt6.QtCore import QUrl
+            from PyQt6.QtGui import QIcon
+        else:
+            from PySide6.QtWidgets import QApplication
+            from PySide6.QtWebEngineWidgets import QWebEngineView
+            from PySide6.QtCore import QUrl
+            from PySide6.QtGui import QIcon
+        app = QApplication(["gurt"])
+        app.setApplicationName(title)
+        app.setDesktopFileName("gurt")
+        if icon:
+            app.setWindowIcon(QIcon(icon))
+        view = QWebEngineView()
+        view.setWindowTitle(title)
+        view.resize(w, h)
+        view.load(QUrl(url))
+        view.show()
+        app.exec()
+    elif tk == "pywebview":
+        import webview
+        webview.create_window(title, url, width=w, height=h)
+        webview.start()
+
+
 def open_window(url):
     for b in ("chromium", "chromium-browser", "google-chrome-stable", "google-chrome", "brave", "brave-browser",
               "microsoft-edge-stable", "vivaldi-stable"):
@@ -292,7 +379,13 @@ def main():
     ap.add_argument("--gurt", default=shutil.which("gurt") or "gurt")
     ap.add_argument("--port", type=int, default=0)
     ap.add_argument("--no-window", action="store_true")
+    ap.add_argument("--browser", action="store_true", help="use a browser window even if a native one is possible")
+    ap.add_argument("--probe", action="store_true", help="exit 0 if a native app window is possible")
     a = ap.parse_args()
+    if a.probe:
+        tk = find_toolkit()
+        print(tk or "none")
+        sys.exit(0 if tk else 1)
     GURT = a.gurt
     here = os.path.dirname(os.path.abspath(__file__))
     ICONS = [os.path.join(here, "..", "site", "assets", "apple-touch-icon.png"),
@@ -300,20 +393,40 @@ def main():
     server = ThreadingHTTPServer(("127.0.0.1", a.port), H)
     PORT = server.server_address[1]
     ASKPASS = write_askpass()
+    tk = None if (a.no_window or a.browser) else find_toolkit()
+    global MODE
+    MODE = "native" if tk else "browser"
     url = f"http://127.0.0.1:{PORT}/?t={TOKEN}"
-    print(f"GURT is running at {url}", flush=True)
-    if not a.no_window:
-        open_window(url)
-    threading.Thread(target=watchdog, args=(server,), daemon=True).start()
+    print(f"GURT is running at {url}" + (f" (app window: {tk})" if tk else ""), flush=True)
+    icon = next((f for f in ICONS if os.path.isfile(f)), None)
     try:
-        server.serve_forever()
+        if tk:
+            # native window: the server runs in the background, the window owns the main thread
+            threading.Thread(target=server.serve_forever, daemon=True).start()
+            try:
+                native_window(tk, url, icon)
+            except Exception as e:  # window toolkit blew up → fall back to a browser window
+                print(f"app window failed ({e}), using your browser instead", flush=True)
+                MODE = "browser"
+                open_window(url)
+                watchdog(server)
+            if any(not j.done for j in JOBS.values()):
+                print("finishing what gurt was doing before quitting…", flush=True)
+                while any(not j.done for j in JOBS.values()):
+                    time.sleep(0.5)
+            server.shutdown()
+        else:
+            if not a.no_window:
+                open_window(url)
+            threading.Thread(target=watchdog, args=(server,), daemon=True).start()
+            server.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
         shutil.rmtree(os.path.dirname(ASKPASS), ignore_errors=True)
 
 
-PORT, ASKPASS, ICONS = 0, "", []
+PORT, ASKPASS, ICONS, MODE = 0, "", [], "browser"
 
 PAGE = r"""<!doctype html>
 <html lang="en"><head>
@@ -359,6 +472,8 @@ nav button:hover{color:var(--ink);background:var(--tag)}
 nav button.on{background:var(--accent);color:var(--accent-ink);font-weight:700}
 nav .badge{background:var(--bad);color:#fff;border-radius:999px;font-size:11px;padding:0 6px;margin-left:4px}
 .spacer{flex:1}
+#appbar{background:var(--tag);color:var(--muted);font-size:13px;padding:6px 20px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#appbar code{color:var(--ink)}
 .btn{font:inherit;font-weight:600;background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;padding:7px 14px;cursor:pointer;white-space:nowrap}
 .btn:hover{filter:brightness(1.06)}.btn:disabled{opacity:.5;cursor:default}
 .btn.ghost{background:var(--tag);color:var(--ink)}
@@ -405,6 +520,7 @@ dialog .row{justify-content:flex-end}
   <div class="spacer"></div>
   <button class="btn ghost small" id="syncbtn" title="gurt sync">↻ sync</button>
 </header>
+<div id="appbar" hidden>running in your browser 🌐 for a real GURT app window, run <code>gurt gui --setup</code> once <button class="btn ghost small" id="appbarx">×</button></div>
 <main>
   <section id="t-discover">
     <div class="srcs" id="srcs" role="tablist" aria-label="sources">
@@ -445,7 +561,7 @@ dialog .row{justify-content:flex-end}
   <form id="pwform"><input type="password" id="pwin" autocomplete="current-password" placeholder="your password"><div class="row"><button type="button" class="btn ghost" id="pwno">cancel</button><button class="btn" type="submit">ok</button></div></form></dialog>
 
 <script>
-const T = "__TOKEN__";
+const T = "__TOKEN__", MODE = "__MODE__";
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const api = (p, body) => fetch(p, body ? {method:"POST", headers:{"X-Gurt-Token":T,"Content-Type":"application/json"}, body:JSON.stringify(body)} : {headers:{"X-Gurt-Token":T}}).then(r => r.json());
@@ -620,6 +736,7 @@ document.querySelectorAll("nav button").forEach(b => b.addEventListener("click",
 }));
 
 setInterval(() => api("/api/ping").catch(() => {}), 5000); api("/api/ping");
+if (MODE === "browser") { $("#appbar").hidden = false; $("#appbarx").onclick = () => $("#appbar").hidden = true; }
 load();
 </script></body></html>"""
 
