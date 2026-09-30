@@ -65,6 +65,8 @@ Things inside a box manage **the box**, not your host. dnfdragora in `gurt-fedor
 
 ### Got a `.deb` or `.rpm` file? Just install it 📥
 
+(For AppImages, tarballs, `.exe`s, `.dmg`s and more, see [`gurt outsource`](#outsource-any-file-you-downloaded-).)
+
 ```sh
 gurt install ./google-chrome-stable_current_amd64.deb   # on Fedora, Arch, openSUSE, whatever
 gurt install ~/Downloads/some-app.rpm                   # on Debian/Ubuntu/Mint
@@ -215,6 +217,29 @@ gurt outsource Cyanidenjoyers/Crosshair-W     # GitHub user/repo works too
 gurt clones it and builds it with the repo's own **GURTBUILD**, then its **PKGBUILD**, and otherwise guesses from **make / cmake / meson / autotools / cargo / go**. It pulls in build deps (using `-dev`/`-devel` packages on non-Arch distros), shows you the recipe and asks before running anything, then installs it as `git/<name>`, so `gurt remove git/<name>` removes it cleanly and `gurt upgrade` rebuilds it when the repo gets new commits.
 
 ⚠️ This runs code from whatever repo you point it at. Only outsource repos you trust.
+
+### Outsource any file you downloaded 📥
+
+`gurt outsource` also takes **files** (or links to them). Whatever you downloaded, on whatever distro you run, **no box**:
+
+```sh
+gurt outsource ./google-chrome-stable_current_amd64.deb   # on Fedora? sure
+gurt outsource ~/Downloads/Some-App-2.1.0-linux-x64.tar.gz
+gurt outsource https://example.com/cool-thing.AppImage
+gurt outsource ./Photoshop.dmg                            # yes, we went that far 🍎
+```
+
+| you give it | what gurt does |
+|---|---|
+| `.deb` `.rpm` `.pkg.tar.zst` `.apk` (Alpine) `.xbps` (Void) `.eopkg` (Solus) | reads the name/version/deps out of it, repacks it and installs it straight onto your system. If it's your own distro's format, your package manager does it |
+| `.tar.gz` `.tar.xz` `.tar.zst` `.zip` `.7z` … with **source code** inside | builds it like a git repo (make / cmake / meson / cargo / go / GURTBUILD / PKGBUILD), keeping the tarball's version |
+| `.tar.*` `.zip` `.7z` `.zst` … with a **prebuilt app** inside, or a lone program | puts it in `/usr/local/lib/gurt-apps/<name>`, links its programs into `/usr/local/bin` and adds a menu entry |
+| `.AppImage` | installs it with its own menu entry + icon (runs even without FUSE 2) |
+| `.snap` `.flatpak` `.flatpakref` | hands it to snap / flatpak |
+| `.exe` `.msi` 🪟 | Wine. Installers (`setup.exe`, `.msi`) run in Wine; portable `.exe`s get installed with a launcher + menu entry |
+| `.dmg` 🍎 | pulls the `.app` out with 7-Zip and gives it a launcher that runs it through [Darling](https://darlinghq.org). Real talk: Darling mostly runs command-line Mac apps; GUI ones usually don't work yet |
+
+Everything tracked shows up as `file/<name>` (`gurt remove file/<name>`). Same safety rails as always: files for another CPU get refused, so do Alpine/musl builds on a glibc system, kernels/bootloaders/core packages, and anything that would overwrite files your distro owns. `gurt install ./thing.deb` works too for package files.
 
 ## Oops buttons: rollback, hold, export/import ⏪
 

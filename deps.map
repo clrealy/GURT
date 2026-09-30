@@ -23,6 +23,9 @@ flatpak     emerge=sys-apps/flatpak
 podman      emerge=app-containers/podman
 distrobox   emerge=app-containers/distrobox
 patchelf    emerge=dev-util/patchelf
+zstd        emerge=app-arch/zstd
+7zip        apt=7zip  dnf=7zip  pacman=7zip  zypper=7zip  apk=7zip  xbps=7zip  eopkg=p7zip  emerge=app-arch/7zip
+wine        apt=wine  dnf=wine  pacman=wine  zypper=wine  apk=wine  xbps=wine  eopkg=wine  emerge=app-emulation/wine-vanilla
 
 # ── languages ──
 python3     pacman=python  emerge=dev-lang/python

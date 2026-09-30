@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.17.0"
+GURT_VERSION="0.18.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -1278,6 +1278,16 @@ repack_file() { # src name ver file deps desc provides
       tar -xf "$data" -C "$work/pkg" ;;
     *.rpm)
       extract_any "$file" "$work/pkg" ;;
+    *.apk)
+      tar -xzf "$file" -C "$work/pkg" 2>/dev/null
+      rm -f "$work/pkg/.PKGINFO" "$work/pkg"/.SIGN.* "$work/pkg"/.pre-* "$work/pkg"/.post-* "$work/pkg/.trigger" ;;
+    *.xbps)
+      tar -xf "$file" -C "$work/pkg"
+      rm -f "$work/pkg/props.plist" "$work/pkg/files.plist" "$work/pkg/INSTALL" "$work/pkg/REMOVE" ;;
+    *.eopkg)
+      python3 -c 'import sys, zipfile; open(sys.argv[2], "wb").write(zipfile.ZipFile(sys.argv[1]).read("install.tar.xz"))' "$file" "$work/x/install.tar.xz" ||
+        die "weird .eopkg, no install.tar.xz inside"
+      tar -xJf "$work/x/install.tar.xz" -C "$work/pkg" ;;
     *.pkg.tar.*)
       [[ $file == *.zst ]] && need_tool zstd pacman
       tar -xf "$file" -C "$work/pkg"
@@ -1343,10 +1353,10 @@ foreign_install() { # src name reason
 # ── any distro's package file, on any distro: gurt install ./thing.deb | .rpm | .pkg.tar.zst ──
 # no box: it's repacked and installed straight onto your system (same rules as apt/ dnf/ pacman/ — never over distro files)
 is_pkgfile() {
-  case ${1,,} in *.deb|*.rpm|*.pkg.tar|*.pkg.tar.*) ;; *) return 1 ;; esac
+  case ${1,,} in *.deb|*.rpm|*.pkg.tar|*.pkg.tar.*|*.apk|*.xbps|*.eopkg) ;; *) return 1 ;; esac
   [[ $1 =~ ^https?:// || -f $1 ]]
 }
-pkgfile_fam() { case ${1,,} in *.deb) echo apt ;; *.rpm) echo dnf ;; *) echo pacman ;; esac; }
+pkgfile_fam() { case ${1,,} in *.deb) echo apt ;; *.rpm) echo dnf ;; *.apk) echo apk ;; *.xbps) echo xbps ;; *.eopkg) echo eopkg ;; *) echo pacman ;; esac; }
 
 # prints: name \t version \t deps \t description \t provides \t arch
 pkgfile_meta() { # file
@@ -1408,6 +1418,36 @@ PY
         $1 == "depend"   { d = d (d == "" ? "" : ",") so($2) }
         $1 == "provides" { p = p (p == "" ? "" : ",") so($2) }
         END { if (n != "") print n "\t" v "\t" d "\t" ds "\t" p "\t" a }' ;;
+    apk)   # Alpine: a tar.gz with a .PKGINFO (deps look like so:libfoo.so.1 / cmd:foo)
+      tar -xzOf "$f" .PKGINFO 2>/dev/null | awk -F' = ' '
+        function nm(x) { if (x ~ /^!/ || x ~ /^pc:/) return ""; sub(/^(so|cmd):/, "", x); sub(/[<>=~].*/, "", x); return x }
+        $1 == "pkgname" { n=$2 } $1 == "pkgver" { v=$2 } $1 == "pkgdesc" { ds=$2; gsub(/\t/, " ", ds) } $1 == "arch" { a=$2 }
+        $1 == "depend"   { x=nm($2); if (x != "") d = d (d == "" ? "" : ",") x }
+        $1 == "provides" { x=nm($2); if (x != "") p = p (p == "" ? "" : ",") x }
+        END { if (n != "") print n "\t" v "\t" d "\t" ds "\t" p "\t" a }' ;;
+    xbps|eopkg)   # Void (props.plist in a tarball) / Solus (metadata.xml in a zip)
+      need_tool python3 "${f##*.} files"
+      python3 - "$f" <<'PY'
+import sys, re, io, tarfile, zipfile, plistlib, xml.etree.ElementTree as ET
+f = sys.argv[1]; clean = lambda x: re.split(r"[<>=]", x)[0].strip()
+if f.lower().endswith(".xbps"):
+    try: tf = tarfile.open(f)   # gz/xz/bz2 — zstd (the usual) goes through the zstd tool
+    except tarfile.ReadError:
+        import subprocess
+        tf = tarfile.open(fileobj=io.BytesIO(subprocess.run(["zstd", "-qdc", f], capture_output=True, check=True).stdout))
+    m = next(x for x in tf.getmembers() if x.name.lstrip("./") == "props.plist")
+    p = plistlib.loads(tf.extractfile(m).read())
+    deps = [clean(x) for x in p.get("run_depends", [])] + p.get("shlib-requires", [])
+    ver = p.get("version", ""); row = [p.get("pkgname", ""), ver, deps, p.get("short_desc", ""), [clean(x) for x in p.get("provides", [])], p.get("architecture", "")]
+else:
+    m = ET.fromstring(zipfile.ZipFile(f).read("metadata.xml")).find("Package")
+    up = m.find("History/Update")
+    ver = (up.findtext("Version") or "") + ("-" + up.get("release") if up is not None and up.get("release") else "")
+    row = [m.findtext("Name") or "", ver, [d.text for d in m.findall("RuntimeDependencies/Dependency") if d.text], m.findtext("Summary") or "", [], m.findtext("Architecture") or ""]
+row[2] = ",".join(dict.fromkeys(x for x in row[2] if x)); row[4] = ",".join(row[4]); row[3] = row[3].replace("\t", " ").replace("\n", " ")
+print("\t".join(row))
+PY
+      ;;
   esac
   rm -rf "$t"
 }
@@ -1415,24 +1455,34 @@ PY
 # is this file built for your CPU?
 pkgfile_arch_ok() { # fam arch
   case $2 in all|noarch|any|"") return 0 ;; esac
-  case $1 in apt) [[ $2 == "$(debarch)" ]] ;; *) [[ $2 == "$CARCH" ]] ;; esac
+  case $1 in apt) [[ $2 == "$(debarch)" ]] ;; *) [[ ${2%-musl} == "$CARCH" ]] ;; esac
+}
+host_musl() { [[ $PM == apk ]] || ld_has libc.musl-"$CARCH".so.1; }
+# deps of a file from a distro gurt has no mirror for (Alpine/Void/Solus): your system or your distro, that's it
+local_dep() { # fam dep
+  local d=${2%%[<>=]*} g nat
+  [[ -z $d || $d =~ musl ]] && return 0
+  host_has "$d" && return 0
+  $NODEPS && { warn "--nodeps: not getting $d"; return 0; }
+  g=$(rev_map "$1" "$d")
+  # shellcheck disable=SC2206
+  if [[ -n $g ]] && nat=$(map_dep "$g") && [[ -n $nat ]]; then NATIVE_Q+=($nat); return 0; fi
+  pm_available "$d" && { NATIVE_Q+=("$d"); return 0; }
+  warn "couldn't find dep '$d' on your distro — skipping it, stuff might break"
 }
 
 pkgfile_install() { # file-or-url reason
   local f=$1 reason=${2:-explicit} fam row name ver deps desc prov arch key
-  if [[ $f =~ ^https?:// ]]; then
-    mkdir -p "$GURT_CACHE/downloads"
-    local dl="$GURT_CACHE/downloads/${f##*/}"; dl=${dl%%\?*}
-    msg2 "downloading ${dl##*/}"
-    download "$f" "$dl.part" && mv "$dl.part" "$dl"
-    f=$dl
-  fi
-  f=$(readlink -f "$f")
+  f=$(fetch_arg "$f")
   fam=$(pkgfile_fam "$f")
+  if [[ $fam == apk ]] && ! tar -tzf "$f" .PKGINFO >/dev/null 2>&1; then die "${f##*/} is an Android app 🤖, not an Alpine package — try Waydroid for those"; fi
   row=$(pkgfile_meta "$f")
   local F; tsv "$row"; name=${F[0]:-}; ver=${F[1]:-}; deps=${F[2]:-}; desc=${F[3]:-}; prov=${F[4]:-}; arch=${F[5]:-}
   [[ -n $name && -n $ver ]] || die "couldn't read the name/version out of ${f##*/} — is it a real package?"
   pkgfile_arch_ok "$fam" "$arch" || $FORCE || die "${f##*/} is built for $arch, your CPU is $CARCH — that won't run 💀"
+  if { [[ $fam == apk && $arch != noarch ]] || [[ $arch == *-musl ]]; } && ! host_musl && ! $FORCE; then
+    die "${f##*/} is built for musl (Alpine/Void-musl) — its programs won't run on your glibc system 💀 (--force if it's just scripts/data)"
+  fi
   [[ $name =~ $OSPART_RE ]] && die "$name is part of an operating system (kernel/boot/init) — that has to come from YOUR distro 💀"
   [[ $name =~ $CORE_RE ]] && ! $FORCE && die "$name is a core system package — another distro's copy of it would wreck your install 💀"
 
@@ -1443,6 +1493,8 @@ pkgfile_install() { # file-or-url reason
     dnf:dnf|dnf:yum) native="$PM install -y" ;;
     dnf:zypper) native="zypper --non-interactive install --allow-unsigned-rpm" ;;
     pacman:pacman) native="pacman -U --noconfirm" ;;
+    apk:apk) native="apk add --allow-untrusted" ;;
+    eopkg:eopkg) native="eopkg install -y" ;;
   esac
   if [[ -n $native && -z $R ]]; then
     msg "${f##*/} is a native package for your distro — handing it to $PM 👍"
@@ -1466,12 +1518,268 @@ pkgfile_install() { # file-or-url reason
     warn "$name ships system services/hooks — installing them for real like you asked (no box). if it acts up: gurt remove $name"
   fi
   # its deps come from your distro first, then from the distro the file was made for
-  if ! $NODEPS && [[ -n $deps ]]; then ( ensure_idx "$fam" ) >/dev/null 2>&1 || warn "couldn't grab the $fam index — only deps your distro has will get installed"; fi
   local d dl=()
   IFS=, read -ra dl <<<"$deps"
-  for d in "${dl[@]}"; do foreign_dep "$fam" "$d"; done
+  case $fam in
+    apk|xbps|eopkg) for d in "${dl[@]}"; do local_dep "$fam" "$d"; done ;;
+    *) if ! $NODEPS && [[ -n $deps ]]; then ( ensure_idx "$fam" ) >/dev/null 2>&1 || warn "couldn't grab the $fam index — only deps your distro has will get installed"; fi
+       for d in "${dl[@]}"; do foreign_dep "$fam" "$d"; done ;;
+  esac
   flush_native
   install_file "$built" "$reason"
+}
+
+# ── gurt outsource <file|url>: whatever you downloaded, on whatever distro you run — no box ──
+# .deb .rpm .pkg.tar.* .apk .xbps .eopkg → repacked like above · .AppImage → installed + menu entry
+# .tar.* .zip .7z .gz/.xz/.zst/.bz2 → source trees get built, prebuilt apps get installed · lone binaries too
+# .snap .flatpak .flatpakref → handed to snap/flatpak · .exe .msi → wine · .dmg → Darling (yes really 🍎)
+OS_FILE_RE='\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|appimage|dmg|exe|msi|snap|flatpak|flatpakref|tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst)$'
+is_os_file() { # arg → is it a file (or a url to one) rather than a git repo?
+  [[ -f $1 ]] && return 0
+  local l=${1,,}; l=${l%%[?#]*}
+  [[ $l =~ ^https?:// && $l =~ $OS_FILE_RE ]]
+}
+fetch_arg() { # file-or-url → prints a local path
+  if [[ $1 =~ ^https?:// ]]; then
+    local b=${1%%[?#]*}; b=${b##*/}; [[ -n $b ]] || b=download
+    local dl="$GURT_CACHE/downloads/$b"
+    mkdir -p "$GURT_CACHE/downloads"
+    msg2 "downloading $b"
+    download "$1" "$dl.part" >&2 && mv "$dl.part" "$dl"
+    echo "$dl"
+  else
+    [[ -f $1 ]] || die "no file called $1"
+    readlink -f "$1"
+  fi
+}
+# "Some_App-1.2.3-linux-x64.tar.gz" → "some_app\t1.2.3"
+file_namever() { # path
+  local b=${1##*/} n v
+  b=$(sed -E 's/\.(pkg\.tar(\.[a-z0-9]+)?|tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst|appimage|dmg|exe|msi|snap|flatpak|flatpakref|deb|rpm|apk|xbps|eopkg)$//I' <<<"$b")
+  b=$(sed -E 's/([-_.](linux|gnu|musl|x86[-_]64|amd64|x64|arm64|aarch64|static|portable|setup|installer|win(32|64)?|windows|mac(os)?|osx|darwin|universal))+$//I' <<<"$b")
+  if [[ $b =~ ^(.+)[-_]v?([0-9][0-9A-Za-z.+~]*)$ ]]; then n=${BASH_REMATCH[1]}; v=${BASH_REMATCH[2]}
+  else n=$b; v="0.file$(date +%Y%m%d)"; fi
+  n=${n,,}; n=${n//[^a-z0-9._+-]/-}
+  printf '%s\t%s\n' "${n:-app}" "$v"
+}
+is_elf()    { [[ $(head -c4 "$1" 2>/dev/null | od -An -c | tr -d ' ') == 177ELF ]]; }
+is_script() { [[ $(head -c2 "$1" 2>/dev/null) == '#!' ]]; }
+sevenzip()  { # the 7-Zip binary, installing it from your distro if needed
+  local z; for z in 7z 7zz 7za; do command -v "$z" >/dev/null && { echo "$z"; return; }; done
+  msg2 "getting 7-Zip from your distro" >&2
+  # shellcheck disable=SC2046
+  install_native $(map_dep 7zip) >&2
+  for z in 7z 7zz 7za; do command -v "$z" >/dev/null && { echo "$z"; return; }; done
+  die "need 7-Zip (7z) to open that — install it with your package manager"
+}
+
+# a .desktop for an app that didn't bring one
+write_desktop() { # out name exec icon comment
+  printf '[Desktop Entry]\nType=Application\nName=%s\nExec=%s\nIcon=%s\nComment=%s\nTerminal=false\nCategories=Utility;\n' "$2" "$3" "${4:-application-x-executable}" "${5:-installed by gurt}" > "$1"
+}
+
+# a folder of stuff → .gurt at $prefix/lib/gurt-apps/<name>, with its programs linked into $prefix/bin
+pack_app_dir() { # work name ver desc from — expects the app in $work/pkg
+  local work=$1 name=$2 ver=$3 desc=$4 from=$5
+  {
+    printf 'pkgname = %s\npkgver = %s\npkgdesc = %s\narch = %s\n' "$name" "$ver" "$desc" "$CARCH"
+    printf 'builddate = %s\nprefix = %s\ngurtsource = file\nfrom = %s\n' "$(date +%s)" "$GURT_PREFIX" "$from"
+  } > "$work/.PKGINFO"
+  mkdir -p "$GURT_CACHE/pkg"
+  BUILT_PKG="$GURT_CACHE/pkg/file-$name-${ver//[:\/]/_}.gurt"
+  ( cd "$work/pkg" && pack_pkgdir "$work" "$BUILT_PKG" )
+}
+app_tree_install() { # dir name ver from reason — a prebuilt app (tarball/zip/lone binary)
+  local src=$1 name=$2 ver=$3 from=$4 reason=$5 work app rel e b main="" icon="" d
+  work=$(mktemp -d "${TMPDIR:-/tmp}/gurt-app.XXXXXX")
+  app="$work/pkg${GURT_PREFIX}/lib/gurt-apps/$name"
+  mkdir -p "$app" "$work/pkg$GURT_PREFIX/bin" "$work/pkg$GURT_PREFIX/share/applications"
+  if [[ -f $src ]]; then install -m755 "$src" "$app/$name"; else cp -a "$src/." "$app/"; fi
+  # the programs: executables at the top or in bin/ (not libs)
+  local -a execs=()
+  while IFS= read -r e; do
+    [[ $e == *.so || $e == *.so.* ]] && continue
+    is_elf "$e" || is_script "$e" || continue
+    execs+=("$e")
+  done < <(find "$app" "$app/bin" -maxdepth 1 -type f -perm -u+x 2>/dev/null | LC_ALL=C sort -u)
+  (( ${#execs[@]} )) || { rm -rf "$work"; die "found nothing to run in ${from} 🤔 (no executables at the top or in bin/)"; }
+  for e in "${execs[@]}"; do
+    b=${e##*/}; b=${b,,}; rel=${e#"$work/pkg"}
+    [[ -e $work/pkg$GURT_PREFIX/bin/$b ]] && continue
+    ln -s "$rel" "$work/pkg$GURT_PREFIX/bin/$b"
+    [[ -z $main || $b == "$name" ]] && main=$b
+  done
+  (( ${#execs[@]} > 6 )) && warn "linked ${#execs[@]} programs into $GURT_PREFIX/bin — that's a lot, but you asked 🤷"
+  # menu entry: the app's own .desktop files, else make one
+  while IFS= read -r d; do cp "$d" "$work/pkg$GURT_PREFIX/share/applications/"; done < <(find "$app" -maxdepth 3 -name '*.desktop' -type f)
+  if [[ -z $(find "$work/pkg$GURT_PREFIX/share/applications" -name '*.desktop') ]]; then
+    icon=$(find "$app" -maxdepth 4 -type f \( -iname "$name.png" -o -iname "$name.svg" -o -iname 'icon.png' -o -iname 'icon.svg' -o -iname '*logo*.png' \) | head -n1 || true)
+    [[ -n $icon ]] && icon=${icon#"$work/pkg"}
+    write_desktop "$work/pkg$GURT_PREFIX/share/applications/gurt-$name.desktop" "$name" "$GURT_PREFIX/bin/$main" "$icon"
+  fi
+  pack_app_dir "$work" "$name" "$ver" "$name (from $from)" "$from"
+  chmod -R u+w "$work" 2>/dev/null; rm -rf "$work"
+  install_file "$BUILT_PKG" "$reason"
+  msg2 "run it: $main · remove it: gurt remove file/$name"
+}
+
+appimage_install() { # file name ver reason
+  local f=$1 name=$2 ver=$3 reason=$4 work app d icon=""
+  work=$(mktemp -d "${TMPDIR:-/tmp}/gurt-app.XXXXXX")
+  app="$work/pkg$GURT_PREFIX/lib/gurt-apps/$name"
+  mkdir -p "$app" "$work/pkg$GURT_PREFIX/bin" "$work/pkg$GURT_PREFIX/share/applications" "$work/x"
+  install -m755 "$f" "$app/$name.AppImage"
+  # no FUSE 2 on your system? it still runs (extract-and-run mode)
+  printf '#!/bin/sh\nldconfig -p 2>/dev/null | grep -q "libfuse\\.so\\.2" || export APPIMAGE_EXTRACT_AND_RUN=1\nexec "%s" "$@"\n' \
+    "$GURT_PREFIX/lib/gurt-apps/$name/$name.AppImage" > "$work/pkg$GURT_PREFIX/bin/$name"
+  chmod 755 "$work/pkg$GURT_PREFIX/bin/$name"
+  # borrow its menu entry + icon
+  ( cd "$work/x" && for p in '*.desktop' '*.png' '*.svg'; do "$app/$name.AppImage" --appimage-extract "$p" >/dev/null 2>&1 || true; done )
+  icon=$(find "$work/x/squashfs-root" -maxdepth 1 -type f \( -name '*.png' -o -name '*.svg' \) 2>/dev/null | head -n1 || true)
+  if [[ -n $icon ]]; then install -Dm644 "$icon" "$app/icon.${icon##*.}"; icon="$GURT_PREFIX/lib/gurt-apps/$name/icon.${icon##*.}"; fi
+  d=$(find "$work/x/squashfs-root" -maxdepth 1 -name '*.desktop' -type f 2>/dev/null | head -n1 || true)
+  if [[ -n $d ]]; then
+    sed -E "s|^Exec=[^ ]+|Exec=$GURT_PREFIX/bin/$name|; /^TryExec=/d${icon:+; s|^Icon=.*|Icon=$icon|}" "$d" > "$work/pkg$GURT_PREFIX/share/applications/gurt-$name.desktop"
+  else
+    write_desktop "$work/pkg$GURT_PREFIX/share/applications/gurt-$name.desktop" "$name" "$GURT_PREFIX/bin/$name" "$icon"
+  fi
+  rm -rf "$work/x"
+  pack_app_dir "$work" "$name" "$ver" "$name (AppImage)" "${f##*/}"
+  chmod -R u+w "$work" 2>/dev/null; rm -rf "$work"
+  install_file "$BUILT_PKG" "$reason"
+  msg2 "run it: $name · remove it: gurt remove file/$name"
+}
+
+dmg_install() { # file reason
+  local f=$1 reason=$2 z work appdir app exe name ver
+  printf '\n%s        👁️      👁️%s\n\n' "$RED" "$R0" >&2
+  printf '%s  Linus Torvalds is here. He sees you. (doing it anyway)%s\n\n' "$B" "$R0" >&2
+  z=$(sevenzip)
+  work=$(mktemp -d "${TMPDIR:-/tmp}/gurt-dmg.XXXXXX"); mkdir -p "$work/x"
+  "$z" x -y -o"$work/x" "$f" >/dev/null 2>&1 || true
+  appdir=$(find "$work/x" -maxdepth 6 -type d -name '*.app' -prune 2>/dev/null | head -n1 || true)
+  if [[ -z $appdir ]]; then   # some .dmg's are an image inside an image
+    local inner; inner=$(find "$work/x" -maxdepth 2 -type f \( -iname '*.hfs' -o -iname '*.hfsx' -o -iname '*.apfs' -o -iname '*.img' \) | head -n1 || true)
+    [[ -n $inner ]] && "$z" x -y -o"$work/x/in" "$inner" >/dev/null 2>&1 || true
+    appdir=$(find "$work/x" -maxdepth 7 -type d -name '*.app' -prune 2>/dev/null | head -n1 || true)
+  fi
+  if [[ -z $appdir ]]; then
+    [[ -n $(find "$work/x" -maxdepth 4 -iname '*.pkg' -print -quit) ]] && { rm -rf "$work"; die "that .dmg has a macOS installer (.pkg) inside, not an app — can't do those 😔"; }
+    rm -rf "$work"; die "couldn't find a .app inside ${f##*/} (7-Zip can't open every .dmg)"
+  fi
+  app=${appdir##*/}
+  local pl=()
+  mapfile -t pl < <(python3 - "$appdir/Contents/Info.plist" <<'PY' 2>/dev/null || true
+import plistlib, sys
+p = plistlib.load(open(sys.argv[1], "rb"))
+print(p.get("CFBundleExecutable", "")); print(p.get("CFBundleShortVersionString") or p.get("CFBundleVersion") or "0")
+PY
+  )
+  exe=${pl[0]:-}; ver=${pl[1]:-}
+  [[ -n $exe ]] || exe=$(find "$appdir/Contents/MacOS" -maxdepth 1 -type f -printf '%f\n' -quit 2>/dev/null || true)
+  [[ -n $exe ]] || { rm -rf "$work"; die "$app has no program inside (Contents/MacOS is empty)"; }
+  name=${app%.app}; name=${name,,}; name=${name//[^a-z0-9._+-]/-}; ver=${ver:-0}; ver=${ver// /}
+  msg "${f##*/} → $app $ver — a macOS app 🍎. it runs through Darling (a macOS layer for Linux, like Wine but for Mac)"
+  command -v darling >/dev/null || warn "you don't have Darling yet — get it from https://darlinghq.org (your distro probably doesn't ship it). also, Darling mostly runs command-line Mac apps, GUI ones usually don't work yet"
+  ask "install $app anyway?" || { rm -rf "$work"; die "aborted, no cap"; }
+  local dest="$work/pkg$GURT_PREFIX/lib/gurt-mac"
+  mkdir -p "$dest" "$work/pkg$GURT_PREFIX/bin" "$work/pkg$GURT_PREFIX/share/applications"
+  cp -a "$appdir" "$dest/"
+  printf '#!/bin/sh\ncommand -v darling >/dev/null || { echo "%s is a macOS app 🍎 — it needs Darling to run: https://darlinghq.org" >&2; exit 1; }\nexec darling "/Volumes/SystemRoot%s" "$@"\n' \
+    "$app" "$GURT_PREFIX/lib/gurt-mac/$app/Contents/MacOS/$exe" > "$work/pkg$GURT_PREFIX/bin/$name"
+  chmod 755 "$work/pkg$GURT_PREFIX/bin/$name"
+  write_desktop "$work/pkg$GURT_PREFIX/share/applications/gurt-$name.desktop" "${app%.app}" "$GURT_PREFIX/bin/$name" "" "macOS app (via Darling)"
+  rm -rf "$work/x"
+  pack_app_dir "$work" "$name" "$ver" "${app%.app} (macOS app, runs via Darling)" "${f##*/}"
+  chmod -R u+w "$work" 2>/dev/null; rm -rf "$work"
+  install_file "$BUILT_PKG" "$reason"
+  msg2 "run it: $name · remove it: gurt remove file/$name"
+}
+
+win_install() { # file name ver reason
+  local f=$1 name=$2 ver=$3 reason=$4 l=${1,,}
+  if ! command -v wine >/dev/null; then
+    msg "that's a Windows program 🪟 — getting Wine from your distro"
+    # shellcheck disable=SC2046
+    install_native $(map_dep wine)
+    command -v wine >/dev/null || die "couldn't install Wine — install it with your package manager, then try again"
+  fi
+  (( EUID == 0 )) && warn "running Wine as root puts the app in root's Wine prefix, not yours"
+  if [[ $l == *.msi || ${l##*/} =~ (setup|install) ]]; then
+    msg "${f##*/} is an installer — running it in Wine (click through it like on Windows)"
+    ask "run ${f##*/}?" || die "aborted, no cap"
+    if [[ $l == *.msi ]]; then wine msiexec /i "$f"; else wine "$f"; fi
+    msg "done — it lives in your Wine prefix (~/.wine). gurt doesn't track installers; uninstall with: wine uninstaller"
+    return 0
+  fi
+  local work; work=$(mktemp -d "${TMPDIR:-/tmp}/gurt-app.XXXXXX")
+  mkdir -p "$work/pkg$GURT_PREFIX/lib/gurt-apps/$name" "$work/pkg$GURT_PREFIX/bin" "$work/pkg$GURT_PREFIX/share/applications"
+  install -m644 "$f" "$work/pkg$GURT_PREFIX/lib/gurt-apps/$name/$name.exe"
+  printf '#!/bin/sh\nexec wine "%s" "$@"\n' "$GURT_PREFIX/lib/gurt-apps/$name/$name.exe" > "$work/pkg$GURT_PREFIX/bin/$name"
+  chmod 755 "$work/pkg$GURT_PREFIX/bin/$name"
+  write_desktop "$work/pkg$GURT_PREFIX/share/applications/gurt-$name.desktop" "$name" "$GURT_PREFIX/bin/$name" "wine" "Windows app (via Wine)"
+  ask "install $name (Windows app, runs with Wine)?" || { rm -rf "$work"; die "aborted, no cap"; }
+  pack_app_dir "$work" "$name" "$ver" "$name (Windows app, runs via Wine)" "${f##*/}"
+  chmod -R u+w "$work" 2>/dev/null; rm -rf "$work"
+  install_file "$BUILT_PKG" "$reason"
+  msg2 "run it: $name · remove it: gurt remove file/$name"
+}
+
+archive_install() { # file name ver reason
+  local f=$1 name=$2 ver=$3 reason=$4 l=${1,,} work x root n
+  work=$(mktemp -d "${TMPDIR:-/tmp}/gurt-arc.XXXXXX"); x="$work/x"; mkdir -p "$x"
+  case $l in
+    *.7z) "$(sevenzip)" x -y -o"$x" "$f" >/dev/null || die "7-Zip couldn't open ${f##*/}" ;;
+    *.tar|*.tar.*|*.tgz|*.tbz|*.tbz2|*.txz|*.tzst|*.zip|*.gz|*.xz|*.bz2|*.zst)
+      [[ $l == *zst ]] && need_tool zstd outsource
+      extract_any "$f" "$x" || die "couldn't open ${f##*/}"
+      # a compressed tarball with a weird name (.zst of a .tar)? open that too
+      n=$(find "$x" -mindepth 1 -maxdepth 1 | head -n2 || true)
+      if [[ $(wc -l <<<"$n") == 1 && -f $n ]] && tar -tf "$n" >/dev/null 2>&1; then mkdir -p "$x.t"; tar -xf "$n" -C "$x.t"; rm -rf "$x"; mv "$x.t" "$x"; fi ;;
+    *) cp "$f" "$x/" ;;
+  esac
+  # peel off a single top folder
+  root=$x
+  while [[ $(find "$root" -mindepth 1 -maxdepth 1 | wc -l) == 1 && -d $(find "$root" -mindepth 1 -maxdepth 1) ]]; do root=$(find "$root" -mindepth 1 -maxdepth 1); done
+  if [[ $(find "$root" -mindepth 1 -maxdepth 1 | wc -l) == 1 ]]; then   # one lone file
+    n=$(find "$root" -mindepth 1 -maxdepth 1)
+    is_elf "$n" || is_script "$n" || { rm -rf "$work"; die "${f##*/} is just one file and it's not a program 🤔"; }
+    ask "install $name $ver (a lone program from ${f##*/})?" || { rm -rf "$work"; die "aborted, no cap"; }
+    app_tree_install "$n" "$name" "$ver" "${f##*/}" "$reason"; rm -rf "$work"; return
+  fi
+  if [[ -f $root/GURTBUILD || -f $root/PKGBUILD ]] || os_build_kind "$root" >/dev/null; then
+    # source code → snapshot it as a local git repo and build it the normal outsource way
+    need_tool git outsource
+    local snap="$GURT_CACHE/outsource-src/$name"
+    rm -rf "$snap"; mkdir -p "$snap"; cp -a "$root/." "$snap/"; rm -rf "$work"
+    msg2 "${f##*/} is source code — building it"
+    ( cd "$snap" && git init -q && git add -A && git -c user.name=gurt -c user.email=gurt@localhost commit -qm "${f##*/}" ) || die "couldn't snapshot the source"
+    outsource_install "file://$snap" "$reason" "$ver"; return
+  fi
+  ask "install $name $ver (prebuilt app from ${f##*/})?" || { rm -rf "$work"; die "aborted, no cap"; }
+  app_tree_install "$root" "$name" "$ver" "${f##*/}" "$reason"
+  rm -rf "$work"
+}
+
+outsource_file() { # file-or-url reason
+  local f reason=${2:-explicit} l nv name ver
+  f=$(fetch_arg "$1"); l=${f,,}
+  nv=$(file_namever "$f"); name=${nv%%$'\t'*}; ver=${nv#*$'\t'}
+  case $l in
+    *.deb|*.rpm|*.pkg.tar|*.pkg.tar.*|*.apk|*.xbps|*.eopkg) pkgfile_install "$f" "$reason" ;;
+    *.appimage)
+      ask "install $name $ver (AppImage)?" || die "aborted, no cap"
+      appimage_install "$f" "$name" "$ver" "$reason" ;;
+    *.dmg)        dmg_install "$f" "$reason" ;;
+    *.exe|*.msi)  win_install "$f" "$name" "$ver" "$reason" ;;
+    *.snap)       ensure_snap; msg "${f##*/} → snap (unsigned, so --dangerous)"; asroot snap install --dangerous "$f" || die "snap couldn't install it"
+                  msg2 "it's managed by snap: snap list · snap remove <name>" ;;
+    *.flatpak)    ensure_flatpak; flatpak install --user -y --noninteractive --bundle "$f" || die "flatpak couldn't install it"
+                  msg2 "it's managed by flatpak: flatpak list --app · flatpak uninstall <id>" ;;
+    *.flatpakref) ensure_flatpak; flatpak install --user -y --noninteractive --from "$f" || die "flatpak couldn't install it"
+                  msg2 "it's managed by flatpak: flatpak list --app · flatpak uninstall <id>" ;;
+    *) archive_install "$f" "$name" "$ver" "$reason" ;;
+  esac
 }
 
 # ── flatpak + snap: they manage their own installs, gurt drives them and remembers what it put there ──
@@ -2306,8 +2614,9 @@ os_dep() {
   esac
   foreign_dep aur "$d"
 }
-outsource_install() { # url reason
-  local url name dir sha ver kind rdir recipe src_kind d reason=${2:-explicit}
+outsource_install() { # url reason [version]
+  local url name dir sha ver kind rdir recipe src_kind d reason=${2:-explicit} ver_from=${3:-}
+  if is_os_file "$1"; then outsource_file "$1" "$reason"; return; fi
   need_tool git outsource
   url=$(norm_git_url "$1")
   name=${url##*/}; name=${name,,}; name=${name//[^a-z0-9._+-]/-}
@@ -2319,7 +2628,7 @@ outsource_install() { # url reason
   if [[ -f $dir/GURTBUILD ]]; then rdir=$dir; recipe=GURTBUILD; src_kind="the repo's own GURTBUILD 🦆"
   elif [[ -f $dir/PKGBUILD ]]; then rdir=$dir; recipe=PKGBUILD; src_kind="the repo's own PKGBUILD"
   elif kind=$(os_build_kind "$dir"); then
-    ver="r$(git -C "$dir" log -1 --format=%cd --date=format:%Y%m%d).g${sha:0:7}"
+    ver=${ver_from:-"r$(git -C "$dir" log -1 --format=%cd --date=format:%Y%m%d).g${sha:0:7}"}
     rdir=$(os_gen_recipe "$dir" "$name" "$url" "$sha" "$kind" "$ver"); recipe=GURTBUILD; src_kind="$kind (auto-detected)"
   else
     die "no Makefile/CMake/meson/cargo/go/GURTBUILD/PKGBUILD in $url — dunno how to build it 😔 (write a GURTBUILD: gurt new $name)"
@@ -2985,6 +3294,8 @@ ${B}making packages${R0}
 ${B}misc${R0}
   doctor               check your setup + which sources work
   outsource <git url>  clone + build + install any repo (github user/repo works too) → git/<name>
+  outsource <file|url> install ANY download, no box → file/<name>: .deb .rpm .pkg.tar.zst .apk .xbps .eopkg
+                       .AppImage .tar.* .zip .7z .zst .snap .flatpak .exe/.msi (Wine) .dmg (Darling 🍎)
   de list              desktop environments you can install (kde, gnome, xfce, hyprland, niri…)
   de install <name>    install a desktop from YOUR distro's repos (then offers to delete your old one)
   de remove <name>     delete a desktop (never the one you're logged into, keeps your login screen)
@@ -3096,7 +3407,7 @@ main() {
     __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" ;;
     gui)               cmd_gui "$@" ;;
     completions)       completion_script "${1:?usage: gurt completions bash|zsh|fish}" ;;
-    outsource|os|clone) (( $# )) || die "outsource what tho — gurt outsource https://github.com/user/repo"
+    outsource|os|clone) (( $# )) || die "outsource what tho — gurt outsource https://github.com/user/repo (or a file: gurt outsource ./app.deb)"
                        for p; do outsource_install "$p" explicit; done ;;
     doctor)            cmd_doctor ;;
     yo)                echo "gurt: yo 🦆" ;;
