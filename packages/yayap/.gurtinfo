@@ -1,11 +1,11 @@
 pkgname = yayap
-pkgver = 0.1.0
+pkgver = 0.2.0
 pkgrel = 1
-pkgdesc = Yet Another "Yet Another" Program — a Linux toolbox: sysinfo, pkg, ports, extract, backup, clean & more 🧰
+pkgdesc = Yet Another "Yet Another" Program — a YaST-style control center for any distro: services, users, firewall, packages & more 🧰
 url = https://github.com/clrealy/YaYaP
 license = MIT
 maintainer = clrealy
-category = cli
+category = system
 arch = any
 makedepends = git
-source = yayap::git+https://github.com/clrealy/YaYaP.git#commit=be59b5965bdd5a96c12daf6bd62e74050da228fb
+source = yayap::git+https://github.com/clrealy/YaYaP.git#commit=4b75c55b33364734a52ae82d2fcdace184139961
