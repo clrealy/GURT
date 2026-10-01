@@ -64,7 +64,7 @@ jobs:
             if grep -q '^via_type=flatpak' packages/$p/GURTBUILD; then
               # a Flathub app: check its id really exists (downloading every app + runtime on 5 distros would fill the runner)
               id=$(sed -n 's/^via_pkg=//p' packages/$p/GURTBUILD)
-              ./gurt info "flatpak/$id" >/dev/null || { echo "::error::$p: $id isn't on Flathub"; exit 1; }
+              ./gurt -y info "flatpak/$id" >/dev/null || { echo "::error::$p: $id isn't on Flathub"; exit 1; }
               echo "✅ $p → $id is on Flathub"
             elif grep -q '^secret=true' packages/$p/GURTBUILD; then
               # secret packages only answer to their alias

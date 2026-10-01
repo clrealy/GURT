@@ -1,9 +1,9 @@
-# Flameshot — screenshots you can draw on
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Take screenshots and draw on them
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=flameshot
 pkgver=flathub
 pkgrel=1
-pkgdesc="Flameshot — screenshots you can draw on (Flathub)"
+pkgdesc="Take screenshots and draw on them (Flathub)"
 url="https://flathub.org/apps/org.flameshot.Flameshot"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

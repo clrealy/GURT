@@ -1,7 +1,7 @@
 pkgname = onlyoffice
 pkgver = flathub
 pkgrel = 1
-pkgdesc = ONLYOFFICE — office suite that's very compatible with Word/Excel/PowerPoint (Flathub)
+pkgdesc = Office suite that plays nice with Word, Excel and PowerPoint files (Flathub)
 url = https://flathub.org/apps/org.onlyoffice.desktopeditors
 license = AGPL-3.0-only
 maintainer = clrealy

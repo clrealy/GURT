@@ -1,9 +1,9 @@
-# Inkscape — vector graphics editor
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Vector graphics editor
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=inkscape
 pkgver=flathub
 pkgrel=1
-pkgdesc="Inkscape — vector graphics editor (Flathub)"
+pkgdesc="Vector graphics editor (Flathub)"
 url="https://flathub.org/apps/org.inkscape.Inkscape"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

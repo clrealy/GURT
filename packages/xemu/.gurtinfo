@@ -1,7 +1,7 @@
 pkgname = xemu
 pkgver = flathub
 pkgrel = 1
-pkgdesc = xemu — original Xbox emulator (Flathub)
+pkgdesc = Original Xbox emulator (Flathub)
 url = https://flathub.org/apps/app.xemu.xemu
 license = GPL-2.0-or-later
 maintainer = clrealy

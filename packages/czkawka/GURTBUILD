@@ -1,9 +1,9 @@
-# Czkawka — find duplicate + junk files
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Finds duplicate files and other junk taking up space
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=czkawka
 pkgver=flathub
 pkgrel=1
-pkgdesc="Czkawka — find duplicate + junk files (Flathub)"
+pkgdesc="Finds duplicate files and other junk taking up space (Flathub)"
 url="https://flathub.org/apps/com.github.qarmin.czkawka"
 license="MIT"
 maintainer="clrealy"

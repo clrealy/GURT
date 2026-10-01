@@ -1,9 +1,9 @@
-# Fedora Media Writer — make bootable USBs
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Make bootable USB drives
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=mediawriter
 pkgver=flathub
 pkgrel=1
-pkgdesc="Fedora Media Writer — make bootable USBs (Flathub)"
+pkgdesc="Make bootable USB drives (Flathub)"
 url="https://flathub.org/apps/org.fedoraproject.MediaWriter"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

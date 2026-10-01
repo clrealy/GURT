@@ -1,7 +1,7 @@
 pkgname = musescore
 pkgver = flathub
 pkgrel = 1
-pkgdesc = MuseScore — write sheet music (Flathub)
+pkgdesc = Write and play back sheet music (Flathub)
 url = https://flathub.org/apps/org.musescore.MuseScore
 license = GPL-3.0-only
 maintainer = clrealy

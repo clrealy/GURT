@@ -258,6 +258,10 @@ Run `gurt gui --setup` once and it opens in its own real app window (GTK + WebKi
 
 It only needs python3 and a browser. It runs a tiny server that only your own machine can reach (127.0.0.1, with a random secret token), opens it in a Chromium-style app window if you have one (otherwise your default browser), and quits by itself after you close the window.
 
+**Sound effects 🔊**: clicks, lottery ticks + a jackpot jingle, a chime when something finishes (a buzz if it fails). The 🔊 button mutes them, and the app and the website both remember it. In the app, every skin has its own sound set: Windows 11 is soft and round, XP gets bells and a big swelly startup-style chord, and 95 is chunky square waves with a brassy ta-da. Switching skins plays its "startup" sound. They're all homemade synth lookalikes, not Microsoft's actual sound files. The website has its own 🌙/☀️ dark mode button too.
+
+**Drop in files 📥**: drag a `.deb`, `.rpm`, `.pkg.tar.zst`, AppImage, `.tar.gz`, `.zip`, `.flatpak`, `.exe` or `.dmg` anywhere onto the app (or hit **📥 install a file**) and gurt installs it, same as `gurt outsource <file>`. It asks first.
+
 **Skins 🪟**: next to the light/dark button there's a skin picker: 🦆 GURT, Windows 11, Windows XP (Luna blue + the green start button) and Windows 95 (grey bevels on teal). It remembers what you pick.
 
 ## Build any git repo: `gurt outsource` 🛠️

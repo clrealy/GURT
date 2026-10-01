@@ -1,0 +1,15 @@
+# Find any file instantly, like Everything on Windows
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=fsearch
+pkgver=flathub
+pkgrel=1
+pkgdesc="Find any file instantly, like Everything on Windows (Flathub)"
+url="https://flathub.org/apps/io.github.cboxdoerfer.FSearch"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.cboxdoerfer.FSearch

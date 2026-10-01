@@ -1,7 +1,7 @@
 pkgname = discord
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Discord — voice, video and text chat (Flathub)
+pkgdesc = Voice, video and text chat with your friends (Flathub)
 url = https://flathub.org/apps/com.discordapp.Discord
 license = Proprietary
 maintainer = clrealy

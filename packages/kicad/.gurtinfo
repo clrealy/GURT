@@ -1,7 +1,7 @@
 pkgname = kicad
 pkgver = flathub
 pkgrel = 1
-pkgdesc = KiCad — electronics + PCB design (Flathub)
+pkgdesc = Design electronics and PCBs (Flathub)
 url = https://flathub.org/apps/org.kicad.KiCad
 license = GPL-3.0-or-later
 maintainer = clrealy

@@ -1,0 +1,16 @@
+# Write code and upload it to Arduino boards
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=arduino-ide
+pkgver=flathub
+pkgrel=1
+pkgdesc="Write code and upload it to Arduino boards (Flathub)"
+url="https://flathub.org/apps/cc.arduino.IDE2"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64)
+aliases=(arduino)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=cc.arduino.IDE2

@@ -1,0 +1,15 @@
+# KDE's archive manager for zips, tars and more
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=ark
+pkgver=flathub
+pkgrel=1
+pkgdesc="KDE's archive manager for zips, tars and more (Flathub)"
+url="https://flathub.org/apps/org.kde.ark"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.ark

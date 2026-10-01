@@ -1,9 +1,9 @@
-# Audacity — audio recording and editing
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Record and edit audio
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=audacity
 pkgver=flathub
 pkgrel=1
-pkgdesc="Audacity — audio recording and editing (Flathub)"
+pkgdesc="Record and edit audio (Flathub)"
 url="https://flathub.org/apps/org.audacityteam.Audacity"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

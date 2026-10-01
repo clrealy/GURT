@@ -1,0 +1,15 @@
+# Chromium with all the Google stuff taken out
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=ungoogled-chromium
+pkgver=flathub
+pkgrel=1
+pkgdesc="Chromium with all the Google stuff taken out (Flathub)"
+url="https://flathub.org/apps/io.github.ungoogled_software.ungoogled_chromium"
+license="BSD-3-Clause"
+maintainer="clrealy"
+category="browsers"
+arch=(x86_64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.ungoogled_software.ungoogled_chromium

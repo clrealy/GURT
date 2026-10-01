@@ -1,9 +1,9 @@
-# Resources — system monitor (CPU, GPU, RAM, network)
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Keep an eye on your CPU, GPU, RAM and network
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=resources
 pkgver=flathub
 pkgrel=1
-pkgdesc="Resources — system monitor (CPU, GPU, RAM, network) (Flathub)"
+pkgdesc="Keep an eye on your CPU, GPU, RAM and network (Flathub)"
 url="https://flathub.org/apps/net.nokyan.Resources"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

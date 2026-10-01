@@ -1,7 +1,7 @@
 pkgname = teams-for-linux
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Teams for Linux — unofficial Microsoft Teams client (Flathub)
+pkgdesc = Unofficial Microsoft Teams app (Flathub)
 url = https://flathub.org/apps/com.github.IsmaelMartinez.teams_for_linux
 license = GPL-3.0-or-later
 maintainer = clrealy

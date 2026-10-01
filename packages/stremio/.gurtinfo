@@ -1,7 +1,7 @@
 pkgname = stremio
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Stremio — one hub for movies, shows and add-ons (Flathub)
+pkgdesc = One hub for movies, shows and add-ons (Flathub)
 url = https://flathub.org/apps/com.stremio.Stremio
 license = GPL-2.0-only
 maintainer = clrealy

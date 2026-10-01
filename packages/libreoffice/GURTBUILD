@@ -1,9 +1,9 @@
-# LibreOffice — documents, spreadsheets and slides
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Documents, spreadsheets and slides
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=libreoffice
 pkgver=flathub
 pkgrel=1
-pkgdesc="LibreOffice — documents, spreadsheets and slides (Flathub)"
+pkgdesc="Documents, spreadsheets and slides (Flathub)"
 url="https://flathub.org/apps/org.libreoffice.LibreOffice"
 license="MPL-2.0"
 maintainer="clrealy"

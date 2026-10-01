@@ -1,8 +1,8 @@
-# dive — explore Docker image layers
+# Look inside Docker image layers
 pkgname=dive
 pkgver=0.13.1
 pkgrel=1
-pkgdesc="dive — explore Docker image layers"
+pkgdesc="Look inside Docker image layers"
 url="https://github.com/wagoodman/dive"
 license="MIT"
 maintainer="clrealy"

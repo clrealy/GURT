@@ -1,9 +1,9 @@
-# Foliate — pretty e-book reader
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Pretty e-book reader
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=foliate
 pkgver=flathub
 pkgrel=1
-pkgdesc="Foliate — pretty e-book reader (Flathub)"
+pkgdesc="Pretty e-book reader (Flathub)"
 url="https://flathub.org/apps/com.github.johnfactotum.Foliate"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

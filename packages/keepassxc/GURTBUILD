@@ -1,9 +1,9 @@
-# KeePassXC — offline password manager
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Offline password manager that keeps everything on your machine
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=keepassxc
 pkgver=flathub
 pkgrel=1
-pkgdesc="KeePassXC — offline password manager (Flathub)"
+pkgdesc="Offline password manager that keeps everything on your machine (Flathub)"
 url="https://flathub.org/apps/org.keepassxc.KeePassXC"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

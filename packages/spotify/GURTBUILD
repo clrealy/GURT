@@ -1,9 +1,9 @@
-# Spotify — music streaming
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Stream music
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=spotify
 pkgver=flathub
 pkgrel=1
-pkgdesc="Spotify — music streaming (Flathub)"
+pkgdesc="Stream music (Flathub)"
 url="https://flathub.org/apps/com.spotify.Client"
 license="Proprietary"
 maintainer="clrealy"

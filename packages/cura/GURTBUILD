@@ -1,9 +1,9 @@
-# UltiMaker Cura — 3D printing slicer
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Slice 3D models for your printer
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=cura
 pkgver=flathub
 pkgrel=1
-pkgdesc="UltiMaker Cura — 3D printing slicer (Flathub)"
+pkgdesc="Slice 3D models for your printer (Flathub)"
 url="https://flathub.org/apps/com.ultimaker.cura"
 license="LGPL-3.0-or-later"
 maintainer="clrealy"

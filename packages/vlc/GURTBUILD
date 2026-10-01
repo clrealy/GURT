@@ -1,9 +1,9 @@
-# VLC — plays pretty much any video or audio file
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Plays pretty much any video or audio file
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=vlc
 pkgver=flathub
 pkgrel=1
-pkgdesc="VLC — plays pretty much any video or audio file (Flathub)"
+pkgdesc="Plays pretty much any video or audio file (Flathub)"
 url="https://flathub.org/apps/org.videolan.VLC"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

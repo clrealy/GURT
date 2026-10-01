@@ -1,7 +1,7 @@
 pkgname = claude-code
 pkgver = repo
 pkgrel = 1
-pkgdesc = Claude Code — Anthropic's agentic coding tool in your terminal (official repo)
+pkgdesc = Anthropic's agentic coding tool that lives in your terminal (official repo)
 url = https://code.claude.com
 license = custom
 maintainer = clrealy

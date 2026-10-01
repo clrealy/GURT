@@ -1,0 +1,15 @@
+# Lightweight word processor that opens fast
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=abiword
+pkgver=flathub
+pkgrel=1
+pkgdesc="Lightweight word processor that opens fast (Flathub)"
+url="https://flathub.org/apps/com.abisource.AbiWord"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.abisource.AbiWord

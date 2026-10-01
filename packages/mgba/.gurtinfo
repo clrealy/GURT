@@ -1,7 +1,7 @@
 pkgname = mgba
 pkgver = flathub
 pkgrel = 1
-pkgdesc = mGBA — Game Boy Advance emulator (Flathub)
+pkgdesc = Game Boy Advance emulator (Flathub)
 url = https://flathub.org/apps/io.mgba.mGBA
 license = MPL-2.0
 maintainer = clrealy

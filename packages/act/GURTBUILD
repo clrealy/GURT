@@ -1,0 +1,24 @@
+# Run your GitHub Actions on your own machine
+pkgname=act
+pkgver=0.2.89
+pkgrel=1
+pkgdesc="Run your GitHub Actions on your own machine"
+url="https://github.com/nektos/act"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("git+https://github.com/nektos/act.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd act
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X main.version=$pkgver" -o out/act .
+}
+
+package() {
+  install -Dm755 act/out/act "$pkgdir$prefix/bin/act"
+}

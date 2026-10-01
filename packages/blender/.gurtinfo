@@ -1,7 +1,7 @@
 pkgname = blender
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Blender — 3D modeling, animation and rendering (Flathub)
+pkgdesc = 3D modeling, animation and rendering (Flathub)
 url = https://flathub.org/apps/org.blender.Blender
 license = GPL-2.0-or-later
 maintainer = clrealy

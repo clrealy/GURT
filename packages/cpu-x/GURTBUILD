@@ -1,0 +1,15 @@
+# Shows everything about your CPU, like CPU-Z on Windows
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=cpu-x
+pkgver=flathub
+pkgrel=1
+pkgdesc="Shows everything about your CPU, like CPU-Z on Windows (Flathub)"
+url="https://flathub.org/apps/io.github.thetumultuousunicornofdarkness.cpu-x"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.thetumultuousunicornofdarkness.cpu-x

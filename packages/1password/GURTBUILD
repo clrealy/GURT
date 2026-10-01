@@ -1,9 +1,9 @@
-# 1Password — straight from the vendor's official signed apt repo.
+# Password manager that fills in your logins everywhere
 # key fingerprint source: https://support.1password.com/install-linux/
 pkgname=1password
 pkgver=repo
 pkgrel=1
-pkgdesc="1Password — password manager (official repo)"
+pkgdesc="Password manager that fills in your logins everywhere (official repo)"
 url="https://1password.com"
 license="custom"
 maintainer="clrealy"

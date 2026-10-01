@@ -1,7 +1,7 @@
 pkgname = dbeaver
 pkgver = flathub
 pkgrel = 1
-pkgdesc = DBeaver — one app for every database (Flathub)
+pkgdesc = One app for pretty much every database (Flathub)
 url = https://flathub.org/apps/io.dbeaver.DBeaverCommunity
 license = Apache-2.0
 maintainer = clrealy

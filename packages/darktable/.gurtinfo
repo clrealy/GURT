@@ -1,7 +1,7 @@
 pkgname = darktable
 pkgver = flathub
 pkgrel = 1
-pkgdesc = darktable — RAW photo workflow (Flathub)
+pkgdesc = Edit and organize RAW photos (Flathub)
 url = https://flathub.org/apps/org.darktable.Darktable
 license = GPL-3.0-or-later
 maintainer = clrealy

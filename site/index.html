@@ -10,6 +10,7 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>try { const t = localStorage.getItem("gurt-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}</script>
 <style>
 :root{
   --bg:#f6f5f0; --panel:#ffffff; --ink:#16161a; --muted:#6b6b76; --line:#e3e1d8;
@@ -30,7 +31,10 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Space Grotesk",system-ui,sans-serif}
 code,pre,.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
 .wrap{max-width:980px;margin:0 auto;padding:0 16px}
-header{padding:48px 0 24px}
+header{padding:48px 0 24px;position:relative}
+.tbar{position:absolute;top:16px;right:0;display:flex;gap:6px}
+.tbar button{font-size:18px;line-height:1;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.tbar button:hover{border-color:var(--muted)}
 .logo{margin:0;line-height:0}
 .logo img{height:170px;width:auto;max-width:100%;margin:-20px 0 -14px -18px}
 .logo .lg-dirt{display:none}
@@ -184,6 +188,7 @@ body.carted{padding-bottom:84px}
 <body>
 <div class="wrap">
   <header>
+    <div class="tbar"><button id="sfxbtn" type="button" aria-label="sound effects"></button><button id="themebtn" type="button" aria-label="dark mode"></button></div>
     <h1 class="logo"><img class="lg-gurt" src="assets/gurt-logo.png?v=2" alt="gurt" width="1023" height="665"><img class="lg-dirt" src="assets/dirt-logo.png?v=2" alt="dirt." width="1024" height="449"></h1>
     <p class="tag"><b>G</b>URT <b>U</b>niversal <b>R</b>epository <b>T</b>hingy — <b>every</b> distro's packages on <b>every</b> distro. The AUR on Mint, apt on SUSE, zypper on Red Star OS… plus <b>Main GURT</b>, the community repo below.</p>
     <div class="install mono">curl -fsSL https://raw.githubusercontent.com/clrealy/GURT/main/install.sh | sh
@@ -635,8 +640,8 @@ $("#lotto").addEventListener("click", e => {
   const win = pool[Math.floor(Math.random() * pool.length)], box = $("#lottowin");
   box.hidden = false; spinning = true; let i = 0;
   const tick = () => {
-    if (i++ < 18) { box.innerHTML = `<div class="spin">🎰 ${esc(pool[Math.floor(Math.random() * pool.length)].pkgname)}</div>`; return setTimeout(tick, 40 + i * 6); }
-    spinning = false;
+    if (i++ < 18) { SFX.play("tick"); box.innerHTML = `<div class="spin">🎰 ${esc(pool[Math.floor(Math.random() * pool.length)].pkgname)}</div>`; return setTimeout(tick, 40 + i * 6); }
+    spinning = false; SFX.play("jackpot");
     box.innerHTML = `<div class="spin">🎉 ${esc(win.pkgname)}</div><div class="desc">${esc(win.pkgdesc)}</div>
       <div class="row2"><button class="btn small" id="lwadd">${PICKED.has(win.pkgname) ? "already in your setup ✓" : "＋ add to my setup"}</button>
       <button class="btn ghost small" id="lwinfo">see recipe</button><button class="btn ghost small" id="lwagain">spin again</button></div>
@@ -647,6 +652,59 @@ $("#lotto").addEventListener("click", e => {
   };
   tick();
 });
+
+// ── 🔊 sfx: tiny synth bleeps (WebAudio, no sound files), 🔇 button mutes them ──
+const SFX = (() => {
+  let ctx = null, on = (() => { try { return localStorage.getItem("gurt-sfx") !== "off"; } catch { return true; } })();
+  const tone = (f, t, dur, type = "square", vol = 0.05, f2 = 0) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + dur + 0.02);
+  };
+  const sounds = {
+    click:   t => tone(620, t, 0.045, "square", 0.03),
+    tick:    t => tone(700 + Math.random() * 600, t, 0.03, "square", 0.025),
+    jackpot: t => [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, t + i * 0.08, 0.18, "triangle", 0.06)),
+    copy:    t => { tone(988, t, 0.06, "sine", 0.06); tone(1480, t + 0.06, 0.1, "sine", 0.06); },
+    pick:    t => tone(660, t, 0.07, "triangle", 0.05, 990),
+    unpick:  t => tone(660, t, 0.07, "triangle", 0.05, 440),
+    ok:      t => [784, 1047, 1568].forEach((f, i) => tone(f, t + i * 0.07, 0.14, "triangle", 0.06)),
+    err:     t => { tone(196, t, 0.18, "sawtooth", 0.05); tone(147, t + 0.16, 0.28, "sawtooth", 0.05); },
+    theme:   t => tone(300, t, 0.22, "sine", 0.05, 900),
+    pop:     t => tone(400, t, 0.09, "sine", 0.07, 1200),
+  };
+  const play = name => {
+    if (!on || !sounds[name]) return;
+    try {
+      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+      if (ctx.state === "suspended") ctx.resume();
+      sounds[name](ctx.currentTime);
+    } catch {}
+  };
+  return { play, get on() { return on; }, set(v) { on = v; } };
+})();
+const SFX_ROLES = {copy:"copy", scopy:"copy", cartcopy:"copy", lotto:"", lotto2:"", themebtn:"theme", sfxbtn:""};
+document.addEventListener("click", e => {
+  const b = e.target.closest("button, .src, .bcat, .pkg, nav button, summary");
+  if (!b) return;
+  const role = b.id in SFX_ROLES ? SFX_ROLES[b.id] : "click";
+  if (role) SFX.play(role);
+}, true);
+
+// ── 🌙 dark mode + 🔊 buttons (remembered in this browser) ──
+const isDarkNow = () => { const t = document.documentElement.dataset.theme; return t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches); };
+const paintTbar = () => { $("#themebtn").textContent = isDarkNow() ? "☀️" : "🌙"; $("#themebtn").title = isDarkNow() ? "light mode" : "dark mode";
+  $("#sfxbtn").textContent = SFX.on ? "🔊" : "🔇"; $("#sfxbtn").title = SFX.on ? "mute sound effects" : "turn sound effects on"; };
+$("#themebtn").addEventListener("click", () => {
+  const t = isDarkNow() ? "light" : "dark"; document.documentElement.dataset.theme = t;
+  try { localStorage.setItem("gurt-theme", t); } catch {} paintTbar();
+});
+$("#sfxbtn").addEventListener("click", () => {
+  SFX.set(!SFX.on); try { localStorage.setItem("gurt-sfx", SFX.on ? "on" : "off"); } catch {} paintTbar(); SFX.play("pop");
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paintTbar); paintTbar();
+$("#bgroups").addEventListener("change", e => { if (e.target.dataset.n) SFX.play(e.target.checked ? "pick" : "unpick"); });
 $("#heyo").addEventListener("click", () => { $("#heyo-found").hidden = false; $("#heyo").style.opacity = 1; });
 fetch("packages.json").then(r => r.json()).then(d => { PKGS = d.packages; render(); renderBuilder(); const u = new URLSearchParams(location.search).get("u"); if (u) showProfile(u, false); })
   .catch(() => { $("#count").textContent = "couldn't load packages.json"; });

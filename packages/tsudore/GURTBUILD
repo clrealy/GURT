@@ -1,4 +1,4 @@
-# tsudore — tsundere root. it's not like it wants to help you or anything
+# tsudore, tsundere root. it's not like it wants to help you or anything
 # works on every distro now, not just nyarch
 pkgname=tsudore
 pkgver=1.1.0

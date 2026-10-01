@@ -1,9 +1,9 @@
-# melonDS — Nintendo DS emulator
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Nintendo DS emulator
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=melonds
 pkgver=flathub
 pkgrel=1
-pkgdesc="melonDS — Nintendo DS emulator (Flathub)"
+pkgdesc="Nintendo DS emulator (Flathub)"
 url="https://flathub.org/apps/net.kuribo64.melonDS"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

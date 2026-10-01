@@ -1,0 +1,16 @@
+# Play your PlayStation remotely from your PC
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=chiaki-ng
+pkgver=flathub
+pkgrel=1
+pkgdesc="Play your PlayStation remotely from your PC (Flathub)"
+url="https://flathub.org/apps/io.github.streetpea.Chiaki4deck"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64)
+aliases=(chiaki)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.streetpea.Chiaki4deck

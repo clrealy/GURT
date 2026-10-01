@@ -1,9 +1,9 @@
-# Konsole — KDE's terminal emulator
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# KDE's terminal
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=konsole
 pkgver=flathub
 pkgrel=1
-pkgdesc="Konsole — KDE's terminal emulator (Flathub)"
+pkgdesc="KDE's terminal (Flathub)"
 url="https://flathub.org/apps/org.kde.konsole"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

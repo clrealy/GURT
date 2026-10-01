@@ -10,7 +10,7 @@ category="fun"
 arch=(any)
 hidden=true
 aliases=(skav°7)
-secret=true   # only "gurt install skav°7" works — "gurt install hpa2" pretends it doesn't exist
+secret=true   # only "gurt install skav°7" works, "gurt install hpa2" pretends it doesn't exist
 source=()
 sha256sums=()
 

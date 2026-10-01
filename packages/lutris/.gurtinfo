@@ -1,7 +1,7 @@
 pkgname = lutris
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Lutris — one place for all your games (Wine, emulators, stores) (Flathub)
+pkgdesc = One place for all your games, from Wine to emulators to stores (Flathub)
 url = https://flathub.org/apps/net.lutris.Lutris
 license = GPL-3.0-or-later
 maintainer = clrealy

@@ -1,9 +1,9 @@
-# Obsidian — markdown notes that link together
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Markdown notes that link together
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=obsidian
 pkgver=flathub
 pkgrel=1
-pkgdesc="Obsidian — markdown notes that link together (Flathub)"
+pkgdesc="Markdown notes that link together (Flathub)"
 url="https://flathub.org/apps/md.obsidian.Obsidian"
 license="Proprietary"
 maintainer="clrealy"

@@ -1,7 +1,7 @@
 pkgname = rpcs3
 pkgver = flathub
 pkgrel = 1
-pkgdesc = RPCS3 — PlayStation 3 emulator (Flathub)
+pkgdesc = PlayStation 3 emulator (Flathub)
 url = https://flathub.org/apps/net.rpcs3.RPCS3
 license = GPL-2.0-only
 maintainer = clrealy

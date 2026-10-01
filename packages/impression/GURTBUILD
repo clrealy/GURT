@@ -1,9 +1,9 @@
-# Impression — flash ISOs to USB drives
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Flash ISO files onto USB drives
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=impression
 pkgver=flathub
 pkgrel=1
-pkgdesc="Impression — flash ISOs to USB drives (Flathub)"
+pkgdesc="Flash ISO files onto USB drives (Flathub)"
 url="https://flathub.org/apps/io.gitlab.adhami3310.Impression"
 license="GPL-3.0-only"
 maintainer="clrealy"

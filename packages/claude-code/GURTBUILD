@@ -1,10 +1,10 @@
-# Claude Code (the CLI) — straight from Anthropic's official signed apt repo.
+# Anthropic's agentic coding tool that lives in your terminal
 # gurt adds the repo for you and refuses if the signing key's fingerprint doesn't match the one pinned here.
 # fingerprint source: https://code.claude.com/docs/en/setup#install-with-linux-package-managers
 pkgname=claude-code
 pkgver=repo
 pkgrel=1
-pkgdesc="Claude Code — Anthropic's agentic coding tool in your terminal (official repo)"
+pkgdesc="Anthropic's agentic coding tool that lives in your terminal (official repo)"
 url="https://code.claude.com"
 license="custom"
 maintainer="clrealy"

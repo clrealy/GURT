@@ -1,7 +1,7 @@
 pkgname = czkawka
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Czkawka — find duplicate + junk files (Flathub)
+pkgdesc = Finds duplicate files and other junk taking up space (Flathub)
 url = https://flathub.org/apps/com.github.qarmin.czkawka
 license = MIT
 maintainer = clrealy

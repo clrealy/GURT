@@ -1,0 +1,15 @@
+# Music player built for big collections
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=tauon
+pkgver=flathub
+pkgrel=1
+pkgdesc="Music player built for big collections (Flathub)"
+url="https://flathub.org/apps/com.github.taiko2k.tauonmb"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="media"
+arch=(x86_64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.taiko2k.tauonmb

@@ -1,0 +1,13 @@
+pkgname = haruna
+pkgver = flathub
+pkgrel = 1
+pkgdesc = KDE video player with mpv under the hood (Flathub)
+url = https://flathub.org/apps/org.kde.haruna
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.kde.haruna

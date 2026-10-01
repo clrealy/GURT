@@ -1,9 +1,9 @@
-# Postman — API testing
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Test and build APIs
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=postman
 pkgver=flathub
 pkgrel=1
-pkgdesc="Postman — API testing (Flathub)"
+pkgdesc="Test and build APIs (Flathub)"
 url="https://flathub.org/apps/com.getpostman.Postman"
 license="Proprietary"
 maintainer="clrealy"

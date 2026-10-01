@@ -7,13 +7,24 @@ Started by:  gurt gui
 """
 import argparse, json, os, re, secrets, shutil, stat, subprocess, sys, tempfile, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, unquote
 
 TOKEN = secrets.token_urlsafe(24)
 GURT = "gurt"
 JOBS, JOBS_LOCK = {}, threading.Lock()
 LAST_PING = [time.time()]
 SPEC_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+°:@/-]{0,200}$")
+# files you can drop into the app (same list gurt outsource understands)
+DROP_RE = re.compile(r"\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|appimage|dmg|exe|msi|snap|flatpak|flatpakref|"
+                     r"tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst)$", re.I)
+DROP_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]{0,200}$")
+DROP_MAX = 8 << 30   # 8 GiB
+
+
+def drops_dir():
+    d = os.path.join(paths().get("cache") or os.path.expanduser("~/.cache/gurt"), "drops")
+    os.makedirs(d, exist_ok=True)
+    return d
 URL_RE = re.compile(r"^(https?://|git@)[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]{3,300}$|^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 ALLOWED = {  # command → (needs a package arg?, extra flags)
     "install": True, "remove": True, "rollback": True, "hold": True, "unhold": True, "info": True,
@@ -229,7 +240,7 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/":
             if not self._host_ok() or not secrets.compare_digest((q.get("t") or [""])[0], TOKEN):
                 return self._send(403, "nope 🔒 open GURT with: gurt gui", "text/plain")
-            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()), "text/html")
+            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()).replace("__SFX__", "off" if conf().get("sfx") is False else "on"), "text/html")
         if u.path in ("/icon.png", "/logo.png", "/dirt-logo.png"):
             repo = paths().get("repo", "")
             want = {"/logo.png": "gurt-logo.png", "/dirt-logo.png": "dirt-logo.png"}.get(u.path, "apple-touch-icon.png")
@@ -259,6 +270,25 @@ class H(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         if not self._auth():
             return self._send(403, {"error": "bad token"})
+        if u.path == "/api/drop":   # a file dropped into the app → saved to the cache, then gurt outsource installs it
+            name = re.sub(r"[^A-Za-z0-9._+-]", "_", os.path.basename(unquote(self.headers.get("X-Filename", ""))))[:200].lstrip("._-")
+            if not DROP_NAME_RE.match(name) or not DROP_RE.search(name):
+                return self._send(400, {"error": "gurt can't install that kind of file 🤔 (.deb .rpm .AppImage .tar.gz .exe .dmg …)"})
+            n = int(self.headers.get("Content-Length") or 0)
+            if n <= 0 or n > DROP_MAX:
+                return self._send(400, {"error": "that file's empty or way too big"})
+            path, left = os.path.join(drops_dir(), name), n
+            with open(path + ".part", "wb") as f:
+                while left:
+                    chunk = self.rfile.read(min(left, 1 << 20))
+                    if not chunk:
+                        break
+                    f.write(chunk); left -= len(chunk)
+            if left:
+                os.remove(path + ".part")
+                return self._send(400, {"error": "the upload got cut off"})
+            os.replace(path + ".part", path)
+            return self._send(200, {"name": name})
         body = self._body()
         if u.path == "/api/run":
             cmd, arg = body.get("cmd"), (body.get("arg") or "").strip()
@@ -275,6 +305,12 @@ class H(BaseHTTPRequestHandler):
                 if not names or len(names) > 200 or any(n.startswith("-") or not SPEC_RE.match(n) for n in names):
                     return self._send(400, {"error": "those names look sus"})
                 job = start_job([GURT, "-y", "install", *names])
+                return self._send(200, {"job": job.id})
+            if cmd == "dropped":
+                p = os.path.join(drops_dir(), arg)
+                if not DROP_NAME_RE.match(arg) or not DROP_RE.search(arg) or not os.path.isfile(p):
+                    return self._send(400, {"error": "that dropped file is gone"})
+                job = start_job([GURT, "-y", "outsource", p])
                 return self._send(200, {"job": job.id})
             if cmd == "gui-setup":
                 job = start_job([GURT, "-y", "gui", "--setup"])
@@ -297,6 +333,9 @@ class H(BaseHTTPRequestHandler):
                 argv.append(arg)
             job = start_job(argv)
             return self._send(200, {"job": job.id})
+        if u.path == "/api/sfx":
+            save_conf(sfx=bool(body.get("on")))
+            return self._send(200, {"ok": True})
         if u.path == "/api/skin":
             if body.get("skin") not in SKINS:
                 return self._send(400, {"error": "unknown skin"})
@@ -516,7 +555,7 @@ def main():
 PORT, ASKPASS, ICONS, MODE = 0, "", [], "browser"
 
 PAGE = r"""<!doctype html>
-<html lang="en" data-theme="__THEME__" data-skin="__SKIN__"><head>
+<html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GURT</title><link rel="icon" href="/icon.png">
 <style>
@@ -620,6 +659,9 @@ dialog .row{justify-content:flex-end}
 #lottowin2{border:2px dashed var(--accent);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center}
 #lottowin2 .spin{font:700 20px ui-monospace,monospace;margin-bottom:6px}
 #lottowin2 .card{text-align:left;max-width:520px;margin:8px auto 0}
+#dropzone{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(3px);pointer-events:none}
+#dropzone div{border:4px dashed var(--accent);border-radius:24px;padding:48px 64px;text-align:center;background:var(--panel);font-size:22px;font-weight:700}
+#dropzone small{display:block;font-size:14px;font-weight:400;color:var(--muted);margin-top:8px}
 #lottowin{border:2px dashed var(--accent);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center}
 #lottowin .spin{font:700 20px ui-monospace,monospace;margin-bottom:6px}
 #lottowin .card{text-align:left;max-width:520px;margin:8px auto 0}
@@ -679,6 +721,7 @@ dialog .row{justify-content:flex-end}
   <select id="skinsel" title="skin">
     <option value="gurt">🦆 GURT</option><option value="win11">🪟 Windows 11</option><option value="xp">🟩 Windows XP</option><option value="w95">💾 Windows 95</option>
   </select>
+  <button class="btn ghost small" id="sfxbtn" title="sound effects"></button>
   <button class="btn ghost small" id="themebtn" title="light / dark"></button>
   <button class="btn ghost small" id="syncbtn" title="gurt sync">↻ sync</button>
 </header>
@@ -697,7 +740,7 @@ dialog .row{justify-content:flex-end}
       <button data-src="dirt" class="dirtbtn">dirt/ <small>18+</small></button>
     </div>
     <p class="blurb" id="blurb" hidden></p>
-    <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button><button class="btn lottobtn" id="lotto" title="win a random app">🎰 lottery</button></div>
+    <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button><button class="btn lottobtn" id="lotto" title="win a random app">🎰 lottery</button><button class="btn ghost" id="dropbtn" title="install a .deb, .rpm, AppImage, .exe… you downloaded">📥 install a file</button><input type="file" id="dropin" hidden></div>
     <p class="hint">tip: <code>aur/yay</code>, <code>apt/cowsay</code>, <code>flatpak/gimp</code>… type a full name with a source and hit install</p>
     <div id="direct" hidden class="row" style="margin-bottom:12px"><button class="btn" id="directbtn"></button></div>
     <div id="allres" hidden><h2>everywhere</h2><div class="grid" id="allgrid"></div><h2 style="margin-top:18px">Main GURT</h2></div>
@@ -729,6 +772,7 @@ dialog .row{justify-content:flex-end}
 </main>
 <div id="console"><div class="bar"><span class="dot" id="cdot"></span><b id="ctitle">activity</b><span class="spacer"></span><button class="btn ghost small" id="cstop" hidden>stop</button><button class="btn ghost small" id="chide">hide</button></div><pre id="cout"></pre></div>
 
+<div id="dropzone" hidden><div>📥 drop it to install<small>.deb · .rpm · .pkg.tar.zst · AppImage · .tar.gz · .zip · .flatpak · .exe · .dmg — any distro, no box</small></div></div>
 <dialog id="confirm"><h3 id="ctitle2"></h3><p id="cbody"></p><div class="row"><button class="btn ghost" id="cno">Nah</button><button class="btn" id="cyes">Yeah</button></div></dialog>
 <dialog id="gate" style="padding:0;background:transparent"><div class="box" style="padding:26px 22px"><div class="g18">18+</div><h3>Are you sure?</h3>
   <p>This section of the GURT Repository is 18+ ONLY. Explore at your own risk.</p>
@@ -782,7 +826,7 @@ function renderInstalled(){
 }
 
 // ── running gurt ──
-const VERB = {de:"Install the desktop", install:"Install", "install-many":"Install", sysup:"Update your whole system", remove:"Remove", rollback:"Roll back", hold:"Hold", unhold:"Unhold", upgrade:"Update everything (your system + apps)", "self-update":"Update gurt", outsource:"Build + install"};
+const VERB = {dropped:"Install", de:"Install the desktop", install:"Install", "install-many":"Install", sysup:"Update your whole system", remove:"Remove", rollback:"Roll back", hold:"Hold", unhold:"Unhold", upgrade:"Update everything (your system + apps)", "self-update":"Update gurt", outsource:"Build + install"};
 function ask(title, body){ return new Promise(res => { $("#ctitle2").textContent = title; $("#cbody").textContent = body; const d=$("#confirm");
   const done = v => { d.close(); $("#cyes").onclick = $("#cno").onclick = null; res(v); };
   $("#cyes").onclick = () => done(true); $("#cno").onclick = () => done(false); d.onclose = () => res(false); d.showModal(); }); }
@@ -807,7 +851,7 @@ async function run(cmd, arg="", {all=false, quiet=false, confirm=true} = {}){
     if (!quiet && j.lines.length) { const o = $("#cout"); o.textContent += j.lines.join("\n") + "\n"; o.scrollTop = o.scrollHeight; }
     if (j.ask && !pwShown) { pwShown = true; askPassword(j.ask); }
     if (!j.ask) pwShown = false;
-    if (j.done) { $("#cdot").className = "dot " + (j.rc === 0 ? "ok" : "bad"); busy = false; setBusyUI(false); cur = null; await load(); return {rc:j.rc, lines}; }
+    if (j.done) { $("#cdot").className = "dot " + (j.rc === 0 ? "ok" : "bad"); if (!quiet) SFX.play(j.rc === 0 ? "ok" : "err"); busy = false; setBusyUI(false); cur = null; await load(); return {rc:j.rc, lines}; }
     await new Promise(r => setTimeout(r, 300));
   }
 }
@@ -893,7 +937,110 @@ async function searchAll(){
 }
 $("#q").addEventListener("input", () => { if (SRC === "dirt") renderDirt(); if (SRC === "gurt") renderMain(); if (!$("#q").value) $("#allres").hidden = true; });
 $("#q").addEventListener("keydown", e => { if (e.key === "Enter") searchAll(); });
+
+// ── 🔊 sfx: synth sounds (WebAudio, no sound files) — every skin has its own set, 🔇 mutes ──
+const SFX = (() => {
+  let ctx = null, on = document.documentElement.dataset.sfx !== "off";
+  // one note: freq, start, length, wave, volume, glide-to freq, attack
+  const tone = (f, t, dur, type = "square", vol = 0.05, f2 = 0, atk = 0.004) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + atk); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + dur + 0.05);
+  };
+  const bell = (f, t, dur, vol = 0.05) => { tone(f, t, dur, "triangle", vol); tone(f * 2.01, t, dur * 0.6, "sine", vol * 0.35); };
+  const pad = (fs, t, dur, type = "sine", vol = 0.03, atk = 0.25) => fs.forEach(f => { tone(f, t, dur, type, vol, 0, atk); tone(f * 1.004, t, dur, type, vol * 0.7, 0, atk); });
+  const arp = (fs, t, step, dur, fn) => fs.forEach((f, i) => fn(f, t + i * step, dur));
+  const SETS = {
+    gurt: {
+      click: t => tone(620, t, 0.045, "square", 0.03),
+      tick: t => tone(700 + Math.random() * 600, t, 0.03, "square", 0.025),
+      jackpot: t => arp([523, 659, 784, 1047, 1319], t, 0.08, 0.18, (f, s, d) => tone(f, s, d, "triangle", 0.06)),
+      copy: t => { tone(988, t, 0.06, "sine", 0.06); tone(1480, t + 0.06, 0.1, "sine", 0.06); },
+      pick: t => tone(660, t, 0.07, "triangle", 0.05, 990), unpick: t => tone(660, t, 0.07, "triangle", 0.05, 440),
+      ok: t => arp([784, 1047, 1568], t, 0.07, 0.14, (f, s, d) => tone(f, s, d, "triangle", 0.06)),
+      err: t => { tone(196, t, 0.18, "sawtooth", 0.05); tone(147, t + 0.16, 0.28, "sawtooth", 0.05); },
+      theme: t => tone(300, t, 0.22, "sine", 0.05, 900), pop: t => tone(400, t, 0.09, "sine", 0.07, 1200),
+      startup: t => arp([392, 523, 659, 784], t, 0.07, 0.2, (f, s, d) => tone(f, s, d, "triangle", 0.05)),
+    },
+    win11: {   // soft, round, quiet — modern Windows vibes
+      click: t => tone(1400, t, 0.03, "sine", 0.025),
+      tick: t => tone(1100 + Math.random() * 300, t, 0.035, "sine", 0.03),
+      jackpot: t => { arp([659, 784, 988, 1319], t, 0.09, 0.5, (f, s, d) => tone(f, s, d, "sine", 0.05, 0, 0.01)); },
+      copy: t => { tone(1319, t, 0.18, "sine", 0.05, 0, 0.008); tone(1760, t + 0.09, 0.25, "sine", 0.04, 0, 0.008); },
+      pick: t => tone(880, t, 0.08, "sine", 0.04, 1175), unpick: t => tone(880, t, 0.08, "sine", 0.04, 660),
+      ok: t => { tone(988, t, 0.35, "sine", 0.05, 0, 0.01); tone(1319, t + 0.12, 0.45, "sine", 0.05, 0, 0.01); },
+      err: t => { tone(523, t, 0.25, "sine", 0.06, 0, 0.01); tone(392, t + 0.14, 0.4, "sine", 0.06, 0, 0.01); },
+      theme: t => tone(500, t, 0.3, "sine", 0.04, 1000, 0.05), pop: t => tone(700, t, 0.12, "sine", 0.05, 1050),
+      startup: t => { pad([262, 330, 392, 494], t, 1.4, "sine", 0.025, 0.35); arp([784, 988, 1175], t + 0.35, 0.12, 0.6, (f, s, d) => tone(f, s, d, "sine", 0.035, 0, 0.02)); },
+    },
+    xp: {      // bells + a big warm swell — very 2001
+      click: t => tone(1800, t, 0.018, "square", 0.02),
+      tick: t => bell(988 + Math.random() * 500, t, 0.08, 0.03),
+      jackpot: t => { pad([311, 466, 622, 784], t, 2.2, "sine", 0.025, 0.5); arp([622, 932, 1245, 1568], t + 0.3, 0.22, 1.0, (f, s, d) => bell(f, s, d, 0.045)); },
+      copy: t => { bell(1047, t, 0.5, 0.05); bell(1568, t + 0.11, 0.6, 0.04); },     // the "ding"
+      pick: t => bell(1175, t, 0.18, 0.035), unpick: t => bell(784, t, 0.18, 0.035),
+      ok: t => arp([622, 784, 932, 1245], t, 0.1, 0.5, (f, s, d) => bell(f, s, d, 0.045)),
+      err: t => arp([784, 587, 392], t, 0.13, 0.45, (f, s, d) => bell(f, s, d, 0.06)),  // critical-stop energy
+      theme: t => tone(400, t, 0.35, "triangle", 0.04, 800, 0.05), pop: t => bell(880, t, 0.25, 0.05),
+      startup: t => { pad([156, 233, 311, 392, 466], t, 3.0, "sine", 0.022, 0.8); arp([622, 932, 1245, 1568, 1865], t + 0.6, 0.25, 1.4, (f, s, d) => bell(f, s, d, 0.04)); },
+    },
+    w95: {     // chunky square waves + a brassy ta-da
+      click: t => tone(1000, t, 0.03, "square", 0.035),
+      tick: t => tone(500 + Math.random() * 400, t, 0.04, "square", 0.03),
+      jackpot: t => { arp([523, 659, 784], t, 0.09, 0.12, (f, s, d) => tone(f, s, d, "sawtooth", 0.04, 0, 0.01)); pad([523, 659, 784, 1047], t + 0.3, 0.9, "sawtooth", 0.018, 0.02); },
+      copy: t => tone(1568, t, 0.12, "square", 0.04),
+      pick: t => tone(784, t, 0.05, "square", 0.035), unpick: t => tone(392, t, 0.05, "square", 0.035),
+      ok: t => { tone(523, t, 0.1, "sawtooth", 0.04, 0, 0.01); pad([523, 659, 784, 1047], t + 0.12, 0.7, "sawtooth", 0.018, 0.02); },   // ta-da
+      err: t => pad([220, 277, 330], t, 0.35, "square", 0.03, 0.005),   // the "chord"
+      theme: t => tone(250, t, 0.25, "square", 0.03, 750), pop: t => tone(660, t, 0.06, "square", 0.04),
+      startup: t => { arp([262, 330, 392, 523, 659], t, 0.11, 0.25, (f, s, d) => tone(f, s, d, "square", 0.03)); pad([523, 659, 784], t + 0.6, 1.2, "sawtooth", 0.015, 0.1); },
+    },
+  };
+  const play = name => {
+    if (!on) return;
+    const set = SETS[document.documentElement.dataset.skin] || SETS.gurt, fn = set[name] || SETS.gurt[name];
+    if (!fn) return;
+    try {
+      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+      if (ctx.state === "suspended") ctx.resume();
+      fn(ctx.currentTime + 0.01);
+    } catch {}
+  };
+  return { play, get on() { return on; }, set(v) { on = v; } };
+})();
+const SFX_ROLES = {copy:"copy", scopy:"copy", cartcopy:"copy", lotto:"", lotto2:"", themebtn:"theme", sfxbtn:"", skinsel:""};
+document.addEventListener("click", e => {
+  const b = e.target.closest("button, .src, .bcat, .pkg, nav button, summary");
+  if (!b) return;
+  const role = b.id in SFX_ROLES ? SFX_ROLES[b.id] : "click";
+  if (role) SFX.play(role);
+}, true);
+
+$("#sfxbtn").addEventListener("click", () => { SFX.set(!SFX.on); $("#sfxbtn").textContent = SFX.on ? "🔊" : "🔇"; api("/api/sfx", {on:SFX.on}).catch(() => {}); SFX.play("pop"); });
+$("#sfxbtn").textContent = SFX.on ? "🔊" : "🔇";
+$("#bgroups").addEventListener("change", e => { if (e.target.dataset.n) SFX.play(e.target.checked ? "pick" : "unpick"); });
 $("#qall").addEventListener("click", searchAll);
+// ── 📥 drop in foreign files (or pick one): gurt figures out what it is and installs it ──
+const DROPPABLE = /\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|appimage|dmg|exe|msi|snap|flatpak|flatpakref|tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst)$/i;
+async function installFile(f){
+  if (!f) return;
+  if (!DROPPABLE.test(f.name)) { alert(`gurt can't install "${f.name}" 🤔 — try a .deb, .rpm, AppImage, .tar.gz, .exe, .dmg…`); return; }
+  if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return; }
+  if (!await ask(`Install ${f.name}?`, `gurt figures out what it is and installs it straight onto your system (no box). ${(f.size / 1048576).toFixed(1)} MB. Only install files you trust.`)) return;
+  $("#ctitle").textContent = `uploading ${f.name}…`; $("#cdot").className = "dot run"; $("#console").classList.add("open");
+  const r = await fetch("/api/drop", {method:"POST", headers:{"X-Gurt-Token":T, "X-Filename":encodeURIComponent(f.name)}, body:f}).then(x => x.json()).catch(() => ({error:"upload failed"}));
+  if (r.error) { $("#cdot").className = "dot bad"; alert(r.error); return; }
+  await run("dropped", r.name, {confirm:false});
+}
+$("#dropbtn").addEventListener("click", () => $("#dropin").click());
+$("#dropin").addEventListener("change", e => { installFile(e.target.files[0]); e.target.value = ""; });
+let dragDepth = 0;
+const hasFiles = e => [...(e.dataTransfer?.types || [])].includes("Files");
+addEventListener("dragenter", e => { if (!hasFiles(e)) return; e.preventDefault(); if (!dragDepth++) SFX.play("pop"); $("#dropzone").hidden = false; });
+addEventListener("dragover", e => { if (hasFiles(e)) e.preventDefault(); });
+addEventListener("dragleave", e => { if (hasFiles(e) && --dragDepth <= 0) { dragDepth = 0; $("#dropzone").hidden = true; } });
+addEventListener("drop", e => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth = 0; $("#dropzone").hidden = true; installFile(e.dataTransfer.files[0]); });
 // 🎰 lottery: spin through Main GURT, land on one, install it if you dare
 let spinning = false;
 function spinLottery(box, show, after){
@@ -901,8 +1048,8 @@ function spinLottery(box, show, after){
   const pool = S.main, win = pool[Math.floor(Math.random() * pool.length)];
   box.hidden = false; spinning = true; let i = 0;
   const tick = () => {
-    if (i++ < 18) { box.innerHTML = `<div class="spin">🎰 ${esc(pool[Math.floor(Math.random() * pool.length)].name)}</div>`; return setTimeout(tick, 40 + i * 6); }
-    spinning = false; box.innerHTML = show(win); after && after(win);
+    if (i++ < 18) { SFX.play("tick"); box.innerHTML = `<div class="spin">🎰 ${esc(pool[Math.floor(Math.random() * pool.length)].name)}</div>`; return setTimeout(tick, 40 + i * 6); }
+    spinning = false; SFX.play("jackpot"); box.innerHTML = show(win); after && after(win);
   };
   tick();
 }
@@ -978,7 +1125,7 @@ $("#themebtn").addEventListener("click", () => {
 darkMQ.addEventListener("change", themeIcon); themeIcon();
 // ── 🪟 skins ── (XP + 95 are always light, like the real thing)
 const applySkin = s => { document.documentElement.dataset.skin = s; $("#skinsel").value = s; $("#themebtn").hidden = s === "xp" || s === "w95"; };
-$("#skinsel").addEventListener("change", e => { applySkin(e.target.value); api("/api/skin", {skin:e.target.value}).catch(() => {}); });
+$("#skinsel").addEventListener("change", e => { applySkin(e.target.value); api("/api/skin", {skin:e.target.value}).catch(() => {}); if (typeof SFX !== "undefined") SFX.play("startup"); });
 applySkin(document.documentElement.dataset.skin || "gurt");
 
 // ── tabs ──

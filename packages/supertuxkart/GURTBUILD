@@ -1,9 +1,9 @@
-# SuperTuxKart — kart racing with Tux
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Kart racing starring Tux
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=supertuxkart
 pkgver=flathub
 pkgrel=1
-pkgdesc="SuperTuxKart — kart racing with Tux (Flathub)"
+pkgdesc="Kart racing starring Tux (Flathub)"
 url="https://flathub.org/apps/net.supertuxkart.SuperTuxKart"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

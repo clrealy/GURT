@@ -1,9 +1,9 @@
-# Mullvad Browser — Tor Browser's privacy, minus Tor
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Tor Browser's privacy without the Tor network
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=mullvad-browser
 pkgver=flathub
 pkgrel=1
-pkgdesc="Mullvad Browser — Tor Browser's privacy, minus Tor (Flathub)"
+pkgdesc="Tor Browser's privacy without the Tor network (Flathub)"
 url="https://flathub.org/apps/net.mullvad.MullvadBrowser"
 license="MPL-2.0"
 maintainer="clrealy"

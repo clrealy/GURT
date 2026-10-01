@@ -1,0 +1,15 @@
+# Simple video editor
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=pitivi
+pkgver=flathub
+pkgrel=1
+pkgdesc="Simple video editor (Flathub)"
+url="https://flathub.org/apps/org.pitivi.Pitivi"
+license="LGPL-2.1-or-later"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.pitivi.Pitivi

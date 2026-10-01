@@ -1,9 +1,9 @@
-# Podman Desktop — containers with a GUI
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Manage containers with a GUI
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=podman-desktop
 pkgver=flathub
 pkgrel=1
-pkgdesc="Podman Desktop — containers with a GUI (Flathub)"
+pkgdesc="Manage containers with a GUI (Flathub)"
 url="https://flathub.org/apps/io.podman_desktop.PodmanDesktop"
 license="Apache-2.0"
 maintainer="clrealy"

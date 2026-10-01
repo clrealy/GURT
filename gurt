@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.21.0"
+GURT_VERSION="0.24.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -426,12 +426,12 @@ extract_any() {
   case $f in
     *.deb)
       if command -v bsdtar >/dev/null; then bsdtar -xf "$f" -C "$to"
-      else command -v ar >/dev/null || die "need 'ar' (binutils) or bsdtar to open .deb files"
+      else need_tool ar ".deb files"
            (cd "$to" && ar x "$(readlink -f "$f")"); fi ;;
     *.rpm)
+      command -v bsdtar >/dev/null || { command -v rpm2cpio >/dev/null && command -v cpio >/dev/null; } || need_tool bsdtar ".rpm files"
       if command -v bsdtar >/dev/null; then bsdtar -xf "$f" -C "$to"
-      else command -v rpm2cpio >/dev/null && command -v cpio >/dev/null || die "need bsdtar, or rpm2cpio + cpio, to open .rpm files"
-           (cd "$to" && rpm2cpio "$(readlink -f "$f")" | cpio -idm --quiet); fi ;;
+      else (cd "$to" && rpm2cpio "$(readlink -f "$f")" | cpio -idm --quiet); fi ;;
     *.tar|*.tar.*|*.tgz|*.tbz2|*.txz|*.tzst) tar -xf "$f" -C "$to" ;;
     *.zip) if command -v bsdtar >/dev/null; then bsdtar -xf "$f" -C "$to"
            else command -v unzip >/dev/null || die "need unzip"; unzip -q -o "$f" -d "$to"; fi ;;
@@ -1001,7 +1001,17 @@ idx_provider() {
   awk -F'\t' -v d="$2" '{ c=split($7, a, ","); for (i=1; i<=c; i++) if (a[i] == d) { print $1; exit } }' "$(idx_file "$1")"
 }
 
-need_tool() { command -v "$1" >/dev/null || die "the $2 source needs '$1' — install it from your distro first"; }
+# missing a tool? get it from your distro instead of giving up (ar for .debs, zstd, gpgv…)
+need_tool() { # cmd what-needs-it
+  command -v "$1" >/dev/null && return 0
+  local dep
+  case $1 in ar) dep=binutils ;; gpg|gpgv) dep=gnupg ;; bsdtar) dep=bsdtar ;; rpm2cpio|cpio) dep=rpm2cpio ;; *) dep=$1 ;; esac
+  $NODEPS && die "$2 needs '$1' (and --nodeps is on) — install $dep from your distro first"
+  msg2 "$2 needs '$1' — getting $dep from your distro ($PM)"
+  # shellcheck disable=SC2046
+  install_native $(map_dep "$dep") >&2 || true
+  hash -r; command -v "$1" >/dev/null || die "couldn't install '$1' for $2 — install $dep from your distro, then try again"
+}
 
 sync_source() {
   local s=$1 tmp out

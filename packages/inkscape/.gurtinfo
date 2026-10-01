@@ -1,7 +1,7 @@
 pkgname = inkscape
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Inkscape — vector graphics editor (Flathub)
+pkgdesc = Vector graphics editor (Flathub)
 url = https://flathub.org/apps/org.inkscape.Inkscape
 license = GPL-3.0-or-later
 maintainer = clrealy

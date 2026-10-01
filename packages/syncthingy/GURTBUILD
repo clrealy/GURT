@@ -1,0 +1,16 @@
+# Run Syncthing from your system tray
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=syncthingy
+pkgver=flathub
+pkgrel=1
+pkgdesc="Run Syncthing from your system tray (Flathub)"
+url="https://flathub.org/apps/com.github.zocker_160.SyncThingy"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+aliases=(syncthing)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.zocker_160.SyncThingy

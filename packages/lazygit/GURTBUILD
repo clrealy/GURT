@@ -1,8 +1,8 @@
-# lazygit — git in your terminal, but make it easy
+# Git in your terminal, but way easier
 pkgname=lazygit
 pkgver=0.65.1
 pkgrel=1
-pkgdesc="lazygit — git in your terminal, but make it easy"
+pkgdesc="Git in your terminal, but way easier"
 url="https://github.com/jesseduffield/lazygit"
 license="MIT"
 maintainer="clrealy"

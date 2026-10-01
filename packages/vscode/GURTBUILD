@@ -1,9 +1,9 @@
-# Visual Studio Code — straight from the vendor's official signed apt repo.
+# Microsoft's code editor
 # key fingerprint source: https://learn.microsoft.com/en-us/linux/packages + https://code.visualstudio.com/docs/setup/linux
 pkgname=vscode
 pkgver=repo
 pkgrel=1
-pkgdesc="Visual Studio Code — code editor by Microsoft (official repo)"
+pkgdesc="Microsoft's code editor (official repo)"
 url="https://code.visualstudio.com"
 license="custom"
 maintainer="clrealy"

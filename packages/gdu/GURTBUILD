@@ -1,8 +1,8 @@
-# gdu — super fast disk usage analyzer
+# Super fast disk usage analyzer for the terminal
 pkgname=gdu
 pkgver=5.37.0
 pkgrel=1
-pkgdesc="gdu — super fast disk usage analyzer"
+pkgdesc="Super fast disk usage analyzer for the terminal"
 url="https://github.com/dundee/gdu"
 license="MIT"
 maintainer="clrealy"

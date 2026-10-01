@@ -1,0 +1,15 @@
+# IDE made for building GNOME apps
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=gnome-builder
+pkgver=flathub
+pkgrel=1
+pkgdesc="IDE made for building GNOME apps (Flathub)"
+url="https://flathub.org/apps/org.gnome.Builder"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.Builder

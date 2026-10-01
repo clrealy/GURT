@@ -1,9 +1,9 @@
-# GPU Screen Recorder — ShadowPlay-style clips + recording
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Record your screen and save instant replays, like ShadowPlay
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=gpu-screen-recorder
 pkgver=flathub
 pkgrel=1
-pkgdesc="GPU Screen Recorder — ShadowPlay-style clips + recording (Flathub)"
+pkgdesc="Record your screen and save instant replays, like ShadowPlay (Flathub)"
 url="https://flathub.org/apps/com.dec05eba.gpu_screen_recorder"
 license="GPL-3.0-only"
 maintainer="clrealy"
