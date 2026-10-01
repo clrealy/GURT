@@ -3,7 +3,7 @@
 pkgname=proton-pass
 pkgver=flathub
 pkgrel=1
-pkgdesc="Password manager from Proton (Flathub)"
+pkgdesc="Password manager from Proton"
 url="https://flathub.org/apps/me.proton.Pass"
 license="GPL-3.0-only"
 maintainer="clrealy"

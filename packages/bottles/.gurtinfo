@@ -1,7 +1,7 @@
 pkgname = bottles
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Run Windows apps and games with Wine, made easy (Flathub)
+pkgdesc = Run Windows apps and games with Wine, minus the pain
 url = https://flathub.org/apps/com.usebottles.bottles
 license = GPL-3.0-only
 maintainer = clrealy

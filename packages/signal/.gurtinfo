@@ -1,7 +1,7 @@
 pkgname = signal
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Private messaging (Flathub)
+pkgdesc = Private messaging
 url = https://flathub.org/apps/org.signal.Signal
 license = AGPL-3.0-only
 maintainer = clrealy

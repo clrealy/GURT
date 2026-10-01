@@ -3,7 +3,7 @@
 pkgname=jdownloader
 pkgver=flathub
 pkgrel=1
-pkgdesc="Download manager that handles just about any site (Flathub)"
+pkgdesc="Download manager that handles just about any site"
 url="https://flathub.org/apps/org.jdownloader.JDownloader"
 license="GPL-3.0-only"
 maintainer="clrealy"

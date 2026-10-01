@@ -3,7 +3,7 @@
 pkgname=localsend
 pkgver=flathub
 pkgrel=1
-pkgdesc="Send files to nearby devices, like AirDrop for everything (Flathub)"
+pkgdesc="Send files to nearby devices, like AirDrop for everything"
 url="https://flathub.org/apps/org.localsend.localsend_app"
 license="MIT"
 maintainer="clrealy"

@@ -1,7 +1,7 @@
 pkgname = sublime-text
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Fast, minimal code editor (Flathub)
+pkgdesc = Fast, minimal code editor
 url = https://flathub.org/apps/com.sublimetext.three
 license = Proprietary
 maintainer = clrealy

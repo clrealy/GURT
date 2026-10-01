@@ -3,7 +3,7 @@
 pkgname=openrct2
 pkgver=flathub
 pkgrel=1
-pkgdesc="Open source RollerCoaster Tycoon 2 (Flathub)"
+pkgdesc="Open source remake of RollerCoaster Tycoon 2"
 url="https://flathub.org/apps/io.openrct2.OpenRCT2"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

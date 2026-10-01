@@ -1,7 +1,7 @@
 pkgname = deja-dup
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Simple backups that just work (Flathub)
+pkgdesc = Simple backups that just work
 url = https://flathub.org/apps/org.gnome.DejaDup
 license = GPL-3.0-or-later
 maintainer = clrealy

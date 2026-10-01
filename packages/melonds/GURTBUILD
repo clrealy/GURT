@@ -3,7 +3,7 @@
 pkgname=melonds
 pkgver=flathub
 pkgrel=1
-pkgdesc="Nintendo DS emulator (Flathub)"
+pkgdesc="Nintendo DS emulator"
 url="https://flathub.org/apps/net.kuribo64.melonDS"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

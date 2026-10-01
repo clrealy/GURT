@@ -3,7 +3,7 @@
 pkgname=shotcut
 pkgver=flathub
 pkgrel=1
-pkgdesc="Cross-platform video editor (Flathub)"
+pkgdesc="Free video editor that runs everywhere"
 url="https://flathub.org/apps/org.shotcut.Shotcut"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

@@ -3,7 +3,7 @@
 pkgname=musescore
 pkgver=flathub
 pkgrel=1
-pkgdesc="Write and play back sheet music (Flathub)"
+pkgdesc="Write sheet music and hear it played back"
 url="https://flathub.org/apps/org.musescore.MuseScore"
 license="GPL-3.0-only"
 maintainer="clrealy"

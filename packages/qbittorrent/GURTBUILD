@@ -3,7 +3,7 @@
 pkgname=qbittorrent
 pkgver=flathub
 pkgrel=1
-pkgdesc="Free BitTorrent client with no ads (Flathub)"
+pkgdesc="Free BitTorrent client with no ads"
 url="https://flathub.org/apps/org.qbittorrent.qBittorrent"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

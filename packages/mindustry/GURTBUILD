@@ -3,7 +3,7 @@
 pkgname=mindustry
 pkgver=flathub
 pkgrel=1
-pkgdesc="Factory building meets tower defense (Flathub)"
+pkgdesc="Factory building meets tower defense"
 url="https://flathub.org/apps/com.github.Anuken.Mindustry"
 license="GPL-3.0-only"
 maintainer="clrealy"

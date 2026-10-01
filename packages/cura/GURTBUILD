@@ -3,7 +3,7 @@
 pkgname=cura
 pkgver=flathub
 pkgrel=1
-pkgdesc="Slice 3D models for your printer (Flathub)"
+pkgdesc="Slice 3D models so your printer can print them"
 url="https://flathub.org/apps/com.ultimaker.cura"
 license="LGPL-3.0-or-later"
 maintainer="clrealy"

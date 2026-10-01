@@ -1,7 +1,7 @@
 pkgname = evolution
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Email, calendar and contacts all in one (Flathub)
+pkgdesc = Email, calendar and contacts all in one
 url = https://flathub.org/apps/org.gnome.Evolution
 license = GPL-2.0-or-later
 maintainer = clrealy

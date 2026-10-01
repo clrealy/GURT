@@ -3,7 +3,7 @@
 pkgname=protonvpn
 pkgver=flathub
 pkgrel=1
-pkgdesc="Free VPN from the people behind Proton Mail (Flathub)"
+pkgdesc="Free VPN from the people behind Proton Mail"
 url="https://flathub.org/apps/com.protonvpn.www"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

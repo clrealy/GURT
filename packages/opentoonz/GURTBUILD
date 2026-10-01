@@ -3,7 +3,7 @@
 pkgname=opentoonz
 pkgver=flathub
 pkgrel=1
-pkgdesc="2D animation software, the same one Studio Ghibli used (Flathub)"
+pkgdesc="2D animation software, the same one Studio Ghibli used"
 url="https://flathub.org/apps/io.github.OpenToonz"
 license="BSD-3-Clause"
 maintainer="clrealy"

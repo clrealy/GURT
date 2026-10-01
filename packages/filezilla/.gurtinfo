@@ -1,7 +1,7 @@
 pkgname = filezilla
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Upload and download files over FTP and SFTP (Flathub)
+pkgdesc = Upload and download files over FTP and SFTP
 url = https://flathub.org/apps/org.filezillaproject.Filezilla
 license = GPL-2.0-or-later
 maintainer = clrealy

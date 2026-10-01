@@ -1,7 +1,7 @@
 pkgname = neovim
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Vim, but more extensible (Flathub)
+pkgdesc = Vim, but more extensible
 url = https://flathub.org/apps/io.neovim.nvim
 license = Apache-2.0
 maintainer = clrealy

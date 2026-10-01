@@ -3,7 +3,7 @@
 pkgname=xournalpp
 pkgver=flathub
 pkgrel=1
-pkgdesc="Take handwritten notes and scribble on PDFs (Flathub)"
+pkgdesc="Take handwritten notes and scribble on PDFs"
 url="https://flathub.org/apps/com.github.xournalpp.xournalpp"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

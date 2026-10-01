@@ -3,7 +3,7 @@
 pkgname=flameshot
 pkgver=flathub
 pkgrel=1
-pkgdesc="Take screenshots and draw on them (Flathub)"
+pkgdesc="Take screenshots and draw on them"
 url="https://flathub.org/apps/org.flameshot.Flameshot"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

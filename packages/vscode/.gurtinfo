@@ -1,7 +1,7 @@
 pkgname = vscode
 pkgver = repo
 pkgrel = 1
-pkgdesc = Microsoft's code editor (official repo)
+pkgdesc = Microsoft's code editor
 url = https://code.visualstudio.com
 license = custom
 maintainer = clrealy

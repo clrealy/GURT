@@ -1,7 +1,7 @@
 pkgname = ardour
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Pro audio recording and mixing studio (Flathub)
+pkgdesc = Pro studio for recording and mixing audio
 url = https://flathub.org/apps/org.ardour.Ardour
 license = GPL-2.0-or-later
 maintainer = clrealy

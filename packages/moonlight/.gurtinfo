@@ -1,7 +1,7 @@
 pkgname = moonlight
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Stream games from your gaming PC to any screen (Flathub)
+pkgdesc = Stream games from your gaming PC to any screen
 url = https://flathub.org/apps/com.moonlight_stream.Moonlight
 license = GPL-3.0-or-later
 maintainer = clrealy

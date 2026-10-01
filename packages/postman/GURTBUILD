@@ -3,7 +3,7 @@
 pkgname=postman
 pkgver=flathub
 pkgrel=1
-pkgdesc="Test and build APIs (Flathub)"
+pkgdesc="Test and build APIs"
 url="https://flathub.org/apps/com.getpostman.Postman"
 license="Proprietary"
 maintainer="clrealy"

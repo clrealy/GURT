@@ -3,7 +3,7 @@
 pkgname=arduino-ide
 pkgver=flathub
 pkgrel=1
-pkgdesc="Write code and upload it to Arduino boards (Flathub)"
+pkgdesc="Write code and upload it to Arduino boards"
 url="https://flathub.org/apps/cc.arduino.IDE2"
 license="AGPL-3.0-only"
 maintainer="clrealy"

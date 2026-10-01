@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.24.0"
+GURT_VERSION="0.25.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -2602,8 +2602,8 @@ gui_pkgs() { # the distro packages a real app window needs (python GObject + Web
   pkgs=($(map_dep gui-webview))
   if [[ ${pkgs[*]} == gui-webview ]]; then   # older deps.map → built-in list
     case $PM in
-      pacman) pkgs=(python-gobject webkit2gtk-4.1) ;;  apt) pkgs=(python3-gi gir1.2-webkit2-4.1) ;;
-      dnf|yum) pkgs=(python3-gobject webkit2gtk4.1) ;; zypper) pkgs=(python3-gobject-Gdk typelib-1_0-WebKit2-4_1) ;;
+      pacman) pkgs=(python-gobject webkit2gtk-4.1 gst-plugins-good) ;;  apt) pkgs=(python3-gi gir1.2-webkit2-4.1 gstreamer1.0-plugins-good) ;;
+      dnf|yum) pkgs=(python3-gobject webkit2gtk4.1 gstreamer1-plugins-good) ;; zypper) pkgs=(python3-gobject-Gdk typelib-1_0-WebKit2-4_1 gstreamer-plugins-good) ;;
       *) pkgs=() ;;
     esac
   fi

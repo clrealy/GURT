@@ -1,7 +1,7 @@
 pkgname = pika-backup
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Easy backups powered by borg (Flathub)
+pkgdesc = Easy backups powered by borg
 url = https://flathub.org/apps/org.gnome.World.PikaBackup
 license = GPL-3.0-or-later
 maintainer = clrealy

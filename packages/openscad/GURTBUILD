@@ -3,7 +3,7 @@
 pkgname=openscad
 pkgver=flathub
 pkgrel=1
-pkgdesc="Build 3D models by writing code (Flathub)"
+pkgdesc="Build 3D models by writing code"
 url="https://flathub.org/apps/org.openscad.OpenSCAD"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

@@ -3,7 +3,7 @@
 pkgname=celluloid
 pkgver=flathub
 pkgrel=1
-pkgdesc="Clean GTK video player with mpv under the hood (Flathub)"
+pkgdesc="Clean GTK video player with mpv under the hood"
 url="https://flathub.org/apps/io.github.celluloid_player.Celluloid"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

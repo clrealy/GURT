@@ -3,7 +3,7 @@
 pkgname=librewolf
 pkgver=flathub
 pkgrel=1
-pkgdesc="Firefox with the privacy settings cranked all the way up (Flathub)"
+pkgdesc="Firefox with the privacy settings cranked all the way up"
 url="https://flathub.org/apps/io.gitlab.librewolf-community"
 license="MPL-2.0"
 maintainer="clrealy"

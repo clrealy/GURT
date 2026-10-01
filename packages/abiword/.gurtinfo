@@ -1,7 +1,7 @@
 pkgname = abiword
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Lightweight word processor that opens fast (Flathub)
+pkgdesc = Lightweight word processor that opens in a blink
 url = https://flathub.org/apps/com.abisource.AbiWord
 license = GPL-2.0-or-later
 maintainer = clrealy

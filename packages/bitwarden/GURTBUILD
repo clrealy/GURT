@@ -3,7 +3,7 @@
 pkgname=bitwarden
 pkgver=flathub
 pkgrel=1
-pkgdesc="Open source password manager that syncs everywhere (Flathub)"
+pkgdesc="Open source password manager that syncs everywhere"
 url="https://flathub.org/apps/com.bitwarden.desktop"
 license="GPL-3.0-only"
 maintainer="clrealy"

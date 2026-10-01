@@ -3,7 +3,7 @@
 pkgname=falkon
 pkgver=flathub
 pkgrel=1
-pkgdesc="KDE's lightweight web browser (Flathub)"
+pkgdesc="KDE's lightweight web browser"
 url="https://flathub.org/apps/org.kde.falkon"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

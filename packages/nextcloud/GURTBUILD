@@ -3,7 +3,7 @@
 pkgname=nextcloud
 pkgver=flathub
 pkgrel=1
-pkgdesc="Sync your files with your Nextcloud server (Flathub)"
+pkgdesc="Sync your files with your Nextcloud server"
 url="https://flathub.org/apps/com.nextcloud.desktopclient.nextcloud"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

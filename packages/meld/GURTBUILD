@@ -3,7 +3,7 @@
 pkgname=meld
 pkgver=flathub
 pkgrel=1
-pkgdesc="Compare and merge files side by side (Flathub)"
+pkgdesc="Compare and merge files side by side"
 url="https://flathub.org/apps/org.gnome.meld"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

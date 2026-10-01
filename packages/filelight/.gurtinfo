@@ -1,7 +1,7 @@
 pkgname = filelight
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Shows your disk usage as a sunburst chart (Flathub)
+pkgdesc = Shows your disk usage as a sunburst chart
 url = https://flathub.org/apps/org.kde.filelight
 license = GPL-2.0-or-later
 maintainer = clrealy

@@ -3,7 +3,7 @@
 pkgname=fontforge
 pkgver=flathub
 pkgrel=1
-pkgdesc="Design and edit fonts (Flathub)"
+pkgdesc="Design and edit fonts"
 url="https://flathub.org/apps/org.fontforge.FontForge"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

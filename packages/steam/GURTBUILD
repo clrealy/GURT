@@ -3,7 +3,7 @@
 pkgname=steam
 pkgver=flathub
 pkgrel=1
-pkgdesc="Valve's game store and launcher (Flathub)"
+pkgdesc="Valve's game store and launcher"
 url="https://flathub.org/apps/com.valvesoftware.Steam"
 license="Proprietary"
 maintainer="clrealy"

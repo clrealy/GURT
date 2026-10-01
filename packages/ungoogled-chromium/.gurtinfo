@@ -1,7 +1,7 @@
 pkgname = ungoogled-chromium
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Chromium with all the Google stuff taken out (Flathub)
+pkgdesc = Chromium with all the Google stuff taken out
 url = https://flathub.org/apps/io.github.ungoogled_software.ungoogled_chromium
 license = BSD-3-Clause
 maintainer = clrealy

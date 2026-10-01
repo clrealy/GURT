@@ -3,7 +3,7 @@
 pkgname=anki
 pkgver=flathub
 pkgrel=1
-pkgdesc="Flashcards that actually help you remember stuff (Flathub)"
+pkgdesc="Flashcards that actually help you remember stuff"
 url="https://flathub.org/apps/net.ankiweb.Anki"
 license="AGPL-3.0-or-later"
 maintainer="clrealy"

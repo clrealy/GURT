@@ -3,7 +3,7 @@
 pkgname=goverlay
 pkgver=flathub
 pkgrel=1
-pkgdesc="Set up MangoHud and vkBasalt without editing config files (Flathub)"
+pkgdesc="Set up MangoHud and vkBasalt without touching config files"
 url="https://flathub.org/apps/io.github.benjamimgois.goverlay"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

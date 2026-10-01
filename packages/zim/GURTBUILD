@@ -3,7 +3,7 @@
 pkgname=zim
 pkgver=flathub
 pkgrel=1
-pkgdesc="Desktop wiki for your notes (Flathub)"
+pkgdesc="Desktop wiki for your notes"
 url="https://flathub.org/apps/org.zim_wiki.Zim"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

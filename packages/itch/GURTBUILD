@@ -3,7 +3,7 @@
 pkgname=itch
 pkgver=flathub
 pkgrel=1
-pkgdesc="Store and launcher for indie games from itch.io (Flathub)"
+pkgdesc="Store and launcher for indie games from itch.io"
 url="https://flathub.org/apps/io.itch.itch"
 license="MIT"
 maintainer="clrealy"

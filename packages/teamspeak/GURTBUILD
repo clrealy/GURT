@@ -3,7 +3,7 @@
 pkgname=teamspeak
 pkgver=flathub
 pkgrel=1
-pkgdesc="Voice chat for gaming (Flathub)"
+pkgdesc="Voice chat for gaming"
 url="https://flathub.org/apps/com.teamspeak.TeamSpeak3"
 license="Proprietary"
 maintainer="clrealy"

@@ -1,7 +1,7 @@
 pkgname = apostrophe
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Distraction-free markdown writer (Flathub)
+pkgdesc = Distraction-free markdown writer
 url = https://flathub.org/apps/org.gnome.gitlab.somas.Apostrophe
 license = GPL-3.0-or-later
 maintainer = clrealy

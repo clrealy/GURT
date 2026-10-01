@@ -3,7 +3,7 @@
 pkgname=transmission
 pkgver=flathub
 pkgrel=1
-pkgdesc="Simple torrent client (Flathub)"
+pkgdesc="Simple torrent client"
 url="https://flathub.org/apps/com.transmissionbt.Transmission"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

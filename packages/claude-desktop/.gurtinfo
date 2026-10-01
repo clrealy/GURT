@@ -1,7 +1,7 @@
 pkgname = claude-desktop
 pkgver = repo
 pkgrel = 1
-pkgdesc = Chat, Cowork and Claude Code in one app (official repo, Linux beta)
+pkgdesc = Chat, Cowork and Claude Code in one app (Linux beta)
 url = https://claude.com/download
 license = custom
 maintainer = clrealy

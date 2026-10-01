@@ -3,7 +3,7 @@
 pkgname=kooha
 pkgver=flathub
 pkgrel=1
-pkgdesc="Dead simple screen recorder (Flathub)"
+pkgdesc="Dead simple screen recorder"
 url="https://flathub.org/apps/io.github.seadve.Kooha"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

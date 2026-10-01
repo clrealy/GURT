@@ -1,7 +1,7 @@
 pkgname = vlc
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Plays pretty much any video or audio file (Flathub)
+pkgdesc = Plays pretty much any video or audio file
 url = https://flathub.org/apps/org.videolan.VLC
 license = GPL-2.0-or-later
 maintainer = clrealy

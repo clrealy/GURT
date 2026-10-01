@@ -3,7 +3,7 @@
 pkgname=notesnook
 pkgver=flathub
 pkgrel=1
-pkgdesc="Private, encrypted notes (Flathub)"
+pkgdesc="Private, encrypted notes"
 url="https://flathub.org/apps/com.notesnook.Notesnook"
 license="GPL-3.0-only"
 maintainer="clrealy"

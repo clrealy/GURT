@@ -3,7 +3,7 @@
 pkgname=gimp
 pkgver=flathub
 pkgrel=1
-pkgdesc="Free and open source image editor (official Flathub build)"
+pkgdesc="Free and open source image editor"
 url="https://www.gimp.org"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

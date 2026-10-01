@@ -3,7 +3,7 @@
 pkgname=flatseal
 pkgver=flathub
 pkgrel=1
-pkgdesc="Manage what your flatpak apps are allowed to touch (Flathub)"
+pkgdesc="Control what your flatpak apps are allowed to touch"
 url="https://flathub.org/apps/com.github.tchx84.Flatseal"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

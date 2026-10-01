@@ -56,4 +56,4 @@ vulkan      apt=libvulkan-dev  dnf=vulkan-loader-devel  pacman=vulkan-icd-loader
 dbus        apt=libdbus-1-dev  dnf=dbus-devel  pacman=dbus  zypper=dbus-1-devel  apk=dbus-dev  xbps=dbus-devel  emerge=sys-apps/dbus
 
 # ── gurt gui app window (python GObject + WebKit2GTK) ──
-gui-webview  apt=python3-gi,gir1.2-webkit2-4.1  dnf=python3-gobject,webkit2gtk4.1  pacman=python-gobject,webkit2gtk-4.1  zypper=python3-gobject-Gdk,typelib-1_0-WebKit2-4_1  apk=py3-gobject3,webkit2gtk-4.1  xbps=python3-gobject,libwebkit2gtk41  eopkg=python-gobject,libwebkit-gtk41
+gui-webview  apt=python3-gi,gir1.2-webkit2-4.1,gstreamer1.0-plugins-good  dnf=python3-gobject,webkit2gtk4.1,gstreamer1-plugins-good  pacman=python-gobject,webkit2gtk-4.1,gst-plugins-good  zypper=python3-gobject-Gdk,typelib-1_0-WebKit2-4_1,gstreamer-plugins-good  apk=py3-gobject3,webkit2gtk-4.1,gst-plugins-good  xbps=python3-gobject,libwebkit2gtk41,gst-plugins-good1  eopkg=python-gobject,libwebkit-gtk41,gstreamer-1.0-plugins-good

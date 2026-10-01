@@ -3,7 +3,7 @@
 pkgname=openttd
 pkgver=flathub
 pkgrel=1
-pkgdesc="Build a transport empire, Transport Tycoon style (Flathub)"
+pkgdesc="Build a transport empire, Transport Tycoon style"
 url="https://flathub.org/apps/org.openttd.OpenTTD"
 license="GPL-2.0-only"
 maintainer="clrealy"

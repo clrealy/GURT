@@ -1,7 +1,7 @@
 pkgname = bruno
 pkgver = flathub
 pkgrel = 1
-pkgdesc = API client that keeps your collections offline (Flathub)
+pkgdesc = API client that keeps your collections offline in plain files
 url = https://flathub.org/apps/com.usebruno.Bruno
 license = MIT
 maintainer = clrealy

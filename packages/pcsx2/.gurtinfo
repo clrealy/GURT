@@ -1,7 +1,7 @@
 pkgname = pcsx2
 pkgver = flathub
 pkgrel = 1
-pkgdesc = PlayStation 2 emulator (Flathub)
+pkgdesc = PlayStation 2 emulator
 url = https://flathub.org/apps/net.pcsx2.PCSX2
 license = GPL-3.0-or-later
 maintainer = clrealy

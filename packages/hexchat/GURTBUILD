@@ -3,7 +3,7 @@
 pkgname=hexchat
 pkgver=flathub
 pkgrel=1
-pkgdesc="Chat on IRC (Flathub)"
+pkgdesc="Chat on IRC"
 url="https://flathub.org/apps/io.github.Hexchat"
 license="GPL-2.0-or-later"
 maintainer="clrealy"
