@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.19.4"
+GURT_VERSION="0.21.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -42,7 +42,7 @@ FOREIGN_SOURCES="aur apt dnf zypper pacman flatpak snap"
 IDX_DIR="$GURT_CACHE/index"
 IDX_MAX_AGE="${IDX_MAX_AGE:-86400}"   # re-download foreign indexes after a day
 
-NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT="" EXPECT_FPR="" BOX=false NOBOX=false SCAN=false NO_DESKTOP=false QUIET_YEET=false
+NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT="" EXPECT_FPR="" BOX=false NOBOX=false SCAN=false NO_DESKTOP=false QUIET_YEET=false NO_SYSTEM=false
 
 # ───────────────────────── pretty output ─────────────────────────
 if [[ -t 2 && -z ${NO_COLOR:-} ]]; then
@@ -63,6 +63,9 @@ ask()  {
 R="${GURT_ROOT%/}"                       # "" when root is /
 DB="$R/var/lib/gurt/local"
 SELF_DIR=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
+
+# running inside WSL (gurt on Windows)?
+is_wsl() { [[ -n ${WSL_DISTRO_NAME:-} || -n ${WSL_INTEROP:-} ]] || grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; }
 
 depmap_file() {
   local f
@@ -632,6 +635,7 @@ add_desktop_icons() {
   local key=$1 desk rel f out made=()
   { $NO_DESKTOP || [[ ${GURT_DESKTOP_ICONS:-1} == 0 ]]; } && return 0
   (( EUID == 0 )) && return 0   # root's desktop isn't yours
+  is_wsl && return 0            # WSL: apps land in the Windows Start menu (WSLg), there's no Linux desktop
   desk=$(desktop_dir); mkdir -p "$desk" 2>/dev/null || return 0
   while IFS= read -r rel; do
     f="$R/$rel"; out="$desk/${rel##*/}"
@@ -1911,6 +1915,9 @@ flatpak_install() { # name reason
 }
 
 ensure_snap() {
+  if is_wsl && [[ ! -d /run/systemd/system ]]; then
+    die "snaps need systemd, and it's off in your WSL 🪟 turn it on: put [boot] + systemd=true in /etc/wsl.conf, run 'wsl --shutdown' in PowerShell, then try again (or grab the flatpak/ version)"
+  fi
   command -v snap >/dev/null && return 0
   $NODEPS && die "snap isn't installed (and --nodeps is on)"
   msg "snap isn't installed — setting up snapd"
@@ -2400,6 +2407,9 @@ de_remove() { # name — removes a desktop through your package manager, which s
 }
 cmd_de() {
   local sub=${1:-list} d
+  if is_wsl; then
+    die "you're on Windows (WSL) 🪟 — Linux desktops don't run here. Your Linux apps show up right in the Windows Start menu instead"
+  fi
   case $sub in
     list|ls)
       printf '%sdesktops you can install on %s (%s):%s\n' "$B" "$(. /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-this distro}")" "$PM" "$R0"
@@ -2537,7 +2547,7 @@ cmd_complete() {
     installed) for d in "$DB"/*/; do [[ -d $d ]] && pretty "$(basename "$d")"; done ;;
     available) for f in "$GURT_REPO_DIR"/packages/*/.gurtinfo; do [[ -f $f ]] || continue
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
-    commands)  printf '%s\n' sync search info install update upgrade self-update remove autoremove list files owns lottery \
+    commands)  printf '%s\n' sync search info install update upgrade self-update remove autoremove list files owns lottery sysup \
                  build add srcinfo checksum new repo dirt gui de outsource rollback hold unhold export import completions doctor version help yo ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman flatpak snap dirt ;;
   esac
@@ -2979,14 +2989,84 @@ cmd_update() {   # like apt update: refresh everything, install nothing
   refresh_all
   msg "checking for newer versions"
   find_outdated
-  local v; v=$(repo_gurt_ver)
+  local n sys=false v; n=$(system_updates_count); [[ -n $n && $n != 0 ]] && sys=true
+  $sys && msg "🐧 $n system update(s) waiting from $PM — gurt upgrade installs them too"
+  v=$(repo_gurt_ver)
   if (( ${#TODO[@]} )); then msg "${#TODO[@]} package(s) can be upgraded — run: gurt upgrade"
   elif [[ -n $v ]] && vnewer "$GURT_VERSION" "$v"; then msg "your apps are up to date — but gurt itself has an update 👇"
+  elif $sys; then msg "everything gurt installed is up to date — just your system has updates 👆"
   else msg "everything's up to date, you're chillin 😎"; fi
   check_self
 }
 
-cmd_upgrade() {  # refresh + actually install the new versions
+# ── your whole system, with its own package manager (pacman -Syu, zypper dup, apt full-upgrade…) ──
+os_id() { [[ -r /etc/os-release ]] && (. /etc/os-release; echo "${ID:-}"); }
+system_upgrade() {
+  if [[ -n $R ]]; then msg2 "--root: leaving the real system alone"; return 0; fi
+  local y=() id; id=$(os_id)
+  if [[ -e /run/ostree-booted ]] && command -v rpm-ostree >/dev/null; then   # Fedora Atomic (Silverblue, Kinoite, Bazzite…)
+    msg "🐧 updating your system (rpm-ostree — it's an immutable distro)"
+    asroot rpm-ostree upgrade || warn "rpm-ostree upgrade had problems"
+    msg2 "reboot to boot into the update"; return 0
+  fi
+  [[ -e /etc/NIXOS ]] && { warn "NixOS updates through its config: sudo nixos-rebuild switch --upgrade"; return 0; }
+  case $PM in
+    apt)
+      msg "🐧 updating your system (apt full-upgrade)"
+      [[ -n $(ls -A /var/lib/dpkg/updates 2>/dev/null) ]] && asroot dpkg --configure -a
+      local o=(-o DPkg::Lock::Timeout=300) ag=(apt-get)
+      $NOCONFIRM && { y=(-y); o+=(-o Dpkg::Options::=--force-confold); ag=(env DEBIAN_FRONTEND=noninteractive apt-get); }
+      asroot "${ag[@]}" "${o[@]}" update && asroot "${ag[@]}" "${o[@]}" "${y[@]}" full-upgrade ;;
+    dnf)
+      msg "🐧 updating your system (dnf upgrade)"
+      $NOCONFIRM && y=(-y); asroot dnf upgrade --refresh "${y[@]}" ;;
+    yum)
+      msg "🐧 updating your system (yum update)"
+      $NOCONFIRM && y=(-y); asroot yum update "${y[@]}" ;;
+    pacman)
+      msg "🐧 updating your system (pacman -Syu)"
+      $NOCONFIRM && y=(--noconfirm); asroot pacman -Syu "${y[@]}" ;;
+    zypper)
+      $NOCONFIRM && y=(--non-interactive)
+      case $id in
+        opensuse-tumbleweed|opensuse-slowroll|opensuse-microos|opensuse-aeon|opensuse-kalpa)   # rolling: dup is the only right way
+          msg "🐧 updating your system (zypper dup — Tumbleweed style)"
+          asroot zypper "${y[@]}" refresh && asroot zypper "${y[@]}" dup ;;
+        *) msg "🐧 updating your system (zypper update)"
+           asroot zypper "${y[@]}" refresh && asroot zypper "${y[@]}" update ;;
+      esac ;;
+    apk)
+      msg "🐧 updating your system (apk upgrade)"
+      asroot apk upgrade -U ;;
+    xbps)
+      msg "🐧 updating your system (xbps-install -Su)"
+      $NOCONFIRM && y=(-y)
+      asroot xbps-install -Su "${y[@]}" xbps && asroot xbps-install -Su "${y[@]}" ;;   # xbps itself has to go first
+    eopkg)
+      msg "🐧 updating your system (eopkg upgrade)"
+      $NOCONFIRM && y=(-y); asroot eopkg upgrade "${y[@]}" ;;
+    emerge)
+      msg "🐧 updating your system (emerge --sync + @world — grab a snack 🍿)"
+      asroot emerge --sync && asroot emerge --ask="$($NOCONFIRM && echo n || echo y)" --update --deep --newuse @world ;;
+    *) warn "don't know how to update this distro's own packages ($PM) — skipping that part"; return 0 ;;
+  esac || { warn "the system update had problems (scroll up) — carrying on with gurt's own stuff"; return 0; }
+  msg "system updated ✅"
+}
+# how many system updates are waiting (best effort, never needs root; empty = can't tell)
+system_updates_count() {
+  case $PM in
+    pacman) command -v checkupdates >/dev/null && checkupdates 2>/dev/null | grep -c . ;;
+    dnf)    dnf -q check-update 2>/dev/null | grep -cE '^[[:alnum:]][^ ]*\.[^ ]+ ' ;;
+    apt)    apt list --upgradable 2>/dev/null | grep -c / ;;
+    zypper) zypper -q --no-refresh list-updates 2>/dev/null | grep -c '^v ' ;;
+    apk)    apk version -l '<' 2>/dev/null | grep -vc '^Installed' ;;
+  esac
+  return 0
+}
+cmd_sysup() { system_upgrade; }
+
+cmd_upgrade() {  # your system + everything gurt installed
+  $NO_SYSTEM || [[ ${GURT_SYSTEM_UPGRADE:-1} == 0 ]] || system_upgrade
   refresh_all
   find_outdated
   check_self
@@ -3303,6 +3383,7 @@ cmd_repo() {
 
 cmd_doctor() {
   local id="unknown"; [[ -r /etc/os-release ]] && id=$(. /etc/os-release; echo "${PRETTY_NAME:-$ID}")
+  is_wsl && id="$id (on Windows, WSL ${WSL_DISTRO_NAME:-})"
   printf '%-14s %s\n' gurt "$GURT_VERSION" distro "$id" "pkg manager" "$PM" arch "$CARCH" \
     prefix "$GURT_PREFIX" root "${GURT_ROOT}" "main repo" "$GURT_REPO_URL" cache "$GURT_CACHE" \
     deps.map "$(depmap_file || true)"
@@ -3418,7 +3499,9 @@ ${B}using packages${R0}
   info [src/]pkg       show package details
   install [src/]pkg…   install (deps come from your distro first, then the source)
   update               refresh package lists + show what's outdated (installs nothing)
-  upgrade              update everything gurt installed, from every source
+  upgrade              update EVERYTHING: your system (pacman -Syu / zypper dup / apt full-upgrade / dnf upgrade…),
+                       then everything gurt installed, flatpaks + snaps (--no-system: skip the system part)
+  sysup                just update your system with your distro's own package manager
   self-update          update gurt itself
   remove pkg…          uninstall (only removes files gurt put there)
   autoremove           remove deps nothing needs anymore
@@ -3492,6 +3575,7 @@ main() {
       --nodeps)       NODEPS=true ;;
       --nocheck)      NOCHECK=true ;;
       --no-desktop)   NO_DESKTOP=true ;;
+      --no-system)    NO_SYSTEM=true ;;
       --quiet-yeet)   QUIET_YEET=true ;;
       --keep)         KEEP=true ;;
       --root)         shift; GURT_ROOT=${1:?--root needs a dir}; R="${GURT_ROOT%/}"; DB="$R/var/lib/gurt/local" ;;
@@ -3528,6 +3612,7 @@ main() {
                                  elif $SCAN && [[ $p != */* ]]; then scan_install "$p"; else install_any "$p" explicit; fi; done ;;
     update|refresh)    cmd_update ;;
     upgrade|up)        cmd_upgrade ;;
+    sysup|system-upgrade|syu) cmd_sysup ;;
     self-update|selfupdate) cmd_self_update ;;
     remove|rm|yeet)    (( $# )) || die "remove what tho"; for p; do remove_pkg "$p"; done; play_scream ;;
     autoremove|clean)  cmd_autoremove ;;
@@ -3549,7 +3634,7 @@ main() {
     lottery|lotto|gamble) cmd_lottery "$@" ;;
     import)            cmd_import "$@" ;;
     __complete)        cmd_complete "$@" ;;
-    __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" ;;
+    __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\nwsl=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" "$(is_wsl && echo yes || echo no)" ;;
     gui)               cmd_gui "$@" ;;
     completions)       completion_script "${1:?usage: gurt completions bash|zsh|fish}" ;;
     outsource|os|clone) (( $# )) || die "outsource what tho — gurt outsource https://github.com/user/repo (or a file: gurt outsource ./app.deb)"

@@ -17,7 +17,7 @@ SPEC_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+°:@/-]{0,200}$")
 URL_RE = re.compile(r"^(https?://|git@)[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]{3,300}$|^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 ALLOWED = {  # command → (needs a package arg?, extra flags)
     "install": True, "remove": True, "rollback": True, "hold": True, "unhold": True, "info": True,
-    "search": True, "sync": False, "update": False, "upgrade": False, "self-update": False, "outsource": True,
+    "search": True, "sync": False, "update": False, "upgrade": False, "self-update": False, "outsource": True, "sysup": False,
 }
 ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 
@@ -123,6 +123,14 @@ def theme():
     return t if t in ("light", "dark") else "auto"
 
 
+SKINS = ("gurt", "win11", "xp", "w95")
+
+
+def skin():
+    s = conf().get("skin")
+    return s if s in SKINS else "gurt"
+
+
 def paths():
     out = subprocess.run([GURT, "__paths"], capture_output=True, text=True, env=dict(os.environ, NO_COLOR="1")).stdout
     return dict(l.split("=", 1) for l in out.splitlines() if "=" in l)
@@ -179,7 +187,7 @@ def state():
                                       text=True, timeout=15).stdout.split()
         except Exception:
             pass
-    return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks,
+    return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks, "wsl": p.get("wsl") == "yes",
             "main": main, "dirtpkgs": dirt, "installed": installed}
 
 
@@ -221,7 +229,7 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/":
             if not self._host_ok() or not secrets.compare_digest((q.get("t") or [""])[0], TOKEN):
                 return self._send(403, "nope 🔒 open GURT with: gurt gui", "text/plain")
-            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()), "text/html")
+            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()), "text/html")
         if u.path in ("/icon.png", "/logo.png", "/dirt-logo.png"):
             repo = paths().get("repo", "")
             want = {"/logo.png": "gurt-logo.png", "/dirt-logo.png": "dirt-logo.png"}.get(u.path, "apple-touch-icon.png")
@@ -289,6 +297,11 @@ class H(BaseHTTPRequestHandler):
                 argv.append(arg)
             job = start_job(argv)
             return self._send(200, {"job": job.id})
+        if u.path == "/api/skin":
+            if body.get("skin") not in SKINS:
+                return self._send(400, {"error": "unknown skin"})
+            save_conf(skin=body["skin"])
+            return self._send(200, {"ok": True})
         if u.path == "/api/theme":
             t = body.get("theme")
             if t not in ("light", "dark", "auto"):
@@ -417,6 +430,12 @@ def native_window(tk, url, icon):
 
 
 def open_window(url):
+    # gurt on Windows (WSL): open it in the Windows browser
+    if os.environ.get("WSL_DISTRO_NAME") or os.environ.get("WSL_INTEROP"):
+        for cmd in (["wslview", url], ["cmd.exe", "/c", "start", "", url], ["explorer.exe", url]):
+            if shutil.which(cmd[0]):
+                subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                return
     for b in ("chromium", "chromium-browser", "google-chrome-stable", "google-chrome", "brave", "brave-browser",
               "microsoft-edge-stable", "vivaldi-stable"):
         if shutil.which(b):
@@ -497,7 +516,7 @@ def main():
 PORT, ASKPASS, ICONS, MODE = 0, "", [], "browser"
 
 PAGE = r"""<!doctype html>
-<html lang="en" data-theme="__THEME__"><head>
+<html lang="en" data-theme="__THEME__" data-skin="__SKIN__"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GURT</title><link rel="icon" href="/icon.png">
 <style>
@@ -539,7 +558,7 @@ header{display:flex;align-items:center;gap:18px;padding:14px 20px;border-bottom:
 .logo .g{color:var(--g)}.logo .u{color:var(--u)}.logo .r{color:var(--r)}.logo .t{color:var(--t)}
 .ver{color:var(--muted);font-size:12px}
 nav{display:flex;gap:6px;margin-left:8px}
-nav button{font:inherit;background:none;border:1px solid transparent;color:var(--muted);padding:6px 14px;border-radius:999px;cursor:pointer}
+nav button{font:inherit;background:none;border:1px solid transparent;color:var(--muted);padding:6px 14px;border-radius:999px;cursor:pointer;white-space:nowrap}
 nav button:hover{color:var(--ink);background:var(--tag)}
 nav button.on{background:var(--accent);color:var(--accent-ink);font-weight:700}
 nav .badge{background:var(--bad);color:#fff;border-radius:999px;font-size:11px;padding:0 6px;margin-left:4px}
@@ -605,6 +624,45 @@ dialog .row{justify-content:flex-end}
 #lottowin .spin{font:700 20px ui-monospace,monospace;margin-bottom:6px}
 #lottowin .card{text-align:left;max-width:520px;margin:8px auto 0}
 .cicada{text-align:center;font:600 14px ui-monospace,monospace;margin:30px 0 10px}
+
+/* ── 🪟 skins ── */
+#skinsel{font:inherit;font-size:13px;background:var(--tag);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:5px 10px;cursor:pointer}
+/* Windows 11: Segoe, soft Mica greys, blue accent, follows light/dark */
+:root[data-skin=win11]{--bg:#f3f3f3;--panel:#fbfbfb;--ink:#1b1b1b;--muted:#5d5d5d;--line:#e5e5e5;--accent:#005fb8;--accent-ink:#fff;--tag:#f0f0f0;--code:#f9f9f9}
+@media (prefers-color-scheme: dark){:root[data-skin=win11]:not([data-theme=light]){--bg:#202020;--panel:#2b2b2b;--ink:#fff;--muted:#c5c5c5;--line:#3a3a3a;--accent:#60cdff;--accent-ink:#000;--tag:#373737;--code:#1c1c1c}}
+:root[data-skin=win11][data-theme=dark]{--bg:#202020;--panel:#2b2b2b;--ink:#fff;--muted:#c5c5c5;--line:#3a3a3a;--accent:#60cdff;--accent-ink:#000;--tag:#373737;--code:#1c1c1c}
+:root[data-skin=win11] body{font-family:"Segoe UI Variable","Segoe UI",system-ui,sans-serif}
+:root[data-skin=win11] header{background:color-mix(in srgb,var(--panel) 85%,transparent);backdrop-filter:blur(30px)}
+:root[data-skin=win11] .btn,:root[data-skin=win11] nav button,:root[data-skin=win11] .srcs button,:root[data-skin=win11] .bcat,:root[data-skin=win11] #skinsel{border-radius:4px}
+:root[data-skin=win11] .card,:root[data-skin=win11] .bapp,:root[data-skin=win11] .search input{border-radius:8px}
+:root[data-skin=win11] .card{box-shadow:0 2px 4px rgba(0,0,0,.04)}
+/* Windows XP: Luna blue + that green start button 💀 (always light) */
+:root[data-skin=xp]{--bg:#ece9d8;--panel:#fff;--ink:#000;--muted:#444;--line:#7f9db9;--accent:#3c8d0d;--accent-ink:#fff;--tag:#f4f3ee;--code:#fff;--good:#2c7a0b;--bad:#c4271b;color-scheme:light}
+:root[data-skin=xp] body{font:13px/1.4 Tahoma,"Trebuchet MS",Verdana,sans-serif}
+:root[data-skin=xp] header{background:linear-gradient(#0058ee,#3a93ff 8%,#2e7cf5 40%,#0f5ee6 88%,#0d56d8);border-bottom:2px solid #003c9e;color:#fff}
+:root[data-skin=xp] header .ver,:root[data-skin=xp] nav button{color:#fff}
+:root[data-skin=xp] nav button:hover{background:rgba(255,255,255,.18)}
+:root[data-skin=xp] nav button.on{background:linear-gradient(#5eac56,#3c8d0d 50%,#2f7a0a);border:1px solid #1d5b06;border-radius:0 10px 10px 0;font-style:italic;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
+:root[data-skin=xp] .btn{border-radius:3px;border:1px solid #003c74;background:linear-gradient(#fff,#ece9d8 85%,#d6d0c5);color:#000;font-weight:400}
+:root[data-skin=xp] .btn:not(.ghost):not(.danger):not(.lottobtn){background:linear-gradient(#7ac25d,#3c8d0d 50%,#2f7a0a);color:#fff;border-color:#1d5b06}
+:root[data-skin=xp] .card,:root[data-skin=xp] .bapp{border-radius:3px;border:1px solid #7f9db9;box-shadow:inset 0 1px 0 #fff}
+:root[data-skin=xp] .card .top{background:linear-gradient(90deg,#d6dff7,#fff);margin:-12px -14px 0;padding:6px 14px;border-bottom:1px solid #b4c8f0}
+:root[data-skin=xp] .search input,:root[data-skin=xp] .srcs button,:root[data-skin=xp] .bcat,:root[data-skin=xp] .chip,:root[data-skin=xp] #skinsel{border-radius:2px}
+:root[data-skin=xp] #console{background:#000;color:#c0c0c0}
+/* Windows 95: grey bevels, navy title bar, teal desktop, zero rounded corners */
+:root[data-skin=w95]{--bg:#008080;--panel:#c0c0c0;--ink:#000;--muted:#222;--line:#808080;--accent:#000080;--accent-ink:#fff;--tag:#c0c0c0;--code:#fff;--good:#006400;--bad:#a00000;color-scheme:light}
+:root[data-skin=w95] body{font:12px/1.35 "MS Sans Serif","Microsoft Sans Serif",Tahoma,Arial,sans-serif;-webkit-font-smoothing:none}
+:root[data-skin=w95] *{border-radius:0!important}
+:root[data-skin=w95] header{background:linear-gradient(90deg,#000080,#1084d0);color:#fff;border-bottom:2px solid #000}
+:root[data-skin=w95] header .ver,:root[data-skin=w95] nav button{color:#fff}
+:root[data-skin=w95] .btn,:root[data-skin=w95] nav button.on,:root[data-skin=w95] .srcs button,:root[data-skin=w95] .bcat,:root[data-skin=w95] #skinsel{background:#c0c0c0;color:#000;font-weight:400;border:2px solid;border-color:#fff #000 #000 #fff;box-shadow:inset -1px -1px #808080,inset 1px 1px #dfdfdf}
+:root[data-skin=w95] .btn:active,:root[data-skin=w95] .srcs button.on,:root[data-skin=w95] .bcat.on{border-color:#000 #fff #fff #000;box-shadow:inset 1px 1px #808080}
+:root[data-skin=w95] .card,:root[data-skin=w95] .bapp,:root[data-skin=w95] #cartbar,:root[data-skin=w95] dialog{background:#c0c0c0;border:2px solid;border-color:#dfdfdf #000 #000 #dfdfdf;box-shadow:inset -1px -1px #808080,inset 1px 1px #fff}
+:root[data-skin=w95] .card .top{background:linear-gradient(90deg,#000080,#1084d0);color:#fff;margin:-12px -14px 0;padding:3px 8px}
+:root[data-skin=w95] .card .top .src,:root[data-skin=w95] .card .top .v{color:#dfdfdf}
+:root[data-skin=w95] .search input{background:#fff;border:2px solid;border-color:#808080 #fff #fff #808080}
+:root[data-skin=w95] h2,:root[data-skin=w95] .hint,:root[data-skin=w95] .blurb,:root[data-skin=w95] .cicada,:root[data-skin=w95] .bgroup h3,:root[data-skin=w95] .setuphead p{color:#fff}
+:root[data-skin=xp] .logoimg,:root[data-skin=w95] .logoimg{filter:drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1px #fff)}
 .out-line-err{color:var(--bad)}.out-line-ok{color:var(--good)}
 @media (max-width:640px){header{flex-wrap:wrap}nav{margin-left:0}}
 </style></head><body>
@@ -618,6 +676,9 @@ dialog .row{justify-content:flex-end}
     <button data-tab="desktops">🖥️ Desktops</button>
   </nav>
   <div class="spacer"></div>
+  <select id="skinsel" title="skin">
+    <option value="gurt">🦆 GURT</option><option value="win11">🪟 Windows 11</option><option value="xp">🟩 Windows XP</option><option value="w95">💾 Windows 95</option>
+  </select>
   <button class="btn ghost small" id="themebtn" title="light / dark"></button>
   <button class="btn ghost small" id="syncbtn" title="gurt sync">↻ sync</button>
 </header>
@@ -683,7 +744,8 @@ const api = (p, body) => fetch(p, body ? {method:"POST", headers:{"X-Gurt-Token"
 let S = {main:[], installed:[]}, busy = false, cur = null;
 
 // ── state ──
-async function load(){ S = await api("/api/state"); $("#ver").textContent = `v${S.version} · ${S.pm}`; renderMain(); renderInstalled(); if (!$("#t-setup").hidden) renderBuilder(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt(); }
+async function load(){ S = await api("/api/state"); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · 🪟 Windows" : ""}`;
+  document.querySelector('nav button[data-tab="desktops"]').hidden = S.wsl;   /* no Linux desktops on Windows */ renderMain(); renderInstalled(); if (!$("#t-setup").hidden) renderBuilder(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt(); }
 const inst = spec => {
   const m = S.main.find(p => p.name === spec);
   return S.installed.find(i => i.spec === spec || i.key === spec || (m && i.key === m.ikey) || (i.src === "gurt" && i.name === spec))
@@ -720,7 +782,7 @@ function renderInstalled(){
 }
 
 // ── running gurt ──
-const VERB = {de:"Install the desktop", install:"Install", "install-many":"Install", remove:"Remove", rollback:"Roll back", hold:"Hold", unhold:"Unhold", upgrade:"Update everything", "self-update":"Update gurt", outsource:"Build + install"};
+const VERB = {de:"Install the desktop", install:"Install", "install-many":"Install", sysup:"Update your whole system", remove:"Remove", rollback:"Roll back", hold:"Hold", unhold:"Unhold", upgrade:"Update everything (your system + apps)", "self-update":"Update gurt", outsource:"Build + install"};
 function ask(title, body){ return new Promise(res => { $("#ctitle2").textContent = title; $("#cbody").textContent = body; const d=$("#confirm");
   const done = v => { d.close(); $("#cyes").onclick = $("#cno").onclick = null; res(v); };
   $("#cyes").onclick = () => done(true); $("#cno").onclick = () => done(false); d.onclose = () => res(false); d.showModal(); }); }
@@ -892,11 +954,13 @@ async function check(){
   const ups = r.lines.map(l => l.match(/^\s*->\s*(\S+)\s+(\S+) -> (\S+)$/)).filter(Boolean);
   // gurt itself counts as an update too (and goes first — the new gurt might be needed for the rest)
   const selfUp = r.lines.find(l => /is out \(you have|gurt self-update/.test(l));
-  const n = ups.length + (selfUp ? 1 : 0);
+  const sysM = r.lines.map(l => l.match(/(\d+) system update\(s\) waiting from (\S+)/)).find(Boolean);
+  const n = ups.length + (selfUp ? 1 : 0) + (sysM ? 1 : 0);
   $("#ubadge").hidden = !n; $("#ubadge").textContent = n;
   const sv = selfUp && selfUp.match(/gurt (\S+) is out \(you have (\S+)\)/);
   $("#ugrid").innerHTML = !n ? `<div class="empty">everything's up to date, you're chillin 😎</div>`
     : (selfUp ? card({name:"gurt", ver: sv ? `${sv[2]} → ${sv[1]}` : "new version", desc:"gurt itself has an update 🦆", actions: actBtn("update gurt","self-update","")}) : "")
+      + (sysM ? card({name:"your system", src:sysM[2], ver:`${sysM[1]} update${sysM[1] === "1" ? "" : "s"}`, desc:`${sysM[1]} package${sysM[1] === "1" ? "" : "s"} from your distro (${sysM[2]}) — "update everything" installs them too`, actions: actBtn("🐧 update system","sysup","")}) : "")
       + ups.map(m => card({name:m[1].split("/").pop(), src:m[1].includes("/") ? m[1].split("/")[0] : "gurt", ver:`${m[2]} → ${m[3]}`, desc:"update available", actions: actBtn("update","install",m[1])})).join("");
 }
 $("#checkbtn").addEventListener("click", check);
@@ -912,6 +976,10 @@ $("#themebtn").addEventListener("click", () => {
   document.documentElement.dataset.theme = t; themeIcon(); api("/api/theme", {theme:t}).catch(() => {});
 });
 darkMQ.addEventListener("change", themeIcon); themeIcon();
+// ── 🪟 skins ── (XP + 95 are always light, like the real thing)
+const applySkin = s => { document.documentElement.dataset.skin = s; $("#skinsel").value = s; $("#themebtn").hidden = s === "xp" || s === "w95"; };
+$("#skinsel").addEventListener("change", e => { applySkin(e.target.value); api("/api/skin", {skin:e.target.value}).catch(() => {}); });
+applySkin(document.documentElement.dataset.skin || "gurt");
 
 // ── tabs ──
 document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
