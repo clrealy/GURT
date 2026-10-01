@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.19.2"
+GURT_VERSION="0.19.3"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -737,6 +737,13 @@ resolve_key() { # user spec (name or src/name) -> installed db key
   if [[ $spec == */* ]]; then src=$(norm_src "${spec%%/*}"); name=${spec#*/}; k=$(pkey "$src" "$name")
     is_installed "$k" && { echo "$k"; return; }; return 1; fi
   is_installed "$spec" && { echo "$spec"; return; }
+  # a Main GURT recipe that installs from Flathub / snap / an official repo lives under that source's key
+  local ri; ri=$(repo_info "$spec")
+  if [[ -f $ri ]]; then
+    local vt vp vr; vt=$(info_get "$ri" via_type); vp=$(info_get "$ri" via_pkg); vr=$(info_get "$ri" via_repo)
+    case $vt in flatpak|snap) k="$vt:$vp" ;; *) k=${vr:+$vr:${vp:-$spec}} ;; esac
+    [[ -n $k ]] && is_installed "$k" && { echo "$k"; return; }
+  fi
   local hits=() d
   for d in "$DB"/*:"$spec"/; do hits+=("$(basename "$d")"); done
   local lo

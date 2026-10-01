@@ -138,7 +138,10 @@ def state():
             info = kv(os.path.join(pkgdir, name, ".gurtinfo"))
             if not info or info.get("hidden") == "true" or info.get("secret") == "true":
                 continue
-            main.append({"name": info.get("pkgname", name), "ver": "latest" if info.get("via_repo") else f"{info.get('pkgver','')}-{info.get('pkgrel','')}",
+            vt, vp, vr = info.get("via_type", ""), info.get("via_pkg", ""), info.get("via_repo", "")
+            # where it lands once installed: Flathub/snap/official-repo recipes are kept under that source
+            ikey = f"{vt}:{vp}" if vt in ("flatpak", "snap") else f"{vr}:{vp or name}" if vr else name
+            main.append({"ikey": ikey, "flatpak": vp if vt == "flatpak" else "", "name": info.get("pkgname", name), "ver": "latest" if info.get("via_repo") else f"{info.get('pkgver','')}-{info.get('pkgrel','')}",
                          "desc": info.get("pkgdesc", ""), "alias": info.get("alias", []), "maintainer": info.get("maintainer", ""),
                          "official": bool(info.get("via_repo")), "category": info.get("category", "")})
     dirt = []
@@ -163,7 +166,15 @@ def state():
             installed.append({"key": key, "spec": key if src == "gurt" else f"{src}/{name}", "name": name, "src": src,
                               "ver": info.get("pkgver", "?") + (f"-{rel}" if rel else ""), "desc": info.get("pkgdesc", ""),
                               "reason": reason, "held": os.path.exists(os.path.join(db, key, "held"))})
-    return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on",
+    # flatpaks you installed without gurt still count as installed
+    flatpaks = []
+    if shutil.which("flatpak"):
+        try:
+            flatpaks = subprocess.run(["flatpak", "list", "--app", "--columns=application"], capture_output=True,
+                                      text=True, timeout=15).stdout.split()
+        except Exception:
+            pass
+    return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks,
             "main": main, "dirtpkgs": dirt, "installed": installed}
 
 
@@ -668,7 +679,11 @@ let S = {main:[], installed:[]}, busy = false, cur = null;
 
 // ── state ──
 async function load(){ S = await api("/api/state"); $("#ver").textContent = `v${S.version} · ${S.pm}`; renderMain(); renderInstalled(); if (!$("#t-setup").hidden) renderBuilder(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt(); }
-const inst = spec => S.installed.find(i => i.spec === spec || i.key === spec || (i.src === "gurt" && i.name === spec));
+const inst = spec => {
+  const m = S.main.find(p => p.name === spec);
+  return S.installed.find(i => i.spec === spec || i.key === spec || (m && i.key === m.ikey) || (i.src === "gurt" && i.name === spec))
+    || (m && m.flatpak && (S.flatpaks || []).includes(m.flatpak) ? {external: true} : null);
+};
 
 function card({name, src="gurt", ver, desc, extra="", actions=""}){
   return `<div class="card"><div class="top"><span class="name">${esc(name)}</span><span class="src">${esc(src)}/</span><span class="v">${esc(ver||"")}</span></div>
@@ -676,7 +691,9 @@ function card({name, src="gurt", ver, desc, extra="", actions=""}){
 }
 const actBtn = (label, cmd, arg, cls="") => `<button class="btn small ${cls}" data-cmd="${cmd}" data-arg="${esc(arg)}">${label}</button>`;
 function installBtns(spec){
-  return inst(spec) ? `<span class="chip ok">installed ✓</span>${actBtn("remove","remove",spec,"ghost")}` : actBtn("install","install",spec);
+  const i = inst(spec);
+  if (i && i.external) return `<span class="chip ok" title="installed with flatpak, outside gurt">installed ✓ (flatpak)</span>`;
+  return i ? `<span class="chip ok">installed ✓</span>${actBtn("remove","remove",spec,"ghost")}` : actBtn("install","install",spec);
 }
 function renderMain(){
   const q = $("#q").value.trim().toLowerCase();
