@@ -52,6 +52,12 @@ jobs:
           elif command -v zypper; then zypper -n install git bash sudo curl tar gzip findutils gpg2 xz bsdtar zstd python3; fi
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
+      - name: gurt utils installs everything on this distro
+        shell: bash
+        run: |
+          ./gurt -y utils
+          ./gurt utils list | tee /tmp/utils.txt
+          ! grep -q '✗' /tmp/utils.txt
       - name: build changed packages
         shell: bash
         run: |
