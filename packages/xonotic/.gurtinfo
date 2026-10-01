@@ -1,7 +1,7 @@
 pkgname = xonotic
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Xonotic — fast arena shooter (Flathub)
+pkgdesc = Fast-paced arena shooter (Flathub)
 url = https://flathub.org/apps/org.xonotic.Xonotic
 license = GPL-3.0-or-later
 maintainer = clrealy

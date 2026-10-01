@@ -1,7 +1,7 @@
 pkgname = baobab
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Disk Usage Analyzer — what's eating your disk (Flathub)
+pkgdesc = Shows what's eating your disk space (Flathub)
 url = https://flathub.org/apps/org.gnome.baobab
 license = GPL-2.0-or-later
 maintainer = clrealy

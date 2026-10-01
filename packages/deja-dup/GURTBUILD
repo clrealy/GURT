@@ -1,9 +1,9 @@
-# Déjà Dup — simple backups
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Simple backups that just work
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=deja-dup
 pkgver=flathub
 pkgrel=1
-pkgdesc="Déjà Dup — simple backups (Flathub)"
+pkgdesc="Simple backups that just work (Flathub)"
 url="https://flathub.org/apps/org.gnome.DejaDup"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

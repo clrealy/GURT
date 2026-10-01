@@ -1,8 +1,8 @@
-# superfile — pretty terminal file manager (run: spf)
+# Pretty file manager for the terminal (run it with spf)
 pkgname=superfile
 pkgver=1.6.0
 pkgrel=1
-pkgdesc="superfile — pretty terminal file manager (run: spf)"
+pkgdesc="Pretty file manager for the terminal (run it with spf)"
 url="https://github.com/yorukot/superfile"
 license="MIT"
 maintainer="clrealy"

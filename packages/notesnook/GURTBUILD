@@ -1,9 +1,9 @@
-# Notesnook — encrypted notes
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Private, encrypted notes
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=notesnook
 pkgver=flathub
 pkgrel=1
-pkgdesc="Notesnook — encrypted notes (Flathub)"
+pkgdesc="Private, encrypted notes (Flathub)"
 url="https://flathub.org/apps/com.notesnook.Notesnook"
 license="GPL-3.0-only"
 maintainer="clrealy"

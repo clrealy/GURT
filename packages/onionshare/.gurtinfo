@@ -1,7 +1,7 @@
 pkgname = onionshare
 pkgver = flathub
 pkgrel = 1
-pkgdesc = OnionShare — share files over Tor (Flathub)
+pkgdesc = Share files privately over Tor (Flathub)
 url = https://flathub.org/apps/org.onionshare.OnionShare
 license = GPL-3.0-only
 maintainer = clrealy

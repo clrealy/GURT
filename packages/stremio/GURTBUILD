@@ -1,9 +1,9 @@
-# Stremio — one hub for movies, shows and add-ons
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# One hub for movies, shows and add-ons
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=stremio
 pkgver=flathub
 pkgrel=1
-pkgdesc="Stremio — one hub for movies, shows and add-ons (Flathub)"
+pkgdesc="One hub for movies, shows and add-ons (Flathub)"
 url="https://flathub.org/apps/com.stremio.Stremio"
 license="GPL-2.0-only"
 maintainer="clrealy"

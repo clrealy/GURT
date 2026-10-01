@@ -1,7 +1,7 @@
 pkgname = gitg
 pkgver = flathub
 pkgrel = 1
-pkgdesc = gitg — GNOME git viewer (Flathub)
+pkgdesc = See your git history in a GNOME app (Flathub)
 url = https://flathub.org/apps/org.gnome.gitg
 license = GPL-2.0-or-later
 maintainer = clrealy

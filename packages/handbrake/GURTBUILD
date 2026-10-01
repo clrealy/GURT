@@ -1,9 +1,9 @@
-# HandBrake — video converter
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Convert videos to other formats
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=handbrake
 pkgver=flathub
 pkgrel=1
-pkgdesc="HandBrake — video converter (Flathub)"
+pkgdesc="Convert videos to other formats (Flathub)"
 url="https://flathub.org/apps/fr.handbrake.ghb"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

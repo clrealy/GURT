@@ -1,7 +1,7 @@
 pkgname = synfig
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Synfig — 2D animation (Flathub)
+pkgdesc = 2D animation software (Flathub)
 url = https://flathub.org/apps/org.synfig.SynfigStudio
 license = GPL-3.0-or-later
 maintainer = clrealy

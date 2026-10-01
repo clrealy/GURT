@@ -1,7 +1,7 @@
 pkgname = insomnia
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Insomnia — API client (Flathub)
+pkgdesc = Test and debug APIs (Flathub)
 url = https://flathub.org/apps/rest.insomnia.Insomnia
 license = MIT
 maintainer = clrealy

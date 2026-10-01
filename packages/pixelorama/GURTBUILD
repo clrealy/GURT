@@ -1,9 +1,9 @@
-# Pixelorama — pixel art editor
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Pixel art editor
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=pixelorama
 pkgver=flathub
 pkgrel=1
-pkgdesc="Pixelorama — pixel art editor (Flathub)"
+pkgdesc="Pixel art editor (Flathub)"
 url="https://flathub.org/apps/com.orama_interactive.Pixelorama"
 license="MIT"
 maintainer="clrealy"

@@ -1,9 +1,9 @@
-# Element — Matrix chat client
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Chat on Matrix
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=element
 pkgver=flathub
 pkgrel=1
-pkgdesc="Element — Matrix chat client (Flathub)"
+pkgdesc="Chat on Matrix (Flathub)"
 url="https://flathub.org/apps/im.riot.Riot"
 license="AGPL-3.0-only"
 maintainer="clrealy"

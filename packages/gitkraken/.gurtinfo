@@ -1,7 +1,7 @@
 pkgname = gitkraken
 pkgver = flathub
 pkgrel = 1
-pkgdesc = GitKraken — pretty git GUI (Flathub)
+pkgdesc = Pretty git client with a visual commit graph (Flathub)
 url = https://flathub.org/apps/com.axosoft.GitKraken
 license = Proprietary
 maintainer = clrealy

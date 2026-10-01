@@ -1,9 +1,9 @@
-# MarkText — live-preview markdown editor
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Markdown editor that shows the result as you type
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=marktext
 pkgver=flathub
 pkgrel=1
-pkgdesc="MarkText — live-preview markdown editor (Flathub)"
+pkgdesc="Markdown editor that shows the result as you type (Flathub)"
 url="https://flathub.org/apps/com.github.marktext.marktext"
 license="MIT"
 maintainer="clrealy"

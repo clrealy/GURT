@@ -1,7 +1,7 @@
 pkgname = meld
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Meld — visual diff + merge (Flathub)
+pkgdesc = Compare and merge files side by side (Flathub)
 url = https://flathub.org/apps/org.gnome.meld
 license = GPL-2.0-or-later
 maintainer = clrealy

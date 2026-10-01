@@ -1,7 +1,7 @@
 pkgname = anydesk
 pkgver = flathub
 pkgrel = 1
-pkgdesc = AnyDesk — remote desktop (Flathub)
+pkgdesc = Remote desktop to help someone out or reach your own PC (Flathub)
 url = https://flathub.org/apps/com.anydesk.Anydesk
 license = Proprietary
 maintainer = clrealy

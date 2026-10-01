@@ -1,9 +1,9 @@
-# Motrix — fast download manager
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Fast download manager
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=motrix
 pkgver=flathub
 pkgrel=1
-pkgdesc="Motrix — fast download manager (Flathub)"
+pkgdesc="Fast download manager (Flathub)"
 url="https://flathub.org/apps/net.agalwood.Motrix"
 license="MIT"
 maintainer="clrealy"

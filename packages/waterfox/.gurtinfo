@@ -1,7 +1,7 @@
 pkgname = waterfox
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Waterfox — privacy-minded Firefox fork (Flathub)
+pkgdesc = Privacy-minded fork of Firefox (Flathub)
 url = https://flathub.org/apps/net.waterfox.waterfox
 license = MPL-2.0
 maintainer = clrealy

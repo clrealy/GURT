@@ -1,9 +1,9 @@
-# Mixxx — DJ software
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# DJ software for mixing tracks live
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=mixxx
 pkgver=flathub
 pkgrel=1
-pkgdesc="Mixxx — DJ software (Flathub)"
+pkgdesc="DJ software for mixing tracks live (Flathub)"
 url="https://flathub.org/apps/org.mixxx.Mixxx"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

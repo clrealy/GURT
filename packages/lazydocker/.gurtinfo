@@ -1,7 +1,7 @@
 pkgname = lazydocker
 pkgver = 0.25.2
 pkgrel = 1
-pkgdesc = lazydocker — Docker in a terminal UI
+pkgdesc = Manage Docker from a terminal UI
 url = https://github.com/jesseduffield/lazydocker
 license = MIT
 maintainer = clrealy

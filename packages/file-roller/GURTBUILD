@@ -1,9 +1,9 @@
-# File Roller — GNOME archive manager
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# GNOME's archive manager
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=file-roller
 pkgver=flathub
 pkgrel=1
-pkgdesc="File Roller — GNOME archive manager (Flathub)"
+pkgdesc="GNOME's archive manager (Flathub)"
 url="https://flathub.org/apps/org.gnome.FileRoller"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

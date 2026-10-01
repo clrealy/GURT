@@ -1,9 +1,9 @@
-# Floorp — super customizable Firefox-based browser
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Firefox-based browser you can customize like crazy
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=floorp
 pkgver=flathub
 pkgrel=1
-pkgdesc="Floorp — super customizable Firefox-based browser (Flathub)"
+pkgdesc="Firefox-based browser you can customize like crazy (Flathub)"
 url="https://flathub.org/apps/one.ablaze.floorp"
 license="MPL-2.0"
 maintainer="clrealy"

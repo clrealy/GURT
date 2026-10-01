@@ -1,7 +1,7 @@
 pkgname = clapper
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Clapper — slick GNOME video player (Flathub)
+pkgdesc = Slick video player for GNOME (Flathub)
 url = https://flathub.org/apps/com.github.rafostar.Clapper
 license = GPL-3.0-or-later
 maintainer = clrealy

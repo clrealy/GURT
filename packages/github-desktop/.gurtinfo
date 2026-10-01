@@ -1,7 +1,7 @@
 pkgname = github-desktop
 pkgver = flathub
 pkgrel = 1
-pkgdesc = GitHub Desktop — git with buttons (Linux fork) (Flathub)
+pkgdesc = Use git with buttons instead of commands (Linux fork)
 url = https://flathub.org/apps/io.github.shiftey.Desktop
 license = MIT
 maintainer = clrealy

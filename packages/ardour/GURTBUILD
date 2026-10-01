@@ -1,9 +1,9 @@
-# Ardour — pro audio recording + mixing (DAW)
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Pro audio recording and mixing studio
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=ardour
 pkgver=flathub
 pkgrel=1
-pkgdesc="Ardour — pro audio recording + mixing (DAW) (Flathub)"
+pkgdesc="Pro audio recording and mixing studio (Flathub)"
 url="https://flathub.org/apps/org.ardour.Ardour"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

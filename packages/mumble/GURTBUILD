@@ -1,9 +1,9 @@
-# Mumble — low-latency voice chat
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Voice chat with really low lag
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=mumble
 pkgver=flathub
 pkgrel=1
-pkgdesc="Mumble — low-latency voice chat (Flathub)"
+pkgdesc="Voice chat with really low lag (Flathub)"
 url="https://flathub.org/apps/info.mumble.Mumble"
 license="BSD-3-Clause"
 maintainer="clrealy"

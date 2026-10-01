@@ -1,9 +1,9 @@
-# Blender — 3D modeling, animation and rendering
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# 3D modeling, animation and rendering
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=blender
 pkgver=flathub
 pkgrel=1
-pkgdesc="Blender — 3D modeling, animation and rendering (Flathub)"
+pkgdesc="3D modeling, animation and rendering (Flathub)"
 url="https://flathub.org/apps/org.blender.Blender"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

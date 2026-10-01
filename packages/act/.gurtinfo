@@ -1,7 +1,7 @@
 pkgname = act
 pkgver = 0.2.89
 pkgrel = 1
-pkgdesc = act — run GitHub Actions locally
+pkgdesc = Run your GitHub Actions on your own machine
 url = https://github.com/nektos/act
 license = MIT
 maintainer = clrealy

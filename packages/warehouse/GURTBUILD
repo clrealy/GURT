@@ -1,9 +1,9 @@
-# Warehouse — manage all your flatpaks
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Manage all your flatpaks in one place
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=warehouse
 pkgver=flathub
 pkgrel=1
-pkgdesc="Warehouse — manage all your flatpaks (Flathub)"
+pkgdesc="Manage all your flatpaks in one place (Flathub)"
 url="https://flathub.org/apps/io.github.flattool.Warehouse"
 license="GPL-3.0-only"
 maintainer="clrealy"

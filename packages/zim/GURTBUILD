@@ -1,9 +1,9 @@
-# Zim — desktop wiki for notes
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Desktop wiki for your notes
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=zim
 pkgver=flathub
 pkgrel=1
-pkgdesc="Zim — desktop wiki for notes (Flathub)"
+pkgdesc="Desktop wiki for your notes (Flathub)"
 url="https://flathub.org/apps/org.zim_wiki.Zim"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

@@ -1,8 +1,8 @@
-# duf — disk usage/free, but readable
+# Shows disk usage in a way you can actually read
 pkgname=duf
 pkgver=0.9.1
 pkgrel=1
-pkgdesc="duf — disk usage/free, but readable"
+pkgdesc="Shows disk usage in a way you can actually read"
 url="https://github.com/muesli/duf"
 license="MIT"
 maintainer="clrealy"

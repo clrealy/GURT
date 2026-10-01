@@ -1,9 +1,9 @@
-# Authenticator — 2FA codes
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Generates your 2FA codes
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=authenticator
 pkgver=flathub
 pkgrel=1
-pkgdesc="Authenticator — 2FA codes (Flathub)"
+pkgdesc="Generates your 2FA codes (Flathub)"
 url="https://flathub.org/apps/com.belmoussaoui.Authenticator"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

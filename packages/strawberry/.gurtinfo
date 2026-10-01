@@ -1,7 +1,7 @@
 pkgname = strawberry
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Strawberry — music player for big local libraries (Flathub)
+pkgdesc = Music player for big local libraries (Flathub)
 url = https://flathub.org/apps/org.strawberrymusicplayer.strawberry
 license = GPL-3.0-or-later
 maintainer = clrealy

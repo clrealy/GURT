@@ -1,9 +1,9 @@
-# dconf Editor — every GNOME setting
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Dig into every hidden GNOME setting
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=dconf-editor
 pkgver=flathub
 pkgrel=1
-pkgdesc="dconf Editor — every GNOME setting (Flathub)"
+pkgdesc="Dig into every hidden GNOME setting (Flathub)"
 url="https://flathub.org/apps/ca.desrt.dconf-editor"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

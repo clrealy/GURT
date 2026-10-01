@@ -1,9 +1,9 @@
-# HexChat — IRC client
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Chat on IRC
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=hexchat
 pkgver=flathub
 pkgrel=1
-pkgdesc="HexChat — IRC client (Flathub)"
+pkgdesc="Chat on IRC (Flathub)"
 url="https://flathub.org/apps/io.github.Hexchat"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

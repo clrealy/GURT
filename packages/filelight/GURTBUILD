@@ -1,9 +1,9 @@
-# Filelight — disk usage as a sunburst
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Shows your disk usage as a sunburst chart
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=filelight
 pkgver=flathub
 pkgrel=1
-pkgdesc="Filelight — disk usage as a sunburst (Flathub)"
+pkgdesc="Shows your disk usage as a sunburst chart (Flathub)"
 url="https://flathub.org/apps/org.kde.filelight"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

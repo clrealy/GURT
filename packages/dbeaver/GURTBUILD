@@ -1,9 +1,9 @@
-# DBeaver — one app for every database
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# One app for pretty much every database
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=dbeaver
 pkgver=flathub
 pkgrel=1
-pkgdesc="DBeaver — one app for every database (Flathub)"
+pkgdesc="One app for pretty much every database (Flathub)"
 url="https://flathub.org/apps/io.dbeaver.DBeaverCommunity"
 license="Apache-2.0"
 maintainer="clrealy"

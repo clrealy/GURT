@@ -1,9 +1,9 @@
-# Sublime Text — fast, minimal code editor
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Fast, minimal code editor
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=sublime-text
 pkgver=flathub
 pkgrel=1
-pkgdesc="Sublime Text — fast, minimal code editor (Flathub)"
+pkgdesc="Fast, minimal code editor (Flathub)"
 url="https://flathub.org/apps/com.sublimetext.three"
 license="Proprietary"
 maintainer="clrealy"

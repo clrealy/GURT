@@ -1,9 +1,9 @@
-# Greenlight — Xbox remote play + xCloud
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Stream games from your Xbox or Xbox Cloud Gaming
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=greenlight
 pkgver=flathub
 pkgrel=1
-pkgdesc="Greenlight — Xbox remote play + xCloud (Flathub)"
+pkgdesc="Stream games from your Xbox or Xbox Cloud Gaming (Flathub)"
 url="https://flathub.org/apps/io.github.unknownskl.greenlight"
 license="MIT"
 maintainer="clrealy"

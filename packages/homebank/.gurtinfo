@@ -1,7 +1,7 @@
 pkgname = homebank
 pkgver = flathub
 pkgrel = 1
-pkgdesc = HomeBank — track your money (Flathub)
+pkgdesc = Keep track of your money (Flathub)
 url = https://flathub.org/apps/fr.free.Homebank
 license = GPL-2.0-or-later
 maintainer = clrealy

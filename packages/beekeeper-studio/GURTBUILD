@@ -1,9 +1,9 @@
-# Beekeeper Studio — SQL editor + database GUI
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# SQL editor and database manager that's nice to look at
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=beekeeper-studio
 pkgver=flathub
 pkgrel=1
-pkgdesc="Beekeeper Studio — SQL editor + database GUI (Flathub)"
+pkgdesc="SQL editor and database manager that's nice to look at (Flathub)"
 url="https://flathub.org/apps/io.beekeeperstudio.Studio"
 license="GPL-3.0-only"
 maintainer="clrealy"

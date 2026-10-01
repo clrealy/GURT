@@ -1,7 +1,7 @@
 pkgname = tuba
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Tuba — Mastodon / fediverse client (Flathub)
+pkgdesc = Browse Mastodon and the rest of the fediverse (Flathub)
 url = https://flathub.org/apps/dev.geopjr.Tuba
 license = GPL-3.0-only
 maintainer = clrealy

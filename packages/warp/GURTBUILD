@@ -1,9 +1,9 @@
-# Warp — send files to another computer with a code
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Send files to another computer with a code
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=warp
 pkgver=flathub
 pkgrel=1
-pkgdesc="Warp — send files to another computer with a code (Flathub)"
+pkgdesc="Send files to another computer with a code (Flathub)"
 url="https://flathub.org/apps/app.drey.Warp"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

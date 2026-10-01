@@ -1,9 +1,9 @@
-# Plex — watch your Plex server
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Watch your stuff from your Plex server
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=plex
 pkgver=flathub
 pkgrel=1
-pkgdesc="Plex — watch your Plex server (Flathub)"
+pkgdesc="Watch your stuff from your Plex server (Flathub)"
 url="https://flathub.org/apps/tv.plex.PlexDesktop"
 license="Proprietary"
 maintainer="clrealy"

@@ -1,9 +1,9 @@
-# Kodi — home theater / media center
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Turn your PC into a home theater
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=kodi
 pkgver=flathub
 pkgrel=1
-pkgdesc="Kodi — home theater / media center (Flathub)"
+pkgdesc="Turn your PC into a home theater (Flathub)"
 url="https://flathub.org/apps/tv.kodi.Kodi"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

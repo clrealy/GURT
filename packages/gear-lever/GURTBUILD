@@ -1,9 +1,9 @@
-# Gear Lever — manage AppImages
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Install and manage AppImages
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=gear-lever
 pkgver=flathub
 pkgrel=1
-pkgdesc="Gear Lever — manage AppImages (Flathub)"
+pkgdesc="Install and manage AppImages (Flathub)"
 url="https://flathub.org/apps/it.mijorus.gearlever"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

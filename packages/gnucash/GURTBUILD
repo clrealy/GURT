@@ -1,9 +1,9 @@
-# GnuCash — personal + business accounting
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Accounting for your personal or business money
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=gnucash
 pkgver=flathub
 pkgrel=1
-pkgdesc="GnuCash — personal + business accounting (Flathub)"
+pkgdesc="Accounting for your personal or business money (Flathub)"
 url="https://flathub.org/apps/org.gnucash.GnuCash"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

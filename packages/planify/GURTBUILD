@@ -1,9 +1,9 @@
-# Planify — to-dos + tasks
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Keep track of your to-dos and tasks
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=planify
 pkgver=flathub
 pkgrel=1
-pkgdesc="Planify — to-dos + tasks (Flathub)"
+pkgdesc="Keep track of your to-dos and tasks (Flathub)"
 url="https://flathub.org/apps/io.github.alainm23.planify"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

@@ -1,7 +1,7 @@
 pkgname = mumble
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Mumble — low-latency voice chat (Flathub)
+pkgdesc = Voice chat with really low lag (Flathub)
 url = https://flathub.org/apps/info.mumble.Mumble
 license = BSD-3-Clause
 maintainer = clrealy

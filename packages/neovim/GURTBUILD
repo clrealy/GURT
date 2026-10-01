@@ -1,9 +1,9 @@
-# Neovim — hyperextensible Vim
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Vim, but more extensible
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=neovim
 pkgver=flathub
 pkgrel=1
-pkgdesc="Neovim — hyperextensible Vim (Flathub)"
+pkgdesc="Vim, but more extensible (Flathub)"
 url="https://flathub.org/apps/io.neovim.nvim"
 license="Apache-2.0"
 maintainer="clrealy"

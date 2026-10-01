@@ -1,9 +1,9 @@
-# Shortwave — internet radio
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Listen to internet radio
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=shortwave
 pkgver=flathub
 pkgrel=1
-pkgdesc="Shortwave — internet radio (Flathub)"
+pkgdesc="Listen to internet radio (Flathub)"
 url="https://flathub.org/apps/de.haeckerfelix.Shortwave"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

@@ -1,9 +1,9 @@
-# Google Chrome — straight from the vendor's official signed apt repo.
+# Google's web browser
 # key fingerprint source: https://www.google.com/linuxrepositories/
 pkgname=google-chrome
 pkgver=repo
 pkgrel=1
-pkgdesc="Google Chrome — web browser (official repo)"
+pkgdesc="Google's web browser (official repo)"
 url="https://www.google.com/chrome/"
 license="custom"
 maintainer="clrealy"

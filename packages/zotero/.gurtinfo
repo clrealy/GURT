@@ -1,7 +1,7 @@
 pkgname = zotero
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Zotero — collect + cite research (Flathub)
+pkgdesc = Collect and cite your research (Flathub)
 url = https://flathub.org/apps/org.zotero.Zotero
 license = AGPL-3.0-only
 maintainer = clrealy

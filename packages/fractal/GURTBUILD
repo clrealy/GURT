@@ -1,9 +1,9 @@
-# Fractal — Matrix chat for GNOME
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Matrix chat made for GNOME
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=fractal
 pkgver=flathub
 pkgrel=1
-pkgdesc="Fractal — Matrix chat for GNOME (Flathub)"
+pkgdesc="Matrix chat made for GNOME (Flathub)"
 url="https://flathub.org/apps/org.gnome.Fractal"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

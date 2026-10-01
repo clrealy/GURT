@@ -1,9 +1,9 @@
-# 0 A.D. — ancient warfare RTS
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Real-time strategy set in ancient times
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=zeroad
 pkgver=flathub
 pkgrel=1
-pkgdesc="0 A.D. — ancient warfare RTS (Flathub)"
+pkgdesc="Real-time strategy set in ancient times (Flathub)"
 url="https://flathub.org/apps/com.play0ad.zeroad"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

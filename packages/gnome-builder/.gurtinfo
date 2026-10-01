@@ -1,7 +1,7 @@
 pkgname = gnome-builder
 pkgver = flathub
 pkgrel = 1
-pkgdesc = GNOME Builder — IDE for GNOME apps (Flathub)
+pkgdesc = IDE made for building GNOME apps (Flathub)
 url = https://flathub.org/apps/org.gnome.Builder
 license = GPL-3.0-or-later
 maintainer = clrealy

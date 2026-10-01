@@ -1,8 +1,8 @@
-# Gum — make shell scripts look glamorous
+# Makes your shell scripts look good
 pkgname=gum
 pkgver=2.0.2
 pkgrel=1
-pkgdesc="Gum — make shell scripts look glamorous"
+pkgdesc="Makes your shell scripts look good"
 url="https://github.com/charmbracelet/gum"
 license="MIT"
 maintainer="clrealy"

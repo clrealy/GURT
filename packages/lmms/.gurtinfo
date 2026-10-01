@@ -1,7 +1,7 @@
 pkgname = lmms
 pkgver = flathub
 pkgrel = 1
-pkgdesc = LMMS — make beats (FL Studio vibes) (Flathub)
+pkgdesc = Make beats, kind of like FL Studio (Flathub)
 url = https://flathub.org/apps/io.lmms.LMMS
 license = GPL-2.0-or-later
 maintainer = clrealy

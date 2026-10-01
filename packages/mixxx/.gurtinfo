@@ -1,7 +1,7 @@
 pkgname = mixxx
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Mixxx — DJ software (Flathub)
+pkgdesc = DJ software for mixing tracks live (Flathub)
 url = https://flathub.org/apps/org.mixxx.Mixxx
 license = GPL-2.0-or-later
 maintainer = clrealy

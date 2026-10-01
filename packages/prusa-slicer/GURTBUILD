@@ -1,9 +1,9 @@
-# PrusaSlicer — slice models for 3D printing
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Slice models for 3D printing
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=prusa-slicer
 pkgver=flathub
 pkgrel=1
-pkgdesc="PrusaSlicer — slice models for 3D printing (Flathub)"
+pkgdesc="Slice models for 3D printing (Flathub)"
 url="https://flathub.org/apps/com.prusa3d.PrusaSlicer"
 license="AGPL-3.0-only"
 maintainer="clrealy"

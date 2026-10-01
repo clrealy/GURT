@@ -1,7 +1,7 @@
 pkgname = motrix
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Motrix — fast download manager (Flathub)
+pkgdesc = Fast download manager (Flathub)
 url = https://flathub.org/apps/net.agalwood.Motrix
 license = MIT
 maintainer = clrealy

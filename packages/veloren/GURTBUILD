@@ -1,9 +1,9 @@
-# Veloren — open voxel RPG
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Open source voxel RPG
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=veloren
 pkgver=flathub
 pkgrel=1
-pkgdesc="Veloren — open voxel RPG (Flathub)"
+pkgdesc="Open source voxel RPG (Flathub)"
 url="https://flathub.org/apps/net.veloren.veloren"
 license="GPL-3.0-only"
 maintainer="clrealy"

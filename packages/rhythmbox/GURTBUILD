@@ -1,9 +1,9 @@
-# Rhythmbox — music player + podcasts
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Music player that also does podcasts
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=rhythmbox
 pkgver=flathub
 pkgrel=1
-pkgdesc="Rhythmbox — music player + podcasts (Flathub)"
+pkgdesc="Music player that also does podcasts (Flathub)"
 url="https://flathub.org/apps/org.gnome.Rhythmbox3"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

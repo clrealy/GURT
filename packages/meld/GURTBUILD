@@ -1,9 +1,9 @@
-# Meld — visual diff + merge
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Compare and merge files side by side
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=meld
 pkgver=flathub
 pkgrel=1
-pkgdesc="Meld — visual diff + merge (Flathub)"
+pkgdesc="Compare and merge files side by side (Flathub)"
 url="https://flathub.org/apps/org.gnome.meld"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

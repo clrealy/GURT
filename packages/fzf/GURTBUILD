@@ -1,8 +1,8 @@
-# fzf — fuzzy finder for literally everything in your terminal
+# Fuzzy finder for basically everything in your terminal
 pkgname=fzf
 pkgver=0.74.4
 pkgrel=1
-pkgdesc="fzf — fuzzy finder for literally everything in your terminal"
+pkgdesc="Fuzzy finder for basically everything in your terminal"
 url="https://github.com/junegunn/fzf"
 license="MIT"
 maintainer="clrealy"

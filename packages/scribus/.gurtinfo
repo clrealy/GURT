@@ -1,7 +1,7 @@
 pkgname = scribus
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Scribus — desktop publishing (posters, zines) (Flathub)
+pkgdesc = Lay out posters, zines and magazines (Flathub)
 url = https://flathub.org/apps/net.scribus.Scribus
 license = GPL-2.0-or-later
 maintainer = clrealy

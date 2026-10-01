@@ -1,9 +1,9 @@
-# Falkon — KDE's lightweight browser
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# KDE's lightweight web browser
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=falkon
 pkgver=flathub
 pkgrel=1
-pkgdesc="Falkon — KDE's lightweight browser (Flathub)"
+pkgdesc="KDE's lightweight web browser (Flathub)"
 url="https://flathub.org/apps/org.kde.falkon"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

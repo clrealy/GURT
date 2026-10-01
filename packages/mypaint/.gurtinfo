@@ -1,7 +1,7 @@
 pkgname = mypaint
 pkgver = flathub
 pkgrel = 1
-pkgdesc = MyPaint — painting with an infinite canvas (Flathub)
+pkgdesc = Paint on a canvas that never runs out (Flathub)
 url = https://flathub.org/apps/org.mypaint.MyPaint
 license = GPL-2.0-or-later
 maintainer = clrealy

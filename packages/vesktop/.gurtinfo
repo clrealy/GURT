@@ -1,7 +1,7 @@
 pkgname = vesktop
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Vesktop — Discord with Vencord built in, better screenshare on Linux (Flathub)
+pkgdesc = Discord with Vencord built in and better screensharing on Linux (Flathub)
 url = https://flathub.org/apps/dev.vencord.Vesktop
 license = GPL-3.0-only
 maintainer = clrealy

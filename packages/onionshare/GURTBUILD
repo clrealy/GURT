@@ -1,9 +1,9 @@
-# OnionShare — share files over Tor
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Share files privately over Tor
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=onionshare
 pkgver=flathub
 pkgrel=1
-pkgdesc="OnionShare — share files over Tor (Flathub)"
+pkgdesc="Share files privately over Tor (Flathub)"
 url="https://flathub.org/apps/org.onionshare.OnionShare"
 license="GPL-3.0-only"
 maintainer="clrealy"

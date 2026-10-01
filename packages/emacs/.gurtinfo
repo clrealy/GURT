@@ -1,7 +1,7 @@
 pkgname = emacs
 pkgver = flathub
 pkgrel = 1
-pkgdesc = GNU Emacs — the extensible editor (Flathub)
+pkgdesc = The endlessly extensible text editor (Flathub)
 url = https://flathub.org/apps/org.gnu.emacs
 license = GPL-3.0-or-later
 maintainer = clrealy

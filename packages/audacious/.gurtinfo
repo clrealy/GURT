@@ -1,7 +1,7 @@
 pkgname = audacious
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Audacious — lightweight music player (Winamp vibes) (Flathub)
+pkgdesc = Lightweight music player with serious Winamp vibes (Flathub)
 url = https://flathub.org/apps/org.atheme.audacious
 license = BSD-2-Clause
 maintainer = clrealy

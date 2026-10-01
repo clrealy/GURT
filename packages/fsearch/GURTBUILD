@@ -1,9 +1,9 @@
-# FSearch — instant file search (Everything vibes)
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Find any file instantly, like Everything on Windows
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=fsearch
 pkgver=flathub
 pkgrel=1
-pkgdesc="FSearch — instant file search (Everything vibes) (Flathub)"
+pkgdesc="Find any file instantly, like Everything on Windows (Flathub)"
 url="https://flathub.org/apps/io.github.cboxdoerfer.FSearch"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

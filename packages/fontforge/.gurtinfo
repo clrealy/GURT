@@ -1,7 +1,7 @@
 pkgname = fontforge
 pkgver = flathub
 pkgrel = 1
-pkgdesc = FontForge — make fonts (Flathub)
+pkgdesc = Design and edit fonts (Flathub)
 url = https://flathub.org/apps/org.fontforge.FontForge
 license = GPL-3.0-or-later
 maintainer = clrealy

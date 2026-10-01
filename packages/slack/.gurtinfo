@@ -1,7 +1,7 @@
 pkgname = slack
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Slack — team chat (Flathub)
+pkgdesc = Team chat (Flathub)
 url = https://flathub.org/apps/com.slack.Slack
 license = Proprietary
 maintainer = clrealy

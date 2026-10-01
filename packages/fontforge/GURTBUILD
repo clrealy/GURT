@@ -1,9 +1,9 @@
-# FontForge — make fonts
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Design and edit fonts
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=fontforge
 pkgver=flathub
 pkgrel=1
-pkgdesc="FontForge — make fonts (Flathub)"
+pkgdesc="Design and edit fonts (Flathub)"
 url="https://flathub.org/apps/org.fontforge.FontForge"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

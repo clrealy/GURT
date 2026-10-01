@@ -1,7 +1,7 @@
 pkgname = ark
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Ark — KDE archive manager (Flathub)
+pkgdesc = KDE's archive manager for zips, tars and more (Flathub)
 url = https://flathub.org/apps/org.kde.ark
 license = GPL-2.0-or-later
 maintainer = clrealy

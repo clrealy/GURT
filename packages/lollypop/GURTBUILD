@@ -1,9 +1,9 @@
-# Lollypop — pretty music library player
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Pretty music player for your library
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=lollypop
 pkgver=flathub
 pkgrel=1
-pkgdesc="Lollypop — pretty music library player (Flathub)"
+pkgdesc="Pretty music player for your library (Flathub)"
 url="https://flathub.org/apps/org.gnome.Lollypop"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

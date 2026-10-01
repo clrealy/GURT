@@ -1,7 +1,7 @@
 pkgname = hydrogen
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Hydrogen — drum machine (Flathub)
+pkgdesc = Drum machine for making beats (Flathub)
 url = https://flathub.org/apps/org.hydrogenmusic.Hydrogen
 license = GPL-2.0-or-later
 maintainer = clrealy

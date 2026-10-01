@@ -1,9 +1,9 @@
-# Scribus — desktop publishing (posters, zines)
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Lay out posters, zines and magazines
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=scribus
 pkgver=flathub
 pkgrel=1
-pkgdesc="Scribus — desktop publishing (posters, zines) (Flathub)"
+pkgdesc="Lay out posters, zines and magazines (Flathub)"
 url="https://flathub.org/apps/net.scribus.Scribus"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

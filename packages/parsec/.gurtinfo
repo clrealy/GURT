@@ -1,7 +1,7 @@
 pkgname = parsec
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Parsec — low-latency remote desktop (Flathub)
+pkgdesc = Remote desktop fast enough for gaming (Flathub)
 url = https://flathub.org/apps/com.parsecgaming.parsec
 license = Proprietary
 maintainer = clrealy

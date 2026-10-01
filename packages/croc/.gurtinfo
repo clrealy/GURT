@@ -1,7 +1,7 @@
 pkgname = croc
 pkgver = 11.5.4
 pkgrel = 1
-pkgdesc = croc — send files between any two computers with a code
+pkgdesc = Send files between any two computers with a short code
 url = https://github.com/schollz/croc
 license = MIT
 maintainer = clrealy

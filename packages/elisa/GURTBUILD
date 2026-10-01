@@ -1,9 +1,9 @@
-# Elisa — KDE's music player
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# KDE's music player
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=elisa
 pkgver=flathub
 pkgrel=1
-pkgdesc="Elisa — KDE's music player (Flathub)"
+pkgdesc="KDE's music player (Flathub)"
 url="https://flathub.org/apps/org.kde.elisa"
 license="LGPL-3.0-or-later"
 maintainer="clrealy"
