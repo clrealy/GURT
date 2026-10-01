@@ -240,7 +240,7 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/":
             if not self._host_ok() or not secrets.compare_digest((q.get("t") or [""])[0], TOKEN):
                 return self._send(403, "nope 🔒 open GURT with: gurt gui", "text/plain")
-            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()), "text/html")
+            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()).replace("__SFX__", "off" if conf().get("sfx") is False else "on"), "text/html")
         if u.path in ("/icon.png", "/logo.png", "/dirt-logo.png"):
             repo = paths().get("repo", "")
             want = {"/logo.png": "gurt-logo.png", "/dirt-logo.png": "dirt-logo.png"}.get(u.path, "apple-touch-icon.png")
@@ -333,6 +333,9 @@ class H(BaseHTTPRequestHandler):
                 argv.append(arg)
             job = start_job(argv)
             return self._send(200, {"job": job.id})
+        if u.path == "/api/sfx":
+            save_conf(sfx=bool(body.get("on")))
+            return self._send(200, {"ok": True})
         if u.path == "/api/skin":
             if body.get("skin") not in SKINS:
                 return self._send(400, {"error": "unknown skin"})
@@ -552,7 +555,7 @@ def main():
 PORT, ASKPASS, ICONS, MODE = 0, "", [], "browser"
 
 PAGE = r"""<!doctype html>
-<html lang="en" data-theme="__THEME__" data-skin="__SKIN__"><head>
+<html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GURT</title><link rel="icon" href="/icon.png">
 <style>
@@ -718,6 +721,7 @@ dialog .row{justify-content:flex-end}
   <select id="skinsel" title="skin">
     <option value="gurt">🦆 GURT</option><option value="win11">🪟 Windows 11</option><option value="xp">🟩 Windows XP</option><option value="w95">💾 Windows 95</option>
   </select>
+  <button class="btn ghost small" id="sfxbtn" title="sound effects"></button>
   <button class="btn ghost small" id="themebtn" title="light / dark"></button>
   <button class="btn ghost small" id="syncbtn" title="gurt sync">↻ sync</button>
 </header>
@@ -847,7 +851,7 @@ async function run(cmd, arg="", {all=false, quiet=false, confirm=true} = {}){
     if (!quiet && j.lines.length) { const o = $("#cout"); o.textContent += j.lines.join("\n") + "\n"; o.scrollTop = o.scrollHeight; }
     if (j.ask && !pwShown) { pwShown = true; askPassword(j.ask); }
     if (!j.ask) pwShown = false;
-    if (j.done) { $("#cdot").className = "dot " + (j.rc === 0 ? "ok" : "bad"); busy = false; setBusyUI(false); cur = null; await load(); return {rc:j.rc, lines}; }
+    if (j.done) { $("#cdot").className = "dot " + (j.rc === 0 ? "ok" : "bad"); if (!quiet) SFX.play(j.rc === 0 ? "ok" : "err"); busy = false; setBusyUI(false); cur = null; await load(); return {rc:j.rc, lines}; }
     await new Promise(r => setTimeout(r, 300));
   }
 }
@@ -933,6 +937,49 @@ async function searchAll(){
 }
 $("#q").addEventListener("input", () => { if (SRC === "dirt") renderDirt(); if (SRC === "gurt") renderMain(); if (!$("#q").value) $("#allres").hidden = true; });
 $("#q").addEventListener("keydown", e => { if (e.key === "Enter") searchAll(); });
+
+// ── 🔊 sfx: tiny synth bleeps (WebAudio, no sound files), 🔇 button mutes them ──
+const SFX = (() => {
+  let ctx = null, on = document.documentElement.dataset.sfx !== "off";
+  const tone = (f, t, dur, type = "square", vol = 0.05, f2 = 0) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + dur + 0.02);
+  };
+  const sounds = {
+    click:   t => tone(620, t, 0.045, "square", 0.03),
+    tick:    t => tone(700 + Math.random() * 600, t, 0.03, "square", 0.025),
+    jackpot: t => [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, t + i * 0.08, 0.18, "triangle", 0.06)),
+    copy:    t => { tone(988, t, 0.06, "sine", 0.06); tone(1480, t + 0.06, 0.1, "sine", 0.06); },
+    pick:    t => tone(660, t, 0.07, "triangle", 0.05, 990),
+    unpick:  t => tone(660, t, 0.07, "triangle", 0.05, 440),
+    ok:      t => [784, 1047, 1568].forEach((f, i) => tone(f, t + i * 0.07, 0.14, "triangle", 0.06)),
+    err:     t => { tone(196, t, 0.18, "sawtooth", 0.05); tone(147, t + 0.16, 0.28, "sawtooth", 0.05); },
+    theme:   t => tone(300, t, 0.22, "sine", 0.05, 900),
+    pop:     t => tone(400, t, 0.09, "sine", 0.07, 1200),
+  };
+  const play = name => {
+    if (!on || !sounds[name]) return;
+    try {
+      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+      if (ctx.state === "suspended") ctx.resume();
+      sounds[name](ctx.currentTime);
+    } catch {}
+  };
+  return { play, get on() { return on; }, set(v) { on = v; } };
+})();
+const SFX_ROLES = {copy:"copy", scopy:"copy", cartcopy:"copy", lotto:"", lotto2:"", themebtn:"theme", sfxbtn:""};
+document.addEventListener("click", e => {
+  const b = e.target.closest("button, .src, .bcat, .pkg, nav button, summary");
+  if (!b) return;
+  const role = b.id in SFX_ROLES ? SFX_ROLES[b.id] : "click";
+  if (role) SFX.play(role);
+}, true);
+
+$("#sfxbtn").addEventListener("click", () => { SFX.set(!SFX.on); $("#sfxbtn").textContent = SFX.on ? "🔊" : "🔇"; api("/api/sfx", {on:SFX.on}).catch(() => {}); SFX.play("pop"); });
+$("#sfxbtn").textContent = SFX.on ? "🔊" : "🔇";
+$("#bgroups").addEventListener("change", e => { if (e.target.dataset.n) SFX.play(e.target.checked ? "pick" : "unpick"); });
 $("#qall").addEventListener("click", searchAll);
 // ── 📥 drop in foreign files (or pick one): gurt figures out what it is and installs it ──
 const DROPPABLE = /\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|appimage|dmg|exe|msi|snap|flatpak|flatpakref|tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst)$/i;
@@ -950,7 +997,7 @@ $("#dropbtn").addEventListener("click", () => $("#dropin").click());
 $("#dropin").addEventListener("change", e => { installFile(e.target.files[0]); e.target.value = ""; });
 let dragDepth = 0;
 const hasFiles = e => [...(e.dataTransfer?.types || [])].includes("Files");
-addEventListener("dragenter", e => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth++; $("#dropzone").hidden = false; });
+addEventListener("dragenter", e => { if (!hasFiles(e)) return; e.preventDefault(); if (!dragDepth++) SFX.play("pop"); $("#dropzone").hidden = false; });
 addEventListener("dragover", e => { if (hasFiles(e)) e.preventDefault(); });
 addEventListener("dragleave", e => { if (hasFiles(e) && --dragDepth <= 0) { dragDepth = 0; $("#dropzone").hidden = true; } });
 addEventListener("drop", e => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth = 0; $("#dropzone").hidden = true; installFile(e.dataTransfer.files[0]); });
@@ -961,8 +1008,8 @@ function spinLottery(box, show, after){
   const pool = S.main, win = pool[Math.floor(Math.random() * pool.length)];
   box.hidden = false; spinning = true; let i = 0;
   const tick = () => {
-    if (i++ < 18) { box.innerHTML = `<div class="spin">🎰 ${esc(pool[Math.floor(Math.random() * pool.length)].name)}</div>`; return setTimeout(tick, 40 + i * 6); }
-    spinning = false; box.innerHTML = show(win); after && after(win);
+    if (i++ < 18) { SFX.play("tick"); box.innerHTML = `<div class="spin">🎰 ${esc(pool[Math.floor(Math.random() * pool.length)].name)}</div>`; return setTimeout(tick, 40 + i * 6); }
+    spinning = false; SFX.play("jackpot"); box.innerHTML = show(win); after && after(win);
   };
   tick();
 }
