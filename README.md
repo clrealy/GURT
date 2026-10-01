@@ -174,6 +174,20 @@ You need `bash`, `git`, GNU `tar`, and `curl` or `wget`. The foreign sources als
 
 `gurt doctor` shows which sources are ready on your system.
 
+### On Windows 🪟
+
+gurt runs on Windows through **WSL** (the Linux that's built into Windows). Paste this in PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/clrealy/GURT/main/install.ps1 | iex
+```
+
+- **No WSL yet?** It installs WSL + Ubuntu for you (Windows asks for admin and might want a reboot). Open Ubuntu once to make your Linux user, then run the line again.
+- It installs gurt inside WSL and adds a `gurt` command to Windows, so `gurt install firefox` works straight from PowerShell or cmd.
+- **GURT** shows up in your Start menu, and Linux apps you install show up there too (WSLg, on Windows 11 or Windows 10 21H2+).
+- Want a different distro than your default? `$env:GURT_WSL_DISTRO = "Debian"` before running it.
+- Linux desktops (`gurt de`) don't make sense on Windows, so they're turned off there. Snaps need systemd switched on in WSL; gurt tells you how.
+
 ## Build your setup + the app lottery 🧰🎰
 
 The [website](https://clrealy.github.io/GURT/) has a **Build your setup** picker (like tuxmate, but gurt): tick the apps you want, grouped by category, and copy one `gurt install …` command that works on every distro. Tick "I don't have gurt yet" and the command installs gurt first.

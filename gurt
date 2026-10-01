@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.19.4"
+GURT_VERSION="0.20.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -63,6 +63,9 @@ ask()  {
 R="${GURT_ROOT%/}"                       # "" when root is /
 DB="$R/var/lib/gurt/local"
 SELF_DIR=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
+
+# running inside WSL (gurt on Windows)?
+is_wsl() { [[ -n ${WSL_DISTRO_NAME:-} || -n ${WSL_INTEROP:-} ]] || grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; }
 
 depmap_file() {
   local f
@@ -632,6 +635,7 @@ add_desktop_icons() {
   local key=$1 desk rel f out made=()
   { $NO_DESKTOP || [[ ${GURT_DESKTOP_ICONS:-1} == 0 ]]; } && return 0
   (( EUID == 0 )) && return 0   # root's desktop isn't yours
+  is_wsl && return 0            # WSL: apps land in the Windows Start menu (WSLg), there's no Linux desktop
   desk=$(desktop_dir); mkdir -p "$desk" 2>/dev/null || return 0
   while IFS= read -r rel; do
     f="$R/$rel"; out="$desk/${rel##*/}"
@@ -1911,6 +1915,9 @@ flatpak_install() { # name reason
 }
 
 ensure_snap() {
+  if is_wsl && [[ ! -d /run/systemd/system ]]; then
+    die "snaps need systemd, and it's off in your WSL 🪟 turn it on: put [boot] + systemd=true in /etc/wsl.conf, run 'wsl --shutdown' in PowerShell, then try again (or grab the flatpak/ version)"
+  fi
   command -v snap >/dev/null && return 0
   $NODEPS && die "snap isn't installed (and --nodeps is on)"
   msg "snap isn't installed — setting up snapd"
@@ -2400,6 +2407,9 @@ de_remove() { # name — removes a desktop through your package manager, which s
 }
 cmd_de() {
   local sub=${1:-list} d
+  if is_wsl; then
+    die "you're on Windows (WSL) 🪟 — Linux desktops don't run here. Your Linux apps show up right in the Windows Start menu instead"
+  fi
   case $sub in
     list|ls)
       printf '%sdesktops you can install on %s (%s):%s\n' "$B" "$(. /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-this distro}")" "$PM" "$R0"
@@ -3303,6 +3313,7 @@ cmd_repo() {
 
 cmd_doctor() {
   local id="unknown"; [[ -r /etc/os-release ]] && id=$(. /etc/os-release; echo "${PRETTY_NAME:-$ID}")
+  is_wsl && id="$id (on Windows, WSL ${WSL_DISTRO_NAME:-})"
   printf '%-14s %s\n' gurt "$GURT_VERSION" distro "$id" "pkg manager" "$PM" arch "$CARCH" \
     prefix "$GURT_PREFIX" root "${GURT_ROOT}" "main repo" "$GURT_REPO_URL" cache "$GURT_CACHE" \
     deps.map "$(depmap_file || true)"
@@ -3549,7 +3560,7 @@ main() {
     lottery|lotto|gamble) cmd_lottery "$@" ;;
     import)            cmd_import "$@" ;;
     __complete)        cmd_complete "$@" ;;
-    __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" ;;
+    __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\nwsl=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" "$(is_wsl && echo yes || echo no)" ;;
     gui)               cmd_gui "$@" ;;
     completions)       completion_script "${1:?usage: gurt completions bash|zsh|fish}" ;;
     outsource|os|clone) (( $# )) || die "outsource what tho — gurt outsource https://github.com/user/repo (or a file: gurt outsource ./app.deb)"

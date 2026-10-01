@@ -179,7 +179,7 @@ def state():
                                       text=True, timeout=15).stdout.split()
         except Exception:
             pass
-    return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks,
+    return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks, "wsl": p.get("wsl") == "yes",
             "main": main, "dirtpkgs": dirt, "installed": installed}
 
 
@@ -417,6 +417,12 @@ def native_window(tk, url, icon):
 
 
 def open_window(url):
+    # gurt on Windows (WSL): open it in the Windows browser
+    if os.environ.get("WSL_DISTRO_NAME") or os.environ.get("WSL_INTEROP"):
+        for cmd in (["wslview", url], ["cmd.exe", "/c", "start", "", url], ["explorer.exe", url]):
+            if shutil.which(cmd[0]):
+                subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                return
     for b in ("chromium", "chromium-browser", "google-chrome-stable", "google-chrome", "brave", "brave-browser",
               "microsoft-edge-stable", "vivaldi-stable"):
         if shutil.which(b):
@@ -683,7 +689,8 @@ const api = (p, body) => fetch(p, body ? {method:"POST", headers:{"X-Gurt-Token"
 let S = {main:[], installed:[]}, busy = false, cur = null;
 
 // ── state ──
-async function load(){ S = await api("/api/state"); $("#ver").textContent = `v${S.version} · ${S.pm}`; renderMain(); renderInstalled(); if (!$("#t-setup").hidden) renderBuilder(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt(); }
+async function load(){ S = await api("/api/state"); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · 🪟 Windows" : ""}`;
+  document.querySelector('nav button[data-tab="desktops"]').hidden = S.wsl;   /* no Linux desktops on Windows */ renderMain(); renderInstalled(); if (!$("#t-setup").hidden) renderBuilder(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt(); }
 const inst = spec => {
   const m = S.main.find(p => p.name === spec);
   return S.installed.find(i => i.spec === spec || i.key === spec || (m && i.key === m.ikey) || (i.src === "gurt" && i.name === spec))

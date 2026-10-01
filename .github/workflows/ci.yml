@@ -15,6 +15,23 @@ jobs:
       - name: lint recipes
         run: ./tools/lint.sh
 
+  # gurt on Windows: the PowerShell installer has to parse + pass PSScriptAnalyzer on a real Windows box
+  windows:
+    if: github.event_name == 'pull_request'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install.ps1 parses + passes PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          $e = $null; [void][System.Management.Automation.Language.Parser]::ParseFile("$PWD\install.ps1", [ref]$null, [ref]$e)
+          if ($e) { $e | ForEach-Object { Write-Host "::error file=install.ps1::$_" }; exit 1 }
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+          $r = Invoke-ScriptAnalyzer -Path install.ps1 -Severity Error
+          $r | Format-Table -AutoSize | Out-String -Width 200 | Write-Host
+          if ($r) { exit 1 }
+          Write-Host "install.ps1 ✅"
+
   # builds every recipe the PR touched, on a few different distros
   build:
     if: github.event_name == 'pull_request'
