@@ -576,10 +576,11 @@ dialog .row{justify-content:flex-end}
 .bapp{display:flex;gap:8px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;font-size:14px;line-height:1.3;min-width:0}
 .bapp:hover{border-color:var(--muted)}
 .bapp input{margin:2px 0 0;accent-color:var(--accent);flex:none}
-.bapp b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bapp small{display:block;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bapp b{display:block;overflow-wrap:anywhere}
+.bapp small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--muted);font-size:12px;line-height:1.35;margin-top:2px}
 .bapp.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--panel))}
 .bapp.done{opacity:.6;cursor:default}
+#cartcount{flex:1;min-width:0;font-size:14px;line-height:1.35}
 #cartbar{position:sticky;bottom:0;display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-top:14px;box-shadow:0 -4px 18px rgba(0,0,0,.1)}
 #lottowin2{border:2px dashed var(--accent);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center}
 #lottowin2 .spin{font:700 20px ui-monospace,monospace;margin-bottom:6px}
@@ -841,7 +842,7 @@ function renderBuilder(){
 }
 function renderCart(){
   const n = PICKED.size; $("#cartbar").hidden = !n;
-  $("#cartcount").textContent = `${n} app${n === 1 ? "" : "s"} picked: ${[...PICKED].sort().join(", ")}`;
+  $("#cartcount").innerHTML = `<b>${n} app${n === 1 ? "" : "s"} picked</b> · ${esc([...PICKED].sort().join(", "))}`;
 }
 $("#bcats").addEventListener("click", e => { const b = e.target.closest(".bcat"); if (b) { BCAT = b.dataset.c; renderBuilder(); } });
 $("#bgroups").addEventListener("change", e => { const n = e.target.dataset.n; if (!n) return;
@@ -867,10 +868,14 @@ async function check(){
   $("#ugrid").innerHTML = `<div class="empty">checking… ⏳</div>`;
   const r = await run("update", "", {confirm:false}); if (!r) return;
   const ups = r.lines.map(l => l.match(/^\s*->\s*(\S+)\s+(\S+) -> (\S+)$/)).filter(Boolean);
-  $("#ubadge").hidden = !ups.length; $("#ubadge").textContent = ups.length;
-  const selfUp = r.lines.find(l => /newer gurt|gurt self-update/.test(l));
-  $("#ugrid").innerHTML = (ups.length ? ups.map(m => card({name:m[1].split("/").pop(), src:m[1].includes("/") ? m[1].split("/")[0] : "gurt", ver:`${m[2]} → ${m[3]}`, desc:"update available", actions: actBtn("update","install",m[1])})).join("")
-    : `<div class="empty">everything's up to date, you're chillin 😎</div>`) + (selfUp ? card({name:"gurt", ver:"new version", desc:selfUp.replace(/^\W+/,""), actions: actBtn("update gurt","self-update","")}) : "");
+  // gurt itself counts as an update too (and goes first — the new gurt might be needed for the rest)
+  const selfUp = r.lines.find(l => /is out \(you have|gurt self-update/.test(l));
+  const n = ups.length + (selfUp ? 1 : 0);
+  $("#ubadge").hidden = !n; $("#ubadge").textContent = n;
+  const sv = selfUp && selfUp.match(/gurt (\S+) is out \(you have (\S+)\)/);
+  $("#ugrid").innerHTML = !n ? `<div class="empty">everything's up to date, you're chillin 😎</div>`
+    : (selfUp ? card({name:"gurt", ver: sv ? `${sv[2]} → ${sv[1]}` : "new version", desc:"gurt itself has an update 🦆", actions: actBtn("update gurt","self-update","")}) : "")
+      + ups.map(m => card({name:m[1].split("/").pop(), src:m[1].includes("/") ? m[1].split("/")[0] : "gurt", ver:`${m[2]} → ${m[3]}`, desc:"update available", actions: actBtn("update","install",m[1])})).join("");
 }
 $("#checkbtn").addEventListener("click", check);
 $("#upbtn").addEventListener("click", async () => { if (await run("upgrade")) check(); });
