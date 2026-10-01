@@ -1,0 +1,26 @@
+name: flathub ids
+# every Flathub recipe's app id has to really exist on Flathub — checks all of them weekly
+# (apps get renamed or pulled), and on PRs that touch recipes
+on:
+  schedule: [{ cron: "41 6 * * 1" }]
+  workflow_dispatch:
+  pull_request:
+    paths: ["packages/**", ".github/workflows/flatpak-ids.yml"]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq flatpak
+      - run: flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+      - name: check every via_type=flatpak recipe
+        run: |
+          bad=0 n=0
+          for f in packages/*/GURTBUILD; do
+            grep -q '^via_type=flatpak' "$f" || continue
+            p=$(basename "$(dirname "$f")"); id=$(sed -n 's/^via_pkg=//p' "$f"); n=$((n + 1))
+            if flatpak remote-info --user flathub "$id" >/dev/null 2>&1; then echo "✅ $p → $id"
+            else echo "::error file=$f::$p: $id isn't on Flathub (renamed or removed?)"; bad=$((bad + 1)); fi
+          done
+          echo "checked $n Flathub apps, $bad missing"
+          [ "$bad" -eq 0 ]
