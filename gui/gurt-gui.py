@@ -246,6 +246,12 @@ class H(BaseHTTPRequestHandler):
                     return self._send(400, {"error": "that desktop name looks sus"})
                 job = start_job([GURT, "-y", "de", "install", arg])
                 return self._send(200, {"job": job.id})
+            if cmd == "install-many":
+                names = arg.split()
+                if not names or len(names) > 200 or any(n.startswith("-") or not SPEC_RE.match(n) for n in names):
+                    return self._send(400, {"error": "those names look sus"})
+                job = start_job([GURT, "-y", "install", *names])
+                return self._send(200, {"job": job.id})
             if cmd == "gui-setup":
                 job = start_job([GURT, "-y", "gui", "--setup"])
                 return self._send(200, {"job": job.id})
@@ -557,6 +563,27 @@ dialog h3{margin:0 0 6px;font-size:20px}dialog p{color:var(--muted);margin:0 0 1
 dialog input{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--ink);margin-bottom:14px;outline:none}
 dialog input:focus{border-color:var(--accent)}
 dialog .row{justify-content:flex-end}
+.lottobtn{background:linear-gradient(90deg,#ff3b3b,#ffc629,#33e06b,#4f7bff);color:#111;font-weight:800}
+.btn.big{font-size:16px;padding:12px 20px}
+.setuphead{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+.setuphead h2{margin:0}
+#t-setup .btn.big{background:linear-gradient(90deg,#ff3b3b,#ffc629,#33e06b,#4f7bff);color:#111;font-weight:800}
+.bcats{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.bcat{font:inherit;font-size:13px;background:var(--tag);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:4px 12px;cursor:pointer}
+.bcat.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.bgroup h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:16px 0 8px}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.bapp{display:flex;gap:8px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;font-size:14px;line-height:1.3;min-width:0}
+.bapp:hover{border-color:var(--muted)}
+.bapp input{margin:2px 0 0;accent-color:var(--accent);flex:none}
+.bapp b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bapp small{display:block;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bapp.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--panel))}
+.bapp.done{opacity:.6;cursor:default}
+#cartbar{position:sticky;bottom:0;display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-top:14px;box-shadow:0 -4px 18px rgba(0,0,0,.1)}
+#lottowin2{border:2px dashed var(--accent);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center}
+#lottowin2 .spin{font:700 20px ui-monospace,monospace;margin-bottom:6px}
+#lottowin2 .card{text-align:left;max-width:520px;margin:8px auto 0}
 #lottowin{border:2px dashed var(--accent);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center}
 #lottowin .spin{font:700 20px ui-monospace,monospace;margin-bottom:6px}
 #lottowin .card{text-align:left;max-width:520px;margin:8px auto 0}
@@ -570,6 +597,7 @@ dialog .row{justify-content:flex-end}
     <button data-tab="discover" class="on">🔍 Discover</button>
     <button data-tab="installed">📦 Installed</button>
     <button data-tab="updates">⬆️ Updates<span class="badge" id="ubadge" hidden></span></button>
+    <button data-tab="setup">🧰 Setup</button>
     <button data-tab="desktops">🖥️ Desktops</button>
   </nav>
   <div class="spacer"></div>
@@ -591,7 +619,7 @@ dialog .row{justify-content:flex-end}
       <button data-src="dirt" class="dirtbtn">dirt/ <small>18+</small></button>
     </div>
     <p class="blurb" id="blurb" hidden></p>
-    <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button><button class="btn ghost" id="lotto" title="win a random app">🎰 lottery</button></div>
+    <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button><button class="btn lottobtn" id="lotto" title="win a random app">🎰 lottery</button></div>
     <p class="hint">tip: <code>aur/yay</code>, <code>apt/cowsay</code>, <code>flatpak/gimp</code>… type a full name with a source and hit install</p>
     <div id="direct" hidden class="row" style="margin-bottom:12px"><button class="btn" id="directbtn"></button></div>
     <div id="allres" hidden><h2>everywhere</h2><div class="grid" id="allgrid"></div><h2 style="margin-top:18px">Main GURT</h2></div>
@@ -607,6 +635,14 @@ dialog .row{justify-content:flex-end}
   <section id="t-updates" hidden>
     <div class="row" style="margin-bottom:14px"><button class="btn ghost" id="checkbtn">check for updates</button><button class="btn" id="upbtn">⬆️ update everything</button><button class="btn ghost" id="selfbtn">update gurt itself</button></div>
     <div class="grid" id="ugrid"><div class="empty">hit "check for updates" 👆</div></div>
+  </section>
+  <section id="t-setup" hidden>
+    <div class="setuphead"><div><h2>🧰 Build your setup</h2><p class="blurb">tick everything you want, hit install once. works the same on every distro.</p></div>
+      <button class="btn big" id="lotto2">🎰 spin the app lottery</button></div>
+    <div id="lottowin2" hidden></div>
+    <div class="bcats" id="bcats"></div>
+    <div id="bgroups"></div>
+    <div id="cartbar" hidden><span id="cartcount"></span><span class="spacer"></span><button class="btn ghost small" id="cartclear">clear</button><button class="btn" id="cartgo">install them</button></div>
   </section>
   <section id="t-desktops" hidden>
     <p class="blurb">Desktop environments come straight from your own distro's repos (never from another distro, that breaks stuff). After installing, log out and pick it on the login screen.</p>
@@ -630,7 +666,7 @@ const api = (p, body) => fetch(p, body ? {method:"POST", headers:{"X-Gurt-Token"
 let S = {main:[], installed:[]}, busy = false, cur = null;
 
 // ── state ──
-async function load(){ S = await api("/api/state"); $("#ver").textContent = `v${S.version} · ${S.pm}`; renderMain(); renderInstalled(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt(); }
+async function load(){ S = await api("/api/state"); $("#ver").textContent = `v${S.version} · ${S.pm}`; renderMain(); renderInstalled(); if (!$("#t-setup").hidden) renderBuilder(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt(); }
 const inst = spec => S.installed.find(i => i.spec === spec || i.key === spec || (i.src === "gurt" && i.name === spec));
 
 function card({name, src="gurt", ver, desc, extra="", actions=""}){
@@ -661,7 +697,7 @@ function renderInstalled(){
 }
 
 // ── running gurt ──
-const VERB = {de:"Install the desktop", install:"Install", remove:"Remove", rollback:"Roll back", hold:"Hold", unhold:"Unhold", upgrade:"Update everything", "self-update":"Update gurt", outsource:"Build + install"};
+const VERB = {de:"Install the desktop", install:"Install", "install-many":"Install", remove:"Remove", rollback:"Roll back", hold:"Hold", unhold:"Unhold", upgrade:"Update everything", "self-update":"Update gurt", outsource:"Build + install"};
 function ask(title, body){ return new Promise(res => { $("#ctitle2").textContent = title; $("#cbody").textContent = body; const d=$("#confirm");
   const done = v => { d.close(); $("#cyes").onclick = $("#cno").onclick = null; res(v); };
   $("#cyes").onclick = () => done(true); $("#cno").onclick = () => done(false); d.onclose = () => res(false); d.showModal(); }); }
@@ -775,17 +811,54 @@ $("#q").addEventListener("keydown", e => { if (e.key === "Enter") searchAll(); }
 $("#qall").addEventListener("click", searchAll);
 // 🎰 lottery: spin through Main GURT, land on one, install it if you dare
 let spinning = false;
-$("#lotto").addEventListener("click", () => {
+function spinLottery(box, show, after){
   if (spinning || !S.main.length) return;
-  const pool = S.main, win = pool[Math.floor(Math.random() * pool.length)], box = $("#lottowin");
+  const pool = S.main, win = pool[Math.floor(Math.random() * pool.length)];
   box.hidden = false; spinning = true; let i = 0;
   const tick = () => {
     if (i++ < 18) { box.innerHTML = `<div class="spin">🎰 ${esc(pool[Math.floor(Math.random() * pool.length)].name)}</div>`; return setTimeout(tick, 40 + i * 6); }
-    spinning = false;
-    box.innerHTML = `<div class="spin">🎉 jackpot!</div>` + card({name:win.name, ver:win.ver, desc:win.desc, actions: installBtns(win.name)});
+    spinning = false; box.innerHTML = show(win); after && after(win);
   };
   tick();
+}
+$("#lotto").addEventListener("click", () => spinLottery($("#lottowin"),
+  win => `<div class="spin">🎉 jackpot!</div>` + card({name:win.name, ver:win.ver, desc:win.desc, actions: installBtns(win.name)})));
+// ── 🧰 setup builder: pick a bunch, install them in one go ──
+const CATS = {browsers:"🌐 Browsers", chat:"💬 Chat & email", media:"🎬 Media", creative:"🎨 Creative", office:"📚 Office & notes",
+  dev:"🧑‍💻 Dev", cli:"⌨️ Terminal tools", gaming:"🎮 Gaming", internet:"📡 Files & remote", system:"⚙️ System", security:"🔐 Security", fun:"🤪 Fun", other:"📦 Other"};
+const PICKED = new Set(); let BCAT = "all";
+const catOf = p => CATS[p.category] ? p.category : "other";
+function renderBuilder(){
+  const have = [...new Set(S.main.map(catOf))].sort((a, b) => Object.keys(CATS).indexOf(a) - Object.keys(CATS).indexOf(b));
+  $("#bcats").innerHTML = [`<button class="bcat${BCAT === "all" ? " on" : ""}" data-c="all">all (${S.main.length})</button>`]
+    .concat(have.map(c => `<button class="bcat${BCAT === c ? " on" : ""}" data-c="${c}">${CATS[c]}</button>`)).join("");
+  $("#bgroups").innerHTML = have.filter(c => BCAT === "all" || BCAT === c).map(c => `<div class="bgroup"><h3>${CATS[c]}</h3><div class="bgrid">${
+    S.main.filter(p => catOf(p) === c).map(p => {
+      const done = inst(p.name), on = PICKED.has(p.name), d = (p.desc || "").replace(/\s*\((Flathub|official repo[^)]*)\)\s*$/, "").replace(/^[^—]*—\s*/, "");
+      return `<label class="bapp${on ? " on" : ""}${done ? " done" : ""}" title="${esc(p.desc)}"><input type="checkbox" data-n="${esc(p.name)}"${on || done ? " checked" : ""}${done ? " disabled" : ""}><span><b>${esc(p.name)}</b><small>${done ? "installed ✓" : esc(d)}</small></span></label>`;
+    }).join("")}</div></div>`).join("");
+  renderCart();
+}
+function renderCart(){
+  const n = PICKED.size; $("#cartbar").hidden = !n;
+  $("#cartcount").textContent = `${n} app${n === 1 ? "" : "s"} picked: ${[...PICKED].sort().join(", ")}`;
+}
+$("#bcats").addEventListener("click", e => { const b = e.target.closest(".bcat"); if (b) { BCAT = b.dataset.c; renderBuilder(); } });
+$("#bgroups").addEventListener("change", e => { const n = e.target.dataset.n; if (!n) return;
+  e.target.checked ? PICKED.add(n) : PICKED.delete(n); e.target.closest(".bapp").classList.toggle("on", e.target.checked); renderCart(); });
+$("#cartclear").addEventListener("click", () => { PICKED.clear(); renderBuilder(); });
+$("#cartgo").addEventListener("click", async () => {
+  const names = [...PICKED].sort(); if (!names.length) return;
+  const r = await run("install-many", names.join(" "));
+  if (r && r.rc === 0) PICKED.clear();
+  renderBuilder();
 });
+// the Setup tab's lottery: lands on an app and ticks it for you
+$("#lotto2").addEventListener("click", () => spinLottery($("#lottowin2"), win => {
+  return `<div class="spin">🎉 jackpot!</div>` + card({name:win.name, ver:win.ver, desc:win.desc,
+    actions: installBtns(win.name) + (inst(win.name) ? "" : ` <button class="btn ghost small" id="lwpick">＋ add to my setup</button>`)});
+}, win => { const b = $("#lwpick"); if (b) b.onclick = () => { PICKED.add(win.name); BCAT = catOf(win); renderBuilder(); b.textContent = "added ✓"; }; }));
+
 $("#directbtn").addEventListener("click", () => run("install", $("#q").value.trim()));
 $("#iq").addEventListener("input", renderInstalled);
 
@@ -816,7 +889,8 @@ darkMQ.addEventListener("change", themeIcon); themeIcon();
 // ── tabs ──
 document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x === b));
-  for (const t of ["discover","installed","updates","desktops"]) $("#t-"+t).hidden = b.dataset.tab !== t;
+  for (const t of ["discover","installed","updates","setup","desktops"]) $("#t-"+t).hidden = b.dataset.tab !== t;
+  if (b.dataset.tab === "setup") renderBuilder();
   if (b.dataset.tab === "desktops" && !deLoaded) loadDesktops();
 }));
 

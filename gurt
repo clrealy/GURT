@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.19.0"
+GURT_VERSION="0.19.1"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -1037,6 +1037,14 @@ APT_ROWS_AWK='BEGIN { RS=""; FS="\n"; OFS="\t" }
       for (j=1; j<=m; j++) { x=arr[j]; sub(/ *\(.*/, "", x); gsub(/ /, "", x); if (x != "") prov = prov (prov == "" ? "" : ",") x }
       gsub(/\t/, " ", ds)
       if (n != "" && f != "") print n, v, f, "sha256:" s, out, ds, prov }'
+# the text inside a clearsigned message (headers dropped, "- " dash-escapes undone)
+clearsigned_text() {
+  awk '/^-----BEGIN PGP SIGNED MESSAGE-----/ { h=1; next }
+       h && /^\r?$/ { h=0; b=1; next }
+       h { next }
+       b && /^-----BEGIN PGP SIGNATURE-----/ { exit }
+       b { sub(/^- /, ""); print }'
+}
 sync_apt() { # tmp mirror suite components [key]
   local tmp=$1 mirror=$2 suite=$3 comps=$4 key=${5:-} c u da rel="" ext rp got want; da=$(debarch)
   if [[ -n $key ]]; then
@@ -1045,6 +1053,12 @@ sync_apt() { # tmp mirror suite components [key]
     gpg_keyring "$key" "$tmp/kr.gpg"
     gpgv --keyring "$tmp/kr.gpg" --output "$tmp/Release" "$tmp/InRelease" 2>/dev/null ||
       die "🚩 signature check FAILED for $mirror ($suite) — not trusting this repo"
+    # some gpgv builds (Sequoia's, on openSUSE) verify fine but don't write --output — take the signed text out ourselves
+    if [[ ! -s $tmp/Release ]]; then
+      [[ $(grep -c '^-----BEGIN PGP SIGNED MESSAGE-----' "$tmp/InRelease") == 1 ]] || die "🚩 $mirror InRelease has more than one signed block — refusing"
+      clearsigned_text < "$tmp/InRelease" > "$tmp/Release"
+      [[ -s $tmp/Release ]] || die "couldn't read the signed Release out of $mirror's InRelease"
+    fi
     rel="$tmp/Release"; msg2 "signature ok 🔏"
   fi
   for c in $comps; do

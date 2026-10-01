@@ -1,6 +1,6 @@
 pkgname = btop
 pkgver = 1.4.4
-pkgrel = 1
+pkgrel = 2
 pkgdesc = A monitor of resources (CPU, memory, disks, network, processes) that looks sick
 url = https://github.com/aristocratos/btop
 license = Apache-2.0
@@ -13,4 +13,5 @@ arch = riscv64
 makedepends = cc
 makedepends = make
 makedepends = git
+makedepends = linux-headers
 source = git+https://github.com/aristocratos/btop.git#tag=v1.4.4
