@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.19.3"
+GURT_VERSION="0.19.4"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -845,8 +845,8 @@ resolve_and_install() { # name reason
   # official-repo recipe → add the vendor's repo (key fingerprint pinned by the recipe), install from it
   local via; via=$(info_get "$info" via_repo)
   case $(info_get "$info" via_type) in
-    flatpak) flatpak_install "$(info_get "$info" via_pkg)" "$reason"; return ;;
-    snap)    snap_install "$(info_get "$info" via_pkg)" "$reason"; return ;;
+    flatpak) flatpak_install "$(info_get "$info" via_pkg)" "$reason"; mark_origin "flatpak:$(info_get "$info" via_pkg)" "$name"; return ;;
+    snap)    snap_install "$(info_get "$info" via_pkg)" "$reason"; mark_origin "snap:$(info_get "$info" via_pkg)" "$name"; return ;;
   esac
   if [[ -n $via ]]; then
     if ! repo_file "$via" >/dev/null; then
@@ -858,6 +858,7 @@ resolve_and_install() { # name reason
     fi
     local vp; vp=$(info_get "$info" via_pkg)
     foreign_install "$via" "${vp:-$name}" "$reason"
+    mark_origin "$via:${vp:-$name}" "$name"
     return
   fi
 
@@ -2889,10 +2890,33 @@ cmd_info() {
   else printf '%-14s: no\n' installed; fi
 }
 
+# Main GURT recipes that install from Flathub / snap / an official repo are stored under that source's key,
+# but they came from GURT — remember which recipe brought them in
+mark_origin() { # key recipe
+  is_installed "$1" || return 0
+  grep -qx "recipe = $2" "$DB/$1/info" 2>/dev/null && return 0
+  printf 'origin = gurt\nrecipe = %s\n' "$2" | asroot tee -a "$DB/$1/info" >/dev/null
+}
+declare -A RECIPE_OF=()
+recipe_of() { # key → the Main GURT recipe it came from (works for installs from before gurt kept track, too)
+  local r; r=$(info_get "$DB/$1/info" recipe 2>/dev/null); [[ -n $r ]] && { echo "$r"; return; }
+  if (( ! ${#RECIPE_OF[@]} )); then
+    RECIPE_OF[.]=1
+    local k n
+    while IFS=$'\t' read -r k n; do RECIPE_OF[$k]=$n; done < <(
+      awk -F' = ' 'FNR == 1 { if (n != "") out(); n = FILENAME; sub(/\/\.gurtinfo$/, "", n); sub(/.*\//, "", n); vt = vp = vr = "" }
+        $1 == "via_type" { vt = $2 } $1 == "via_pkg" { vp = $2 } $1 == "via_repo" { vr = $2 }
+        function out() { if (vt == "flatpak" || vt == "snap") print vt ":" vp "\t" n; else if (vr != "") print vr ":" (vp != "" ? vp : n) "\t" n }
+        END { if (n != "") out() }' "$GURT_REPO_DIR"/packages/*/.gurtinfo 2>/dev/null)
+  fi
+  [[ -n ${RECIPE_OF[$1]:-} ]] && echo "${RECIPE_OF[$1]}"
+}
 cmd_list() {
-  local d k
+  local d k r
   for d in "$DB"/*/; do
-    k=$(basename "$d"); printf '%s %s\n' "$(pretty "$k")" "$(inst_ver "$k")"
+    k=$(basename "$d"); r=$(recipe_of "$k")
+    if [[ -n $r ]]; then printf '%s %s  (from GURT · via %s)\n' "$r" "$(inst_ver "$k")" "$(pretty "$k")"
+    else printf '%s %s\n' "$(pretty "$k")" "$(inst_ver "$k")"; fi
   done
 }
 

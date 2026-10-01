@@ -153,6 +153,7 @@ def state():
                 continue
             dirt.append({"name": info.get("pkgname", name), "ver": f"{info.get('pkgver','')}-{info.get('pkgrel','')}",
                          "desc": info.get("pkgdesc", ""), "alias": info.get("alias", []), "maintainer": info.get("maintainer", "")})
+    by_ikey = {p["ikey"]: p["name"] for p in main if p["ikey"] != p["name"]}
     installed = []
     if os.path.isdir(db):
         for key in sorted(os.listdir(db)):
@@ -163,7 +164,11 @@ def state():
                 reason = ""
             src, name = key.split(":", 1) if ":" in key else ("gurt", key)
             rel = info.get("pkgrel")
-            installed.append({"key": key, "spec": key if src == "gurt" else f"{src}/{name}", "name": name, "src": src,
+            via = ""
+            recipe = info.get("recipe") or by_ikey.get(key)   # came from a Main GURT recipe → its origin is GURT
+            if recipe and src != "gurt":
+                via, src, name = f"{src}/{name}", "gurt", recipe
+            installed.append({"key": key, "via": via, "spec": key if src == "gurt" and not via else name if via else f"{src}/{name}", "name": name, "src": src,
                               "ver": info.get("pkgver", "?") + (f"-{rel}" if rel else ""), "desc": info.get("pkgdesc", ""),
                               "reason": reason, "held": os.path.exists(os.path.join(db, key, "held"))})
     # flatpaks you installed without gurt still count as installed
@@ -708,7 +713,7 @@ function renderInstalled(){
   const q = $("#iq").value.trim().toLowerCase();
   const list = S.installed.filter(i => !q || (i.spec+" "+i.desc).toLowerCase().includes(q));
   $("#igrid").innerHTML = list.length ? list.map(i => card({name:i.name, src:i.src, ver:i.ver, desc:i.desc,
-      extra:`<div class="row">${i.reason==="dep"?'<span class="chip">dependency</span>':""}${i.held?'<span class="chip">held 📌</span>':""}</div>`,
+      extra:`<div class="row">${i.via?`<span class="chip" title="${esc(i.via)}">from GURT 🦆 · via ${esc(i.via.split("/")[0])}</span>`:""}${i.reason==="dep"?'<span class="chip">dependency</span>':""}${i.held?'<span class="chip">held 📌</span>':""}</div>`,
       actions: actBtn("remove","remove",i.spec,"danger") + actBtn("rollback","rollback",i.spec,"ghost") +
         (i.held ? actBtn("unhold","unhold",i.spec,"ghost") : actBtn("hold","hold",i.spec,"ghost"))})).join("")
     : `<div class="empty">${S.installed.length ? "nothing matched" : "nothing installed with gurt yet 👀"}</div>`;
