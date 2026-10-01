@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.19.1"
+GURT_VERSION="0.19.2"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -2948,7 +2948,9 @@ cmd_update() {   # like apt update: refresh everything, install nothing
   refresh_all
   msg "checking for newer versions"
   find_outdated
+  local v; v=$(repo_gurt_ver)
   if (( ${#TODO[@]} )); then msg "${#TODO[@]} package(s) can be upgraded — run: gurt upgrade"
+  elif [[ -n $v ]] && vnewer "$GURT_VERSION" "$v"; then msg "your apps are up to date — but gurt itself has an update 👇"
   else msg "everything's up to date, you're chillin 😎"; fi
   check_self
 }
