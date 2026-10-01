@@ -1,0 +1,15 @@
+# gitg — GNOME git viewer
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=gitg
+pkgver=flathub
+pkgrel=1
+pkgdesc="gitg — GNOME git viewer (Flathub)"
+url="https://flathub.org/apps/org.gnome.gitg"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.gitg

@@ -1,0 +1,13 @@
+pkgname = chiaki-ng
+pkgver = flathub
+pkgrel = 1
+pkgdesc = chiaki-ng — PlayStation remote play (Flathub)
+url = https://flathub.org/apps/io.github.streetpea.Chiaki4deck
+license = AGPL-3.0-only
+maintainer = clrealy
+category = gaming
+arch = x86_64
+alias = chiaki
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.streetpea.Chiaki4deck

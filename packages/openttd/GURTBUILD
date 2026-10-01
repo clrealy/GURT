@@ -1,0 +1,15 @@
+# OpenTTD — transport tycoon
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=openttd
+pkgver=flathub
+pkgrel=1
+pkgdesc="OpenTTD — transport tycoon (Flathub)"
+url="https://flathub.org/apps/org.openttd.OpenTTD"
+license="GPL-2.0-only"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.openttd.OpenTTD

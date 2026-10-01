@@ -1,0 +1,24 @@
+# yq — jq for YAML, JSON, XML and TOML
+pkgname=yq
+pkgver=4.54.1
+pkgrel=1
+pkgdesc="yq — jq for YAML, JSON, XML and TOML"
+url="https://github.com/mikefarah/yq"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("git+https://github.com/mikefarah/yq.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd yq
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X main.version=$pkgver" -o out/yq .
+}
+
+package() {
+  install -Dm755 yq/out/yq "$pkgdir$prefix/bin/yq"
+}

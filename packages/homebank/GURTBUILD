@@ -1,0 +1,15 @@
+# HomeBank — track your money
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=homebank
+pkgver=flathub
+pkgrel=1
+pkgdesc="HomeBank — track your money (Flathub)"
+url="https://flathub.org/apps/fr.free.Homebank"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=fr.free.Homebank

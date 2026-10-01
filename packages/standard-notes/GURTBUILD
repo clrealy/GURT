@@ -1,0 +1,15 @@
+# Standard Notes — encrypted notes
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=standard-notes
+pkgver=flathub
+pkgrel=1
+pkgdesc="Standard Notes — encrypted notes (Flathub)"
+url="https://flathub.org/apps/org.standardnotes.standardnotes"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="office"
+arch=(x86_64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.standardnotes.standardnotes

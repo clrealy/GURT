@@ -1,0 +1,12 @@
+pkgname = marktext
+pkgver = flathub
+pkgrel = 1
+pkgdesc = MarkText — live-preview markdown editor (Flathub)
+url = https://flathub.org/apps/com.github.marktext.marktext
+license = MIT
+maintainer = clrealy
+category = office
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.marktext.marktext

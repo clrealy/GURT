@@ -1,0 +1,13 @@
+pkgname = zeroad
+pkgver = flathub
+pkgrel = 1
+pkgdesc = 0 A.D. — ancient warfare RTS (Flathub)
+url = https://flathub.org/apps/com.play0ad.zeroad
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = gaming
+arch = x86_64
+alias = 0ad
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.play0ad.zeroad

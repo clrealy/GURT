@@ -1,0 +1,12 @@
+pkgname = bruno
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Bruno — offline-first API client (Flathub)
+url = https://flathub.org/apps/com.usebruno.Bruno
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.usebruno.Bruno

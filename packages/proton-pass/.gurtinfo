@@ -1,0 +1,12 @@
+pkgname = proton-pass
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Proton Pass — password manager (Flathub)
+url = https://flathub.org/apps/me.proton.Pass
+license = GPL-3.0-only
+maintainer = clrealy
+category = security
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = me.proton.Pass

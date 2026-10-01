@@ -1,0 +1,16 @@
+# GNOME Web — simple, clean browser
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=epiphany
+pkgver=flathub
+pkgrel=1
+pkgdesc="GNOME Web — simple, clean browser (Flathub)"
+url="https://flathub.org/apps/org.gnome.Epiphany"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="browsers"
+arch=(x86_64 aarch64)
+aliases=(gnome-web)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.Epiphany

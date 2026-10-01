@@ -1,0 +1,15 @@
+# Disk Usage Analyzer — what's eating your disk
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=baobab
+pkgver=flathub
+pkgrel=1
+pkgdesc="Disk Usage Analyzer — what's eating your disk (Flathub)"
+url="https://flathub.org/apps/org.gnome.baobab"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.baobab

@@ -1,0 +1,15 @@
+# Parsec — low-latency remote desktop
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=parsec
+pkgver=flathub
+pkgrel=1
+pkgdesc="Parsec — low-latency remote desktop (Flathub)"
+url="https://flathub.org/apps/com.parsecgaming.parsec"
+license="Proprietary"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.parsecgaming.parsec

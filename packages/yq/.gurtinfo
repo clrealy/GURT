@@ -1,0 +1,13 @@
+pkgname = yq
+pkgver = 4.54.1
+pkgrel = 1
+pkgdesc = yq — jq for YAML, JSON, XML and TOML
+url = https://github.com/mikefarah/yq
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = git+https://github.com/mikefarah/yq.git#tag=v4.54.1

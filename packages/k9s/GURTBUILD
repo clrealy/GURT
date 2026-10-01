@@ -1,0 +1,24 @@
+# k9s — Kubernetes in your terminal
+pkgname=k9s
+pkgver=0.51.0
+pkgrel=1
+pkgdesc="k9s — Kubernetes in your terminal"
+url="https://github.com/derailed/k9s"
+license="Apache-2.0"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("git+https://github.com/derailed/k9s.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd k9s
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X main.version=$pkgver" -o out/k9s .
+}
+
+package() {
+  install -Dm755 k9s/out/k9s "$pkgdir$prefix/bin/k9s"
+}

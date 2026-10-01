@@ -938,38 +938,78 @@ async function searchAll(){
 $("#q").addEventListener("input", () => { if (SRC === "dirt") renderDirt(); if (SRC === "gurt") renderMain(); if (!$("#q").value) $("#allres").hidden = true; });
 $("#q").addEventListener("keydown", e => { if (e.key === "Enter") searchAll(); });
 
-// ── 🔊 sfx: tiny synth bleeps (WebAudio, no sound files), 🔇 button mutes them ──
+// ── 🔊 sfx: synth sounds (WebAudio, no sound files) — every skin has its own set, 🔇 mutes ──
 const SFX = (() => {
   let ctx = null, on = document.documentElement.dataset.sfx !== "off";
-  const tone = (f, t, dur, type = "square", vol = 0.05, f2 = 0) => {
+  // one note: freq, start, length, wave, volume, glide-to freq, attack
+  const tone = (f, t, dur, type = "square", vol = 0.05, f2 = 0, atk = 0.004) => {
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
-    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + dur + 0.02);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + atk); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + dur + 0.05);
   };
-  const sounds = {
-    click:   t => tone(620, t, 0.045, "square", 0.03),
-    tick:    t => tone(700 + Math.random() * 600, t, 0.03, "square", 0.025),
-    jackpot: t => [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, t + i * 0.08, 0.18, "triangle", 0.06)),
-    copy:    t => { tone(988, t, 0.06, "sine", 0.06); tone(1480, t + 0.06, 0.1, "sine", 0.06); },
-    pick:    t => tone(660, t, 0.07, "triangle", 0.05, 990),
-    unpick:  t => tone(660, t, 0.07, "triangle", 0.05, 440),
-    ok:      t => [784, 1047, 1568].forEach((f, i) => tone(f, t + i * 0.07, 0.14, "triangle", 0.06)),
-    err:     t => { tone(196, t, 0.18, "sawtooth", 0.05); tone(147, t + 0.16, 0.28, "sawtooth", 0.05); },
-    theme:   t => tone(300, t, 0.22, "sine", 0.05, 900),
-    pop:     t => tone(400, t, 0.09, "sine", 0.07, 1200),
+  const bell = (f, t, dur, vol = 0.05) => { tone(f, t, dur, "triangle", vol); tone(f * 2.01, t, dur * 0.6, "sine", vol * 0.35); };
+  const pad = (fs, t, dur, type = "sine", vol = 0.03, atk = 0.25) => fs.forEach(f => { tone(f, t, dur, type, vol, 0, atk); tone(f * 1.004, t, dur, type, vol * 0.7, 0, atk); });
+  const arp = (fs, t, step, dur, fn) => fs.forEach((f, i) => fn(f, t + i * step, dur));
+  const SETS = {
+    gurt: {
+      click: t => tone(620, t, 0.045, "square", 0.03),
+      tick: t => tone(700 + Math.random() * 600, t, 0.03, "square", 0.025),
+      jackpot: t => arp([523, 659, 784, 1047, 1319], t, 0.08, 0.18, (f, s, d) => tone(f, s, d, "triangle", 0.06)),
+      copy: t => { tone(988, t, 0.06, "sine", 0.06); tone(1480, t + 0.06, 0.1, "sine", 0.06); },
+      pick: t => tone(660, t, 0.07, "triangle", 0.05, 990), unpick: t => tone(660, t, 0.07, "triangle", 0.05, 440),
+      ok: t => arp([784, 1047, 1568], t, 0.07, 0.14, (f, s, d) => tone(f, s, d, "triangle", 0.06)),
+      err: t => { tone(196, t, 0.18, "sawtooth", 0.05); tone(147, t + 0.16, 0.28, "sawtooth", 0.05); },
+      theme: t => tone(300, t, 0.22, "sine", 0.05, 900), pop: t => tone(400, t, 0.09, "sine", 0.07, 1200),
+      startup: t => arp([392, 523, 659, 784], t, 0.07, 0.2, (f, s, d) => tone(f, s, d, "triangle", 0.05)),
+    },
+    win11: {   // soft, round, quiet — modern Windows vibes
+      click: t => tone(1400, t, 0.03, "sine", 0.025),
+      tick: t => tone(1100 + Math.random() * 300, t, 0.035, "sine", 0.03),
+      jackpot: t => { arp([659, 784, 988, 1319], t, 0.09, 0.5, (f, s, d) => tone(f, s, d, "sine", 0.05, 0, 0.01)); },
+      copy: t => { tone(1319, t, 0.18, "sine", 0.05, 0, 0.008); tone(1760, t + 0.09, 0.25, "sine", 0.04, 0, 0.008); },
+      pick: t => tone(880, t, 0.08, "sine", 0.04, 1175), unpick: t => tone(880, t, 0.08, "sine", 0.04, 660),
+      ok: t => { tone(988, t, 0.35, "sine", 0.05, 0, 0.01); tone(1319, t + 0.12, 0.45, "sine", 0.05, 0, 0.01); },
+      err: t => { tone(523, t, 0.25, "sine", 0.06, 0, 0.01); tone(392, t + 0.14, 0.4, "sine", 0.06, 0, 0.01); },
+      theme: t => tone(500, t, 0.3, "sine", 0.04, 1000, 0.05), pop: t => tone(700, t, 0.12, "sine", 0.05, 1050),
+      startup: t => { pad([262, 330, 392, 494], t, 1.4, "sine", 0.025, 0.35); arp([784, 988, 1175], t + 0.35, 0.12, 0.6, (f, s, d) => tone(f, s, d, "sine", 0.035, 0, 0.02)); },
+    },
+    xp: {      // bells + a big warm swell — very 2001
+      click: t => tone(1800, t, 0.018, "square", 0.02),
+      tick: t => bell(988 + Math.random() * 500, t, 0.08, 0.03),
+      jackpot: t => { pad([311, 466, 622, 784], t, 2.2, "sine", 0.025, 0.5); arp([622, 932, 1245, 1568], t + 0.3, 0.22, 1.0, (f, s, d) => bell(f, s, d, 0.045)); },
+      copy: t => { bell(1047, t, 0.5, 0.05); bell(1568, t + 0.11, 0.6, 0.04); },     // the "ding"
+      pick: t => bell(1175, t, 0.18, 0.035), unpick: t => bell(784, t, 0.18, 0.035),
+      ok: t => arp([622, 784, 932, 1245], t, 0.1, 0.5, (f, s, d) => bell(f, s, d, 0.045)),
+      err: t => arp([784, 587, 392], t, 0.13, 0.45, (f, s, d) => bell(f, s, d, 0.06)),  // critical-stop energy
+      theme: t => tone(400, t, 0.35, "triangle", 0.04, 800, 0.05), pop: t => bell(880, t, 0.25, 0.05),
+      startup: t => { pad([156, 233, 311, 392, 466], t, 3.0, "sine", 0.022, 0.8); arp([622, 932, 1245, 1568, 1865], t + 0.6, 0.25, 1.4, (f, s, d) => bell(f, s, d, 0.04)); },
+    },
+    w95: {     // chunky square waves + a brassy ta-da
+      click: t => tone(1000, t, 0.03, "square", 0.035),
+      tick: t => tone(500 + Math.random() * 400, t, 0.04, "square", 0.03),
+      jackpot: t => { arp([523, 659, 784], t, 0.09, 0.12, (f, s, d) => tone(f, s, d, "sawtooth", 0.04, 0, 0.01)); pad([523, 659, 784, 1047], t + 0.3, 0.9, "sawtooth", 0.018, 0.02); },
+      copy: t => tone(1568, t, 0.12, "square", 0.04),
+      pick: t => tone(784, t, 0.05, "square", 0.035), unpick: t => tone(392, t, 0.05, "square", 0.035),
+      ok: t => { tone(523, t, 0.1, "sawtooth", 0.04, 0, 0.01); pad([523, 659, 784, 1047], t + 0.12, 0.7, "sawtooth", 0.018, 0.02); },   // ta-da
+      err: t => pad([220, 277, 330], t, 0.35, "square", 0.03, 0.005),   // the "chord"
+      theme: t => tone(250, t, 0.25, "square", 0.03, 750), pop: t => tone(660, t, 0.06, "square", 0.04),
+      startup: t => { arp([262, 330, 392, 523, 659], t, 0.11, 0.25, (f, s, d) => tone(f, s, d, "square", 0.03)); pad([523, 659, 784], t + 0.6, 1.2, "sawtooth", 0.015, 0.1); },
+    },
   };
   const play = name => {
-    if (!on || !sounds[name]) return;
+    if (!on) return;
+    const set = SETS[document.documentElement.dataset.skin] || SETS.gurt, fn = set[name] || SETS.gurt[name];
+    if (!fn) return;
     try {
       ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
       if (ctx.state === "suspended") ctx.resume();
-      sounds[name](ctx.currentTime);
+      fn(ctx.currentTime + 0.01);
     } catch {}
   };
   return { play, get on() { return on; }, set(v) { on = v; } };
 })();
-const SFX_ROLES = {copy:"copy", scopy:"copy", cartcopy:"copy", lotto:"", lotto2:"", themebtn:"theme", sfxbtn:""};
+const SFX_ROLES = {copy:"copy", scopy:"copy", cartcopy:"copy", lotto:"", lotto2:"", themebtn:"theme", sfxbtn:"", skinsel:""};
 document.addEventListener("click", e => {
   const b = e.target.closest("button, .src, .bcat, .pkg, nav button, summary");
   if (!b) return;
@@ -1085,7 +1125,7 @@ $("#themebtn").addEventListener("click", () => {
 darkMQ.addEventListener("change", themeIcon); themeIcon();
 // ── 🪟 skins ── (XP + 95 are always light, like the real thing)
 const applySkin = s => { document.documentElement.dataset.skin = s; $("#skinsel").value = s; $("#themebtn").hidden = s === "xp" || s === "w95"; };
-$("#skinsel").addEventListener("change", e => { applySkin(e.target.value); api("/api/skin", {skin:e.target.value}).catch(() => {}); });
+$("#skinsel").addEventListener("change", e => { applySkin(e.target.value); api("/api/skin", {skin:e.target.value}).catch(() => {}); if (typeof SFX !== "undefined") SFX.play("startup"); });
 applySkin(document.documentElement.dataset.skin || "gurt");
 
 // ── tabs ──

@@ -1,0 +1,13 @@
+pkgname = act
+pkgver = 0.2.89
+pkgrel = 1
+pkgdesc = act — run GitHub Actions locally
+url = https://github.com/nektos/act
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = git+https://github.com/nektos/act.git#tag=v0.2.89

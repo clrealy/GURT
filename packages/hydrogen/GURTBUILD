@@ -1,0 +1,15 @@
+# Hydrogen — drum machine
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=hydrogen
+pkgver=flathub
+pkgrel=1
+pkgdesc="Hydrogen — drum machine (Flathub)"
+url="https://flathub.org/apps/org.hydrogenmusic.Hydrogen"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.hydrogenmusic.Hydrogen

@@ -1,0 +1,13 @@
+pkgname = arduino-ide
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Arduino IDE 2 — program Arduino boards (Flathub)
+url = https://flathub.org/apps/cc.arduino.IDE2
+license = AGPL-3.0-only
+maintainer = clrealy
+category = dev
+arch = x86_64
+alias = arduino
+via_repo = flathub
+via_type = flatpak
+via_pkg = cc.arduino.IDE2

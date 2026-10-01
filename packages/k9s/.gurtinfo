@@ -1,0 +1,13 @@
+pkgname = k9s
+pkgver = 0.51.0
+pkgrel = 1
+pkgdesc = k9s — Kubernetes in your terminal
+url = https://github.com/derailed/k9s
+license = Apache-2.0
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = git+https://github.com/derailed/k9s.git#tag=v0.51.0

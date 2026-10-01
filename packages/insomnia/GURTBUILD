@@ -1,0 +1,15 @@
+# Insomnia — API client
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=insomnia
+pkgver=flathub
+pkgrel=1
+pkgdesc="Insomnia — API client (Flathub)"
+url="https://flathub.org/apps/rest.insomnia.Insomnia"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=rest.insomnia.Insomnia
