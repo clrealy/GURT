@@ -82,7 +82,6 @@
 /packages/gnome-builder/  @clrealy
 /packages/gnome-podcasts/  @clrealy
 /packages/gnucash/  @clrealy
-/packages/gnumeric/  @clrealy
 /packages/godot/  @clrealy
 /packages/google-chrome/  @clrealy
 /packages/goverlay/  @clrealy
@@ -107,7 +106,6 @@
 /packages/joplin/  @clrealy
 /packages/k9s/  @clrealy
 /packages/kate/  @clrealy
-/packages/kdeconnect/  @clrealy
 /packages/kdenlive/  @clrealy
 /packages/keepassxc/  @clrealy
 /packages/kicad/  @clrealy
