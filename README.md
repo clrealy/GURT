@@ -258,6 +258,8 @@ Run `gurt gui --setup` once and it opens in its own real app window (GTK + WebKi
 
 It only needs python3 and a browser. It runs a tiny server that only your own machine can reach (127.0.0.1, with a random secret token), opens it in a Chromium-style app window if you have one (otherwise your default browser), and quits by itself after you close the window.
 
+**Drop in files 📥**: drag a `.deb`, `.rpm`, `.pkg.tar.zst`, AppImage, `.tar.gz`, `.zip`, `.flatpak`, `.exe` or `.dmg` anywhere onto the app (or hit **📥 install a file**) and gurt installs it, same as `gurt outsource <file>`. It asks first.
+
 **Skins 🪟**: next to the light/dark button there's a skin picker: 🦆 GURT, Windows 11, Windows XP (Luna blue + the green start button) and Windows 95 (grey bevels on teal). It remembers what you pick.
 
 ## Build any git repo: `gurt outsource` 🛠️
