@@ -49,6 +49,9 @@ jobs:
               id=$(sed -n 's/^via_pkg=//p' packages/$p/GURTBUILD)
               ./gurt info "flatpak/$id" >/dev/null || { echo "::error::$p: $id isn't on Flathub"; exit 1; }
               echo "✅ $p → $id is on Flathub"
+            elif grep -q '^secret=true' packages/$p/GURTBUILD; then
+              # secret packages only answer to their alias
+              ./gurt -y install "$(./gurt srcinfo packages/$p | sed -n 's/^alias = //p' | head -n1)"
             else
               ./gurt -y install "$p"
             fi
