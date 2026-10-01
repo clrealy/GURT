@@ -188,6 +188,32 @@ irm https://raw.githubusercontent.com/clrealy/GURT/main/install.ps1 | iex
 - Want a different distro than your default? `$env:GURT_WSL_DISTRO = "Debian"` before running it.
 - Linux desktops (`gurt de`) don't make sense on Windows, so they're turned off there. Snaps need systemd switched on in WSL; gurt tells you how.
 
+## Update your whole system 🐧
+
+gurt isn't just an installer: `gurt upgrade` updates **everything**. First your system, using your distro's own package manager the right way, then everything gurt installed, then flatpaks + snaps.
+
+| your distro | what `gurt upgrade` runs |
+|---|---|
+| Arch, CachyOS, EndeavourOS, Manjaro… | `pacman -Syu` |
+| openSUSE Tumbleweed / Slowroll / MicroOS | `zypper refresh` + `zypper dup` (the rolling way) |
+| openSUSE Leap | `zypper refresh` + `zypper update` |
+| Debian, Ubuntu, Mint, Pop… | `apt-get update` + `apt-get full-upgrade` |
+| Fedora, RHEL-likes | `dnf upgrade --refresh` |
+| Fedora Atomic (Silverblue, Kinoite, Bazzite…) | `rpm-ostree upgrade` |
+| Alpine | `apk upgrade -U` |
+| Void | `xbps-install -Su` (xbps itself first) |
+| Solus | `eopkg upgrade` |
+| Gentoo | `emerge --sync` + `emerge -uDN @world` |
+
+```sh
+gurt update               # what's waiting (system + gurt + gurt itself), installs nothing
+gurt upgrade             # system + everything gurt installed
+gurt upgrade --no-system # only gurt's stuff
+gurt sysup               # only the system
+```
+
+In the app, the Updates tab shows a 🐧 "your system" card with how many distro updates are waiting.
+
 ## Build your setup + the app lottery 🧰🎰
 
 The [website](https://clrealy.github.io/GURT/) has a **Build your setup** picker (like tuxmate, but gurt): tick the apps you want, grouped by category, and copy one `gurt install …` command that works on every distro. Tick "I don't have gurt yet" and the command installs gurt first.
@@ -231,6 +257,8 @@ Opens GURT as an app: browse Main GURT, search every source, install or remove w
 Run `gurt gui --setup` once and it opens in its own real app window (GTK + WebKit, or Qt WebEngine if you have it on KDE). Without that it still works, it just uses a browser window.
 
 It only needs python3 and a browser. It runs a tiny server that only your own machine can reach (127.0.0.1, with a random secret token), opens it in a Chromium-style app window if you have one (otherwise your default browser), and quits by itself after you close the window.
+
+**Skins 🪟**: next to the light/dark button there's a skin picker: 🦆 GURT, Windows 11, Windows XP (Luna blue + the green start button) and Windows 95 (grey bevels on teal). It remembers what you pick.
 
 ## Build any git repo: `gurt outsource` 🛠️
 
