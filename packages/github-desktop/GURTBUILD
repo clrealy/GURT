@@ -1,0 +1,15 @@
+# GitHub Desktop — git with buttons (Linux fork)
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=github-desktop
+pkgver=flathub
+pkgrel=1
+pkgdesc="GitHub Desktop — git with buttons (Linux fork) (Flathub)"
+url="https://flathub.org/apps/io.github.shiftey.Desktop"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.shiftey.Desktop

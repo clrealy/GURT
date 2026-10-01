@@ -5,6 +5,7 @@ pkgdesc = ???
 url = https://clrealy.github.io/GURT
 license = MIT
 maintainer = clrealy
+category = fun
 arch = any
 alias = skav°7
 hidden = true

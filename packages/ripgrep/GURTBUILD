@@ -1,0 +1,25 @@
+# ripgrep — grep, but absurdly fast
+pkgname=ripgrep
+pkgver=15.2.0
+pkgrel=1
+pkgdesc="ripgrep — grep, but absurdly fast (rg)"
+url="https://github.com/BurntSushi/ripgrep"
+license="MIT OR Unlicense"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+aliases=(rg)
+makedepends=(rust git)
+source=("git+https://github.com/BurntSushi/ripgrep.git#tag=$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd ripgrep
+  cargo build --release --locked
+}
+
+package() {
+  cd ripgrep
+  install -Dm755 target/release/rg "$pkgdir$prefix/bin/rg"
+  install -Dm644 LICENSE-MIT "$pkgdir$prefix/share/licenses/$pkgname/LICENSE-MIT"
+}

@@ -174,6 +174,19 @@ You need `bash`, `git`, GNU `tar`, and `curl` or `wget`. The foreign sources als
 
 `gurt doctor` shows which sources are ready on your system.
 
+## Build your setup + the app lottery 🧰🎰
+
+The [website](https://clrealy.github.io/GURT/) has a **Build your setup** picker (like tuxmate, but gurt): tick the apps you want, grouped by category, and copy one `gurt install …` command that works on every distro. Tick "I don't have gurt yet" and the command installs gurt first.
+
+Can't decide? Spin for one:
+
+```sh
+gurt lottery          # 🎰 a random app from Main GURT, asks before installing
+gurt lottery gaming   # only from one category (browsers chat media creative office dev cli gaming internet system security fun)
+```
+
+The site and the app have a 🎰 button too.
+
 ## Aliases + hidden packages
 
 In a GURTBUILD:
@@ -199,7 +212,7 @@ Desktops are system software, so gurt **only** installs them from your own distr
 gurt gui
 ```
 
-Opens GURT as an app: browse Main GURT, search every source, install or remove with one click, and see updates, holds and rollbacks, with gurt's output live at the bottom. When something needs sudo, it asks for your password in the app. After the first run, **GURT** is in your app menu.
+Opens GURT as an app: browse Main GURT, search every source, install or remove with one click, and see updates, holds and rollbacks, with gurt's output live at the bottom. When something needs sudo, it asks for your password in the app. After the first run, **GURT** is in your app menu (with its icon 🦆). The ☀️/🌙 button up top flips between light and dark. It starts on your system theme and remembers what you pick (`~/.config/gurt/gui.json`).
 
 Run `gurt gui --setup` once and it opens in its own real app window (GTK + WebKit, or Qt WebEngine if you have it on KDE). Without that it still works, it just uses a browser window.
 

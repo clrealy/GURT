@@ -1,0 +1,13 @@
+pkgname = filezilla
+pkgver = flathub
+pkgrel = 1
+pkgdesc = FileZilla — FTP / SFTP client (Flathub)
+url = https://flathub.org/apps/org.filezillaproject.Filezilla
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.filezillaproject.Filezilla

@@ -7,6 +7,7 @@ pkgdesc="Dolphin — GameCube and Wii emulator (Flathub)"
 url="https://flathub.org/apps/org.DolphinEmu.dolphin-emu"
 license="GPL-2.0-or-later"
 maintainer="clrealy"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

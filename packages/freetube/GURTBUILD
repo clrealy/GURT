@@ -1,0 +1,15 @@
+# FreeTube — YouTube without ads or tracking
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=freetube
+pkgver=flathub
+pkgrel=1
+pkgdesc="FreeTube — YouTube without ads or tracking (Flathub)"
+url="https://flathub.org/apps/io.freetubeapp.FreeTube"
+license="AGPL-3.0-or-later"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.freetubeapp.FreeTube

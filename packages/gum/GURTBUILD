@@ -1,0 +1,24 @@
+# Gum — make shell scripts look glamorous
+pkgname=gum
+pkgver=2.0.2
+pkgrel=1
+pkgdesc="Gum — make shell scripts look glamorous"
+url="https://github.com/charmbracelet/gum"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("git+https://github.com/charmbracelet/gum.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd gum
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X main.version=$pkgver" -o out/gum .
+}
+
+package() {
+  install -Dm755 gum/out/gum "$pkgdir$prefix/bin/gum"
+}

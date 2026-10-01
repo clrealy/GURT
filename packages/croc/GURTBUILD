@@ -1,0 +1,24 @@
+# croc — send files between any two computers with a code
+pkgname=croc
+pkgver=11.5.4
+pkgrel=1
+pkgdesc="croc — send files between any two computers with a code"
+url="https://github.com/schollz/croc"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("git+https://github.com/schollz/croc.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd croc
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X main.version=$pkgver" -o out/croc .
+}
+
+package() {
+  install -Dm755 croc/out/croc "$pkgdir$prefix/bin/croc"
+}

@@ -1,0 +1,13 @@
+pkgname = lazydocker
+pkgver = 0.25.2
+pkgrel = 1
+pkgdesc = lazydocker — Docker in a terminal UI
+url = https://github.com/jesseduffield/lazydocker
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = git+https://github.com/jesseduffield/lazydocker.git#tag=v0.25.2

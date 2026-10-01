@@ -7,6 +7,7 @@ pkgdesc="mpv — minimal, fast video player (Flathub)"
 url="https://flathub.org/apps/io.mpv.Mpv"
 license="GPL-2.0-or-later"
 maintainer="clrealy"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

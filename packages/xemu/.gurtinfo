@@ -1,0 +1,12 @@
+pkgname = xemu
+pkgver = flathub
+pkgrel = 1
+pkgdesc = xemu — original Xbox emulator (Flathub)
+url = https://flathub.org/apps/app.xemu.xemu
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = gaming
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = app.xemu.xemu

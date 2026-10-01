@@ -1,0 +1,13 @@
+pkgname = fzf
+pkgver = 0.74.4
+pkgrel = 1
+pkgdesc = fzf — fuzzy finder for literally everything in your terminal
+url = https://github.com/junegunn/fzf
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = git+https://github.com/junegunn/fzf.git#tag=v0.74.4

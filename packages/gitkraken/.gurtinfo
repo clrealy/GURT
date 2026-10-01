@@ -1,0 +1,12 @@
+pkgname = gitkraken
+pkgver = flathub
+pkgrel = 1
+pkgdesc = GitKraken — pretty git GUI (Flathub)
+url = https://flathub.org/apps/com.axosoft.GitKraken
+license = Proprietary
+maintainer = clrealy
+category = dev
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.axosoft.GitKraken

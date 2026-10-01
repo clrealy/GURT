@@ -5,6 +5,7 @@ pkgdesc = RetroArch — frontend for tons of emulators (Flathub)
 url = https://flathub.org/apps/org.libretro.RetroArch
 license = GPL-3.0-or-later
 maintainer = clrealy
+category = gaming
 arch = x86_64
 arch = aarch64
 via_repo = flathub

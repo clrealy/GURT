@@ -1,0 +1,15 @@
+# Upscayl — AI image upscaler
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=upscayl
+pkgver=flathub
+pkgrel=1
+pkgdesc="Upscayl — AI image upscaler (Flathub)"
+url="https://flathub.org/apps/org.upscayl.Upscayl"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.upscayl.Upscayl

@@ -5,6 +5,7 @@ pkgdesc = Search DuckDuckGo from the terminal 🦆🔍
 url = https://github.com/jarun/ddgr
 license = GPL-3.0-or-later
 maintainer = clrealy
+category = cli
 arch = any
 depends = python3
 makedepends = make

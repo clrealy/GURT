@@ -1,0 +1,12 @@
+pkgname = bitwarden
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Bitwarden — open source password manager (Flathub)
+url = https://flathub.org/apps/com.bitwarden.desktop
+license = GPL-3.0-only
+maintainer = clrealy
+category = security
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.bitwarden.desktop

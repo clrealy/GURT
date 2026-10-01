@@ -5,6 +5,7 @@ pkgdesc = OBS Studio — screen recording and live streaming (Flathub)
 url = https://flathub.org/apps/com.obsproject.Studio
 license = GPL-2.0-or-later
 maintainer = clrealy
+category = media
 arch = x86_64
 arch = aarch64
 alias = obs

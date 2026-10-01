@@ -5,6 +5,7 @@ pkgdesc = Slack — team chat (Flathub)
 url = https://flathub.org/apps/com.slack.Slack
 license = Proprietary
 maintainer = clrealy
+category = chat
 arch = x86_64
 via_repo = flathub
 via_type = flatpak

@@ -5,6 +5,7 @@ pkgdesc="The hello world of gurt. Prints 'gurt: yo'"
 url="https://github.com/clrealy/GURT"
 license="MIT"
 maintainer="clrealy"
+category="cli"
 arch=(any)
 depends=()
 makedepends=()

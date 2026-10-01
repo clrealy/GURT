@@ -1,0 +1,13 @@
+pkgname = gdu
+pkgver = 5.37.0
+pkgrel = 1
+pkgdesc = gdu — super fast disk usage analyzer
+url = https://github.com/dundee/gdu
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = git+https://github.com/dundee/gdu.git#tag=v5.37.0

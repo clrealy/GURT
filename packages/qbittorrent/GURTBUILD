@@ -7,6 +7,7 @@ pkgdesc="qBittorrent — free, ad-free BitTorrent client (Flathub)"
 url="https://flathub.org/apps/org.qbittorrent.qBittorrent"
 license="GPL-2.0-or-later"
 maintainer="clrealy"
+category="internet"
 arch=(x86_64 aarch64)
 aliases=(qbit)
 

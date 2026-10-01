@@ -5,6 +5,7 @@ pkgdesc = Bottles — run Windows apps and games with Wine, made easy (Flathub)
 url = https://flathub.org/apps/com.usebottles.bottles
 license = GPL-3.0-only
 maintainer = clrealy
+category = gaming
 arch = x86_64
 arch = aarch64
 via_repo = flathub

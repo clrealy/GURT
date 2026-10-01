@@ -1,0 +1,13 @@
+pkgname = croc
+pkgver = 11.5.4
+pkgrel = 1
+pkgdesc = croc — send files between any two computers with a code
+url = https://github.com/schollz/croc
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = git+https://github.com/schollz/croc.git#tag=v11.5.4

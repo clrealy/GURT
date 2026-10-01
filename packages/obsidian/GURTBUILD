@@ -7,6 +7,7 @@ pkgdesc="Obsidian — markdown notes that link together (Flathub)"
 url="https://flathub.org/apps/md.obsidian.Obsidian"
 license="Proprietary"
 maintainer="clrealy"
+category="office"
 arch=(x86_64)
 
 via_repo=flathub

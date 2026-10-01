@@ -1,0 +1,15 @@
+# OpenRGB — control all your RGB in one place
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=openrgb
+pkgver=flathub
+pkgrel=1
+pkgdesc="OpenRGB — control all your RGB in one place (Flathub)"
+url="https://flathub.org/apps/org.openrgb.OpenRGB"
+license="GPL-2.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.openrgb.OpenRGB

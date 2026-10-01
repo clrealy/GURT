@@ -1,0 +1,13 @@
+pkgname = parabolic
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Parabolic — download videos and audio (yt-dlp with a GUI) (Flathub)
+url = https://flathub.org/apps/org.nickvision.tubeconverter
+license = MIT
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.nickvision.tubeconverter

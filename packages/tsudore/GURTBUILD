@@ -8,6 +8,7 @@ aliases=(tsudo tsundere)
 url="https://github.com/clrealy/GURT"
 license="MIT"
 maintainer="clrealy"
+category="fun"
 arch=(any)
 depends=()
 makedepends=()

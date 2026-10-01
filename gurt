@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.18.0"
+GURT_VERSION="0.19.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -310,7 +310,7 @@ load_recipe() {
   RECIPE=$f
   pkgname="" pkgbase="" pkgver="" pkgrel=1 epoch="" pkgdesc="" url="" license="" maintainer="" install=""
   via_repo="" via_type="" via_url="" via_suite="" via_components="" via_key="" via_fingerprint="" via_pkg=""
-  aliases=() hidden="" desktop_icon="" secret=""
+  aliases=() hidden="" desktop_icon="" secret="" category=""
   arch=() depends=() makedepends=() checkdepends=() source=() noextract=() sums=() SUMALGO=sha256
   local a v fn
   for a in $SUM_ALGOS; do unset "${a}sums" "${a}sums_$CARCH"; done
@@ -374,6 +374,7 @@ print_srcinfo() {
   [[ -n $url ]]        && printf 'url = %s\n' "$url"
   [[ -n $license ]]    && printf 'license = %s\n' "$license"
   [[ -n $maintainer ]] && printf 'maintainer = %s\n' "$maintainer"
+  [[ -n $category ]]   && printf 'category = %s\n' "$category"
   for x in "${arch[@]}";        do printf 'arch = %s\n' "$x"; done
   for x in "${depends[@]}";     do printf 'depends = %s\n' "$x"; done
   for x in "${makedepends[@]}"; do printf 'makedepends = %s\n' "$x"; done
@@ -2514,7 +2515,7 @@ cmd_complete() {
     installed) for d in "$DB"/*/; do [[ -d $d ]] && pretty "$(basename "$d")"; done ;;
     available) for f in "$GURT_REPO_DIR"/packages/*/.gurtinfo; do [[ -f $f ]] || continue
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
-    commands)  printf '%s\n' sync search info install update upgrade self-update remove autoremove list files owns \
+    commands)  printf '%s\n' sync search info install update upgrade self-update remove autoremove list files owns lottery \
                  build add srcinfo checksum new repo dirt gui de outsource rollback hold unhold export import completions doctor version help yo ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman flatpak snap dirt ;;
   esac
@@ -2533,12 +2534,25 @@ gui_script() {
 }
 gui_desktop_entry() { # add "GURT" to your app menu (just for you, no sudo)
   (( EUID == 0 )) && return 0
-  local data="${XDG_DATA_HOME:-$HOME/.local/share}" icon="$GURT_REPO_DIR/site/assets/apple-touch-icon.png"
-  mkdir -p "$data/applications" "$data/icons/hicolor/256x256/apps" 2>/dev/null || return 0
-  [[ -f $icon ]] && cp -f "$icon" "$data/icons/hicolor/256x256/apps/gurt.png" 2>/dev/null
-  printf '%s\n' "[Desktop Entry]" "Type=Application" "Name=GURT" "GenericName=Package Manager" \
-    "Comment=every distro's packages, on every distro" "Exec=$(readlink -f "$0") gui" "Icon=gurt" "Terminal=false" "StartupWMClass=gurt" \
-    "Categories=System;PackageManager;" "Keywords=packages;install;aur;apt;flatpak;" > "$data/applications/gurt.desktop"
+  local data="${XDG_DATA_HOME:-$HOME/.local/share}" f icon="" png entry
+  png="$data/icons/hicolor/256x256/apps/gurt.png"
+  mkdir -p "$data/applications" "${png%/*}" 2>/dev/null || return 0
+  for f in /usr/local/share/gurt/gurt.png /usr/share/gurt/gurt.png "$SELF_DIR/../share/gurt/gurt.png" \
+           "$SELF_DIR/site/assets/apple-touch-icon.png" "$GURT_REPO_DIR/site/assets/apple-touch-icon.png"; do
+    [[ -f $f ]] && { icon=$f; break; }
+  done
+  [[ -n $icon ]] && ! cmp -s "$icon" "$png" && cp -f "$icon" "$png" 2>/dev/null
+  # full path, not just "gurt" — KDE (and some others) won't find a freshly added icon by name until their cache rebuilds
+  [[ -f $png ]] && icon=$png || icon=gurt
+  entry=$(printf '%s\n' "[Desktop Entry]" "Type=Application" "Name=GURT" "GenericName=Package Manager" \
+    "Comment=every distro's packages, on every distro" "Exec=$(readlink -f "$0") gui" "Icon=$icon" "Terminal=false" "StartupWMClass=gurt" \
+    "Categories=System;PackageManager;" "Keywords=packages;install;aur;apt;flatpak;")
+  [[ $entry == "$(cat "$data/applications/gurt.desktop" 2>/dev/null)" ]] && return 0
+  printf '%s\n' "$entry" > "$data/applications/gurt.desktop"
+  # tell the app menu (KDE caches it)
+  command -v update-desktop-database >/dev/null && update-desktop-database -q "$data/applications" 2>/dev/null
+  for f in kbuildsycoca6 kbuildsycoca5; do command -v "$f" >/dev/null && { "$f" >/dev/null 2>&1 & break; }; done
+  return 0
 }
 gui_pkgs() { # the distro packages a real app window needs (python GObject + WebKit2GTK)
   local pkgs
@@ -2827,7 +2841,7 @@ cmd_info() {
       [[ -n $o ]] && printf '%-14s: %s\n' "out of date" yes ;;
     flatpak)
       ensure_flatpak; local id; id=$(flatpak_resolve "$name"); [[ -n $id ]] || die "nothing on Flathub matches '$name'"
-      key="flatpak:$id"; flatpak remote-info flathub "$id" 2>/dev/null || die "couldn't get info for $id" ;;
+      key="flatpak:$id"; flatpak remote-info --user flathub "$id" 2>/dev/null || flatpak remote-info flathub "$id" 2>/dev/null || die "couldn't get info for $id" ;;
     file)
       is_installed "$key" || die "file/$name isn't installed (file/ packages come from: gurt install ./$name.deb / .rpm / .pkg.tar.zst)"
       awk -F' = ' '{ printf "%-14s: %s\n", $1, substr($0, length($1)+4) }' "$DB/$key/info" ;;
@@ -3041,9 +3055,33 @@ cmd_self_update() {
   for f in /usr/local/share/gurt /usr/share/gurt; do
     [[ -d $f && -f $GURT_REPO_DIR/gui/gurt-gui.py ]] && asroot cp "$GURT_REPO_DIR/gui/gurt-gui.py" "$f/gurt-gui.py"
     [[ -d $f && -f $GURT_REPO_DIR/assets/wilhelm.mp3 ]] && asroot cp "$GURT_REPO_DIR/assets/wilhelm.mp3" "$f/wilhelm.mp3"
+    [[ -d $f && -f $GURT_REPO_DIR/site/assets/apple-touch-icon.png ]] && asroot cp "$GURT_REPO_DIR/site/assets/apple-touch-icon.png" "$f/gurt.png"
   done
   msg "gurt updated to $new ✅"
   exit 0
+}
+
+# 🎰 gurt lottery [category] — spin for a random app from Main GURT
+cmd_lottery() {
+  ensure_repo
+  local cat=${1:-} f n i win picks=()
+  for f in "$GURT_REPO_DIR"/packages/*/.gurtinfo; do
+    grep -qxE '(hidden|secret) = true' "$f" && continue
+    [[ -n $cat ]] && ! grep -qx "category = ${cat,,}" "$f" && continue
+    n=${f%/.gurtinfo}; picks+=("${n##*/}")
+  done
+  (( ${#picks[@]} )) || die "nothing to win${cat:+ in '$cat'} 😔 (categories: $(cat "$GURT_REPO_DIR"/packages/*/.gurtinfo | sed -n 's/^category = //p' | sort -u | tr '\n' ' '))"
+  win=${picks[RANDOM % ${#picks[@]}]}
+  if [[ -t 2 ]]; then   # spin it 🎰
+    for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
+      printf '\r%s🎰 %-30s%s' "$B" "${picks[RANDOM % ${#picks[@]}]}" "$R0" >&2; sleep "0.$(( i < 10 ? 06 : 15 ))"
+    done
+    printf '\r\033[K' >&2
+  fi
+  msg "🎰 JACKPOT: $win"
+  msg2 "$(info_get "$GURT_REPO_DIR/packages/$win/.gurtinfo" pkgdesc)"
+  ask "install $win?" || { msg2 "no worries — spin again: gurt lottery"; return 0; }
+  install_any "$win" explicit
 }
 
 cmd_files() { local k; k=$(resolve_key "${1:?usage: gurt files <pkg>}") || die "$1 isn't installed"; sed 's|^|/|' "$DB/$k/files"; }
@@ -3360,6 +3398,7 @@ ${B}misc${R0}
   rollback <pkg>       go back to the version before (gurt keeps the last 3) + hold it there
   hold / unhold <pkg>  stop / resume upgrades for a package
   export [file]        save the list of stuff you installed
+  lottery [category]   🎰 spin for a random app (browsers chat media creative office dev gaming system cli …)
   import <file>        install everything from an export (new PC speedrun)
   completions <shell>  print tab completion for bash/zsh/fish (bash+fish set themselves up)
   gui                  open the GURT app 🖥️ (also in your app menu after the first run)
@@ -3460,6 +3499,7 @@ main() {
     hold|pin)          (( $# )) || die "hold what tho"; cmd_hold "$@" ;;
     unhold|unpin)      (( $# )) || die "unhold what tho"; cmd_unhold "$@" ;;
     export)            cmd_export "$@" ;;
+    lottery|lotto|gamble) cmd_lottery "$@" ;;
     import)            cmd_import "$@" ;;
     __complete)        cmd_complete "$@" ;;
     __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" ;;

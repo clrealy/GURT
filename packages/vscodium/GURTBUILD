@@ -1,0 +1,16 @@
+# VSCodium — VS Code minus Microsoft's telemetry
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=vscodium
+pkgver=flathub
+pkgrel=1
+pkgdesc="VSCodium — VS Code minus Microsoft's telemetry (Flathub)"
+url="https://flathub.org/apps/com.vscodium.codium"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+aliases=(codium)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.vscodium.codium

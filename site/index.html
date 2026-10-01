@@ -149,6 +149,36 @@ footer a{color:inherit}
 #heyo:hover,#heyo:focus-visible{opacity:1;outline:none;text-shadow:0 0 8px #ff1a1a}
 #heyo-found{text-align:center;color:var(--muted);font-size:14px;padding-bottom:40px}
 #heyo-found b{color:#ff1a1a}
+
+/* ── 🧰 build your setup (tuxmate, but gurt) + 🎰 lottery ── */
+#builder{margin:22px 0 4px;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+#builder>summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#builder>summary::-webkit-details-marker{display:none}
+#builder>summary h2{font-size:20px;margin:0}
+#builder>summary .hint{flex:1;min-width:200px}
+#builder>summary::after{content:"▾";color:var(--muted);transition:transform .15s}
+#builder:not([open])>summary::after{transform:rotate(-90deg)}
+.bbody{padding:0 16px 16px}
+.bcats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.bcat{font:inherit;font-size:13px;background:var(--tag);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:4px 12px;cursor:pointer}
+.bcat.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.bgroup h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.bapp{display:flex;gap:8px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;font-size:14px;line-height:1.3;min-width:0}
+.bapp:hover{border-color:var(--muted)}
+.bapp input{margin:2px 0 0;accent-color:var(--accent);flex:none}
+.bapp b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bapp small{display:block;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bapp.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--bg))}
+#lottowin{margin-top:12px;border:2px dashed var(--accent);border-radius:12px;padding:14px 16px;text-align:center}
+#lottowin .spin{font:700 22px "JetBrains Mono",monospace}
+#lottowin .row2{justify-content:center;margin-top:10px}
+#cart{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--panel);border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(0,0,0,.12);padding:10px 16px}
+#cart .in{max-width:980px;margin:0 auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#cart code{flex:1;min-width:0;background:var(--code);padding:10px 12px;border-radius:8px;border:1px solid var(--line);overflow-x:auto;white-space:nowrap;font-size:13px}
+#cart label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}
+body.carted{padding-bottom:84px}
+.cicada{text-align:center;font:600 15px "JetBrains Mono",monospace;color:var(--ink);margin:28px 0 0;letter-spacing:.02em}
 </style>
 </head>
 <body>
@@ -179,6 +209,15 @@ gurt outsource user/repo   <span class="c"># any git repo: clone + build + insta
     <div class="secthead"><h2 class="sect" id="secttitle">Main GURT packages</h2><button class="btn" id="upbtn">＋ upload a package</button></div>
     <p class="dirtnote" id="dirtnote" hidden>🔞 DIRT is GURT's mature section. It's off in the CLI until you run <code>gurt dirt on</code>, then <code>gurt install dirt/&lt;name&gt;</code>. <a href="https://github.com/clrealy/GURT/blob/main/dirt/README.md" style="color:inherit">rules</a></p>
   </header>
+
+  <details id="builder" open>
+    <summary><h2>🧰 Build your setup</h2><span class="hint">tick the apps you want → copy one command → done. same command on every distro.</span><button class="btn ghost small" id="lotto" type="button">🎰 app lottery</button></summary>
+    <div class="bbody">
+      <div class="bcats" id="bcats"></div>
+      <div id="lottowin" hidden></div>
+      <div id="bgroups"></div>
+    </div>
+  </details>
 
   <div class="search">
     <input id="q" type="search" placeholder="search Main GURT…" autocomplete="off" aria-label="Search packages">
@@ -212,9 +251,16 @@ gurt outsource user/repo   <span class="c"># any git repo: clone + build + insta
     <a href="https://github.com/clrealy/GURT/blob/main/CONTRIBUTING.md">submit a package</a><br>
     GURT is independent and not affiliated with or endorsed by Arch Linux, Debian, Ubuntu, Fedora, openSUSE or any other distro. All trademarks belong to their owners.
   </footer>
+  <p class="cicada">Could prime Wifies solve Cicada 3301?</p>
   <button id="heyo" aria-label="???">HEYO</button>
   <div id="heyo-found" hidden>🔍 you found it. <b>gurt install skav°7</b> 🤫</div>
 </div>
+
+<div id="cart" hidden><div class="in">
+  <code id="cartcmd"></code>
+  <label><input type="checkbox" id="cartnew"> I don't have gurt yet</label>
+  <button class="btn" id="cartcopy">copy</button><button class="btn ghost" id="cartclear">clear</button>
+</div></div>
 
 <dialog id="gate" aria-labelledby="gtitle">
   <div class="gbody">
@@ -364,7 +410,7 @@ function showProfile(u, push = true) {
   $("#plist").innerHTML = mine.length ? mine.map(card).join("") : `<div class="empty">no packages yet 👀</div>`;
   fetch(`https://api.github.com/users/${encodeURIComponent(u)}`).then(r => r.ok ? r.json() : null)
     .then(d => { if (d && d.name) $("#pname").textContent = `${d.name} (${u})`; }).catch(() => {});
-  ["header .srcs", ".secthead", ".search", "#list", "#srcpanel"].forEach(q => document.querySelector(q).hidden = true);
+  ["header .srcs", ".secthead", ".search", "#list", "#srcpanel", "#builder"].forEach(q => document.querySelector(q).hidden = true);
   $("#profile").hidden = false; dlg.open && dlg.close();
   if (push) try { history.pushState({ u }, "", "?u=" + encodeURIComponent(u)); } catch {}
   window.scrollTo({ top: $("#profile").offsetTop - 20, behavior: "smooth" });
@@ -420,6 +466,7 @@ function setSrc(src) {
   if (main) render();
   $("#upbtn").hidden = !main;
   document.querySelector(".search").hidden = !main; $("#list").hidden = !main;
+  $("#builder").hidden = src !== "gurt"; $("#cart").hidden = src !== "gurt" || !PICKED.size;
   $("#srcpanel").hidden = main;
   if (!main) { $("#srcblurb").textContent = SRC[src].blurb; $("#sq").placeholder = `search ${src}/…`; srcUpdate(); }
 }
@@ -543,8 +590,62 @@ $("#u-dl").addEventListener("click", () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });
 
+
+// ── 🧰 build your setup (tuxmate, but gurt) ──
+const CATS = {browsers:"🌐 Browsers", chat:"💬 Chat & email", media:"🎬 Media", creative:"🎨 Creative", office:"📚 Office & notes",
+  dev:"🧑‍💻 Dev", cli:"⌨️ Terminal tools", gaming:"🎮 Gaming", internet:"📡 Files & remote", system:"⚙️ System", security:"🔐 Security", fun:"🤪 Fun", other:"📦 Other"};
+const PICKED = new Set(); let BCAT = "all";
+const catOf = p => CATS[p.category] ? p.category : "other";
+function renderBuilder() {
+  const have = [...new Set(PKGS.map(catOf))].sort((a, b) => Object.keys(CATS).indexOf(a) - Object.keys(CATS).indexOf(b));
+  $("#bcats").innerHTML = [`<button class="bcat${BCAT === "all" ? " on" : ""}" data-c="all">all (${PKGS.length})</button>`]
+    .concat(have.map(c => `<button class="bcat${BCAT === c ? " on" : ""}" data-c="${c}">${CATS[c]}</button>`)).join("");
+  $("#bgroups").innerHTML = have.filter(c => BCAT === "all" || BCAT === c).map(c => {
+    const apps = PKGS.filter(p => catOf(p) === c).sort((a, b) => a.pkgname.localeCompare(b.pkgname));
+    return `<div class="bgroup"><h3>${CATS[c]}</h3><div class="bgrid">${apps.map(p => {
+      const desc = (p.pkgdesc || "").replace(/\s*\((Flathub|official repo[^)]*)\)\s*$/, "").replace(/^[^—]*—\s*/, "");
+      return `<label class="bapp${PICKED.has(p.pkgname) ? " on" : ""}" title="${esc(p.pkgdesc)}"><input type="checkbox" data-n="${esc(p.pkgname)}"${PICKED.has(p.pkgname) ? " checked" : ""}><span><b>${esc(p.pkgname)}</b><small>${esc(desc)}</small></span></label>`;
+    }).join("")}</div></div>`;
+  }).join("");
+}
+function renderCart() {
+  const names = [...PICKED].sort();
+  $("#cart").hidden = !names.length; document.body.classList.toggle("carted", names.length > 0);
+  const cmd = `gurt install ${names.join(" ")}`;
+  $("#cartcmd").textContent = $("#cartnew").checked ? `curl -fsSL https://raw.githubusercontent.com/${REPO}/${BRANCH}/install.sh | sh && ${cmd}` : cmd;
+}
+$("#bcats").addEventListener("click", e => { const b = e.target.closest(".bcat"); if (!b) return; BCAT = b.dataset.c; renderBuilder(); });
+$("#bgroups").addEventListener("change", e => {
+  const n = e.target.dataset.n; if (!n) return;
+  e.target.checked ? PICKED.add(n) : PICKED.delete(n); e.target.closest(".bapp").classList.toggle("on", e.target.checked); renderCart();
+});
+$("#cartnew").addEventListener("change", renderCart);
+$("#cartclear").addEventListener("click", () => { PICKED.clear(); renderBuilder(); renderCart(); });
+$("#cartcopy").addEventListener("click", async () => { try { await navigator.clipboard.writeText($("#cartcmd").textContent); $("#cartcopy").textContent = "copied ✓"; setTimeout(() => $("#cartcopy").textContent = "copy", 1200); } catch {} });
+
+// ── 🎰 app lottery ──
+let spinning = false;
+$("#lotto").addEventListener("click", e => {
+  e.preventDefault(); $("#builder").open = true;
+  if (spinning || !PKGS.length) return;
+  const pool = BCAT === "all" ? PKGS : PKGS.filter(p => catOf(p) === BCAT);
+  const win = pool[Math.floor(Math.random() * pool.length)], box = $("#lottowin");
+  box.hidden = false; spinning = true; let i = 0;
+  const tick = () => {
+    if (i++ < 18) { box.innerHTML = `<div class="spin">🎰 ${esc(pool[Math.floor(Math.random() * pool.length)].pkgname)}</div>`; return setTimeout(tick, 40 + i * 6); }
+    spinning = false;
+    box.innerHTML = `<div class="spin">🎉 ${esc(win.pkgname)}</div><div class="desc">${esc(win.pkgdesc)}</div>
+      <div class="row2"><button class="btn small" id="lwadd">${PICKED.has(win.pkgname) ? "already in your setup ✓" : "＋ add to my setup"}</button>
+      <button class="btn ghost small" id="lwinfo">see recipe</button><button class="btn ghost small" id="lwagain">spin again</button></div>
+      <div class="hint" style="margin-top:8px">or let fate install it for you: <code>gurt lottery</code></div>`;
+    $("#lwadd").onclick = () => { PICKED.add(win.pkgname); renderBuilder(); renderCart(); $("#lwadd").textContent = "added ✓"; };
+    $("#lwinfo").onclick = () => showPkg(win.pkgname);
+    $("#lwagain").onclick = () => $("#lotto").click();
+  };
+  tick();
+});
 $("#heyo").addEventListener("click", () => { $("#heyo-found").hidden = false; $("#heyo").style.opacity = 1; });
-fetch("packages.json").then(r => r.json()).then(d => { PKGS = d.packages; render(); const u = new URLSearchParams(location.search).get("u"); if (u) showProfile(u, false); })
+fetch("packages.json").then(r => r.json()).then(d => { PKGS = d.packages; render(); renderBuilder(); const u = new URLSearchParams(location.search).get("u"); if (u) showProfile(u, false); })
   .catch(() => { $("#count").textContent = "couldn't load packages.json"; });
 </script>
 </body>

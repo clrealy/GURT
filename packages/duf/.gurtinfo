@@ -1,0 +1,13 @@
+pkgname = duf
+pkgver = 0.9.1
+pkgrel = 1
+pkgdesc = duf — disk usage/free, but readable
+url = https://github.com/muesli/duf
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = git+https://github.com/muesli/duf.git#tag=v0.9.1

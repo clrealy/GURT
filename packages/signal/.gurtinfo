@@ -5,6 +5,7 @@ pkgdesc = Signal — private messaging (Flathub)
 url = https://flathub.org/apps/org.signal.Signal
 license = AGPL-3.0-only
 maintainer = clrealy
+category = chat
 arch = x86_64
 arch = aarch64
 via_repo = flathub

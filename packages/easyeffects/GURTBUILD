@@ -7,6 +7,7 @@ pkgdesc="Easy Effects — audio effects, EQ and mic noise removal (Flathub)"
 url="https://flathub.org/apps/com.github.wwmm.easyeffects"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

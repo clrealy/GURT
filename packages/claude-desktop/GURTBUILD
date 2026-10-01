@@ -8,6 +8,7 @@ pkgdesc="Claude Desktop — Chat, Cowork and Claude Code in one app (official re
 url="https://claude.com/download"
 license="custom"
 maintainer="clrealy"
+category="chat"
 arch=(x86_64 aarch64)
 
 via_repo=claude-desktop

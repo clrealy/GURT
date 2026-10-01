@@ -1,0 +1,24 @@
+# Glow — read markdown in the terminal, beautifully
+pkgname=glow
+pkgver=3.0.0
+pkgrel=1
+pkgdesc="Glow — read markdown in the terminal, beautifully"
+url="https://github.com/charmbracelet/glow"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("git+https://github.com/charmbracelet/glow.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd glow
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X main.version=$pkgver" -o out/glow .
+}
+
+package() {
+  install -Dm755 glow/out/glow "$pkgdir$prefix/bin/glow"
+}

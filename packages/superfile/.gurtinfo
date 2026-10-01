@@ -1,0 +1,14 @@
+pkgname = superfile
+pkgver = 1.6.0
+pkgrel = 1
+pkgdesc = superfile — pretty terminal file manager (run: spf)
+url = https://github.com/yorukot/superfile
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = git+https://github.com/yorukot/superfile.git#tag=v1.6.0
+alias = spf

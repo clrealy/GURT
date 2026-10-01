@@ -1,0 +1,14 @@
+pkgname = jellyfin-media-player
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Jellyfin Media Player — watch your Jellyfin server (Flathub)
+url = https://flathub.org/apps/com.github.iwalton3.jellyfin-media-player
+license = GPL-2.0-only
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+alias = jellyfin
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.iwalton3.jellyfin-media-player

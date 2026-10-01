@@ -1,0 +1,14 @@
+pkgname = keepassxc
+pkgver = flathub
+pkgrel = 1
+pkgdesc = KeePassXC — offline password manager (Flathub)
+url = https://flathub.org/apps/org.keepassxc.KeePassXC
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = security
+arch = x86_64
+arch = aarch64
+alias = keepass
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.keepassxc.KeePassXC

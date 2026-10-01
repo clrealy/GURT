@@ -1,0 +1,15 @@
+# Pinta — simple Paint.NET-style image editor
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=pinta
+pkgver=flathub
+pkgrel=1
+pkgdesc="Pinta — simple Paint.NET-style image editor (Flathub)"
+url="https://flathub.org/apps/com.github.PintaProject.Pinta"
+license="MIT"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.PintaProject.Pinta

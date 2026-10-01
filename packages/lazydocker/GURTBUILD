@@ -1,0 +1,24 @@
+# lazydocker — Docker in a terminal UI
+pkgname=lazydocker
+pkgver=0.25.2
+pkgrel=1
+pkgdesc="lazydocker — Docker in a terminal UI"
+url="https://github.com/jesseduffield/lazydocker"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("git+https://github.com/jesseduffield/lazydocker.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd lazydocker
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X main.version=$pkgver" -o out/lazydocker .
+}
+
+package() {
+  install -Dm755 lazydocker/out/lazydocker "$pkgdir$prefix/bin/lazydocker"
+}

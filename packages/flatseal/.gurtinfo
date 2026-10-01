@@ -5,6 +5,7 @@ pkgdesc = Flatseal — manage flatpak app permissions (Flathub)
 url = https://flathub.org/apps/com.github.tchx84.Flatseal
 license = GPL-3.0-or-later
 maintainer = clrealy
+category = system
 arch = x86_64
 arch = aarch64
 via_repo = flathub

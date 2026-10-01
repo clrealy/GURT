@@ -1,0 +1,12 @@
+pkgname = openrgb
+pkgver = flathub
+pkgrel = 1
+pkgdesc = OpenRGB — control all your RGB in one place (Flathub)
+url = https://flathub.org/apps/org.openrgb.OpenRGB
+license = GPL-2.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.openrgb.OpenRGB

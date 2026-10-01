@@ -5,6 +5,7 @@ pkgdesc = A monitor of resources (CPU, memory, disks, network, processes) that l
 url = https://github.com/aristocratos/btop
 license = Apache-2.0
 maintainer = clrealy
+category = cli
 arch = x86_64
 arch = aarch64
 arch = armv7l

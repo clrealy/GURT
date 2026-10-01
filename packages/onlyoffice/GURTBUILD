@@ -7,6 +7,7 @@ pkgdesc="ONLYOFFICE — office suite that's very compatible with Word/Excel/Powe
 url="https://flathub.org/apps/org.onlyoffice.desktopeditors"
 license="AGPL-3.0-only"
 maintainer="clrealy"
+category="office"
 arch=(x86_64 aarch64)
 aliases=(onlyoffice-desktopeditors)
 

@@ -7,6 +7,7 @@ pkgdesc="Sober — run Roblox on Linux (Flathub)"
 url="https://flathub.org/apps/org.vinegarhq.Sober"
 license="Proprietary"
 maintainer="clrealy"
+category="gaming"
 arch=(x86_64)
 aliases=(roblox)
 

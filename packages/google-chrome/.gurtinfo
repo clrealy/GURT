@@ -5,6 +5,7 @@ pkgdesc = Google Chrome — web browser (official repo)
 url = https://www.google.com/chrome/
 license = custom
 maintainer = clrealy
+category = browsers
 arch = x86_64
 alias = chrome
 via_repo = google-chrome

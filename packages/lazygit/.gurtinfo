@@ -1,0 +1,13 @@
+pkgname = lazygit
+pkgver = 0.65.1
+pkgrel = 1
+pkgdesc = lazygit — git in your terminal, but make it easy
+url = https://github.com/jesseduffield/lazygit
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = git+https://github.com/jesseduffield/lazygit.git#tag=v0.65.1

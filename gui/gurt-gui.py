@@ -100,6 +100,29 @@ def kv(path):
     return out
 
 
+CONF = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"), "gurt", "gui.json")
+
+
+def conf():
+    try:
+        with open(CONF) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def save_conf(**kw):
+    c = conf(); c.update(kw)
+    os.makedirs(os.path.dirname(CONF), exist_ok=True)
+    with open(CONF, "w") as f:
+        json.dump(c, f)
+
+
+def theme():
+    t = conf().get("theme")
+    return t if t in ("light", "dark") else "auto"
+
+
 def paths():
     out = subprocess.run([GURT, "__paths"], capture_output=True, text=True, env=dict(os.environ, NO_COLOR="1")).stdout
     return dict(l.split("=", 1) for l in out.splitlines() if "=" in l)
@@ -117,7 +140,7 @@ def state():
                 continue
             main.append({"name": info.get("pkgname", name), "ver": "latest" if info.get("via_repo") else f"{info.get('pkgver','')}-{info.get('pkgrel','')}",
                          "desc": info.get("pkgdesc", ""), "alias": info.get("alias", []), "maintainer": info.get("maintainer", ""),
-                         "official": bool(info.get("via_repo"))})
+                         "official": bool(info.get("via_repo")), "category": info.get("category", "")})
     dirt = []
     dirtdir = os.path.join(repo, "dirt")
     if os.path.isdir(dirtdir):
@@ -182,7 +205,7 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/":
             if not self._host_ok() or not secrets.compare_digest((q.get("t") or [""])[0], TOKEN):
                 return self._send(403, "nope 🔒 open GURT with: gurt gui", "text/plain")
-            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE), "text/html")
+            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()), "text/html")
         if u.path in ("/icon.png", "/logo.png", "/dirt-logo.png"):
             repo = paths().get("repo", "")
             want = {"/logo.png": "gurt-logo.png", "/dirt-logo.png": "dirt-logo.png"}.get(u.path, "apple-touch-icon.png")
@@ -244,6 +267,12 @@ class H(BaseHTTPRequestHandler):
                 argv.append(arg)
             job = start_job(argv)
             return self._send(200, {"job": job.id})
+        if u.path == "/api/theme":
+            t = body.get("theme")
+            if t not in ("light", "dark", "auto"):
+                return self._send(400, {"error": "light or dark tho"})
+            save_conf(theme=t)
+            return self._send(200, {"ok": True})
         if u.path == "/api/relaunch":   # reopen as a real app window, then this browser copy bows out
             subprocess.Popen([GURT, "gui"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                              stdin=subprocess.DEVNULL, start_new_session=True)
@@ -404,7 +433,8 @@ def main():
         sys.exit(0 if tk else 1)
     GURT = a.gurt
     here = os.path.dirname(os.path.abspath(__file__))
-    ICONS = [os.path.join(here, "..", "site", "assets", "apple-touch-icon.png"),
+    ICONS = [os.path.join(here, "..", "site", "assets", "apple-touch-icon.png"), os.path.join(here, "gurt.png"),
+             "/usr/local/share/gurt/gurt.png", "/usr/share/gurt/gurt.png",
              os.path.expanduser("~/.local/share/icons/hicolor/256x256/apps/gurt.png")]
     server = ThreadingHTTPServer(("127.0.0.1", a.port), H)
     PORT = server.server_address[1]
@@ -445,21 +475,25 @@ def main():
 PORT, ASKPASS, ICONS, MODE = 0, "", [], "browser"
 
 PAGE = r"""<!doctype html>
-<html lang="en"><head>
+<html lang="en" data-theme="__THEME__"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GURT</title><link rel="icon" href="/icon.png">
 <style>
 :root{--bg:#f6f5f0;--panel:#fff;--ink:#16161a;--muted:#6b6b76;--line:#e3e1d8;--accent:#f5b400;--accent-ink:#1a1400;--tag:#efece2;--code:#f1efe7;--good:#1f8a4c;--bad:#d12f3f;
   --g:#16161a;--u:#e00000;--r:#00b300;--t:#0038ff}
-@media (prefers-color-scheme: dark){:root{--bg:#0f0f12;--panel:#17171c;--ink:#ecebe6;--muted:#9a99a3;--line:#2a2a31;--accent:#ffc629;--tag:#23232a;--code:#101014;--good:#46c37b;--bad:#ff5a6a;
+:root{color-scheme:light dark}:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+@media (prefers-color-scheme: dark){:root:not([data-theme=light]){--bg:#0f0f12;--panel:#17171c;--ink:#ecebe6;--muted:#9a99a3;--line:#2a2a31;--accent:#ffc629;--tag:#23232a;--code:#101014;--good:#46c37b;--bad:#ff5a6a;
   --g:#ecebe6;--u:#ff3b3b;--r:#33e06b;--t:#4f7bff}}
+:root[data-theme=dark]{--bg:#0f0f12;--panel:#17171c;--ink:#ecebe6;--muted:#9a99a3;--line:#2a2a31;--accent:#ffc629;--tag:#23232a;--code:#101014;--good:#46c37b;--bad:#ff5a6a;
+  --g:#ecebe6;--u:#ff3b3b;--r:#33e06b;--t:#4f7bff}
 *{box-sizing:border-box}[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,"Segoe UI",sans-serif;height:100vh;display:flex;flex-direction:column}
 code,.mono{font-family:ui-monospace,"JetBrains Mono","DejaVu Sans Mono",monospace}
 header{display:flex;align-items:center;gap:18px;padding:14px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
 .logo{font:700 30px/1 Georgia,"Times New Roman",serif;letter-spacing:-.5px}
 .logoimg{display:block;height:64px;width:auto;margin:-10px -8px -8px -10px}
-@media (prefers-color-scheme: dark){.logoimg{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.9)) drop-shadow(0 0 1px rgba(255,255,255,.9))}}
+@media (prefers-color-scheme: dark){:root:not([data-theme=light]) .logoimg{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.9)) drop-shadow(0 0 1px rgba(255,255,255,.9))}}
+:root[data-theme=dark] .logoimg{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.9)) drop-shadow(0 0 1px rgba(255,255,255,.9))}
 .srcs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .srcs button{font:13px ui-monospace,monospace;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer}
 .srcs button small{font-family:system-ui,sans-serif;color:var(--muted);margin-left:4px}
@@ -523,6 +557,10 @@ dialog h3{margin:0 0 6px;font-size:20px}dialog p{color:var(--muted);margin:0 0 1
 dialog input{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--ink);margin-bottom:14px;outline:none}
 dialog input:focus{border-color:var(--accent)}
 dialog .row{justify-content:flex-end}
+#lottowin{border:2px dashed var(--accent);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center}
+#lottowin .spin{font:700 20px ui-monospace,monospace;margin-bottom:6px}
+#lottowin .card{text-align:left;max-width:520px;margin:8px auto 0}
+.cicada{text-align:center;font:600 14px ui-monospace,monospace;margin:30px 0 10px}
 .out-line-err{color:var(--bad)}.out-line-ok{color:var(--good)}
 @media (max-width:640px){header{flex-wrap:wrap}nav{margin-left:0}}
 </style></head><body>
@@ -535,6 +573,7 @@ dialog .row{justify-content:flex-end}
     <button data-tab="desktops">🖥️ Desktops</button>
   </nav>
   <div class="spacer"></div>
+  <button class="btn ghost small" id="themebtn" title="light / dark"></button>
   <button class="btn ghost small" id="syncbtn" title="gurt sync">↻ sync</button>
 </header>
 <div id="appbar" hidden><span id="appbartxt">GURT is running in your browser 🌐 want it as a real app window?</span><button class="btn small" id="appbarinst">install app window</button><button class="btn ghost small" id="appbarx">×</button></div>
@@ -552,12 +591,14 @@ dialog .row{justify-content:flex-end}
       <button data-src="dirt" class="dirtbtn">dirt/ <small>18+</small></button>
     </div>
     <p class="blurb" id="blurb" hidden></p>
-    <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button></div>
+    <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button><button class="btn ghost" id="lotto" title="win a random app">🎰 lottery</button></div>
     <p class="hint">tip: <code>aur/yay</code>, <code>apt/cowsay</code>, <code>flatpak/gimp</code>… type a full name with a source and hit install</p>
     <div id="direct" hidden class="row" style="margin-bottom:12px"><button class="btn" id="directbtn"></button></div>
     <div id="allres" hidden><h2>everywhere</h2><div class="grid" id="allgrid"></div><h2 style="margin-top:18px">Main GURT</h2></div>
+    <div id="lottowin" hidden></div>
     <div class="grid" id="maingrid"></div>
     <div class="grid" id="srcgrid" hidden></div>
+    <p class="cicada">Could prime Wifies solve Cicada 3301?</p>
   </section>
   <section id="t-installed" hidden>
     <div class="search"><input id="iq" placeholder="filter installed…" autocomplete="off"></div>
@@ -690,7 +731,7 @@ function setSrc(src, gated){
   document.documentElement.classList.toggle("dirt", src === "dirt");
   document.querySelectorAll("#srcs button").forEach(b => b.classList.toggle("on", b.dataset.src === src));
   const main = src === "gurt";
-  $("#maingrid").hidden = !main; $("#srcgrid").hidden = main; $("#allres").hidden = true; $("#qall").hidden = !main;
+  $("#maingrid").hidden = !main; $("#srcgrid").hidden = main; $("#allres").hidden = true; $("#qall").hidden = !main; $("#lotto").hidden = !main; $("#lottowin").hidden = true;
   $("#blurb").hidden = main; $("#blurb").textContent = BLURB[src] || "";
   $("#q").placeholder = main ? "search Main GURT… (Enter searches every source)" : `search ${src}/… and hit Enter`;
   if (src === "dirt") { renderDirt(); renderMain(); return; }
@@ -732,6 +773,19 @@ async function searchAll(){
 $("#q").addEventListener("input", () => { if (SRC === "dirt") renderDirt(); if (SRC === "gurt") renderMain(); if (!$("#q").value) $("#allres").hidden = true; });
 $("#q").addEventListener("keydown", e => { if (e.key === "Enter") searchAll(); });
 $("#qall").addEventListener("click", searchAll);
+// 🎰 lottery: spin through Main GURT, land on one, install it if you dare
+let spinning = false;
+$("#lotto").addEventListener("click", () => {
+  if (spinning || !S.main.length) return;
+  const pool = S.main, win = pool[Math.floor(Math.random() * pool.length)], box = $("#lottowin");
+  box.hidden = false; spinning = true; let i = 0;
+  const tick = () => {
+    if (i++ < 18) { box.innerHTML = `<div class="spin">🎰 ${esc(pool[Math.floor(Math.random() * pool.length)].name)}</div>`; return setTimeout(tick, 40 + i * 6); }
+    spinning = false;
+    box.innerHTML = `<div class="spin">🎉 jackpot!</div>` + card({name:win.name, ver:win.ver, desc:win.desc, actions: installBtns(win.name)});
+  };
+  tick();
+});
 $("#directbtn").addEventListener("click", () => run("install", $("#q").value.trim()));
 $("#iq").addEventListener("input", renderInstalled);
 
@@ -749,6 +803,15 @@ $("#checkbtn").addEventListener("click", check);
 $("#upbtn").addEventListener("click", async () => { if (await run("upgrade")) check(); });
 $("#selfbtn").addEventListener("click", () => run("self-update"));
 $("#syncbtn").addEventListener("click", () => run("sync", "", {confirm:false}));
+// ── light / dark ── (starts on your system's theme, remembers what you pick)
+const darkMQ = matchMedia("(prefers-color-scheme: dark)");
+const isDark = () => { const t = document.documentElement.dataset.theme; return t === "dark" || (t !== "light" && darkMQ.matches); };
+const themeIcon = () => { $("#themebtn").textContent = isDark() ? "☀️ light" : "🌙 dark"; };
+$("#themebtn").addEventListener("click", () => {
+  const t = isDark() ? "light" : "dark";
+  document.documentElement.dataset.theme = t; themeIcon(); api("/api/theme", {theme:t}).catch(() => {});
+});
+darkMQ.addEventListener("change", themeIcon); themeIcon();
 
 // ── tabs ──
 document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {

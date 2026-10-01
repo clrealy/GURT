@@ -1,0 +1,24 @@
+# gdu — super fast disk usage analyzer
+pkgname=gdu
+pkgver=5.37.0
+pkgrel=1
+pkgdesc="gdu — super fast disk usage analyzer"
+url="https://github.com/dundee/gdu"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("git+https://github.com/dundee/gdu.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd gdu
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X main.version=$pkgver" -o out/gdu ./cmd/gdu
+}
+
+package() {
+  install -Dm755 gdu/out/gdu "$pkgdir$prefix/bin/gdu"
+}

@@ -1,0 +1,14 @@
+pkgname = gnome-boxes
+pkgver = flathub
+pkgrel = 1
+pkgdesc = GNOME Boxes — easy virtual machines (Flathub)
+url = https://flathub.org/apps/org.gnome.Boxes
+license = LGPL-2.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+alias = boxes
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.gnome.Boxes

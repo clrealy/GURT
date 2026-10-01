@@ -5,6 +5,7 @@ pkgdesc = Spotify — music streaming (Flathub)
 url = https://flathub.org/apps/com.spotify.Client
 license = Proprietary
 maintainer = clrealy
+category = media
 arch = x86_64
 alias = spotify-client
 via_repo = flathub

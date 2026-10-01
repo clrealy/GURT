@@ -5,6 +5,7 @@ pkgdesc = Geektyper + NordVPN = HOLY OPSEC
 url = https://geektyper.com
 license = MIT
 maintainer = clrealy
+category = fun
 arch = any
 depends = xdg-utils
 alias = opsec.exe
