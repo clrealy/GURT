@@ -1,0 +1,15 @@
+# Extension Manager — GNOME Shell extensions
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=extension-manager
+pkgver=flathub
+pkgrel=1
+pkgdesc="Extension Manager — GNOME Shell extensions (Flathub)"
+url="https://flathub.org/apps/com.mattjakeman.ExtensionManager"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.mattjakeman.ExtensionManager

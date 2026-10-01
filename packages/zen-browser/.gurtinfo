@@ -1,0 +1,14 @@
+pkgname = zen-browser
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Zen — calm Firefox-based browser with vertical tabs (Flathub)
+url = https://flathub.org/apps/app.zen_browser.zen
+license = MPL-2.0
+maintainer = clrealy
+category = browsers
+arch = x86_64
+arch = aarch64
+alias = zen
+via_repo = flathub
+via_type = flatpak
+via_pkg = app.zen_browser.zen

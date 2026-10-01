@@ -7,6 +7,7 @@ pkgdesc="Prism Launcher — Minecraft launcher with mods, modpacks and multiple 
 url="https://flathub.org/apps/org.prismlauncher.PrismLauncher"
 license="GPL-3.0-only"
 maintainer="clrealy"
+category="gaming"
 arch=(x86_64 aarch64)
 aliases=(prism minecraft)
 

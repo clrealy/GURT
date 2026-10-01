@@ -1,0 +1,13 @@
+pkgname = glow
+pkgver = 3.0.0
+pkgrel = 1
+pkgdesc = Glow — read markdown in the terminal, beautifully
+url = https://github.com/charmbracelet/glow
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = git+https://github.com/charmbracelet/glow.git#tag=v3.0.0

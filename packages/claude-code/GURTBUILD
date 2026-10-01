@@ -8,6 +8,7 @@ pkgdesc="Claude Code — Anthropic's agentic coding tool in your terminal (offic
 url="https://code.claude.com"
 license="custom"
 maintainer="clrealy"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=claude

@@ -1,0 +1,12 @@
+pkgname = protonvpn
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Proton VPN — free VPN from the Proton Mail people (Flathub)
+url = https://flathub.org/apps/com.protonvpn.www
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = security
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.protonvpn.www

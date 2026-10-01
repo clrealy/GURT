@@ -1,0 +1,13 @@
+pkgname = transmission
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Transmission — simple torrent client (Flathub)
+url = https://flathub.org/apps/com.transmissionbt.Transmission
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.transmissionbt.Transmission

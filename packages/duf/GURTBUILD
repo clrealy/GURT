@@ -1,0 +1,24 @@
+# duf — disk usage/free, but readable
+pkgname=duf
+pkgver=0.9.1
+pkgrel=1
+pkgdesc="duf — disk usage/free, but readable"
+url="https://github.com/muesli/duf"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("git+https://github.com/muesli/duf.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd duf
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X main.Version=$pkgver" -o out/duf .
+}
+
+package() {
+  install -Dm755 duf/out/duf "$pkgdir$prefix/bin/duf"
+}

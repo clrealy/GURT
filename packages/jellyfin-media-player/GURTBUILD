@@ -1,0 +1,16 @@
+# Jellyfin Media Player — watch your Jellyfin server
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=jellyfin-media-player
+pkgver=flathub
+pkgrel=1
+pkgdesc="Jellyfin Media Player — watch your Jellyfin server (Flathub)"
+url="https://flathub.org/apps/com.github.iwalton3.jellyfin-media-player"
+license="GPL-2.0-only"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+aliases=(jellyfin)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.iwalton3.jellyfin-media-player

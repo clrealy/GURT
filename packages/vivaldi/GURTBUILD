@@ -1,0 +1,15 @@
+# Vivaldi — Chromium browser for power users
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=vivaldi
+pkgver=flathub
+pkgrel=1
+pkgdesc="Vivaldi — Chromium browser for power users (Flathub)"
+url="https://flathub.org/apps/com.vivaldi.Vivaldi"
+license="Proprietary"
+maintainer="clrealy"
+category="browsers"
+arch=(x86_64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.vivaldi.Vivaldi

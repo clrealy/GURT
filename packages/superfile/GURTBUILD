@@ -1,0 +1,25 @@
+# superfile — pretty terminal file manager (run: spf)
+pkgname=superfile
+pkgver=1.6.0
+pkgrel=1
+pkgdesc="superfile — pretty terminal file manager (run: spf)"
+url="https://github.com/yorukot/superfile"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+aliases=(spf)
+makedepends=(go git)
+source=("git+https://github.com/yorukot/superfile.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd superfile
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X main.version=$pkgver" -o out/spf .
+}
+
+package() {
+  install -Dm755 superfile/out/spf "$pkgdir$prefix/bin/spf"
+}

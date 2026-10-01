@@ -7,6 +7,7 @@ pkgdesc="Audacity — audio recording and editing (Flathub)"
 url="https://flathub.org/apps/org.audacityteam.Audacity"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

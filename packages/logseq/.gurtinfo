@@ -1,0 +1,12 @@
+pkgname = logseq
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Logseq — outliner / second brain (Flathub)
+url = https://flathub.org/apps/com.logseq.Logseq
+license = AGPL-3.0-only
+maintainer = clrealy
+category = office
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.logseq.Logseq

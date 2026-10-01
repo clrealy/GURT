@@ -5,6 +5,7 @@ pkgdesc = Telegram — messaging app (Flathub)
 url = https://flathub.org/apps/org.telegram.desktop
 license = GPL-3.0-or-later
 maintainer = clrealy
+category = chat
 arch = x86_64
 arch = aarch64
 alias = telegram-desktop

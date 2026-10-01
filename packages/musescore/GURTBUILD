@@ -1,0 +1,15 @@
+# MuseScore — write sheet music
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=musescore
+pkgver=flathub
+pkgrel=1
+pkgdesc="MuseScore — write sheet music (Flathub)"
+url="https://flathub.org/apps/org.musescore.MuseScore"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.musescore.MuseScore

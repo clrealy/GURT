@@ -7,6 +7,7 @@ pkgdesc="Godot — free game engine (Flathub)"
 url="https://flathub.org/apps/org.godotengine.Godot"
 license="MIT"
 maintainer="clrealy"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

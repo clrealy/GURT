@@ -1,0 +1,13 @@
+pkgname = dive
+pkgver = 0.13.1
+pkgrel = 1
+pkgdesc = dive — explore Docker image layers
+url = https://github.com/wagoodman/dive
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = git+https://github.com/wagoodman/dive.git#tag=v0.13.1

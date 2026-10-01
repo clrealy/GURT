@@ -7,6 +7,7 @@ pkgdesc="Tor Browser — browse privately over the Tor network (Flathub)"
 url="https://flathub.org/apps/org.torproject.torbrowser-launcher"
 license="MIT"
 maintainer="clrealy"
+category="browsers"
 arch=(x86_64 aarch64)
 aliases=(tor-browser)
 

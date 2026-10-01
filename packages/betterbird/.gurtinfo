@@ -1,0 +1,12 @@
+pkgname = betterbird
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Betterbird — Thunderbird with extra fixes (Flathub)
+url = https://flathub.org/apps/eu.betterbird.Betterbird
+license = MPL-2.0
+maintainer = clrealy
+category = chat
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = eu.betterbird.Betterbird

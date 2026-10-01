@@ -7,6 +7,7 @@ pkgdesc="Visual Studio Code — code editor by Microsoft (official repo)"
 url="https://code.visualstudio.com"
 license="custom"
 maintainer="clrealy"
+category="dev"
 arch=(x86_64 aarch64 armv7l)
 aliases=(code visual-studio-code)
 

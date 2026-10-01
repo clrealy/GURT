@@ -1,0 +1,12 @@
+pkgname = upscayl
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Upscayl — AI image upscaler (Flathub)
+url = https://flathub.org/apps/org.upscayl.Upscayl
+license = AGPL-3.0-only
+maintainer = clrealy
+category = creative
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.upscayl.Upscayl

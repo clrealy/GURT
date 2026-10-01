@@ -1,0 +1,15 @@
+# LibreWolf — Firefox fork with the privacy cranked up
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=librewolf
+pkgver=flathub
+pkgrel=1
+pkgdesc="LibreWolf — Firefox fork with the privacy cranked up (Flathub)"
+url="https://flathub.org/apps/io.gitlab.librewolf-community"
+license="MPL-2.0"
+maintainer="clrealy"
+category="browsers"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.gitlab.librewolf-community

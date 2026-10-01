@@ -1,0 +1,24 @@
+# lazygit — git in your terminal, but make it easy
+pkgname=lazygit
+pkgver=0.65.1
+pkgrel=1
+pkgdesc="lazygit — git in your terminal, but make it easy"
+url="https://github.com/jesseduffield/lazygit"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("git+https://github.com/jesseduffield/lazygit.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd lazygit
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X main.version=$pkgver" -o out/lazygit .
+}
+
+package() {
+  install -Dm755 lazygit/out/lazygit "$pkgdir$prefix/bin/lazygit"
+}

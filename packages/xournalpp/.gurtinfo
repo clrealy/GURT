@@ -1,0 +1,14 @@
+pkgname = xournalpp
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Xournal++ — handwritten notes + PDF scribbling (Flathub)
+url = https://flathub.org/apps/com.github.xournalpp.xournalpp
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+alias = xournal
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.xournalpp.xournalpp

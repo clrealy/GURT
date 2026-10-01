@@ -1,0 +1,12 @@
+pkgname = cemu
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Cemu — Wii U emulator (Flathub)
+url = https://flathub.org/apps/info.cemu.Cemu
+license = MPL-2.0
+maintainer = clrealy
+category = gaming
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = info.cemu.Cemu

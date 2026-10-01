@@ -5,6 +5,7 @@ pkgdesc = Element — Matrix chat client (Flathub)
 url = https://flathub.org/apps/im.riot.Riot
 license = AGPL-3.0-only
 maintainer = clrealy
+category = chat
 arch = x86_64
 arch = aarch64
 alias = element-desktop

@@ -7,6 +7,7 @@ pkgdesc="ProtonUp-Qt — install Proton-GE and Wine-GE for Steam/Lutris/Heroic (
 url="https://flathub.org/apps/net.davidotek.pupgui2"
 license="GPL-3.0-only"
 maintainer="clrealy"
+category="gaming"
 arch=(x86_64 aarch64)
 aliases=(protonup)
 

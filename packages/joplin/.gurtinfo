@@ -1,0 +1,12 @@
+pkgname = joplin
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Joplin — notes + to-dos with sync (Flathub)
+url = https://flathub.org/apps/net.cozic.joplin_desktop
+license = AGPL-3.0-or-later
+maintainer = clrealy
+category = office
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.cozic.joplin_desktop

@@ -140,7 +140,7 @@ def state():
                 continue
             main.append({"name": info.get("pkgname", name), "ver": "latest" if info.get("via_repo") else f"{info.get('pkgver','')}-{info.get('pkgrel','')}",
                          "desc": info.get("pkgdesc", ""), "alias": info.get("alias", []), "maintainer": info.get("maintainer", ""),
-                         "official": bool(info.get("via_repo"))})
+                         "official": bool(info.get("via_repo")), "category": info.get("category", "")})
     dirt = []
     dirtdir = os.path.join(repo, "dirt")
     if os.path.isdir(dirtdir):
@@ -557,6 +557,10 @@ dialog h3{margin:0 0 6px;font-size:20px}dialog p{color:var(--muted);margin:0 0 1
 dialog input{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--ink);margin-bottom:14px;outline:none}
 dialog input:focus{border-color:var(--accent)}
 dialog .row{justify-content:flex-end}
+#lottowin{border:2px dashed var(--accent);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center}
+#lottowin .spin{font:700 20px ui-monospace,monospace;margin-bottom:6px}
+#lottowin .card{text-align:left;max-width:520px;margin:8px auto 0}
+.cicada{text-align:center;font:600 14px ui-monospace,monospace;margin:30px 0 10px}
 .out-line-err{color:var(--bad)}.out-line-ok{color:var(--good)}
 @media (max-width:640px){header{flex-wrap:wrap}nav{margin-left:0}}
 </style></head><body>
@@ -587,12 +591,14 @@ dialog .row{justify-content:flex-end}
       <button data-src="dirt" class="dirtbtn">dirt/ <small>18+</small></button>
     </div>
     <p class="blurb" id="blurb" hidden></p>
-    <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button></div>
+    <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button><button class="btn ghost" id="lotto" title="win a random app">🎰 lottery</button></div>
     <p class="hint">tip: <code>aur/yay</code>, <code>apt/cowsay</code>, <code>flatpak/gimp</code>… type a full name with a source and hit install</p>
     <div id="direct" hidden class="row" style="margin-bottom:12px"><button class="btn" id="directbtn"></button></div>
     <div id="allres" hidden><h2>everywhere</h2><div class="grid" id="allgrid"></div><h2 style="margin-top:18px">Main GURT</h2></div>
+    <div id="lottowin" hidden></div>
     <div class="grid" id="maingrid"></div>
     <div class="grid" id="srcgrid" hidden></div>
+    <p class="cicada">Could prime Wifies solve Cicada 3301?</p>
   </section>
   <section id="t-installed" hidden>
     <div class="search"><input id="iq" placeholder="filter installed…" autocomplete="off"></div>
@@ -725,7 +731,7 @@ function setSrc(src, gated){
   document.documentElement.classList.toggle("dirt", src === "dirt");
   document.querySelectorAll("#srcs button").forEach(b => b.classList.toggle("on", b.dataset.src === src));
   const main = src === "gurt";
-  $("#maingrid").hidden = !main; $("#srcgrid").hidden = main; $("#allres").hidden = true; $("#qall").hidden = !main;
+  $("#maingrid").hidden = !main; $("#srcgrid").hidden = main; $("#allres").hidden = true; $("#qall").hidden = !main; $("#lotto").hidden = !main; $("#lottowin").hidden = true;
   $("#blurb").hidden = main; $("#blurb").textContent = BLURB[src] || "";
   $("#q").placeholder = main ? "search Main GURT… (Enter searches every source)" : `search ${src}/… and hit Enter`;
   if (src === "dirt") { renderDirt(); renderMain(); return; }
@@ -767,6 +773,19 @@ async function searchAll(){
 $("#q").addEventListener("input", () => { if (SRC === "dirt") renderDirt(); if (SRC === "gurt") renderMain(); if (!$("#q").value) $("#allres").hidden = true; });
 $("#q").addEventListener("keydown", e => { if (e.key === "Enter") searchAll(); });
 $("#qall").addEventListener("click", searchAll);
+// 🎰 lottery: spin through Main GURT, land on one, install it if you dare
+let spinning = false;
+$("#lotto").addEventListener("click", () => {
+  if (spinning || !S.main.length) return;
+  const pool = S.main, win = pool[Math.floor(Math.random() * pool.length)], box = $("#lottowin");
+  box.hidden = false; spinning = true; let i = 0;
+  const tick = () => {
+    if (i++ < 18) { box.innerHTML = `<div class="spin">🎰 ${esc(pool[Math.floor(Math.random() * pool.length)].name)}</div>`; return setTimeout(tick, 40 + i * 6); }
+    spinning = false;
+    box.innerHTML = `<div class="spin">🎉 jackpot!</div>` + card({name:win.name, ver:win.ver, desc:win.desc, actions: installBtns(win.name)});
+  };
+  tick();
+});
 $("#directbtn").addEventListener("click", () => run("install", $("#q").value.trim()));
 $("#iq").addEventListener("input", renderInstalled);
 

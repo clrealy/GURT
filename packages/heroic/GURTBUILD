@@ -7,6 +7,7 @@ pkgdesc="Heroic — Epic, GOG and Amazon games on Linux (Flathub)"
 url="https://flathub.org/apps/com.heroicgameslauncher.hgl"
 license="GPL-3.0-only"
 maintainer="clrealy"
+category="gaming"
 arch=(x86_64 aarch64)
 aliases=(heroic-games-launcher)
 

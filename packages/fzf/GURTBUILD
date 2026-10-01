@@ -1,0 +1,24 @@
+# fzf — fuzzy finder for literally everything in your terminal
+pkgname=fzf
+pkgver=0.74.4
+pkgrel=1
+pkgdesc="fzf — fuzzy finder for literally everything in your terminal"
+url="https://github.com/junegunn/fzf"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("git+https://github.com/junegunn/fzf.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd fzf
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X main.version=$pkgver" -o out/fzf .
+}
+
+package() {
+  install -Dm755 fzf/out/fzf "$pkgdir$prefix/bin/fzf"
+}

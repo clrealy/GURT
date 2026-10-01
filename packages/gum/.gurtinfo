@@ -1,0 +1,13 @@
+pkgname = gum
+pkgver = 2.0.2
+pkgrel = 1
+pkgdesc = Gum — make shell scripts look glamorous
+url = https://github.com/charmbracelet/gum
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = git+https://github.com/charmbracelet/gum.git#tag=v2.0.2

@@ -1,0 +1,15 @@
+# RawTherapee — RAW photo editor
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=rawtherapee
+pkgver=flathub
+pkgrel=1
+pkgdesc="RawTherapee — RAW photo editor (Flathub)"
+url="https://flathub.org/apps/com.rawtherapee.RawTherapee"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.rawtherapee.RawTherapee

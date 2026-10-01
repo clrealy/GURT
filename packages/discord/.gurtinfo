@@ -5,6 +5,7 @@ pkgdesc = Discord — voice, video and text chat (Flathub)
 url = https://flathub.org/apps/com.discordapp.Discord
 license = Proprietary
 maintainer = clrealy
+category = chat
 arch = x86_64
 via_repo = flathub
 via_type = flatpak

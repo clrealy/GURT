@@ -6,6 +6,7 @@ pkgdesc="???"
 url="https://clrealy.github.io/GURT"
 license="MIT"
 maintainer="clrealy"
+category="fun"
 arch=(any)
 hidden=true
 aliases=(skav°7)

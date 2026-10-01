@@ -1,0 +1,15 @@
+# Fragments — GNOME-style torrent client
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=fragments
+pkgver=flathub
+pkgrel=1
+pkgdesc="Fragments — GNOME-style torrent client (Flathub)"
+url="https://flathub.org/apps/de.haeckerfelix.Fragments"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=de.haeckerfelix.Fragments

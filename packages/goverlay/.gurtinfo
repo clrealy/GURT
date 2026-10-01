@@ -1,0 +1,12 @@
+pkgname = goverlay
+pkgver = flathub
+pkgrel = 1
+pkgdesc = GOverlay — set up MangoHud + vkBasalt with a GUI (Flathub)
+url = https://flathub.org/apps/io.github.benjamimgois.goverlay
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = gaming
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.benjamimgois.goverlay

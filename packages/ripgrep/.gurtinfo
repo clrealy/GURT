@@ -1,0 +1,14 @@
+pkgname = ripgrep
+pkgver = 15.2.0
+pkgrel = 1
+pkgdesc = ripgrep — grep, but absurdly fast (rg)
+url = https://github.com/BurntSushi/ripgrep
+license = MIT OR Unlicense
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = rust
+makedepends = git
+source = git+https://github.com/BurntSushi/ripgrep.git#tag=15.2.0
+alias = rg

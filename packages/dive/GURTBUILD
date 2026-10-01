@@ -1,0 +1,24 @@
+# dive — explore Docker image layers
+pkgname=dive
+pkgver=0.13.1
+pkgrel=1
+pkgdesc="dive — explore Docker image layers"
+url="https://github.com/wagoodman/dive"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("git+https://github.com/wagoodman/dive.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd dive
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X main.version=$pkgver" -o out/dive .
+}
+
+package() {
+  install -Dm755 dive/out/dive "$pkgdir$prefix/bin/dive"
+}

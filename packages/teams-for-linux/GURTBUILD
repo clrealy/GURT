@@ -1,0 +1,16 @@
+# Teams for Linux — unofficial Microsoft Teams client
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=teams-for-linux
+pkgver=flathub
+pkgrel=1
+pkgdesc="Teams for Linux — unofficial Microsoft Teams client (Flathub)"
+url="https://flathub.org/apps/com.github.IsmaelMartinez.teams_for_linux"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+aliases=(teams)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.IsmaelMartinez.teams_for_linux

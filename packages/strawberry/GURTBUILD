@@ -1,0 +1,15 @@
+# Strawberry — music player for big local libraries
+# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=strawberry
+pkgver=flathub
+pkgrel=1
+pkgdesc="Strawberry — music player for big local libraries (Flathub)"
+url="https://flathub.org/apps/org.strawberrymusicplayer.strawberry"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.strawberrymusicplayer.strawberry

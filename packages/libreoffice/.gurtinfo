@@ -5,6 +5,7 @@ pkgdesc = LibreOffice — documents, spreadsheets and slides (Flathub)
 url = https://flathub.org/apps/org.libreoffice.LibreOffice
 license = MPL-2.0
 maintainer = clrealy
+category = office
 arch = x86_64
 arch = aarch64
 alias = office
