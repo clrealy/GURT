@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.27.0"
+GURT_VERSION="0.27.1"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -406,8 +406,19 @@ arch_ok() {
   return 1
 }
 
+# how big is it? (bytes, empty if the server won't say)
+remote_size() {
+  command -v curl >/dev/null || return 0
+  curl -sIL --max-time 6 "$1" 2>/dev/null | tr -d '\r' | awk 'tolower($1) == "content-length:" { n=$2 } END { if (n > 0) print n }'
+}
+human_size() { awk -v b="$1" 'BEGIN { if (b >= 1073741824) printf "%.1f GB", b/1073741824; else printf "%d MB", b/1048576 }'; }
+BIG_BYTES=$((50 * 1024 * 1024))
 download() {
-  local bar=(-sS) wbar=(-q); [[ -t 2 ]] && bar=(--progress-bar) wbar=(-q --show-progress)
+  local bar=(-sS) wbar=(-q) size; [[ -t 2 ]] && bar=(--progress-bar) wbar=(-q --show-progress)
+  size=$(remote_size "$1")
+  if [[ -n $size ]] && (( size > BIG_BYTES )); then
+    msg2 "it's $(human_size "$size"), this might take a while ⏳ (it's not frozen, promise)"
+  fi
   if command -v curl >/dev/null; then curl -fL --retry 3 "${bar[@]}" -o "$2" "$1"
   elif command -v wget >/dev/null; then wget "${wbar[@]}" -O "$2" "$1"
   else die "need curl or wget to download stuff"; fi
@@ -1416,6 +1427,7 @@ pkgfile_unpack() { # file to-dir scratch-dir
 repack_file() { # src name ver file deps desc provides
   local src=$1 name=$2 ver=$3 file=$4 deps=$5 desc=$6 prov=${7:-} work data
   mkdir -p "$GURT_CACHE/pkg"
+  (( $(stat -c %s "$file" 2>/dev/null || echo 0) > BIG_BYTES )) && msg2 "unpacking $name, it's a big one so give it a minute ⏳"
   work=$(mktemp -d "${TMPDIR:-/tmp}/gurt-repack.XXXXXX"); mkdir -p "$work/pkg" "$work/x"
   pkgfile_unpack "$file" "$work/pkg" "$work/x"
   {
