@@ -1,9 +1,9 @@
-# GitKraken — pretty git GUI
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Pretty git client with a visual commit graph
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=gitkraken
 pkgver=flathub
 pkgrel=1
-pkgdesc="GitKraken — pretty git GUI (Flathub)"
+pkgdesc="Pretty git client with a visual commit graph"
 url="https://flathub.org/apps/com.axosoft.GitKraken"
 license="Proprietary"
 maintainer="clrealy"

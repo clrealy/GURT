@@ -1,0 +1,13 @@
+pkgname = pitivi
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Simple video editor
+url = https://flathub.org/apps/org.pitivi.Pitivi
+license = LGPL-2.1-or-later
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.pitivi.Pitivi

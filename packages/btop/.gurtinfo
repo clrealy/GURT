@@ -1,7 +1,7 @@
 pkgname = btop
 pkgver = 1.4.4
 pkgrel = 2
-pkgdesc = A monitor of resources (CPU, memory, disks, network, processes) that looks sick
+pkgdesc = Good-looking system monitor for your CPU, memory, disks, network and processes
 url = https://github.com/aristocratos/btop
 license = Apache-2.0
 maintainer = clrealy

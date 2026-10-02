@@ -1,7 +1,7 @@
 pkgname = supertuxkart
 pkgver = flathub
 pkgrel = 1
-pkgdesc = SuperTuxKart — kart racing with Tux (Flathub)
+pkgdesc = Kart racing starring Tux
 url = https://flathub.org/apps/net.supertuxkart.SuperTuxKart
 license = GPL-3.0-or-later
 maintainer = clrealy

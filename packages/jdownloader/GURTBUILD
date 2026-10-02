@@ -1,0 +1,15 @@
+# Download manager that handles just about any site
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=jdownloader
+pkgver=flathub
+pkgrel=1
+pkgdesc="Download manager that handles just about any site"
+url="https://flathub.org/apps/org.jdownloader.JDownloader"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.jdownloader.JDownloader

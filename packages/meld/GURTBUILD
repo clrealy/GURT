@@ -1,0 +1,15 @@
+# Compare and merge files side by side
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=meld
+pkgver=flathub
+pkgrel=1
+pkgdesc="Compare and merge files side by side"
+url="https://flathub.org/apps/org.gnome.meld"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.meld

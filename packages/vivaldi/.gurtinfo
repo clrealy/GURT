@@ -1,7 +1,7 @@
 pkgname = vivaldi
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Vivaldi — Chromium browser for power users (Flathub)
+pkgdesc = Chromium browser packed with features for power users
 url = https://flathub.org/apps/com.vivaldi.Vivaldi
 license = Proprietary
 maintainer = clrealy

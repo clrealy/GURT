@@ -1,9 +1,9 @@
-# Kooha — dead simple screen recorder
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Dead simple screen recorder
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=kooha
 pkgver=flathub
 pkgrel=1
-pkgdesc="Kooha — dead simple screen recorder (Flathub)"
+pkgdesc="Dead simple screen recorder"
 url="https://flathub.org/apps/io.github.seadve.Kooha"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

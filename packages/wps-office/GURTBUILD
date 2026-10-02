@@ -1,9 +1,9 @@
-# WPS Office — MS Office lookalike
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Office suite that looks a lot like Microsoft Office
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=wps-office
 pkgver=flathub
 pkgrel=1
-pkgdesc="WPS Office — MS Office lookalike (Flathub)"
+pkgdesc="Office suite that looks a lot like Microsoft Office"
 url="https://flathub.org/apps/com.wps.Office"
 license="Proprietary"
 maintainer="clrealy"

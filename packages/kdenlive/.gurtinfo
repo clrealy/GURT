@@ -1,7 +1,7 @@
 pkgname = kdenlive
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Kdenlive — video editor from KDE (Flathub)
+pkgdesc = KDE's video editor
 url = https://flathub.org/apps/org.kde.kdenlive
 license = GPL-3.0-or-later
 maintainer = clrealy

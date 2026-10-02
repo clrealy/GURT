@@ -1,7 +1,7 @@
 pkgname = android-studio
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Android Studio — build Android apps (Flathub)
+pkgdesc = Google's IDE for building Android apps
 url = https://flathub.org/apps/com.google.AndroidStudio
 license = Proprietary
 maintainer = clrealy

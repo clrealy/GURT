@@ -1,0 +1,13 @@
+pkgname = elisa
+pkgver = flathub
+pkgrel = 1
+pkgdesc = KDE's music player
+url = https://flathub.org/apps/org.kde.elisa
+license = LGPL-3.0-or-later
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.kde.elisa

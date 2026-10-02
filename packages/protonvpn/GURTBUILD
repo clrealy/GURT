@@ -1,9 +1,9 @@
-# Proton VPN — free VPN from the Proton Mail people
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Free VPN from the people behind Proton Mail
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=protonvpn
 pkgver=flathub
 pkgrel=1
-pkgdesc="Proton VPN — free VPN from the Proton Mail people (Flathub)"
+pkgdesc="Free VPN from the people behind Proton Mail"
 url="https://flathub.org/apps/com.protonvpn.www"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

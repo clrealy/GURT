@@ -1,7 +1,7 @@
 pkgname = pinta
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Pinta — simple Paint.NET-style image editor (Flathub)
+pkgdesc = Simple image editor, like Paint.NET
 url = https://flathub.org/apps/com.github.PintaProject.Pinta
 license = MIT
 maintainer = clrealy

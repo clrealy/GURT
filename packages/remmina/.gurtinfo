@@ -1,7 +1,7 @@
 pkgname = remmina
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Remmina — remote desktop (RDP, VNC, SSH) (Flathub)
+pkgdesc = Remote desktop over RDP, VNC and SSH
 url = https://flathub.org/apps/org.remmina.Remmina
 license = GPL-2.0-or-later
 maintainer = clrealy

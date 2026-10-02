@@ -1,7 +1,7 @@
 pkgname = spotify
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Spotify — music streaming (Flathub)
+pkgdesc = Stream music
 url = https://flathub.org/apps/com.spotify.Client
 license = Proprietary
 maintainer = clrealy

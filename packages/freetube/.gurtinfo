@@ -1,7 +1,7 @@
 pkgname = freetube
 pkgver = flathub
 pkgrel = 1
-pkgdesc = FreeTube — YouTube without ads or tracking (Flathub)
+pkgdesc = Watch YouTube without ads or tracking
 url = https://flathub.org/apps/io.freetubeapp.FreeTube
 license = AGPL-3.0-or-later
 maintainer = clrealy

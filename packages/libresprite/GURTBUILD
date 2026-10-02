@@ -1,0 +1,15 @@
+# Make sprites and pixel art
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=libresprite
+pkgver=flathub
+pkgrel=1
+pkgdesc="Make sprites and pixel art"
+url="https://flathub.org/apps/com.github.libresprite.LibreSprite"
+license="GPL-2.0-only"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.libresprite.LibreSprite

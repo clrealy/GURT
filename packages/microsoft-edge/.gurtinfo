@@ -1,7 +1,7 @@
 pkgname = microsoft-edge
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Microsoft Edge — yes, on Linux (Flathub)
+pkgdesc = Microsoft's browser, and yes it runs on Linux
 url = https://flathub.org/apps/com.microsoft.Edge
 license = Proprietary
 maintainer = clrealy

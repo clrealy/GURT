@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.21.0"
+GURT_VERSION="0.26.1"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -91,7 +91,7 @@ detect_pm() {
   local w
   for w in $id $like; do
     case $w in
-      debian|ubuntu|linuxmint|pop|elementary|zorin|kali|raspbian|devuan) command -v apt-get >/dev/null && { echo apt; return; } ;;
+      debian|ubuntu|linuxmint|pop|elementary|zorin|kali|raspbian|devuan|donkos|donk) command -v apt-get >/dev/null && { echo apt; return; } ;;
       fedora|rhel|centos|rocky|almalinux|nobara) command -v dnf >/dev/null && { echo dnf; return; }
                                                  command -v yum >/dev/null && { echo yum; return; } ;;
       arch|manjaro|endeavouros|cachyos|garuda|artix) command -v pacman >/dev/null && { echo pacman; return; } ;;
@@ -199,6 +199,14 @@ apt_install() { # apt with the usual fresh-Debian gotchas handled
   asroot apt-get "${o[@]}" -f install -y >/dev/null 2>&1 || true   # finish any half-done install
   fancy "$lbl" asroot "${ag[@]}" "${o[@]}" install -y "$@"
 }
+# zypper finds libkf6foo6 but only installs libKF6Foo6: swap in the real spelling
+zypper_names() {
+  local p real
+  for p; do
+    real=$(zypper -q info "$p" 2>/dev/null | awk -F': *' '/^Name/ { print $2; exit }')
+    if [[ -n $real && ${real,,} == "${p,,}" ]]; then echo "$real"; else echo "$p"; fi
+  done
+}
 pm_install() {
   (( $# )) || return 0
   msg "installing distro deps via $PM: $*"
@@ -209,7 +217,7 @@ pm_install() {
     # Arch doesn't support partial upgrades: installing something against a newer package list than the rest
     # of the system can break it (Qt/KDE/desktop). so deps come with a full upgrade, and pacman shows you it.
     pacman) if $NOCONFIRM; then fancy "${1}" asroot pacman -Syu --needed --noconfirm "$@"; else asroot pacman -Syu --needed "$@"; fi ;;
-    zypper) fancy "${1}" asroot zypper --non-interactive install "$@" ;;
+    zypper) local zn; mapfile -t zn < <(zypper_names "$@"); fancy "${zn[0]}" asroot zypper --non-interactive install "${zn[@]}" ;;
     apk)    asroot apk add "$@" ;;
     xbps)   asroot xbps-install -Sy "$@" ;;
     emerge) asroot emerge --noreplace "$@" ;;
@@ -426,12 +434,12 @@ extract_any() {
   case $f in
     *.deb)
       if command -v bsdtar >/dev/null; then bsdtar -xf "$f" -C "$to"
-      else command -v ar >/dev/null || die "need 'ar' (binutils) or bsdtar to open .deb files"
+      else need_tool ar ".deb files"
            (cd "$to" && ar x "$(readlink -f "$f")"); fi ;;
     *.rpm)
+      command -v bsdtar >/dev/null || { command -v rpm2cpio >/dev/null && command -v cpio >/dev/null; } || need_tool bsdtar ".rpm files"
       if command -v bsdtar >/dev/null; then bsdtar -xf "$f" -C "$to"
-      else command -v rpm2cpio >/dev/null && command -v cpio >/dev/null || die "need bsdtar, or rpm2cpio + cpio, to open .rpm files"
-           (cd "$to" && rpm2cpio "$(readlink -f "$f")" | cpio -idm --quiet); fi ;;
+      else (cd "$to" && rpm2cpio "$(readlink -f "$f")" | cpio -idm --quiet); fi ;;
     *.tar|*.tar.*|*.tgz|*.tbz2|*.txz|*.tzst) tar -xf "$f" -C "$to" ;;
     *.zip) if command -v bsdtar >/dev/null; then bsdtar -xf "$f" -C "$to"
            else command -v unzip >/dev/null || die "need unzip"; unzip -q -o "$f" -d "$to"; fi ;;
@@ -991,7 +999,7 @@ gpg_keyring() { # key out
   if grep -q 'BEGIN PGP' "$1" 2>/dev/null; then gpg --dearmor < "$1" > "$2"; else cp "$1" "$2"; fi
 }
 debarch() { case $CARCH in x86_64) echo amd64 ;; aarch64) echo arm64 ;; armv7l) echo armhf ;; i?86) echo i386 ;; ppc64le) echo ppc64el ;; *) echo "$CARCH" ;; esac; }
-idx_file() { echo "$IDX_DIR/$1.tsv"; }
+idx_file() { echo "$IDX_DIR/$1.v2.tsv"; }   # v2: deps keep their "a|b" alternatives
 idx_fresh() { local f; f=$(idx_file "$1"); [[ -s $f ]] && (( $(date +%s) - $(stat -c %Y "$f") < IDX_MAX_AGE )); }
 ensure_idx() { idx_fresh "$1" || sync_source "$1"; }
 idx_lookup() { [[ -s $(idx_file "$1") ]] && awk -F'\t' -v n="$2" '$1==n {print; exit}' "$(idx_file "$1")"; }
@@ -1001,7 +1009,17 @@ idx_provider() {
   awk -F'\t' -v d="$2" '{ c=split($7, a, ","); for (i=1; i<=c; i++) if (a[i] == d) { print $1; exit } }' "$(idx_file "$1")"
 }
 
-need_tool() { command -v "$1" >/dev/null || die "the $2 source needs '$1' — install it from your distro first"; }
+# missing a tool? get it from your distro instead of giving up (ar for .debs, zstd, gpgv…)
+need_tool() { # cmd what-needs-it
+  command -v "$1" >/dev/null && return 0
+  local dep
+  case $1 in ar) dep=binutils ;; gpg|gpgv) dep=gnupg ;; bsdtar) dep=bsdtar ;; rpm2cpio|cpio) dep=rpm2cpio ;; *) dep=$1 ;; esac
+  $NODEPS && die "$2 needs '$1' (and --nodeps is on) — install $dep from your distro first"
+  msg2 "$2 needs '$1' — getting $dep from your distro ($PM)"
+  # shellcheck disable=SC2046
+  install_native $(map_dep "$dep") >&2 || true
+  hash -r; command -v "$1" >/dev/null || die "couldn't install '$1' for $2 — install $dep from your distro, then try again"
+}
 
 sync_source() {
   local s=$1 tmp out
@@ -1043,7 +1061,9 @@ APT_ROWS_AWK='BEGIN { RS=""; FS="\n"; OFS="\t" }
         else if (l ~ /^Description: /) ds=substr(l,14) }
       if (pd != "") d = (d == "" ? pd : pd ", " d)
       out=""; m=split(d, arr, /, */)
-      for (j=1; j<=m; j++) { x=arr[j]; sub(/ *\|.*/, "", x); sub(/ *\(.*/, "", x); sub(/:any$/, "", x); gsub(/ /, "", x)
+      for (j=1; j<=m; j++) { na=split(arr[j], alt, /\|/); x=""
+        for (k=1; k<=na; k++) { y=alt[k]; sub(/ *\(.*/, "", y); sub(/:any$/, "", y); gsub(/ /, "", y)
+          if (y != "") x = x (x == "" ? "" : "|") y }
         if (x != "") out = out (out == "" ? "" : ",") x }
       prov=""; m=split(pv, arr, /, */)
       for (j=1; j<=m; j++) { x=arr[j]; sub(/ *\(.*/, "", x); gsub(/ /, "", x); if (x != "") prov = prov (prov == "" ? "" : ",") x }
@@ -1251,6 +1271,20 @@ rev_map() {
 # resolve ONE dependency of a foreign package
 foreign_dep() { # src dep
   local src=$1 dep=$2 g nat
+  if [[ $dep == *"|"* ]]; then   # "a|b|c": any one of them does the job
+    local alts a; IFS='|' read -ra alts <<<"$dep"
+    for a in "${alts[@]}"; do a=${a%%[<>=]*}; { host_has "$a" || is_installed "$(pkey "$src" "$a")"; } && return 0; done
+    $NODEPS && { warn "--nodeps: not getting any of ${dep//|/ / }"; return 0; }
+    for a in "${alts[@]}"; do   # one your distro has (by its deps.map name first, then the same name)
+      a=${a%%[<>=]*}; g=$(rev_map "$(src_pm "$src")" "$a")
+      if [[ -n $g ]] && nat=$(map_dep "$g") && [[ -n $nat ]] && pm_available "${nat%% *}"; then
+        # shellcheck disable=SC2206
+        NATIVE_Q+=($nat); return 0
+      fi
+    done
+    for a in "${alts[@]}"; do a=${a%%[<>=]*}; pm_available "$a" && { NATIVE_Q+=("$a"); return 0; }; done
+    dep=${alts[0]}
+  fi
   dep=${dep%%[<>=]*}
   [[ -z $dep ]] && return 0
   if [[ $dep =~ $OSPART_RE || $dep =~ $PMLIB_RE || $dep =~ $SYSTOOL_RE ]] && ! host_has "$dep"; then
@@ -1379,7 +1413,7 @@ repack_file() { # src name ver file deps desc provides
   esac
   {
     printf 'pkgname = %s\npkgver = %s\npkgdesc = %s\narch = %s\n' "$name" "$ver" "$desc" "$CARCH"
-    local d; IFS=, read -ra dl <<<"$deps"; for d in "${dl[@]}"; do [[ -n $d ]] && printf 'depends = %s\n' "$d"; done
+    local d; IFS=, read -ra dl <<<"${deps//|/,}"; for d in "${dl[@]}"; do [[ -n $d ]] && printf 'depends = %s\n' "$d"; done
     IFS=, read -ra dl <<<"$prov"; for d in "${dl[@]}"; do [[ -n $d ]] && printf 'provides = %s\n' "$d"; done
     printf 'builddate = %s\nprefix = /usr\ngurtsource = %s\nfrom = %s\n' "$(date +%s)" "$src" "${file##*/}"
   } > "$work/.PKGINFO"
@@ -2592,8 +2626,8 @@ gui_pkgs() { # the distro packages a real app window needs (python GObject + Web
   pkgs=($(map_dep gui-webview))
   if [[ ${pkgs[*]} == gui-webview ]]; then   # older deps.map → built-in list
     case $PM in
-      pacman) pkgs=(python-gobject webkit2gtk-4.1) ;;  apt) pkgs=(python3-gi gir1.2-webkit2-4.1) ;;
-      dnf|yum) pkgs=(python3-gobject webkit2gtk4.1) ;; zypper) pkgs=(python3-gobject-Gdk typelib-1_0-WebKit2-4_1) ;;
+      pacman) pkgs=(python-gobject webkit2gtk-4.1 gst-plugins-good) ;;  apt) pkgs=(python3-gi gir1.2-webkit2-4.1 gstreamer1.0-plugins-good) ;;
+      dnf|yum) pkgs=(python3-gobject webkit2gtk4.1 gstreamer1-plugins-good) ;; zypper) pkgs=(python3-gobject-Gdk typelib-1_0-WebKit2-4_1 gstreamer-plugins-good) ;;
       *) pkgs=() ;;
     esac
   fi
@@ -3065,6 +3099,41 @@ system_updates_count() {
 }
 cmd_sysup() { system_upgrade; }
 
+# ── the utilities most apps need to install (generic deps.map names) ──
+# flatpak for Flathub apps · ar/bsdtar/zstd/7zip/rpm2cpio to unpack .deb .rpm .pkg.tar.zst .dmg .exe ·
+# git + a compiler + make + pkg-config for source builds · curl/unzip for downloads · gnupg for signatures ·
+# patchelf for foreign binaries · xdg-utils so apps can open links
+GURT_UTILS=(curl git unzip zstd bsdtar binutils 7zip rpm2cpio gnupg patchelf xdg-utils flatpak cc make pkg-config)
+# Donk OS 🫏 (basically worse Ubuntu): gurt is its package manager, so gurt sets these up by itself there
+is_donk() {
+  [[ -n ${GURT_DONK:-} ]] && { [[ $GURT_DONK == 1 ]]; return; }   # GURT_DONK=1/0 overrides detection (testing)
+  [[ -r /etc/os-release ]] && (. /etc/os-release; [[ " ${ID:-} ${ID_LIKE:-} " == *" donkos "* || ${ID:-} == donk ]])
+}
+cmd_utils() { # [list]
+  local g p have miss=() nat=()
+  for g in "${GURT_UTILS[@]}"; do
+    have=1
+    for p in $(map_dep "$g"); do pm_has "$p" || { have=0; nat+=("$p"); }; done
+    if [[ ${1:-} == list ]]; then
+      if (( have )); then printf '  %s✓%s %s\n' "$GRN" "$R0" "$g"; else printf '  %s✗%s %s\n' "$YLW" "$R0" "$g"; fi
+    fi
+    (( have )) || miss+=("$g")
+  done
+  if [[ ${1:-} == list ]]; then
+    (( ${#miss[@]} )) && msg2 "get the missing ones with: gurt utils"
+    return 0
+  fi
+  if (( ! ${#miss[@]} )); then msg "you've already got every utility apps need 👍"; return 0; fi
+  msg "installing the utilities most apps need: ${miss[*]}"
+  # shellcheck disable=SC2046
+  pm_install $(printf '%s\n' "${nat[@]}" | sort -u)
+  if command -v flatpak >/dev/null && ! flatpak remotes --user --columns=name 2>/dev/null | grep -qx flathub; then
+    msg2 "adding Flathub (for your user, no sudo needed)"
+    flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || warn "couldn't add Flathub"
+  fi
+  msg "utilities ready ✅ pretty much any app installs now"
+}
+
 cmd_upgrade() {  # your system + everything gurt installed
   $NO_SYSTEM || [[ ${GURT_SYSTEM_UPGRADE:-1} == 0 ]] || system_upgrade
   refresh_all
@@ -3185,6 +3254,7 @@ cmd_self_update() {
     [[ -d $f && -f $GURT_REPO_DIR/site/assets/apple-touch-icon.png ]] && asroot cp "$GURT_REPO_DIR/site/assets/apple-touch-icon.png" "$f/gurt.png"
   done
   msg "gurt updated to $new ✅"
+  if is_donk; then msg2 "Donk OS 🫏 making sure the utilities apps need are here"; "$self" -y utils || true; fi
   exit 0
 }
 
@@ -3393,6 +3463,8 @@ cmd_doctor() {
   tar --version 2>/dev/null | grep -q GNU || { warn "gurt needs GNU tar (Alpine: apk add tar)"; ok=1; }
   command -v sudo >/dev/null || command -v doas >/dev/null || (( EUID == 0 )) || warn "no sudo/doas found"
   [[ $PM == none ]] && warn "no known package manager — you'll have to install deps yourself (--nodeps)"
+  printf '\n%sutilities apps need%s%s\n' "$B" "$R0" "$(is_donk && echo ' (Donk OS 🫏 gurt keeps these installed)')"
+  cmd_utils list
 
   printf '\n%ssources%s\n' "$B" "$R0"
   has() { command -v "$1" >/dev/null; }
@@ -3502,6 +3574,8 @@ ${B}using packages${R0}
   upgrade              update EVERYTHING: your system (pacman -Syu / zypper dup / apt full-upgrade / dnf upgrade…),
                        then everything gurt installed, flatpaks + snaps (--no-system: skip the system part)
   sysup                just update your system with your distro's own package manager
+  utils [list]         install the utilities most apps need (flatpak, git, curl, unzip tools, a compiler…)
+                       (on Donk OS 🫏 gurt does this by itself)
   self-update          update gurt itself
   remove pkg…          uninstall (only removes files gurt put there)
   autoremove           remove deps nothing needs anymore
@@ -3613,6 +3687,7 @@ main() {
     update|refresh)    cmd_update ;;
     upgrade|up)        cmd_upgrade ;;
     sysup|system-upgrade|syu) cmd_sysup ;;
+    utils|utilities|essentials) cmd_utils "$@" ;;
     self-update|selfupdate) cmd_self_update ;;
     remove|rm|yeet)    (( $# )) || die "remove what tho"; for p; do remove_pkg "$p"; done; play_scream ;;
     autoremove|clean)  cmd_autoremove ;;

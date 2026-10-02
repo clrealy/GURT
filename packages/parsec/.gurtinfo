@@ -1,0 +1,12 @@
+pkgname = parsec
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Remote desktop fast enough for gaming
+url = https://flathub.org/apps/com.parsecgaming.parsec
+license = Proprietary
+maintainer = clrealy
+category = internet
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.parsecgaming.parsec

@@ -1,7 +1,7 @@
 pkgname = google-chrome
 pkgver = repo
 pkgrel = 1
-pkgdesc = Google Chrome — web browser (official repo)
+pkgdesc = Google's web browser
 url = https://www.google.com/chrome/
 license = custom
 maintainer = clrealy

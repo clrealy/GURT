@@ -1,7 +1,7 @@
 pkgname = ripgrep
 pkgver = 15.2.0
 pkgrel = 1
-pkgdesc = ripgrep — grep, but absurdly fast (rg)
+pkgdesc = Like grep, but ridiculously fast (run it with rg)
 url = https://github.com/BurntSushi/ripgrep
 license = MIT OR Unlicense
 maintainer = clrealy

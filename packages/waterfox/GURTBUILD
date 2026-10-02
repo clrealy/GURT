@@ -1,0 +1,15 @@
+# Privacy-minded fork of Firefox
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=waterfox
+pkgver=flathub
+pkgrel=1
+pkgdesc="Privacy-minded fork of Firefox"
+url="https://flathub.org/apps/net.waterfox.waterfox"
+license="MPL-2.0"
+maintainer="clrealy"
+category="browsers"
+arch=(x86_64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.waterfox.waterfox

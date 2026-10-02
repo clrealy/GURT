@@ -1,0 +1,14 @@
+pkgname = syncthingy
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Run Syncthing from your system tray
+url = https://flathub.org/apps/com.github.zocker_160.SyncThingy
+license = GPL-3.0-only
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+alias = syncthing
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.zocker_160.SyncThingy

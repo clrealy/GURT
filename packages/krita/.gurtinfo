@@ -1,7 +1,7 @@
 pkgname = krita
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Krita — digital painting and drawing (Flathub)
+pkgdesc = Digital painting and drawing
 url = https://flathub.org/apps/org.kde.krita
 license = GPL-3.0-or-later
 maintainer = clrealy

@@ -1,0 +1,15 @@
+# Paint on a canvas that never runs out
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=mypaint
+pkgver=flathub
+pkgrel=1
+pkgdesc="Paint on a canvas that never runs out"
+url="https://flathub.org/apps/org.mypaint.MyPaint"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.mypaint.MyPaint

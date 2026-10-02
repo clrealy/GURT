@@ -1,9 +1,9 @@
-# Amberol — tiny, pretty music player
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Tiny, pretty music player for your local files
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=amberol
 pkgver=flathub
 pkgrel=1
-pkgdesc="Amberol — tiny, pretty music player (Flathub)"
+pkgdesc="Tiny, pretty music player for the songs on your computer"
 url="https://flathub.org/apps/io.bassi.Amberol"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

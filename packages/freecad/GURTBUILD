@@ -1,9 +1,9 @@
-# FreeCAD — parametric 3D CAD
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Parametric 3D CAD for designing real parts
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=freecad
 pkgver=flathub
 pkgrel=1
-pkgdesc="FreeCAD — parametric 3D CAD (Flathub)"
+pkgdesc="Parametric 3D CAD for designing real parts"
 url="https://flathub.org/apps/org.freecad.FreeCAD"
 license="LGPL-2.0-or-later"
 maintainer="clrealy"

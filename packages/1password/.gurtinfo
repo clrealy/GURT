@@ -1,7 +1,7 @@
 pkgname = 1password
 pkgver = repo
 pkgrel = 1
-pkgdesc = 1Password — password manager (official repo)
+pkgdesc = Password manager that fills in your logins everywhere
 url = https://1password.com
 license = custom
 maintainer = clrealy

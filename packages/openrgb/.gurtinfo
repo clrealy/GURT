@@ -1,7 +1,7 @@
 pkgname = openrgb
 pkgver = flathub
 pkgrel = 1
-pkgdesc = OpenRGB — control all your RGB in one place (Flathub)
+pkgdesc = Control all your RGB lighting from one place
 url = https://flathub.org/apps/org.openrgb.OpenRGB
 license = GPL-2.0-only
 maintainer = clrealy

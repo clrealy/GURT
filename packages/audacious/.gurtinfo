@@ -1,0 +1,13 @@
+pkgname = audacious
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Lightweight music player with serious Winamp vibes
+url = https://flathub.org/apps/org.atheme.audacious
+license = BSD-2-Clause
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.atheme.audacious

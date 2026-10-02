@@ -1,0 +1,14 @@
+pkgname = epiphany
+pkgver = flathub
+pkgrel = 1
+pkgdesc = GNOME's simple, clean web browser
+url = https://flathub.org/apps/org.gnome.Epiphany
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = browsers
+arch = x86_64
+arch = aarch64
+alias = gnome-web
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.gnome.Epiphany

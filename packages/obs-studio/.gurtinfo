@@ -1,7 +1,7 @@
 pkgname = obs-studio
 pkgver = flathub
 pkgrel = 1
-pkgdesc = OBS Studio — screen recording and live streaming (Flathub)
+pkgdesc = Record your screen and stream live
 url = https://flathub.org/apps/com.obsproject.Studio
 license = GPL-2.0-or-later
 maintainer = clrealy

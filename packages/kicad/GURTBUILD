@@ -1,9 +1,9 @@
-# KiCad — electronics + PCB design
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Design electronics and PCBs
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=kicad
 pkgver=flathub
 pkgrel=1
-pkgdesc="KiCad — electronics + PCB design (Flathub)"
+pkgdesc="Design electronics and circuit boards"
 url="https://flathub.org/apps/org.kicad.KiCad"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

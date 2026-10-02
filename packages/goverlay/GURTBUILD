@@ -1,9 +1,9 @@
-# GOverlay — set up MangoHud + vkBasalt with a GUI
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Set up MangoHud and vkBasalt without editing config files
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=goverlay
 pkgver=flathub
 pkgrel=1
-pkgdesc="GOverlay — set up MangoHud + vkBasalt with a GUI (Flathub)"
+pkgdesc="Set up MangoHud and vkBasalt without touching config files"
 url="https://flathub.org/apps/io.github.benjamimgois.goverlay"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

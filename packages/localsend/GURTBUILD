@@ -1,9 +1,9 @@
-# LocalSend — AirDrop but for every device
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Send files to nearby devices, like AirDrop for everything
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=localsend
 pkgver=flathub
 pkgrel=1
-pkgdesc="LocalSend — AirDrop but for every device (Flathub)"
+pkgdesc="Send files to nearby devices, like AirDrop for everything"
 url="https://flathub.org/apps/org.localsend.localsend_app"
 license="MIT"
 maintainer="clrealy"

@@ -1,7 +1,7 @@
 pkgname = alpaca
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Alpaca — chat with local AI models (Ollama) (Flathub)
+pkgdesc = Chat with AI models running locally on your own PC through Ollama
 url = https://flathub.org/apps/com.jeffser.Alpaca
 license = GPL-3.0-or-later
 maintainer = clrealy

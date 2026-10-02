@@ -1,7 +1,7 @@
 pkgname = extension-manager
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Extension Manager — GNOME Shell extensions (Flathub)
+pkgdesc = Browse and install GNOME Shell extensions
 url = https://flathub.org/apps/com.mattjakeman.ExtensionManager
 license = GPL-3.0-or-later
 maintainer = clrealy

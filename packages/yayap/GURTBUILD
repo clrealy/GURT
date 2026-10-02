@@ -1,15 +1,16 @@
-# YaYaP — Yet Another "Yet Another" Program
+# YaYaP (Yet Another "Yet Another" Program): a YaST-style control center
 pkgname=yayap
-pkgver=0.2.0
+pkgver=0.3.0
 pkgrel=1
-pkgdesc="Yet Another \"Yet Another\" Program — a YaST-style control center for any distro: services, users, firewall, packages & more 🧰"
+pkgdesc="YaST-style control center for any distro, with a desktop app and a terminal UI: services, users, firewall, packages and more 🧰"
 url="https://github.com/clrealy/YaYaP"
 license="MIT"
 maintainer="clrealy"
 category="system"
 arch=(any)
+depends=(python3)            # for `yayap gui`
 makedepends=(git)
-source=("yayap::git+https://github.com/clrealy/YaYaP.git#commit=4b75c55b33364734a52ae82d2fcdace184139961")
+source=("yayap::git+https://github.com/clrealy/YaYaP.git#commit=ddc75e5e392103ed4f7a4177fcf4e06e8f8e1f38")
 sha256sums=(SKIP)
 
 check() {

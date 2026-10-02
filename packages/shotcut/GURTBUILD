@@ -1,9 +1,9 @@
-# Shotcut — cross-platform video editor
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Cross-platform video editor
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=shotcut
 pkgver=flathub
 pkgrel=1
-pkgdesc="Shotcut — cross-platform video editor (Flathub)"
+pkgdesc="Free video editor that runs everywhere"
 url="https://flathub.org/apps/org.shotcut.Shotcut"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

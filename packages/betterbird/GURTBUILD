@@ -1,9 +1,9 @@
-# Betterbird — Thunderbird with extra fixes
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Thunderbird with a bunch of extra fixes
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=betterbird
 pkgver=flathub
 pkgrel=1
-pkgdesc="Betterbird — Thunderbird with extra fixes (Flathub)"
+pkgdesc="Thunderbird with a bunch of extra fixes and features"
 url="https://flathub.org/apps/eu.betterbird.Betterbird"
 license="MPL-2.0"
 maintainer="clrealy"

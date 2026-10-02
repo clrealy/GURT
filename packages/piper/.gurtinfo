@@ -1,7 +1,7 @@
 pkgname = piper
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Piper — configure gaming mice (Flathub)
+pkgdesc = Configure your gaming mouse
 url = https://flathub.org/apps/org.freedesktop.Piper
 license = GPL-2.0-or-later
 maintainer = clrealy

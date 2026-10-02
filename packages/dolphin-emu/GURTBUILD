@@ -1,9 +1,9 @@
-# Dolphin — GameCube and Wii emulator
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# GameCube and Wii emulator
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=dolphin-emu
 pkgver=flathub
 pkgrel=1
-pkgdesc="Dolphin — GameCube and Wii emulator (Flathub)"
+pkgdesc="GameCube and Wii emulator"
 url="https://flathub.org/apps/org.DolphinEmu.dolphin-emu"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

@@ -1,9 +1,9 @@
-# PCSX2 — PlayStation 2 emulator
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# PlayStation 2 emulator
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=pcsx2
 pkgver=flathub
 pkgrel=1
-pkgdesc="PCSX2 — PlayStation 2 emulator (Flathub)"
+pkgdesc="PlayStation 2 emulator"
 url="https://flathub.org/apps/net.pcsx2.PCSX2"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

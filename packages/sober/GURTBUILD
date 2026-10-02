@@ -1,9 +1,9 @@
-# Sober — run Roblox on Linux
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Play Roblox on Linux
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=sober
 pkgver=flathub
 pkgrel=1
-pkgdesc="Sober — run Roblox on Linux (Flathub)"
+pkgdesc="Play Roblox on Linux"
 url="https://flathub.org/apps/org.vinegarhq.Sober"
 license="Proprietary"
 maintainer="clrealy"

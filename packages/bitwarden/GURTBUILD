@@ -1,9 +1,9 @@
-# Bitwarden — open source password manager
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Open source password manager that syncs everywhere
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=bitwarden
 pkgver=flathub
 pkgrel=1
-pkgdesc="Bitwarden — open source password manager (Flathub)"
+pkgdesc="Open source password manager that syncs everywhere"
 url="https://flathub.org/apps/com.bitwarden.desktop"
 license="GPL-3.0-only"
 maintainer="clrealy"

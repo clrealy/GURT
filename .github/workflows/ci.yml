@@ -52,6 +52,12 @@ jobs:
           elif command -v zypper; then zypper -n install git bash sudo curl tar gzip findutils gpg2 xz bsdtar zstd python3; fi
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
+      - name: gurt utils installs everything on this distro
+        shell: bash
+        run: |
+          ./gurt -y utils
+          ./gurt utils list | tee /tmp/utils.txt
+          ! grep -q '✗' /tmp/utils.txt
       - name: build changed packages
         shell: bash
         run: |
@@ -64,7 +70,7 @@ jobs:
             if grep -q '^via_type=flatpak' packages/$p/GURTBUILD; then
               # a Flathub app: check its id really exists (downloading every app + runtime on 5 distros would fill the runner)
               id=$(sed -n 's/^via_pkg=//p' packages/$p/GURTBUILD)
-              ./gurt info "flatpak/$id" >/dev/null || { echo "::error::$p: $id isn't on Flathub"; exit 1; }
+              ./gurt -y info "flatpak/$id" >/dev/null || { echo "::error::$p: $id isn't on Flathub"; exit 1; }
               echo "✅ $p → $id is on Flathub"
             elif grep -q '^secret=true' packages/$p/GURTBUILD; then
               # secret packages only answer to their alias

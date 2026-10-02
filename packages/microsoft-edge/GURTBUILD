@@ -1,9 +1,9 @@
-# Microsoft Edge — yes, on Linux
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Microsoft's browser, and yes it runs on Linux
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=microsoft-edge
 pkgver=flathub
 pkgrel=1
-pkgdesc="Microsoft Edge — yes, on Linux (Flathub)"
+pkgdesc="Microsoft's browser, and yes it runs on Linux"
 url="https://flathub.org/apps/com.microsoft.Edge"
 license="Proprietary"
 maintainer="clrealy"

@@ -1,9 +1,9 @@
-# Nextcloud — desktop sync client
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Sync your files with your Nextcloud server
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=nextcloud
 pkgver=flathub
 pkgrel=1
-pkgdesc="Nextcloud — desktop sync client (Flathub)"
+pkgdesc="Sync your files with your Nextcloud server"
 url="https://flathub.org/apps/com.nextcloud.desktopclient.nextcloud"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

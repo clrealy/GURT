@@ -1,7 +1,7 @@
 pkgname = protonup-qt
 pkgver = flathub
 pkgrel = 1
-pkgdesc = ProtonUp-Qt — install Proton-GE and Wine-GE for Steam/Lutris/Heroic (Flathub)
+pkgdesc = Install Proton-GE and Wine-GE for Steam, Lutris and Heroic
 url = https://flathub.org/apps/net.davidotek.pupgui2
 license = GPL-3.0-only
 maintainer = clrealy

@@ -1,9 +1,9 @@
-# GIMP — the official Flathub build, maintained by the GIMP team themselves.
+# Free and open source image editor (official Flathub build)
 # gurt sets up flatpak + Flathub for you if you don't have them.
 pkgname=gimp
 pkgver=flathub
 pkgrel=1
-pkgdesc="GIMP — free & open source image editor (official Flathub build)"
+pkgdesc="Free and open source image editor"
 url="https://www.gimp.org"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

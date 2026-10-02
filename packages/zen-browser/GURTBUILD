@@ -1,9 +1,9 @@
-# Zen — calm Firefox-based browser with vertical tabs
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Calm, Firefox-based browser with vertical tabs
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=zen-browser
 pkgver=flathub
 pkgrel=1
-pkgdesc="Zen — calm Firefox-based browser with vertical tabs (Flathub)"
+pkgdesc="Calm, Firefox-based browser with vertical tabs"
 url="https://flathub.org/apps/app.zen_browser.zen"
 license="MPL-2.0"
 maintainer="clrealy"

@@ -25,6 +25,12 @@ distrobox   emerge=app-containers/distrobox
 patchelf    emerge=dev-util/patchelf
 linux-headers  apt=linux-libc-dev  dnf=kernel-headers  pacman=linux-api-headers  zypper=linux-glibc-devel  apk=linux-headers  xbps=kernel-libc-headers  emerge=sys-kernel/linux-headers  eopkg=linux-headers
 zstd        emerge=app-arch/zstd
+binutils    emerge=sys-devel/binutils
+gnupg       apt=gpgv,gnupg  dnf=gnupg2  pacman=gnupg  zypper=gpg2  apk=gnupg,gpgv  xbps=gnupg  emerge=app-crypt/gnupg
+# gio: apps use it to move files to the trash
+glib-bin    apt=libglib2.0-bin  dnf=glib2  pacman=glib2  zypper=glib2-tools  apk=glib  xbps=glib  eopkg=glib2  emerge=dev-libs/glib
+bsdtar      apt=libarchive-tools  dnf=bsdtar  pacman=libarchive  zypper=bsdtar  apk=libarchive-tools  xbps=bsdtar  emerge=app-arch/libarchive
+rpm2cpio    apt=rpm2cpio,cpio  dnf=rpm,cpio  pacman=rpm-tools,cpio  zypper=rpm,cpio  apk=rpm2cpio,cpio  xbps=rpm2cpio,cpio
 7zip        apt=7zip  dnf=7zip  pacman=7zip  zypper=7zip  apk=7zip  xbps=7zip  eopkg=p7zip  emerge=app-arch/7zip
 wine        apt=wine  dnf=wine  pacman=wine  zypper=wine  apk=wine  xbps=wine  eopkg=wine  emerge=app-emulation/wine-vanilla
 
@@ -52,4 +58,4 @@ vulkan      apt=libvulkan-dev  dnf=vulkan-loader-devel  pacman=vulkan-icd-loader
 dbus        apt=libdbus-1-dev  dnf=dbus-devel  pacman=dbus  zypper=dbus-1-devel  apk=dbus-dev  xbps=dbus-devel  emerge=sys-apps/dbus
 
 # ── gurt gui app window (python GObject + WebKit2GTK) ──
-gui-webview  apt=python3-gi,gir1.2-webkit2-4.1  dnf=python3-gobject,webkit2gtk4.1  pacman=python-gobject,webkit2gtk-4.1  zypper=python3-gobject-Gdk,typelib-1_0-WebKit2-4_1  apk=py3-gobject3,webkit2gtk-4.1  xbps=python3-gobject,libwebkit2gtk41  eopkg=python-gobject,libwebkit-gtk41
+gui-webview  apt=python3-gi,gir1.2-webkit2-4.1,gstreamer1.0-plugins-good  dnf=python3-gobject,webkit2gtk4.1,gstreamer1-plugins-good  pacman=python-gobject,webkit2gtk-4.1,gst-plugins-good  zypper=python3-gobject-Gdk,typelib-1_0-WebKit2-4_1,gstreamer-plugins-good  apk=py3-gobject3,webkit2gtk-4.1,gst-plugins-good  xbps=python3-gobject,libwebkit2gtk41,gst-plugins-good1  eopkg=python-gobject,libwebkit-gtk41,gstreamer-1.0-plugins-good

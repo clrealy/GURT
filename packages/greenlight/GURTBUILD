@@ -1,0 +1,15 @@
+# Stream games from your Xbox or Xbox Cloud Gaming
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=greenlight
+pkgver=flathub
+pkgrel=1
+pkgdesc="Stream games from your Xbox or Xbox Cloud Gaming"
+url="https://flathub.org/apps/io.github.unknownskl.greenlight"
+license="MIT"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.unknownskl.greenlight

@@ -1,9 +1,9 @@
-# xemu — original Xbox emulator
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Original Xbox emulator
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=xemu
 pkgver=flathub
 pkgrel=1
-pkgdesc="xemu — original Xbox emulator (Flathub)"
+pkgdesc="Original Xbox emulator"
 url="https://flathub.org/apps/app.xemu.xemu"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

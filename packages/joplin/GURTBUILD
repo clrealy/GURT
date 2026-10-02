@@ -1,9 +1,9 @@
-# Joplin — notes + to-dos with sync
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Notes and to-dos that sync between your devices
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=joplin
 pkgver=flathub
 pkgrel=1
-pkgdesc="Joplin — notes + to-dos with sync (Flathub)"
+pkgdesc="Notes and to-dos that sync between your devices"
 url="https://flathub.org/apps/net.cozic.joplin_desktop"
 license="AGPL-3.0-or-later"
 maintainer="clrealy"

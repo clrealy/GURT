@@ -1,9 +1,9 @@
-# qBittorrent — free, ad-free BitTorrent client
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Free BitTorrent client with no ads
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=qbittorrent
 pkgver=flathub
 pkgrel=1
-pkgdesc="qBittorrent — free, ad-free BitTorrent client (Flathub)"
+pkgdesc="Free BitTorrent client with no ads"
 url="https://flathub.org/apps/org.qbittorrent.qBittorrent"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

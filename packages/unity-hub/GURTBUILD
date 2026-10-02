@@ -1,0 +1,15 @@
+# Install and manage Unity versions
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=unity-hub
+pkgver=flathub
+pkgrel=1
+pkgdesc="Install and manage Unity versions"
+url="https://flathub.org/apps/com.unity.UnityHub"
+license="Proprietary"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.unity.UnityHub

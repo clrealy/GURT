@@ -1,7 +1,7 @@
 pkgname = zed
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Zed — fast code editor built in Rust (Flathub)
+pkgdesc = Fast code editor built in Rust
 url = https://flathub.org/apps/dev.zed.Zed
 license = GPL-3.0-or-later
 maintainer = clrealy

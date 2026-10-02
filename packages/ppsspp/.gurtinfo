@@ -1,7 +1,7 @@
 pkgname = ppsspp
 pkgver = flathub
 pkgrel = 1
-pkgdesc = PPSSPP — PSP emulator (Flathub)
+pkgdesc = PSP emulator
 url = https://flathub.org/apps/org.ppsspp.PPSSPP
 license = GPL-2.0-or-later
 maintainer = clrealy

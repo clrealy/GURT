@@ -1,9 +1,9 @@
-# Moonlight — stream games from your gaming PC
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Stream games from your gaming PC to any screen
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=moonlight
 pkgver=flathub
 pkgrel=1
-pkgdesc="Moonlight — stream games from your gaming PC (Flathub)"
+pkgdesc="Stream games from your gaming PC to any screen"
 url="https://flathub.org/apps/com.moonlight_stream.Moonlight"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

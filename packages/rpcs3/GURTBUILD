@@ -1,9 +1,9 @@
-# RPCS3 — PlayStation 3 emulator
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# PlayStation 3 emulator
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=rpcs3
 pkgver=flathub
 pkgrel=1
-pkgdesc="RPCS3 — PlayStation 3 emulator (Flathub)"
+pkgdesc="PlayStation 3 emulator"
 url="https://flathub.org/apps/net.rpcs3.RPCS3"
 license="GPL-2.0-only"
 maintainer="clrealy"

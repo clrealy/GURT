@@ -1,0 +1,15 @@
+# Browse Mastodon and the rest of the fediverse
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=tuba
+pkgver=flathub
+pkgrel=1
+pkgdesc="Browse Mastodon and the rest of the fediverse"
+url="https://flathub.org/apps/dev.geopjr.Tuba"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.geopjr.Tuba

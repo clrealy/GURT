@@ -1,0 +1,15 @@
+# The endlessly extensible text editor
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=emacs
+pkgver=flathub
+pkgrel=1
+pkgdesc="The endlessly extensible text editor"
+url="https://flathub.org/apps/org.gnu.emacs"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnu.emacs

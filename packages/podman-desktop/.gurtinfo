@@ -1,7 +1,7 @@
 pkgname = podman-desktop
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Podman Desktop — containers with a GUI (Flathub)
+pkgdesc = Manage containers with a GUI
 url = https://flathub.org/apps/io.podman_desktop.PodmanDesktop
 license = Apache-2.0
 maintainer = clrealy

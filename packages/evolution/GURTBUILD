@@ -1,9 +1,9 @@
-# Evolution — email, calendar and contacts
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Email, calendar and contacts all in one
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=evolution
 pkgver=flathub
 pkgrel=1
-pkgdesc="Evolution — email, calendar and contacts (Flathub)"
+pkgdesc="Email, calendar and contacts all in one"
 url="https://flathub.org/apps/org.gnome.Evolution"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

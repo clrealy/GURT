@@ -1,0 +1,15 @@
+# Password manager from Proton
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=proton-pass
+pkgver=flathub
+pkgrel=1
+pkgdesc="Password manager from Proton"
+url="https://flathub.org/apps/me.proton.Pass"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="security"
+arch=(x86_64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=me.proton.Pass

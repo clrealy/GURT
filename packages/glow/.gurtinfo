@@ -1,7 +1,7 @@
 pkgname = glow
 pkgver = 3.0.0
 pkgrel = 1
-pkgdesc = Glow — read markdown in the terminal, beautifully
+pkgdesc = Read markdown files in your terminal, nicely formatted
 url = https://github.com/charmbracelet/glow
 license = MIT
 maintainer = clrealy

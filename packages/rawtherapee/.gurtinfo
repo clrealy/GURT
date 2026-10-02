@@ -1,7 +1,7 @@
 pkgname = rawtherapee
 pkgver = flathub
 pkgrel = 1
-pkgdesc = RawTherapee — RAW photo editor (Flathub)
+pkgdesc = Edit RAW photos
 url = https://flathub.org/apps/com.rawtherapee.RawTherapee
 license = GPL-3.0-or-later
 maintainer = clrealy

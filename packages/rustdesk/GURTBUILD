@@ -1,9 +1,9 @@
-# RustDesk — open source TeamViewer alternative
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Open source alternative to TeamViewer
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=rustdesk
 pkgver=flathub
 pkgrel=1
-pkgdesc="RustDesk — open source TeamViewer alternative (Flathub)"
+pkgdesc="Open source alternative to TeamViewer"
 url="https://flathub.org/apps/com.rustdesk.RustDesk"
 license="AGPL-3.0-only"
 maintainer="clrealy"

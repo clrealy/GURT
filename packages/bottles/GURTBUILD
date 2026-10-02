@@ -1,9 +1,9 @@
-# Bottles — run Windows apps and games with Wine, made easy
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Run Windows apps and games with Wine, made easy
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=bottles
 pkgver=flathub
 pkgrel=1
-pkgdesc="Bottles — run Windows apps and games with Wine, made easy (Flathub)"
+pkgdesc="Run Windows apps and games with Wine, minus the pain"
 url="https://flathub.org/apps/com.usebottles.bottles"
 license="GPL-3.0-only"
 maintainer="clrealy"

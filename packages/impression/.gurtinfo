@@ -1,7 +1,7 @@
 pkgname = impression
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Impression — flash ISOs to USB drives (Flathub)
+pkgdesc = Flash ISO files onto USB drives
 url = https://flathub.org/apps/io.gitlab.adhami3310.Impression
 license = GPL-3.0-only
 maintainer = clrealy

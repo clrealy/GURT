@@ -1,0 +1,12 @@
+pkgname = peazip
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Opens pretty much every kind of archive
+url = https://flathub.org/apps/io.github.peazip.PeaZip
+license = LGPL-3.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.peazip.PeaZip

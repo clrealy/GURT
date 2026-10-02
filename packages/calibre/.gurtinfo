@@ -1,7 +1,7 @@
 pkgname = calibre
 pkgver = flathub
 pkgrel = 1
-pkgdesc = calibre — e-book library, converter and reader (Flathub)
+pkgdesc = E-book library, converter and reader in one
 url = https://flathub.org/apps/com.calibre_ebook.calibre
 license = GPL-3.0-only
 maintainer = clrealy

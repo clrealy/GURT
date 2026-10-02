@@ -1,0 +1,13 @@
+pkgname = falkon
+pkgver = flathub
+pkgrel = 1
+pkgdesc = KDE's lightweight web browser
+url = https://flathub.org/apps/org.kde.falkon
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = browsers
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.kde.falkon

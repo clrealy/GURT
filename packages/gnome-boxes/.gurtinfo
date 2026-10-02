@@ -1,7 +1,7 @@
 pkgname = gnome-boxes
 pkgver = flathub
 pkgrel = 1
-pkgdesc = GNOME Boxes — easy virtual machines (Flathub)
+pkgdesc = Run virtual machines without the headache
 url = https://flathub.org/apps/org.gnome.Boxes
 license = LGPL-2.0-or-later
 maintainer = clrealy

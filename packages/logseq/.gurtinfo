@@ -1,7 +1,7 @@
 pkgname = logseq
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Logseq — outliner / second brain (Flathub)
+pkgdesc = Outliner that works like a second brain
 url = https://flathub.org/apps/com.logseq.Logseq
 license = AGPL-3.0-only
 maintainer = clrealy

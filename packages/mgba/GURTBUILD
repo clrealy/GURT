@@ -1,9 +1,9 @@
-# mGBA — Game Boy Advance emulator
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Game Boy Advance emulator
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=mgba
 pkgver=flathub
 pkgrel=1
-pkgdesc="mGBA — Game Boy Advance emulator (Flathub)"
+pkgdesc="Game Boy Advance emulator"
 url="https://flathub.org/apps/io.mgba.mGBA"
 license="MPL-2.0"
 maintainer="clrealy"

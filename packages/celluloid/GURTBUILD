@@ -1,9 +1,9 @@
-# Celluloid — clean GTK video player (mpv inside)
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Clean GTK video player with mpv under the hood
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=celluloid
 pkgver=flathub
 pkgrel=1
-pkgdesc="Celluloid — clean GTK video player (mpv inside) (Flathub)"
+pkgdesc="Clean GTK video player with mpv under the hood"
 url="https://flathub.org/apps/io.github.celluloid_player.Celluloid"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

@@ -1,0 +1,12 @@
+pkgname = bruno
+pkgver = flathub
+pkgrel = 1
+pkgdesc = API client that keeps your collections offline in plain files
+url = https://flathub.org/apps/com.usebruno.Bruno
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.usebruno.Bruno

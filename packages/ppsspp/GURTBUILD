@@ -1,9 +1,9 @@
-# PPSSPP — PSP emulator
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# PSP emulator
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=ppsspp
 pkgver=flathub
 pkgrel=1
-pkgdesc="PPSSPP — PSP emulator (Flathub)"
+pkgdesc="PSP emulator"
 url="https://flathub.org/apps/org.ppsspp.PPSSPP"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

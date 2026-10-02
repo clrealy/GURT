@@ -1,9 +1,9 @@
-# Steam — Valve's game store and launcher (Flathub)
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Valve's game store and launcher
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=steam
 pkgver=flathub
 pkgrel=1
-pkgdesc="Steam — Valve's game store and launcher (Flathub)"
+pkgdesc="Valve's game store and launcher"
 url="https://flathub.org/apps/com.valvesoftware.Steam"
 license="Proprietary"
 maintainer="clrealy"

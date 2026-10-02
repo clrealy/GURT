@@ -1,9 +1,9 @@
-# Brave — Chromium-based browser with ad blocking built in
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Chromium-based browser with ad blocking built in
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=brave
 pkgver=flathub
 pkgrel=1
-pkgdesc="Brave — Chromium-based browser with ad blocking built in (Flathub)"
+pkgdesc="Chromium-based browser with ad blocking built in"
 url="https://flathub.org/apps/com.brave.Browser"
 license="MPL-2.0"
 maintainer="clrealy"

@@ -1,9 +1,9 @@
-# Anki — flashcards that actually make you remember
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Flashcards that actually help you remember stuff
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=anki
 pkgver=flathub
 pkgrel=1
-pkgdesc="Anki — flashcards that actually make you remember (Flathub)"
+pkgdesc="Flashcards that actually help you remember stuff"
 url="https://flathub.org/apps/net.ankiweb.Anki"
 license="AGPL-3.0-or-later"
 maintainer="clrealy"

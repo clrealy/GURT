@@ -1,9 +1,9 @@
-# RetroArch — frontend for tons of emulators
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# One frontend for tons of emulators
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=retroarch
 pkgver=flathub
 pkgrel=1
-pkgdesc="RetroArch — frontend for tons of emulators (Flathub)"
+pkgdesc="One frontend for tons of emulators"
 url="https://flathub.org/apps/org.libretro.RetroArch"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

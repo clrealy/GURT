@@ -1,0 +1,15 @@
+# Open source RollerCoaster Tycoon 2
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+pkgname=openrct2
+pkgver=flathub
+pkgrel=1
+pkgdesc="Open source remake of RollerCoaster Tycoon 2"
+url="https://flathub.org/apps/io.openrct2.OpenRCT2"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.openrct2.OpenRCT2

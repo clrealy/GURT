@@ -1,9 +1,9 @@
-# Logseq — outliner / second brain
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Outliner that works like a second brain
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=logseq
 pkgver=flathub
 pkgrel=1
-pkgdesc="Logseq — outliner / second brain (Flathub)"
+pkgdesc="Outliner that works like a second brain"
 url="https://flathub.org/apps/com.logseq.Logseq"
 license="AGPL-3.0-only"
 maintainer="clrealy"

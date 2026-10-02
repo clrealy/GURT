@@ -1,9 +1,9 @@
-# OpenSCAD — 3D models written as code
-# installs the Flathub build — gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
+# Build 3D models by writing code
+# installs the Flathub build. gurt sets up flatpak + Flathub for you if needed (just for your user, no root needed)
 pkgname=openscad
 pkgver=flathub
 pkgrel=1
-pkgdesc="OpenSCAD — 3D models written as code (Flathub)"
+pkgdesc="Build 3D models by writing code"
 url="https://flathub.org/apps/org.openscad.OpenSCAD"
 license="GPL-2.0-or-later"
 maintainer="clrealy"
