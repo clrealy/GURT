@@ -1,11 +1,12 @@
 pkgname = yayap
-pkgver = 0.1.0
+pkgver = 0.3.1
 pkgrel = 1
-pkgdesc = Linux toolbox for system info, packages, ports, archives, backups and cleanup 🧰
+pkgdesc = YaST-style control center for any distro, with a desktop app and a terminal UI: services, users, firewall, packages and more 🧰
 url = https://github.com/clrealy/YaYaP
 license = MIT
 maintainer = clrealy
-category = cli
+category = system
 arch = any
+depends = python3
 makedepends = git
-source = yayap::git+https://github.com/clrealy/YaYaP.git#commit=be59b5965bdd5a96c12daf6bd62e74050da228fb
+source = yayap::git+https://github.com/clrealy/YaYaP.git#commit=1e398b6a484603c2fa8ab92eab077edaeb8c4220
