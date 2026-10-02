@@ -15,8 +15,9 @@ JOBS, JOBS_LOCK = {}, threading.Lock()
 LAST_PING = [time.time()]
 SPEC_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+°:@/-]{0,200}$")
 # files you can drop into the app (same list gurt outsource understands)
-DROP_RE = re.compile(r"\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|appimage|dmg|exe|msi|snap|flatpak|flatpakref|"
+DROP_RE = re.compile(r"\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|gurt|appimage|dmg|exe|msi|snap|flatpak|flatpakref|"
                      r"tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst)$", re.I)
+CONV_FMTS = ("deb", "rpm", "pacman", "apk", "xbps", "eopkg", "appimage", "gurt", "tar.gz", "zip")
 DROP_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]{0,200}$")
 DROP_MAX = 8 << 30   # 8 GiB
 
@@ -311,6 +312,17 @@ class H(BaseHTTPRequestHandler):
                 if not DROP_NAME_RE.match(arg) or not DROP_RE.search(arg) or not os.path.isfile(p):
                     return self._send(400, {"error": "that dropped file is gone"})
                 job = start_job([GURT, "-y", "outsource", p])
+                return self._send(200, {"job": job.id})
+            if cmd == "convert":   # a dropped file → another package format, saved to your Downloads
+                p = os.path.join(drops_dir(), arg)
+                if not DROP_NAME_RE.match(arg) or not DROP_RE.search(arg) or not os.path.isfile(p):
+                    return self._send(400, {"error": "that file is gone"})
+                if body.get("fmt") not in CONV_FMTS:
+                    return self._send(400, {"error": "gurt can't make that format"})
+                out = os.path.expanduser("~/Downloads")
+                if not os.path.isdir(out):
+                    out = os.path.expanduser("~")
+                job = start_job([GURT, "-y", "convert", p, body["fmt"], "-o", out])
                 return self._send(200, {"job": job.id})
             if cmd == "gui-setup":
                 job = start_job([GURT, "-y", "gui", "--setup"])
@@ -694,11 +706,13 @@ dialog .row{justify-content:flex-end}
 .dropbig:hover,.dropbig:focus{border-color:var(--accent);transform:scale(1.005);outline:none}
 .dropbig .dropicon{font-size:56px;line-height:1}.dropbig b{font-size:20px}.dropbig span{color:var(--muted)}
 .dropbig .fmts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:620px;margin-top:6px}
+.convrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin-top:16px}
+.convrow small{color:var(--muted);width:100%;text-align:center}
 .dropnote{text-align:center;margin-top:14px;color:var(--muted)}
 #musicbtn.off{opacity:.5}
 /* the Install a file tab only shows when the header has room for it; otherwise the button in Discover does the job */
 :root.tight nav button[data-tab=dropfile]{display:none}
-:root:not(.tight) #dropbtn{display:none}
+:root:not(.tight) #dropbtn,:root:not(.tight) #convopen{display:none}
 #dropzone{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(3px);pointer-events:none}
 #dropzone div{border:4px dashed var(--accent);border-radius:24px;padding:48px 64px;text-align:center;background:var(--panel);font-size:22px;font-weight:700}
 #dropzone small{display:block;font-size:14px;font-weight:400;color:var(--muted);margin-top:8px}
@@ -777,6 +791,17 @@ dialog .row{justify-content:flex-end}
       <span>gurt figures out what it is and installs it straight onto your system, any distro, no box</span>
       <span class="fmts"><code>.deb</code><code>.rpm</code><code>.pkg.tar.zst</code><code>AppImage</code><code>.flatpak</code><code>.flatpakref</code><code>.snap</code><code>.apk</code><code>.xbps</code><code>.eopkg</code><code>.tar.gz</code><code>.zip</code><code>.7z</code><code>.exe</code><code>.msi</code><code>.dmg</code></span>
     </label>
+    <div class="convrow">🔁 or <b>convert</b> a package instead:
+      <select id="convfmt" title="convert to">
+        <option value="deb">.deb (Debian, Ubuntu, Mint)</option><option value="rpm">.rpm (Fedora, openSUSE)</option>
+        <option value="pacman">.pkg.tar.zst (Arch, CachyOS)</option><option value="apk">.apk (Alpine)</option>
+        <option value="xbps">.xbps (Void)</option><option value="eopkg">.eopkg (Solus)</option>
+        <option value="appimage">AppImage (any distro)</option><option value="gurt">.gurt</option>
+        <option value="tar.gz">.tar.gz</option><option value="zip">.zip</option>
+      </select>
+      <button class="btn" id="convbtn">pick a file to convert</button><input type="file" id="convin" hidden>
+      <small>it lands in your Downloads folder</small>
+    </div>
     <p class="dropnote">from a terminal it's <code>gurt outsource ./file.deb</code> (or a download link). only install files you trust 🙏</p>
   </section>
   <section id="t-discover">
@@ -792,7 +817,7 @@ dialog .row{justify-content:flex-end}
       <button data-src="dirt" class="dirtbtn">dirt/ <small>18+</small></button>
     </div>
     <p class="blurb" id="blurb" hidden></p>
-    <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button><button class="btn lottobtn" id="lotto" title="win a random app">🎰 lottery</button><button class="btn ghost" id="dropbtn" title="install a .deb, .rpm, AppImage, .exe… you downloaded">📥 install a file</button><input type="file" id="dropin" hidden></div>
+    <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button><button class="btn lottobtn" id="lotto" title="win a random app">🎰 lottery</button><button class="btn ghost" id="dropbtn" title="install a .deb, .rpm, AppImage, .exe… you downloaded">📥 install a file</button><button class="btn ghost" id="convopen" title="turn a package into another format">🔁 convert</button><input type="file" id="dropin" hidden></div>
     <p class="hint">tip: <code>aur/yay</code>, <code>apt/cowsay</code>, <code>flatpak/gimp</code>… type a full name with a source and hit install</p>
     <div id="direct" hidden class="row" style="margin-bottom:12px"><button class="btn" id="directbtn"></button></div>
     <div id="allres" hidden><h2>everywhere</h2><div class="grid" id="allgrid"></div><h2 style="margin-top:18px">Main GURT</h2></div>
@@ -885,7 +910,7 @@ function ask(title, body){ return new Promise(res => { $("#ctitle2").textContent
   const done = v => { d.close(); $("#cyes").onclick = $("#cno").onclick = null; res(v); };
   $("#cyes").onclick = () => done(true); $("#cno").onclick = () => done(false); d.onclose = () => res(false); d.showModal(); }); }
 
-async function run(cmd, arg="", {all=false, quiet=false, confirm=true} = {}){
+async function run(cmd, arg="", {all=false, quiet=false, confirm=true, fmt=""} = {}){
   if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return null; }
   if (confirm && VERB[cmd]) {
     const warn = cmd === "outsource" ? " This builds + runs code from that repo — only do it if you trust it." :
@@ -893,7 +918,7 @@ async function run(cmd, arg="", {all=false, quiet=false, confirm=true} = {}){
     if (!await ask(`${VERB[cmd]}${arg ? " " + arg : ""}?`, `gurt will ${cmd} ${arg || ""}.${warn}`)) return null;
   }
   busy = true; setBusyUI(true);
-  const r = await api("/api/run", {cmd, arg, all});
+  const r = await api("/api/run", {cmd, arg, all, fmt});
   if (r.error) { busy = false; setBusyUI(false); alert(r.error); return null; }
   cur = r.job; let from = 0, lines = [];
   $("#ctitle").textContent = `gurt ${cmd} ${arg}`; $("#cdot").className = "dot run"; if (!quiet) $("#console").classList.add("open");
@@ -1154,6 +1179,19 @@ async function installFile(f){
   await run("dropped", r.name, {confirm:false});
 }
 $("#dropbtn").addEventListener("click", () => $("#dropin").click());
+// 🔁 convert: upload the file, gurt convert turns it into the format you picked
+async function convertFile(f){
+  if (!f) return;
+  if (!DROPPABLE.test(f.name) && !/\.gurt$/i.test(f.name)) { alert(`gurt can't open "${f.name}" 🤔 try a .deb, .rpm, .pkg.tar.zst, AppImage, .exe…`); return; }
+  if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return; }
+  const fmt = $("#convfmt").value;
+  $("#ctitle").textContent = `uploading ${f.name}…`; $("#cdot").className = "dot run"; $("#console").classList.add("open");
+  const r = await fetch("/api/drop", {method:"POST", headers:{"X-Gurt-Token":T, "X-Filename":encodeURIComponent(f.name)}, body:f}).then(x => x.json()).catch(() => ({error:"upload failed"}));
+  if (r.error) { $("#cdot").className = "dot bad"; alert(r.error); return; }
+  await run("convert", r.name, {confirm:false, fmt});
+}
+$("#convbtn").addEventListener("click", () => $("#convin").click());
+$("#convin").addEventListener("change", e => { convertFile(e.target.files[0]); e.target.value = ""; });
 $("#dropbig").addEventListener("click", e => { e.preventDefault(); $("#dropin").click(); });
 $("#dropbig").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("#dropin").click(); } });
 // no room in the header for the Install a file tab? hide it (and bounce back to Discover if you were on it)
@@ -1161,8 +1199,16 @@ function fitNav(){
   const root = document.documentElement, h = document.querySelector("header");
   root.classList.remove("tight");
   if (innerWidth <= 900 || h.scrollWidth > h.clientWidth + 1) root.classList.add("tight");
-  if (root.classList.contains("tight") && !$("#t-dropfile").hidden) document.querySelector('nav button[data-tab="discover"]').click();
+  const tight = root.classList.contains("tight");
+  if (tight && !wasTight && !$("#t-dropfile").hidden) document.querySelector('nav button[data-tab="discover"]').click();
+  wasTight = tight;
 }
+let wasTight = false;
+// narrow window: the 🔁 button in Discover opens the Install a file page (it has the converter) without its tab
+$("#convopen").addEventListener("click", () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.remove("on"));
+  for (const t of ["discover","installed","updates","setup","desktops","dropfile"]) $("#t-"+t).hidden = t !== "dropfile";
+});
 addEventListener("resize", fitNav); fitNav();
 $("#dropin").addEventListener("change", e => { installFile(e.target.files[0]); e.target.value = ""; });
 let dragDepth = 0;

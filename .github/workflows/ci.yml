@@ -58,6 +58,19 @@ jobs:
           ./gurt -y utils
           ./gurt utils list | tee /tmp/utils.txt
           ! grep -q '✗' /tmp/utils.txt
+      - name: gurt convert makes a package this distro's own package manager installs
+        shell: bash
+        run: |
+          mkdir -p /tmp/cv/gurt-cvtest-1.0/usr/bin
+          printf '#!/bin/sh\necho converted by gurt\n' > /tmp/cv/gurt-cvtest-1.0/usr/bin/gurt-cvtest; chmod 755 /tmp/cv/gurt-cvtest-1.0/usr/bin/gurt-cvtest
+          tar -czf /tmp/cv/gurt-cvtest-1.0.tar.gz -C /tmp/cv gurt-cvtest-1.0
+          cd /tmp/cv
+          if command -v apt-get; then "$GITHUB_WORKSPACE/gurt" -y convert gurt-cvtest-1.0.tar.gz deb && dpkg -i ./gurt-cvtest_*.deb
+          elif command -v dnf; then "$GITHUB_WORKSPACE/gurt" -y convert gurt-cvtest-1.0.tar.gz rpm && dnf install -y ./gurt-cvtest-*.rpm
+          elif command -v pacman; then "$GITHUB_WORKSPACE/gurt" -y convert gurt-cvtest-1.0.tar.gz pacman && pacman -U --noconfirm ./gurt-cvtest-*.pkg.tar.zst
+          elif command -v apk; then "$GITHUB_WORKSPACE/gurt" -y convert gurt-cvtest-1.0.tar.gz apk && apk add --allow-untrusted ./gurt-cvtest-*.apk
+          elif command -v zypper; then "$GITHUB_WORKSPACE/gurt" -y convert gurt-cvtest-1.0.tar.gz rpm && zypper --non-interactive install --allow-unsigned-rpm ./gurt-cvtest-*.rpm; fi
+          [ "$(gurt-cvtest)" = "converted by gurt" ]
       - name: build changed packages
         shell: bash
         run: |

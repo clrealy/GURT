@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.26.1"
+GURT_VERSION="0.27.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -227,8 +227,8 @@ pm_install() {
 }
 
 # generic dep name -> native package name(s) for this distro ("-" = not needed)
-map_dep() {
-  local dep=$1 key=$PM map val
+map_dep() { # dep [pm-key, default: yours]
+  local dep=$1 key=${2:-$PM} map val
   [[ $key == yum ]] && key=dnf
   map=$(depmap_file)
   if [[ -n $map ]]; then
@@ -1013,7 +1013,7 @@ idx_provider() {
 need_tool() { # cmd what-needs-it
   command -v "$1" >/dev/null && return 0
   local dep
-  case $1 in ar) dep=binutils ;; gpg|gpgv) dep=gnupg ;; bsdtar) dep=bsdtar ;; rpm2cpio|cpio) dep=rpm2cpio ;; *) dep=$1 ;; esac
+  case $1 in ar) dep=binutils ;; gpg|gpgv) dep=gnupg ;; bsdtar) dep=bsdtar ;; rpm2cpio|cpio) dep=rpm2cpio ;; rpmbuild) dep=rpmbuild ;; *) dep=$1 ;; esac
   $NODEPS && die "$2 needs '$1' (and --nodeps is on) — install $dep from your distro first"
   msg2 "$2 needs '$1' — getting $dep from your distro ($PM)"
   # shellcheck disable=SC2046
@@ -1381,36 +1381,43 @@ repack_foreign() { # src name ver path sum deps desc provides
   repack_file "$src" "$name" "$ver" "$file" "$deps" "$desc" "$prov"
 }
 
+# a .deb / .rpm / .pkg.tar.* / .apk / .xbps / .eopkg → just its files, in a folder
+pkgfile_unpack() { # file to-dir scratch-dir
+  local file=$1 to=$2 x=$3 data
+  mkdir -p "$to" "$x"
+  case $file in
+    *.deb)
+      extract_any "$file" "$x"
+      data=$(find "$x" -maxdepth 1 -name 'data.tar*' | head -n1)
+      [[ -n $data ]] || die "weird .deb, no data.tar inside"
+      [[ $data == *.zst ]] && need_tool zstd apt
+      tar -xf "$data" -C "$to" ;;
+    *.rpm)
+      extract_any "$file" "$to" ;;
+    *.apk)
+      tar -xzf "$file" -C "$to" 2>/dev/null
+      rm -f "$to/.PKGINFO" "$to"/.SIGN.* "$to"/.pre-* "$to"/.post-* "$to/.trigger" ;;
+    *.xbps)
+      tar -xf "$file" -C "$to"
+      rm -f "$to/props.plist" "$to/files.plist" "$to/INSTALL" "$to/REMOVE" ;;
+    *.eopkg)
+      python3 -c 'import sys, zipfile; open(sys.argv[2], "wb").write(zipfile.ZipFile(sys.argv[1]).read("install.tar.xz"))' "$file" "$x/install.tar.xz" ||
+        die "weird .eopkg, no install.tar.xz inside"
+      tar -xJf "$x/install.tar.xz" -C "$to" ;;
+    *.pkg.tar.*)
+      [[ $file == *.zst ]] && need_tool zstd pacman
+      tar -xf "$file" -C "$to"
+      rm -f "$to/.PKGINFO" "$to/.BUILDINFO" "$to/.MTREE" "$to/.INSTALL" ;;
+    *) die "don't know how to open ${file##*/}" ;;
+  esac
+}
+
 # a .deb / .rpm / .pkg.tar.* on disk → .gurt
 repack_file() { # src name ver file deps desc provides
   local src=$1 name=$2 ver=$3 file=$4 deps=$5 desc=$6 prov=${7:-} work data
   mkdir -p "$GURT_CACHE/pkg"
   work=$(mktemp -d "${TMPDIR:-/tmp}/gurt-repack.XXXXXX"); mkdir -p "$work/pkg" "$work/x"
-  case $file in
-    *.deb)
-      extract_any "$file" "$work/x"
-      data=$(find "$work/x" -maxdepth 1 -name 'data.tar*' | head -n1)
-      [[ -n $data ]] || die "weird .deb, no data.tar inside"
-      [[ $data == *.zst ]] && need_tool zstd apt
-      tar -xf "$data" -C "$work/pkg" ;;
-    *.rpm)
-      extract_any "$file" "$work/pkg" ;;
-    *.apk)
-      tar -xzf "$file" -C "$work/pkg" 2>/dev/null
-      rm -f "$work/pkg/.PKGINFO" "$work/pkg"/.SIGN.* "$work/pkg"/.pre-* "$work/pkg"/.post-* "$work/pkg/.trigger" ;;
-    *.xbps)
-      tar -xf "$file" -C "$work/pkg"
-      rm -f "$work/pkg/props.plist" "$work/pkg/files.plist" "$work/pkg/INSTALL" "$work/pkg/REMOVE" ;;
-    *.eopkg)
-      python3 -c 'import sys, zipfile; open(sys.argv[2], "wb").write(zipfile.ZipFile(sys.argv[1]).read("install.tar.xz"))' "$file" "$work/x/install.tar.xz" ||
-        die "weird .eopkg, no install.tar.xz inside"
-      tar -xJf "$work/x/install.tar.xz" -C "$work/pkg" ;;
-    *.pkg.tar.*)
-      [[ $file == *.zst ]] && need_tool zstd pacman
-      tar -xf "$file" -C "$work/pkg"
-      rm -f "$work/pkg/.PKGINFO" "$work/pkg/.BUILDINFO" "$work/pkg/.MTREE" "$work/pkg/.INSTALL" ;;
-    *) die "don't know how to open ${file##*/}" ;;
-  esac
+  pkgfile_unpack "$file" "$work/pkg" "$work/x"
   {
     printf 'pkgname = %s\npkgver = %s\npkgdesc = %s\narch = %s\n' "$name" "$ver" "$desc" "$CARCH"
     local d; IFS=, read -ra dl <<<"${deps//|/,}"; for d in "${dl[@]}"; do [[ -n $d ]] && printf 'depends = %s\n' "$d"; done
@@ -1644,6 +1651,369 @@ pkgfile_install() { # file-or-url reason
   esac
   flush_native
   install_file "$built" "$reason"
+}
+
+# ── gurt convert <file> <format>: turn any Linux package into any other one 🔁 ──
+# in: .deb .rpm .pkg.tar.* .apk(Alpine) .xbps .eopkg .gurt .AppImage .tar.*/.zip (a root-style tree) .exe/.msi (runs via Wine)
+# out: deb rpm pacman(.pkg.tar.zst) apk xbps eopkg appimage gurt tar.gz zip
+# the files go across as-is; deps get translated through deps.map (ones it doesn't know are listed, not guessed)
+CV_NAME="" CV_VER="" CV_DEPS="" CV_DESC="" CV_ARCH="" CV_FAM="" CV_TDEPS=() CV_DROPPED=()
+conv_fmt() { # "deb" / "out.deb" / "arch" → format name, empty = not a format gurt can make
+  local l=${1,,}
+  case $l in
+    *.pkg.tar.zst|*.pkg.tar.xz|*.pkg.tar.gz|*.pkg.tar) echo pacman; return ;;
+    tar.gz|targz|tgz|*.tar.gz|*.tgz) echo tar.gz; return ;;
+  esac
+  case ${l##*.} in
+    deb|debian|ubuntu|mint|apt) echo deb ;;
+    rpm|fedora|suse|opensuse|dnf|zypper) echo rpm ;;
+    pacman|arch|archlinux|zst|pkg.tar.zst) echo pacman ;;
+    apk|alpine) echo apk ;;
+    xbps|void) echo xbps ;;
+    eopkg|solus) echo eopkg ;;
+    appimage) echo appimage ;;
+    gurt) echo gurt ;;
+    zip) echo zip ;;
+    tar|targz) echo tar.gz ;;
+    dmg|app|macos|mac|exe|msi|windows|win|pkg|msix|ipa) echo "nope:${l##*.}" ;;
+  esac
+}
+conv_canon_arch() { # whatever a package calls its CPU → x86_64 / aarch64 / any / …
+  case $1 in
+    amd64|x86_64|x86-64|x64) echo x86_64 ;; arm64|aarch64) echo aarch64 ;; i386|i486|i586|i686|x86) echo i686 ;;
+    armhf|armv7h|armv7l|armv7hl|armv7) echo armv7 ;; ppc64el|ppc64le) echo ppc64le ;;
+    all|noarch|any|"") echo any ;; *-musl) conv_canon_arch "${1%-musl}" ;; *) echo "$1" ;;
+  esac
+}
+# split a version into epoch / upstream / release
+conv_ver() { # ver → sets CVE CVU CVR
+  local v=$1
+  CVE=""; [[ $v =~ ^([0-9]+):(.*)$ ]] && { CVE=${BASH_REMATCH[1]}; v=${BASH_REMATCH[2]}; }
+  CVR=1   # the part after the last - is the packaging release (debian's "3build1", alpine's "r2", fedora's "4.fc41")
+  if [[ $v == *-* ]]; then
+    local r=${v##*-}; v=${v%-*}; r=${r#r}
+    [[ $r =~ ^([0-9]+) ]] && CVR=${BASH_REMATCH[1]}
+  elif [[ $v =~ ^(.+)_([0-9]+)$ ]]; then v=${BASH_REMATCH[1]}; CVR=${BASH_REMATCH[2]}   # void's 1.2_3
+  fi
+  CVU=${v//[-_~:\/ ]/.}; [[ $CVU =~ ^[0-9] ]] || CVU="0.$CVU"
+}
+# deps from the source distro → the target's names (via deps.map) → CV_TDEPS, the ones it can't place → CV_DROPPED
+conv_deps() { # from-fam to-key
+  local from=$1 to=$2 d a g val alts got
+  CV_DROPPED=() CV_TDEPS=()
+  local IFS=,; for d in $CV_DEPS; do
+    IFS='|' read -ra alts <<<"$d"; got=""
+    for a in "${alts[@]}"; do
+      a=${a%%[<>=]*}; a=${a// /}; [[ -n $a ]] || continue
+      if [[ $from == "$to" ]]; then got=$a; break; fi
+      [[ $a == *.so* || $a =~ $CORE_RE ]] && { got=-; break; }   # libc & friends: every distro has them
+      g=""
+      if [[ $from == gurt ]] || in_depmap "$a"; then g=$a; else g=$(rev_map "$from" "$a"); fi
+      [[ -n $g ]] || continue
+      val=$(map_dep "$g" "$to"); [[ -n $val ]] || { got=-; break; }   # "-" = that distro doesn't need it
+      got=${val// /,}; break
+    done
+    if [[ -z $got ]]; then CV_DROPPED+=("${d//|/ or }")
+    elif [[ $got != - ]]; then local x; IFS=, read -ra x <<<"$got"; CV_TDEPS+=("${x[@]}"); fi
+  done
+}
+# any input → files in $2 + CV_* metadata
+conv_unpack() { # file tree scratch
+  local f=$1 tree=$2 x=$3 l=${1,,} row nv
+  mkdir -p "$tree" "$x"
+  nv=$(file_namever "$f"); CV_NAME=${nv%%$'\t'*}; CV_VER=${nv#*$'\t'}; CV_DEPS=""; CV_DESC=""; CV_ARCH=""; CV_FAM=none
+  case $l in
+    *.deb|*.rpm|*.pkg.tar|*.pkg.tar.*|*.apk|*.xbps|*.eopkg)
+      if [[ $l == *.apk ]] && ! tar -tzf "$f" .PKGINFO >/dev/null 2>&1; then die "${f##*/} is an Android app 🤖, not an Alpine package — gurt can't convert those"; fi
+      row=$(pkgfile_meta "$f"); local F; tsv "$row"
+      CV_NAME=${F[0]:-$CV_NAME}; CV_VER=${F[1]:-$CV_VER}; CV_DEPS=${F[2]:-}; CV_DESC=${F[3]:-}; CV_ARCH=${F[5]:-}; CV_FAM=$(pkgfile_fam "$f")
+      pkgfile_unpack "$f" "$tree" "$x" ;;
+    *.gurt)
+      tar -xzf "$f" -C "$tree"
+      CV_NAME=$(info_get "$tree/.PKGINFO" pkgname); CV_VER=$(info_get "$tree/.PKGINFO" pkgver)
+      CV_DESC=$(info_get "$tree/.PKGINFO" pkgdesc); CV_ARCH=$(info_get "$tree/.PKGINFO" arch | head -n1)
+      CV_DEPS=$(info_get "$tree/.PKGINFO" depends | paste -sd, -); CV_FAM=gurt
+      [[ $(info_get "$tree/.PKGINFO" pkgrel) =~ ^[0-9]+$ ]] && CV_VER="$CV_VER-$(info_get "$tree/.PKGINFO" pkgrel)"
+      rm -f "$tree/.PKGINFO" "$tree/.FILES" "$tree/.DIRS" ;;
+    *.appimage)
+      install -Dm755 "$f" "$tree/opt/$CV_NAME/$CV_NAME.AppImage"
+      mkdir -p "$tree/usr/bin" "$tree/usr/share/applications"
+      printf '#!/bin/sh\nldconfig -p 2>/dev/null | grep -q "libfuse\\.so\\.2" || export APPIMAGE_EXTRACT_AND_RUN=1\nexec /opt/%s/%s.AppImage "$@"\n' "$CV_NAME" "$CV_NAME" > "$tree/usr/bin/$CV_NAME"
+      chmod 755 "$tree/usr/bin/$CV_NAME"
+      ( cd "$x" && for p in '*.desktop' '*.png'; do "$tree/opt/$CV_NAME/$CV_NAME.AppImage" --appimage-extract "$p" >/dev/null 2>&1 || true; done )
+      local icon d; icon=$(find "$x/squashfs-root" -maxdepth 1 -type f -name '*.png' 2>/dev/null | head -n1 || true)
+      [[ -n $icon ]] && install -Dm644 "$icon" "$tree/usr/share/pixmaps/$CV_NAME.png"
+      d=$(find "$x/squashfs-root" -maxdepth 1 -name '*.desktop' -type f 2>/dev/null | head -n1 || true)
+      if [[ -n $d ]]; then sed -E "s|^Exec=[^ ]+|Exec=/usr/bin/$CV_NAME|; /^TryExec=/d${icon:+; s|^Icon=.*|Icon=$CV_NAME|}" "$d" > "$tree/usr/share/applications/$CV_NAME.desktop"
+      else write_desktop "$tree/usr/share/applications/$CV_NAME.desktop" "$CV_NAME" "/usr/bin/$CV_NAME" "${icon:+$CV_NAME}"; fi
+      CV_DESC="$CV_NAME (from an AppImage)"; CV_ARCH=$CARCH ;;
+    *.exe|*.msi)
+      install -Dm644 "$f" "$tree/opt/$CV_NAME/${f##*/}"
+      mkdir -p "$tree/usr/bin" "$tree/usr/share/applications"
+      if [[ $l == *.msi ]]; then printf '#!/bin/sh\nexec wine msiexec /i "/opt/%s/%s" "$@"\n' "$CV_NAME" "${f##*/}" > "$tree/usr/bin/$CV_NAME"
+      else printf '#!/bin/sh\nexec wine "/opt/%s/%s" "$@"\n' "$CV_NAME" "${f##*/}" > "$tree/usr/bin/$CV_NAME"; fi
+      chmod 755 "$tree/usr/bin/$CV_NAME"
+      write_desktop "$tree/usr/share/applications/$CV_NAME.desktop" "$CV_NAME" "/usr/bin/$CV_NAME" wine "Windows app (runs with Wine)"
+      CV_DESC="$CV_NAME (Windows app, runs with Wine)"; CV_DEPS=wine; CV_FAM=gurt; CV_ARCH=any
+      [[ $l == *.msi || ${l##*/} =~ (setup|install) ]] && warn "${f##*/} looks like an installer: the package will run the installer, not the app itself" ;;
+    *.dmg) die "${f##*/} is a macOS app 🍎 its programs only run on macOS, so there's nothing to turn into a Linux package" ;;
+    *.tar|*.tar.*|*.tgz|*.tbz2|*.txz|*.tzst|*.zip)
+      extract_any "$f" "$x/t" 2>/dev/null || { mkdir -p "$x/t"; extract_any "$f" "$x/t"; }
+      local top="$x/t" one
+      one=$(find "$top" -mindepth 1 -maxdepth 1)   # everything inside one folder? look in there
+      [[ -n $one && $one != *$'\n'* && -d $one ]] && [[ -d $one/usr || -d $one/opt ]] && top=$one
+      if [[ -d $top/usr || -d $top/opt || -d $top/etc ]]; then cp -a "$top/." "$tree/"
+      else mkdir -p "$tree/opt/$CV_NAME"; cp -a "$top/." "$tree/opt/$CV_NAME/"
+           warn "${f##*/} isn't laid out like a filesystem (no usr/ or opt/), so it all goes in /opt/$CV_NAME"; fi
+      CV_ARCH=$CARCH ;;
+    *) die "gurt doesn't know how to open ${f##*/} 🤔 (it reads .deb .rpm .pkg.tar.zst .apk .xbps .eopkg .gurt .AppImage .tar.gz .zip .exe .msi)" ;;
+  esac
+  [[ -n $(find "$tree" -mindepth 1 -print -quit) ]] || die "${f##*/} has no files inside?"
+  CV_NAME=${CV_NAME,,}; CV_NAME=${CV_NAME//[^a-z0-9.+-]/-}; CV_NAME=${CV_NAME#[-.]}
+  CV_ARCH=$(conv_canon_arch "$CV_ARCH")
+  [[ -n $CV_DESC ]] || CV_DESC="$CV_NAME (converted by gurt)"
+}
+# arch names per format
+conv_arch_for() { # fmt canon-arch
+  case $1:$2 in
+    deb:x86_64) echo amd64 ;; deb:aarch64) echo arm64 ;; deb:i686) echo i386 ;; deb:armv7) echo armhf ;; deb:ppc64le) echo ppc64el ;; deb:any) echo all ;;
+    rpm:any|apk:any|xbps:any) echo noarch ;; rpm:armv7) echo armv7hl ;; pacman:armv7) echo armv7h ;; apk:armv7|xbps:armv7) echo armv7l ;;
+    eopkg:any) echo x86_64 ;; *) echo "$2" ;;
+  esac
+}
+# write the package (python does the formats that are just tar/zip/ar with a little metadata)
+CONV_PY=$(cat <<'PY'
+import os, sys, io, json, time, tarfile, gzip, hashlib, zipfile, plistlib, lzma
+fmt, tree, out = sys.argv[1:4]
+m = json.loads(os.environ["CV_META"])
+def walk():
+    for root, dirs, files in os.walk(tree):
+        dirs.sort()
+        for n in sorted(dirs) + sorted(files):
+            p = os.path.join(root, n); yield os.path.relpath(p, tree), p
+def tarinfo(rel, full, pre):
+    t = tarfile.TarInfo(pre + rel); st = os.lstat(full)
+    t.mode = st.st_mode & 0o7777; t.mtime = int(st.st_mtime); t.uid = t.gid = 0; t.uname = t.gname = "root"
+    if os.path.islink(full): t.type = tarfile.SYMTYPE; t.linkname = os.readlink(full)
+    elif os.path.isdir(full): t.type = tarfile.DIRTYPE
+    else: t.size = st.st_size
+    return t
+def tar_bytes(entries, eof=True):   # entries: (TarInfo, bytes|None) — written by hand so apk can skip the end blocks
+    b = io.BytesIO()
+    for t, data in entries:
+        b.write(t.tobuf(tarfile.PAX_FORMAT, "utf-8", "surrogateescape"))
+        if data: b.write(data); b.write(b"\0" * (-len(data) % 512))
+    if eof: b.write(b"\0" * 1024)
+    return b.getvalue()
+def mem(name, data, mode=0o644):
+    t = tarfile.TarInfo(name); t.size = len(data); t.mode = mode; t.mtime = int(time.time()); t.uname = t.gname = "root"; return (t, data)
+def tree_entries(pre):
+    out = []
+    for rel, full in walk():
+        t = tarinfo(rel, full, pre)
+        out.append((t, open(full, "rb").read() if t.isreg() else None))
+    return out
+size = sum(os.lstat(f).st_size for _, f in walk() if not os.path.isdir(f))
+files = [(rel, full) for rel, full in walk() if not os.path.isdir(full)]
+if fmt == "deb":
+    ctl = "Package: %s\nVersion: %s\nArchitecture: %s\nMaintainer: gurt convert <gurt@localhost>\nInstalled-Size: %d\n" % (m["name"], m["ver"], m["arch"], size // 1024 + 1)
+    if m["deps"]: ctl += "Depends: %s\n" % ", ".join(d.replace("|", " | ") for d in m["deps"])
+    ctl += "Section: misc\nPriority: optional\nDescription: %s\n converted by gurt from %s\n" % (m["desc"], m["from"])
+    md5 = "".join("%s  %s\n" % (hashlib.md5(open(f, "rb").read()).hexdigest(), r) for r, f in files if not os.path.islink(f))
+    control = gzip.compress(tar_bytes([mem("./control", ctl.encode()), mem("./md5sums", md5.encode())]), mtime=0)
+    data = lzma.compress(tar_bytes(tree_entries("./")))
+    def ar(name, d): return b"%-16s%-12d%-6d%-6d%-8s%-10d`\n" % (name.encode(), int(time.time()), 0, 0, b"100644", len(d)) + d + (b"\n" if len(d) % 2 else b"")
+    open(out, "wb").write(b"!<arch>\n" + ar("debian-binary", b"2.0\n") + ar("control.tar.gz", control) + ar("data.tar.xz", data))
+elif fmt == "apk":   # Alpine: gzip(control tar, no end blocks) + gzip(data tar), datahash ties them together
+    data = gzip.compress(tar_bytes(tree_entries("")), mtime=0)
+    info = "# Generated by gurt convert\npkgname = %s\npkgver = %s\npkgdesc = %s\nurl = \nbuilddate = %d\npackager = gurt\nsize = %d\narch = %s\norigin = %s\nlicense = unknown\n" % (m["name"], m["ver"], m["desc"], int(time.time()), size, m["arch"], m["name"])
+    info += "".join("depend = %s\n" % d.split("|")[0] for d in m["deps"]) + "datahash = %s\n" % hashlib.sha256(data).hexdigest()
+    open(out, "wb").write(gzip.compress(tar_bytes([mem(".PKGINFO", info.encode())], eof=False), mtime=0) + data)
+elif fmt == "xbps":  # Void: props.plist + files.plist + the files, in one tarball
+    fl = {"files": [], "links": [], "dirs": []}
+    for rel, full in walk():
+        if os.path.islink(full): fl["links"].append({"file": "/" + rel, "target": os.readlink(full)})
+        elif os.path.isdir(full): fl["dirs"].append({"file": "/" + rel})
+        else: fl["files"].append({"file": "/" + rel, "sha256": hashlib.sha256(open(full, "rb").read()).hexdigest(), "size": os.lstat(full).st_size})
+    props = {"pkgname": m["name"], "version": m["ver"], "pkgver": "%s-%s" % (m["name"], m["ver"]), "architecture": m["arch"], "short_desc": m["desc"],
+             "installed_size": size, "license": "unknown", "maintainer": "gurt convert <gurt@localhost>", "run_depends": [d.split("|")[0] + ">=0" for d in m["deps"]]}
+    ents = [mem("./props.plist", plistlib.dumps(props)), mem("./files.plist", plistlib.dumps(fl))] + tree_entries("./")
+    open(out, "wb").write(lzma.compress(tar_bytes(ents)))
+elif fmt == "eopkg":  # Solus: a zip with metadata.xml, files.xml and install.tar.xz
+    from xml.sax.saxutils import escape as e
+    up, rel_ = m["ver"].rsplit("-", 1)
+    deps = "".join("<Dependency>%s</Dependency>" % e(d.split("|")[0]) for d in m["deps"])
+    meta = ("<PISI><Source><Name>%s</Name><Packager><Name>gurt convert</Name><Email>gurt@localhost</Email></Packager></Source><Package><Name>%s</Name>"
+            "<Summary xml:lang=\"en\">%s</Summary><Description xml:lang=\"en\">%s</Description><PartOf>system.utils</PartOf><License>unknown</License>"
+            "<RuntimeDependencies>%s</RuntimeDependencies><History><Update release=\"%s\"><Date>%s</Date><Version>%s</Version><Name>gurt convert</Name><Email>gurt@localhost</Email></Update></History>"
+            "<BuildHost>gurt</BuildHost><Distribution>Solus</Distribution><DistributionRelease>1</DistributionRelease><Architecture>%s</Architecture><InstalledSize>%d</InstalledSize></Package></PISI>"
+            % (e(m["name"]), e(m["name"]), e(m["desc"]), e(m["desc"]), deps, rel_, time.strftime("%Y-%m-%d"), e(up), m["arch"], size))
+    fx = "<Files>" + "".join("<File><Path>%s</Path><Type>data</Type><Size>%d</Size><Uid>0</Uid><Gid>0</Gid><Mode>%04o</Mode>%s</File>" % (
+        e(r), os.lstat(f).st_size, os.lstat(f).st_mode & 0o7777, "" if os.path.islink(f) else "<Hash>%s</Hash>" % hashlib.sha1(open(f, "rb").read()).hexdigest()) for r, f in files) + "</Files>"
+    z = zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED)
+    z.writestr("metadata.xml", meta); z.writestr("files.xml", fx); z.writestr("install.tar.xz", lzma.compress(tar_bytes(tree_entries(""))), zipfile.ZIP_STORED); z.close()
+elif fmt == "zip":
+    z = zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED)
+    for rel, full in walk():
+        if not os.path.isdir(full) and not os.path.islink(full): z.write(full, rel)
+    z.close()
+PY
+)
+conv_pack() { # fmt tree out — CV_* already set for the target
+  local fmt=$1 tree=$2 out=$3 work=${4:-} d
+  case $fmt in
+    deb|apk|xbps|eopkg|zip)
+      need_tool python3 "converting to .$fmt"
+      local deps_json; deps_json=$(printf '%s\n' "${CV_TDEPS[@]}" | python3 -c 'import sys, json; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')
+      CV_META=$(CV_NAME=$CV_NAME CV_TVER=$CV_TVER CV_DESC=$CV_DESC CV_TARCH=$CV_TARCH CV_FROM=$CV_FROM python3 -c '
+import os, json, sys
+print(json.dumps({"name": os.environ["CV_NAME"], "ver": os.environ["CV_TVER"], "desc": os.environ["CV_DESC"], "arch": os.environ["CV_TARCH"], "from": os.environ["CV_FROM"], "deps": json.loads(sys.argv[1])}))' "$deps_json") \
+        python3 -c "$CONV_PY" "$fmt" "$tree" "$out" ;;
+    tar.gz) tar --owner=0 --group=0 --numeric-owner -czf "$out" -C "$tree" . ;;
+    gurt)
+      { printf 'pkgname = %s\npkgver = %s\npkgrel = %s\npkgdesc = %s\narch = %s\n' "$CV_NAME" "$CVU" "$CVR" "$CV_DESC" "$CV_TARCH"
+        for d in "${CV_TDEPS[@]}"; do printf 'depends = %s\n' "${d%%|*}"; done
+        printf 'builddate = %s\nprefix = /usr\ngurtsource = file\nfrom = %s\n' "$(date +%s)" "$CV_FROM"; } > "$work/.PKGINFO"
+      ( cd "$tree" && pack_pkgdir "$work" "$out" ) ;;
+    pacman)
+      need_tool zstd "converting to .pkg.tar.zst"
+      local top=()
+      { printf '# Generated by gurt convert\npkgname = %s\npkgbase = %s\npkgver = %s\npkgdesc = %s\nurl = \nbuilddate = %s\npackager = gurt convert\nsize = %s\narch = %s\nlicense = unknown\n' \
+          "$CV_NAME" "$CV_NAME" "$CV_TVER" "$CV_DESC" "$(date +%s)" "$(du -sb "$tree" | cut -f1)" "$CV_TARCH"
+        for d in "${CV_TDEPS[@]}"; do printf 'depend = %s\n' "${d%%|*}"; done; } > "$tree/.PKGINFO"
+      mapfile -t top < <(cd "$tree" && find . -mindepth 1 -maxdepth 1 ! -name .PKGINFO | sed 's|^\./||' | LC_ALL=C sort)
+      if command -v bsdtar >/dev/null; then
+        ( cd "$tree" && LANG=C bsdtar -czf .MTREE --format=mtree --options='!all,use-set,type,uid,gid,mode,time,size,md5,sha256,link' .PKGINFO "${top[@]}" )
+        ( cd "$tree" && tar --owner=0 --group=0 --numeric-owner -cf - .PKGINFO .MTREE "${top[@]}" ) | zstd -q -19 -T0 -o "$out"
+      else
+        warn "no bsdtar, so no .MTREE in the package (pacman still installs it, it just can't verify files later)"
+        ( cd "$tree" && tar --owner=0 --group=0 --numeric-owner -cf - .PKGINFO "${top[@]}" ) | zstd -q -19 -T0 -o "$out"
+      fi
+      rm -f "$tree/.PKGINFO" "$tree/.MTREE" ;;
+    rpm)
+      need_tool rpmbuild "converting to .rpm"
+      local top="$work/rpm" spec f
+      mkdir -p "$top"/{SPECS,RPMS,BUILD,BUILDROOT}
+      spec="$top/SPECS/$CV_NAME.spec"
+      { printf '%%define __os_install_post %%{nil}\n%%define debug_package %%{nil}\n%%define _build_id_links none\n%%define __strip /bin/true\n'
+        printf 'Name: %s\nVersion: %s\nRelease: %s\n' "$CV_NAME" "$CVU" "$CVR"
+        [[ -n $CVE ]] && printf 'Epoch: %s\n' "$CVE"
+        printf 'Summary: %s\nLicense: unknown\nBuildArch: %s\nAutoReqProv: no\n' "$CV_DESC" "$CV_TARCH"
+        for d in "${CV_TDEPS[@]}"; do if [[ $d == *"|"* ]]; then printf 'Requires: (%s)\n' "${d//|/ or }"; else printf 'Requires: %s\n' "$d"; fi; done
+        printf '\n%%description\n%s (converted by gurt from %s)\n\n%%install\nmkdir -p %%{buildroot}\ncp -a %q/. %%{buildroot}/\n\n%%files\n%%defattr(-,root,root,-)\n' "$CV_DESC" "$CV_FROM" "$tree"
+        ( cd "$tree" && find . -mindepth 1 \( ! -type d -o -empty \) | sed 's|^\.||' ) | while IFS= read -r f; do
+          f=${f//%/%%}; [[ -d $tree$f && ! -L $tree$f ]] && printf '%%dir "%s"\n' "$f" || printf '"%s"\n' "$f"; done
+      } > "$spec"
+      rpmbuild -bb --quiet --define "_topdir $top" --define "_rpmdir $top/RPMS" --target "$CV_TARCH" "$spec" >"$work/rpmbuild.log" 2>&1 ||
+        { tail -n 20 "$work/rpmbuild.log" >&2; die "rpmbuild couldn't build it"; }
+      f=$(find "$top/RPMS" -name '*.rpm' | head -n1); [[ -n $f ]] || die "rpmbuild didn't make an .rpm?"
+      mv "$f" "$out" ;;
+    appimage)
+      conv_appimage "$tree" "$out" "$work" ;;
+  esac
+}
+conv_appimage() { # tree out work
+  local tree=$1 out=$2 work=$3 dir="$3/AppDir" desk exe icon tool rel
+  cp -a "$tree" "$dir"
+  desk=$(find "$dir/usr/share/applications" -name '*.desktop' 2>/dev/null | head -n1 || true)
+  exe=""; [[ -n $desk ]] && exe=$(sed -n 's/^Exec=\([^ ]*\).*/\1/p' "$desk" | head -n1)
+  exe=${exe#\"}; exe=${exe%\"}
+  if [[ $exe == /* ]]; then rel=${exe#/}
+  elif [[ -n $exe && -e $dir/usr/bin/$exe ]]; then rel=usr/bin/$exe
+  elif [[ -e $dir/usr/bin/$CV_NAME ]]; then rel=usr/bin/$CV_NAME
+  else rel=$(cd "$dir" && find usr/bin usr/local/bin opt -maxdepth 3 -type f -perm -u+x 2>/dev/null | head -n1 || true); fi
+  [[ -n $rel && -e $dir/$rel ]] || die "couldn't find a program to start in there, so it can't be an AppImage"
+  # if the program is a wrapper pointing at /opt/…, point it inside the AppImage instead
+  [[ -f $dir/$rel ]] && is_script "$dir/$rel" && sed -i 's|\(exec[^/]*\)/opt/|\1"$APPDIR"/opt/|' "$dir/$rel"
+  cat > "$dir/AppRun" <<EOF
+#!/bin/sh
+APPDIR="\$(dirname "\$(readlink -f "\$0")")"; export APPDIR
+export PATH="\$APPDIR/usr/bin:\$APPDIR/usr/local/bin:\$PATH"
+export LD_LIBRARY_PATH="\$APPDIR/usr/lib:\$APPDIR/usr/lib64:\$APPDIR/usr/lib/$CARCH-linux-gnu\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
+export XDG_DATA_DIRS="\$APPDIR/usr/share:\${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+exec "\$APPDIR/$rel" "\$@"
+EOF
+  chmod 755 "$dir/AppRun"
+  icon=$(find "$dir/usr/share/icons" "$dir/usr/share/pixmaps" -name '*.png' 2>/dev/null | grep -i "$CV_NAME" | sort -V | tail -n1 || true)
+  [[ -n $icon ]] || icon=$(find "$dir/usr/share/icons" "$dir/usr/share/pixmaps" -name '*.png' 2>/dev/null | sort -V | tail -n1 || true)
+  for f in "$icon" /usr/local/share/gurt/gurt.png /usr/share/gurt/gurt.png "$SELF_DIR/site/assets/apple-touch-icon.png"; do [[ -n $f && -f $f ]] && { cp "$f" "$dir/$CV_NAME.png"; break; }; done
+  [[ -f $dir/$CV_NAME.png ]] || die "need an icon for the AppImage and couldn't find one"
+  write_desktop "$dir/$CV_NAME.desktop" "$CV_NAME" "$CV_NAME" "$CV_NAME" "$CV_DESC"
+  tool="$GURT_CACHE/tools/appimagetool-$CARCH.AppImage"
+  if [[ ! -x $tool ]]; then
+    msg2 "getting appimagetool (makes AppImages)"
+    mkdir -p "${tool%/*}"
+    download "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$CARCH.AppImage" "$tool.part" && mv "$tool.part" "$tool" && chmod 755 "$tool" ||
+      die "couldn't download appimagetool"
+  fi
+  ARCH=$CARCH APPIMAGE_EXTRACT_AND_RUN=1 "$tool" --no-appstream "$dir" "$out" >"$work/appimagetool.log" 2>&1 ||
+    { tail -n 20 "$work/appimagetool.log" >&2; die "appimagetool couldn't make it"; }
+  warn "an AppImage made from a distro package still uses your system's libraries, so it runs best on a distro like the one it came from"
+}
+cmd_convert() { # file|url format|out-file [-o dir]
+  local in=${1:-} want=${2:-} fmt outdir=$PWD out="" work tree from
+  [[ -n $in && -n $want ]] || die "usage: gurt convert <file|url> <format>   (deb rpm pacman apk xbps eopkg appimage gurt tar.gz zip — or an output file name like app.rpm)"
+  [[ ${3:-} == -o && -n ${4:-} ]] && outdir=$4
+  fmt=$(conv_fmt "$want")
+  case $fmt in
+    "") die "gurt can't make '$want' 🤔 it makes: deb rpm pacman (.pkg.tar.zst) apk (Alpine) xbps eopkg appimage gurt tar.gz zip" ;;
+    nope:*) die "can't make a .${fmt#nope:} 💀 that's a macOS/Windows/phone format, and Linux programs don't run there no matter what box you put them in. gurt converts between Linux formats (deb rpm pacman apk xbps eopkg appimage gurt tar.gz zip)" ;;
+  esac
+  case ${want,,} in pkg.tar.zst|tar.gz) ;; *.*) out=$want ;; esac   # "app.rpm" = the output file name
+  in=$(fetch_arg "$in")
+  work=$(mktemp -d "${TMPDIR:-/tmp}/gurt-convert.XXXXXX"); tree="$work/tree"
+  # shellcheck disable=SC2064
+  trap "chmod -R u+w '$work' 2>/dev/null; rm -rf '$work'" EXIT
+  CV_FROM=${in##*/}
+  msg "opening $CV_FROM"
+  conv_unpack "$in" "$tree" "$work/x"
+  conv_ver "$CV_VER"
+  local key; case $fmt in deb) key=apt ;; rpm) key=dnf ;; pacman) key=pacman ;; apk) key=apk ;; xbps) key=xbps ;; eopkg) key=eopkg ;; *) key=gurt ;; esac
+  if [[ $key == gurt ]]; then   # gurt/tar/zip/appimage: gurt's generic names
+    if [[ $CV_FAM == gurt || $CV_FAM == none ]]; then CV_DROPPED=() CV_TDEPS=(); [[ -n $CV_DEPS ]] && IFS=, read -ra CV_TDEPS <<<"$CV_DEPS"
+    else conv_deps "$CV_FAM" gurt_generic; fi
+  else
+    [[ $CV_FAM == none || $CV_FAM == gurt ]] && from=gurt || from=$CV_FAM
+    conv_deps "$from" "$key"
+  fi
+  CV_TARCH=$(conv_arch_for "$fmt" "$CV_ARCH")
+  case $fmt in
+    deb)    CV_TVER="${CVE:+$CVE:}$CVU-$CVR" ;;
+    pacman) CV_TVER="${CVE:+$CVE:}$CVU-$CVR" ;;
+    apk)    [[ $CVU =~ ^([0-9]+(\.[0-9]+)*) ]] && CVU=${BASH_REMATCH[1]}; CV_TVER="$CVU-r$CVR" ;;
+    xbps)   CV_TVER="${CVU//_/.}_$CVR" ;;
+    eopkg)  CV_TVER="$CVU-$CVR" ;;
+    *)      CV_TVER="$CVU-$CVR" ;;
+  esac
+  if [[ -z $out ]]; then
+    case $fmt in
+      deb)      out="${CV_NAME}_${CV_TVER#*:}_$CV_TARCH.deb" ;;
+      rpm)      out="$CV_NAME-$CVU-$CVR.$CV_TARCH.rpm" ;;
+      pacman)   out="$CV_NAME-${CV_TVER/:/_}-$CV_TARCH.pkg.tar.zst" ;;
+      apk)      out="$CV_NAME-$CV_TVER.apk" ;;
+      xbps)     out="$CV_NAME-$CV_TVER.$CV_TARCH.xbps" ;;
+      eopkg)    out="$CV_NAME-$CVU-$CVR-1-$CV_TARCH.eopkg" ;;
+      appimage) out="$CV_NAME-$CVU-$CARCH.AppImage" ;;
+      gurt)     out="$CV_NAME-$CVU-$CVR-$CV_ARCH.gurt" ;;
+      tar.gz)   out="$CV_NAME-$CVU.tar.gz" ;;
+      zip)      out="$CV_NAME-$CVU.zip" ;;
+    esac
+    mkdir -p "$outdir"; out="$outdir/$out"
+  fi
+  [[ $out == /* ]] || out="$PWD/$out"
+  msg "$CV_FROM → ${out##*/} ($CV_NAME $CV_TVER, $CV_TARCH)"
+  (( ${#CV_TDEPS[@]} )) && msg2 "deps: ${CV_TDEPS[*]}"
+  if (( ${#CV_DROPPED[@]} )); then
+    local more=""; (( ${#CV_DROPPED[@]} > 10 )) && more=" and $(( ${#CV_DROPPED[@]} - 10 )) more"
+    warn "left out deps gurt doesn't know the $fmt names for (if the app complains, install them yourself): ${CV_DROPPED[*]:0:10}$more"
+  fi
+  conv_pack "$fmt" "$tree" "$out" "$work"
+  msg "made ${out} ✅ ($(du -h "$out" | cut -f1))"
+  case $fmt in
+    apk)   msg2 "it's unsigned, so on Alpine install it with: apk add --allow-untrusted ${out##*/}" ;;
+    xbps)  msg2 "on Void: xbps-rindex -a ${out##*/} && xbps-install --repository=\$PWD $CV_NAME" ;;
+    rpm)   msg2 "it's unsigned, so dnf may want: dnf install --nogpgcheck ./${out##*/}" ;;
+  esac
 }
 
 # ── gurt outsource <file|url>: whatever you downloaded, on whatever distro you run — no box ──
@@ -3587,6 +3957,8 @@ ${B}making packages${R0}
   new <name>           scaffold a GURTBUILD
   build <dir> [out]    build a GURTBUILD or PKGBUILD into a .gurt file (doesn't install)
   install ./app.deb    install a .deb / .rpm / .pkg.tar.zst file (or url) on ANY distro, no box → file/<name>
+  convert <file> <fmt> turn any Linux package into another: deb rpm pacman apk xbps eopkg appimage gurt tar.gz zip
+                       (gurt convert app.rpm deb · gurt convert app.deb app.pkg.tar.zst · .exe → package that runs it in Wine)
   add <file.gurt>      install a .gurt file
   srcinfo [dir]        print .gurtinfo for a recipe (commit this!)
   checksum [dir]       print sha256sums for a recipe's sources
@@ -3688,6 +4060,7 @@ main() {
     upgrade|up)        cmd_upgrade ;;
     sysup|system-upgrade|syu) cmd_sysup ;;
     utils|utilities|essentials) cmd_utils "$@" ;;
+    convert|conv)      cmd_convert "$@" ;;
     self-update|selfupdate) cmd_self_update ;;
     remove|rm|yeet)    (( $# )) || die "remove what tho"; for p; do remove_pkg "$p"; done; play_scream ;;
     autoremove|clean)  cmd_autoremove ;;
