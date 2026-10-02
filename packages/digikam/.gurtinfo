@@ -1,7 +1,7 @@
 pkgname = digikam
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Organize huge photo collections (Flathub)
+pkgdesc = Organize huge photo collections
 url = https://flathub.org/apps/org.kde.digikam
 license = GPL-2.0-or-later
 maintainer = clrealy

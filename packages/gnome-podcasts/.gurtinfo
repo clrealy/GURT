@@ -1,7 +1,7 @@
 pkgname = gnome-podcasts
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Listen to your podcasts (Flathub)
+pkgdesc = Listen to your podcasts
 url = https://flathub.org/apps/org.gnome.Podcasts
 license = GPL-3.0-or-later
 maintainer = clrealy

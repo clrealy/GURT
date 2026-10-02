@@ -1,7 +1,7 @@
 pkgname = torbrowser
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Browse privately over the Tor network (Flathub)
+pkgdesc = Browse privately over the Tor network
 url = https://flathub.org/apps/org.torproject.torbrowser-launcher
 license = MIT
 maintainer = clrealy

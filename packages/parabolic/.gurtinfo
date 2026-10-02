@@ -1,7 +1,7 @@
 pkgname = parabolic
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Download videos and audio, basically yt-dlp with a GUI (Flathub)
+pkgdesc = Download videos and audio, basically yt-dlp with a GUI
 url = https://flathub.org/apps/org.nickvision.tubeconverter
 license = MIT
 maintainer = clrealy

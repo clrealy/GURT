@@ -3,7 +3,7 @@
 pkgname=tuba
 pkgver=flathub
 pkgrel=1
-pkgdesc="Browse Mastodon and the rest of the fediverse (Flathub)"
+pkgdesc="Browse Mastodon and the rest of the fediverse"
 url="https://flathub.org/apps/dev.geopjr.Tuba"
 license="GPL-3.0-only"
 maintainer="clrealy"

@@ -3,7 +3,7 @@
 pkgname=dbeaver
 pkgver=flathub
 pkgrel=1
-pkgdesc="One app for pretty much every database (Flathub)"
+pkgdesc="One app for pretty much every database"
 url="https://flathub.org/apps/io.dbeaver.DBeaverCommunity"
 license="Apache-2.0"
 maintainer="clrealy"

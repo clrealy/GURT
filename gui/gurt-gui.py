@@ -198,7 +198,7 @@ def state():
                                       text=True, timeout=15).stdout.split()
         except Exception:
             pass
-    return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks, "wsl": p.get("wsl") == "yes",
+    return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks, "wsl": p.get("wsl") == "yes", "audio": audio_ok(),
             "main": main, "dirtpkgs": dirt, "installed": installed}
 
 
@@ -240,7 +240,7 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/":
             if not self._host_ok() or not secrets.compare_digest((q.get("t") or [""])[0], TOKEN):
                 return self._send(403, "nope 🔒 open GURT with: gurt gui", "text/plain")
-            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()).replace("__SFX__", "off" if conf().get("sfx") is False else "on"), "text/html")
+            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()).replace("__SFX__", "off" if conf().get("sfx") is False else "on").replace("__MUSIC__", "off" if conf().get("music") is False else "on"), "text/html")
         if u.path in ("/icon.png", "/logo.png", "/dirt-logo.png"):
             repo = paths().get("repo", "")
             want = {"/logo.png": "gurt-logo.png", "/dirt-logo.png": "dirt-logo.png"}.get(u.path, "apple-touch-icon.png")
@@ -335,6 +335,9 @@ class H(BaseHTTPRequestHandler):
             return self._send(200, {"job": job.id})
         if u.path == "/api/sfx":
             save_conf(sfx=bool(body.get("on")))
+            return self._send(200, {"ok": True})
+        if u.path == "/api/music":
+            save_conf(music=bool(body.get("on")))
             return self._send(200, {"ok": True})
         if u.path == "/api/skin":
             if body.get("skin") not in SKINS:
@@ -434,7 +437,12 @@ def native_window(tk, url, icon):
             except Exception:
                 pass
         view = WebKit2.WebView()
-        view.get_settings().set_enable_developer_extras(False)
+        st = view.get_settings()
+        st.set_enable_developer_extras(False)
+        # sounds + music: WebKitGTK needs web audio switched on, and lets the page play without waiting for a click
+        for name, val in (("set_enable_webaudio", True), ("set_enable_media", True), ("set_media_playback_requires_user_gesture", False)):
+            if hasattr(st, name):
+                getattr(st, name)(val)
         view.load_uri(url)
         win.add(view)
         win.connect("destroy", Gtk.main_quit)
@@ -457,6 +465,12 @@ def native_window(tk, url, icon):
         if icon:
             app.setWindowIcon(QIcon(icon))
         view = QWebEngineView()
+        try:   # let the page play sounds/music without waiting for a click
+            from_settings = view.settings()
+            attr = type(from_settings).WebAttribute.PlaybackRequiresUserGesture if hasattr(type(from_settings), "WebAttribute") else from_settings.PlaybackRequiresUserGesture
+            from_settings.setAttribute(attr, False)
+        except Exception:
+            pass
         view.setWindowTitle(title)
         view.resize(w, h)
         view.load(QUrl(url))
@@ -522,6 +536,7 @@ def main():
     tk = None if (a.no_window or a.browser) else find_toolkit()
     global MODE
     MODE = "native" if tk else "browser"
+    TK[0] = tk or ""
     url = f"http://127.0.0.1:{PORT}/?t={TOKEN}"
     print(f"GURT is running at {url}" + (f" (app window: {tk})" if tk else ""), flush=True)
     icon = next((f for f in ICONS if os.path.isfile(f)), None)
@@ -553,9 +568,24 @@ def main():
 
 
 PORT, ASKPASS, ICONS, MODE = 0, "", [], "browser"
+TK = [""]
+
+
+def audio_ok():
+    """can the GTK app window actually make sound? (WebKitGTK plays audio through GStreamer)"""
+    if TK[0] != "gtk":
+        return True
+    try:
+        import gi
+        gi.require_version("Gst", "1.0")
+        from gi.repository import Gst
+        Gst.init(None)
+        return Gst.ElementFactory.find("autoaudiosink") is not None
+    except Exception:
+        return False
 
 PAGE = r"""<!doctype html>
-<html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__"><head>
+<html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__" data-music="__MUSIC__"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GURT</title><link rel="icon" href="/icon.png">
 <style>
@@ -604,6 +634,7 @@ nav .badge{background:var(--bad);color:#fff;border-radius:999px;font-size:11px;p
 .spacer{flex:1}
 #appbar{background:var(--tag);color:var(--muted);font-size:13px;padding:6px 20px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 #appbar code{color:var(--ink)}
+#soundbar{background:color-mix(in srgb,var(--bad) 15%,var(--tag));color:var(--ink);font-size:13px;padding:6px 20px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .btn{font:inherit;font-weight:600;background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;padding:7px 14px;cursor:pointer;white-space:nowrap}
 .btn:hover{filter:brightness(1.06)}.btn:disabled{opacity:.5;cursor:default}
 .btn.ghost{background:var(--tag);color:var(--ink)}
@@ -659,6 +690,15 @@ dialog .row{justify-content:flex-end}
 #lottowin2{border:2px dashed var(--accent);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center}
 #lottowin2 .spin{font:700 20px ui-monospace,monospace;margin-bottom:6px}
 #lottowin2 .card{text-align:left;max-width:520px;margin:8px auto 0}
+.dropbig{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:56px 24px;margin-top:8px;border:3px dashed var(--line);border-radius:22px;background:var(--panel);cursor:pointer;transition:border-color .15s,transform .15s}
+.dropbig:hover,.dropbig:focus{border-color:var(--accent);transform:scale(1.005);outline:none}
+.dropbig .dropicon{font-size:56px;line-height:1}.dropbig b{font-size:20px}.dropbig span{color:var(--muted)}
+.dropbig .fmts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:620px;margin-top:6px}
+.dropnote{text-align:center;margin-top:14px;color:var(--muted)}
+#musicbtn.off{opacity:.5}
+/* the Install a file tab only shows when the header has room for it; otherwise the button in Discover does the job */
+:root.tight nav button[data-tab=dropfile]{display:none}
+:root:not(.tight) #dropbtn{display:none}
 #dropzone{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(3px);pointer-events:none}
 #dropzone div{border:4px dashed var(--accent);border-radius:24px;padding:48px 64px;text-align:center;background:var(--panel);font-size:22px;font-weight:700}
 #dropzone small{display:block;font-size:14px;font-weight:400;color:var(--muted);margin-top:8px}
@@ -716,17 +756,29 @@ dialog .row{justify-content:flex-end}
     <button data-tab="updates">⬆️ Updates<span class="badge" id="ubadge" hidden></span></button>
     <button data-tab="setup">🧰 Setup</button>
     <button data-tab="desktops">🖥️ Desktops</button>
+    <button data-tab="dropfile">📥 Install a file</button>
   </nav>
   <div class="spacer"></div>
   <select id="skinsel" title="skin">
     <option value="gurt">🦆 GURT</option><option value="win11">🪟 Windows 11</option><option value="xp">🟩 Windows XP</option><option value="w95">💾 Windows 95</option>
   </select>
+  <button class="btn ghost small" id="musicbtn" title="background music"></button>
   <button class="btn ghost small" id="sfxbtn" title="sound effects"></button>
   <button class="btn ghost small" id="themebtn" title="light / dark"></button>
   <button class="btn ghost small" id="syncbtn" title="gurt sync">↻ sync</button>
 </header>
+<div id="soundbar" hidden>🔇 no sound: the app window needs GStreamer's audio plugins <button class="btn small" id="soundfix">fix sound</button><button class="btn ghost small" id="soundx">×</button></div>
 <div id="appbar" hidden><span id="appbartxt">GURT is running in your browser 🌐 want it as a real app window?</span><button class="btn small" id="appbarinst">install app window</button><button class="btn ghost small" id="appbarx">×</button></div>
 <main>
+  <section id="t-dropfile" hidden>
+    <label class="dropbig" id="dropbig" tabindex="0">
+      <span class="dropicon">📥</span>
+      <b>drop a file here, or click to pick one</b>
+      <span>gurt figures out what it is and installs it straight onto your system, any distro, no box</span>
+      <span class="fmts"><code>.deb</code><code>.rpm</code><code>.pkg.tar.zst</code><code>AppImage</code><code>.flatpak</code><code>.flatpakref</code><code>.snap</code><code>.apk</code><code>.xbps</code><code>.eopkg</code><code>.tar.gz</code><code>.zip</code><code>.7z</code><code>.exe</code><code>.msi</code><code>.dmg</code></span>
+    </label>
+    <p class="dropnote">from a terminal it's <code>gurt outsource ./file.deb</code> (or a download link). only install files you trust 🙏</p>
+  </section>
   <section id="t-discover">
     <div class="srcs" id="srcs" role="tablist" aria-label="sources">
       <button data-src="gurt" class="on">gurt/ <small>Main GURT</small></button>
@@ -789,7 +841,9 @@ let S = {main:[], installed:[]}, busy = false, cur = null;
 
 // ── state ──
 async function load(){ S = await api("/api/state"); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · 🪟 Windows" : ""}`;
-  document.querySelector('nav button[data-tab="desktops"]').hidden = S.wsl;   /* no Linux desktops on Windows */ renderMain(); renderInstalled(); if (!$("#t-setup").hidden) renderBuilder(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt(); }
+  document.querySelector('nav button[data-tab="desktops"]').hidden = S.wsl;
+  fitNav();
+  if (S.audio === false && !soundDismissed) $("#soundbar").hidden = false;   /* no Linux desktops on Windows */ renderMain(); renderInstalled(); if (!$("#t-setup").hidden) renderBuilder(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt(); }
 const inst = spec => {
   const m = S.main.find(p => p.name === spec);
   return S.installed.find(i => i.spec === spec || i.key === spec || (m && i.key === m.ikey) || (i.src === "gurt" && i.name === spec))
@@ -810,7 +864,7 @@ function renderMain(){
   const q = $("#q").value.trim().toLowerCase();
   const hits = S.main.filter(p => !q || (p.name+" "+p.desc+" "+p.alias.join(" ")).toLowerCase().includes(q));
   $("#maingrid").innerHTML = hits.length ? hits.map(p => card({name:p.name, ver:p.ver, desc:p.desc,
-      extra: p.official ? `<div class="row"><span class="chip">official repo 🔏</span></div>` : "", actions: installBtns(p.name)})).join("")
+      extra: p.official ? `<div class="row"><span class="chip">official repo 🔏</span></div>` : p.flatpak ? `<div class="row"><span class="chip">Flathub 📦</span></div>` : "", actions: installBtns(p.name)})).join("")
     : `<div class="empty">nothing in Main GURT matched 😔 — try "search everywhere"</div>`;
   const direct = /^[a-z0-9-]+\/[A-Za-z0-9._+-]+$/.test($("#q").value.trim()) && !/^(https?:)/.test($("#q").value);
   $("#direct").hidden = !direct; if (direct) $("#directbtn").textContent = `install ${$("#q").value.trim()}`;
@@ -1009,7 +1063,7 @@ const SFX = (() => {
   };
   return { play, get on() { return on; }, set(v) { on = v; } };
 })();
-const SFX_ROLES = {copy:"copy", scopy:"copy", cartcopy:"copy", lotto:"", lotto2:"", themebtn:"theme", sfxbtn:"", skinsel:""};
+const SFX_ROLES = {copy:"copy", scopy:"copy", cartcopy:"copy", lotto:"", lotto2:"", themebtn:"theme", sfxbtn:"", musicbtn:"", skinsel:""};
 document.addEventListener("click", e => {
   const b = e.target.closest("button, .src, .bcat, .pkg, nav button, summary");
   if (!b) return;
@@ -1020,7 +1074,73 @@ document.addEventListener("click", e => {
 $("#sfxbtn").addEventListener("click", () => { SFX.set(!SFX.on); $("#sfxbtn").textContent = SFX.on ? "🔊" : "🔇"; api("/api/sfx", {on:SFX.on}).catch(() => {}); SFX.play("pop"); });
 $("#sfxbtn").textContent = SFX.on ? "🔊" : "🔇";
 $("#bgroups").addEventListener("change", e => { if (e.target.dataset.n) SFX.play(e.target.checked ? "pick" : "unpick"); });
+// ── 🎵 background music: an original chill shop-style bossa loop, synthesized live (no audio files) ──
+const MUSIC = (() => {
+  let ctx = null, master = null, timer = null, nextT = 0, step = 0, noise = null, on = document.documentElement.dataset.music !== "off";
+  const BPM = 116, E = 60 / BPM / 2;                 // one eighth note
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+  // 8 bars × 8 eighths. chords (midi), bass (midi per eighth or 0), melody (midi per eighth or 0)
+  const CH = [[53,57,60,64],[50,53,57,60],[55,58,62,65],[48,52,55,58],[57,60,64,67],[50,54,57,60],[55,58,62,65],[48,52,55,58]];
+  const ROOT = [41,38,43,36,45,38,43,36];
+  const MEL = [
+    72,0,76,0,79,77,76,0,   74,0,0,72,69,0,72,0,   70,0,74,0,77,0,76,74,   72,0,0,0,67,0,70,72,
+    76,0,79,0,81,79,76,0,   78,0,76,74,72,0,0,74,  70,0,72,74,77,76,74,0,   72,0,0,0,0,0,0,0,
+  ];
+  const COMP = [0, 3, 6];                            // bossa-ish chord hits inside each bar
+  const voice = (t, f, dur, vol, type, harm) => {
+    const g = ctx.createGain(); g.connect(master);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    [[1, 1], [harm, 0.25]].forEach(([mul, lv]) => {
+      if (!mul) return;
+      const o = ctx.createOscillator(), og = ctx.createGain(); o.type = type; o.frequency.value = f * mul; og.gain.value = lv;
+      o.connect(og).connect(g); o.start(t); o.stop(t + dur + 0.05);
+    });
+  };
+  const shaker = (t, vol) => {
+    const s = ctx.createBufferSource(), g = ctx.createGain(), hp = ctx.createBiquadFilter();
+    s.buffer = noise; hp.type = "highpass"; hp.frequency.value = 7000;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    s.connect(hp).connect(g).connect(master); s.start(t); s.stop(t + 0.06);
+  };
+  const schedule = () => {
+    while (nextT < ctx.currentTime + 0.2) {
+      const bar = Math.floor(step / 8) % 8, e = step % 8, t = nextT;
+      if (COMP.includes(e)) CH[bar].forEach(m => voice(t, mtof(m), 0.55, 0.018, "sine", 2));       // soft e-piano chords
+      if (e === 0) voice(t, mtof(ROOT[bar]), 0.5, 0.07, "triangle", 0);                             // bass: root…
+      if (e === 3) voice(t, mtof(ROOT[bar] + 7), 0.35, 0.05, "triangle", 0);                        // …fifth…
+      if (e === 6) voice(t, mtof(ROOT[bar] + 12), 0.3, 0.045, "triangle", 0);                       // …octave
+      const m = MEL[step % 64]; if (m) voice(t, mtof(m), 0.45, 0.045, "sine", 4);                   // vibraphone-ish melody
+      shaker(t, e % 2 ? 0.02 : 0.012);
+      nextT += E * (e % 2 ? 0.9 : 1.1);                                                             // a little swing
+      step++;
+    }
+  };
+  const start = () => {
+    if (timer || !on) return;
+    try {
+      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+      if (!master) {
+        master = ctx.createGain(); master.gain.value = 0.55; master.connect(ctx.destination);
+        noise = ctx.createBuffer(1, ctx.sampleRate * 0.1, ctx.sampleRate); const d = noise.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      if (ctx.state === "suspended") ctx.resume();
+      nextT = ctx.currentTime + 0.1; timer = setInterval(schedule, 40); schedule();
+    } catch {}
+  };
+  const stop = () => { clearInterval(timer); timer = null; };
+  // browsers only allow sound after you touch the page, so the first click starts it
+  ["pointerdown", "keydown"].forEach(ev => addEventListener(ev, () => { if (on && !timer) start(); else if (ctx && ctx.state === "suspended") ctx.resume(); }, true));
+  if (on) start();
+  return { get on() { return on; }, set(v) { on = v; v ? start() : stop(); } };
+})();
+const paintMusic = () => { $("#musicbtn").textContent = "🎵"; $("#musicbtn").classList.toggle("off", !MUSIC.on); $("#musicbtn").title = MUSIC.on ? "pause the music" : "play background music"; };
+$("#musicbtn").addEventListener("click", () => { MUSIC.set(!MUSIC.on); paintMusic(); api("/api/music", {on:MUSIC.on}).catch(() => {}); });
+paintMusic();
 $("#qall").addEventListener("click", searchAll);
+let soundDismissed = false;
+$("#soundx").addEventListener("click", () => { soundDismissed = true; $("#soundbar").hidden = true; });
+$("#soundfix").addEventListener("click", async () => { const r = await run("gui-setup", "", {confirm:false}); if (r && r.rc === 0) { $("#soundbar").hidden = true; alert("sound's installed ✅ close GURT and open it again to hear it"); } });
 // ── 📥 drop in foreign files (or pick one): gurt figures out what it is and installs it ──
 const DROPPABLE = /\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|appimage|dmg|exe|msi|snap|flatpak|flatpakref|tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst)$/i;
 async function installFile(f){
@@ -1034,6 +1154,16 @@ async function installFile(f){
   await run("dropped", r.name, {confirm:false});
 }
 $("#dropbtn").addEventListener("click", () => $("#dropin").click());
+$("#dropbig").addEventListener("click", e => { e.preventDefault(); $("#dropin").click(); });
+$("#dropbig").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("#dropin").click(); } });
+// no room in the header for the Install a file tab? hide it (and bounce back to Discover if you were on it)
+function fitNav(){
+  const root = document.documentElement, h = document.querySelector("header");
+  root.classList.remove("tight");
+  if (innerWidth <= 900 || h.scrollWidth > h.clientWidth + 1) root.classList.add("tight");
+  if (root.classList.contains("tight") && !$("#t-dropfile").hidden) document.querySelector('nav button[data-tab="discover"]').click();
+}
+addEventListener("resize", fitNav); fitNav();
 $("#dropin").addEventListener("change", e => { installFile(e.target.files[0]); e.target.value = ""; });
 let dragDepth = 0;
 const hasFiles = e => [...(e.dataTransfer?.types || [])].includes("Files");
@@ -1124,14 +1254,14 @@ $("#themebtn").addEventListener("click", () => {
 });
 darkMQ.addEventListener("change", themeIcon); themeIcon();
 // ── 🪟 skins ── (XP + 95 are always light, like the real thing)
-const applySkin = s => { document.documentElement.dataset.skin = s; $("#skinsel").value = s; $("#themebtn").hidden = s === "xp" || s === "w95"; };
+const applySkin = s => { document.documentElement.dataset.skin = s; $("#skinsel").value = s; $("#themebtn").hidden = s === "xp" || s === "w95"; if (typeof fitNav === "function") fitNav(); };
 $("#skinsel").addEventListener("change", e => { applySkin(e.target.value); api("/api/skin", {skin:e.target.value}).catch(() => {}); if (typeof SFX !== "undefined") SFX.play("startup"); });
 applySkin(document.documentElement.dataset.skin || "gurt");
 
 // ── tabs ──
 document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x === b));
-  for (const t of ["discover","installed","updates","setup","desktops"]) $("#t-"+t).hidden = b.dataset.tab !== t;
+  for (const t of ["discover","installed","updates","setup","desktops","dropfile"]) $("#t-"+t).hidden = b.dataset.tab !== t;
   if (b.dataset.tab === "setup") renderBuilder();
   if (b.dataset.tab === "desktops" && !deLoaded) loadDesktops();
 }));

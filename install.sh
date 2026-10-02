@@ -21,4 +21,9 @@ $SUDO install -Dm644 "$tmp/gurt/site/assets/apple-touch-icon.png" "$SHARE/gurt.p
 [ -f /etc/gurt.conf ] || $SUDO install -Dm644 "$tmp/gurt/gurt.conf" /etc/gurt.conf
 say "gurt installed to $BIN/gurt 🦆"
 "$BIN/gurt" yo
+# Donk OS 🫏 runs on gurt, so gurt sets up the utilities apps need right away (everywhere else: gurt utils)
+if [ -r /etc/os-release ] && (. /etc/os-release; case " ${ID:-} ${ID_LIKE:-} " in *" donkos "*|*" donk "*) exit 0 ;; *) exit 1 ;; esac); then
+  say "Donk OS detected 🫏 installing the utilities apps need"
+  "$BIN/gurt" -y utils || say "couldn't get every utility, run: gurt utils"
+fi
 echo "next: gurt sync && gurt search   (or open the app: gurt gui)"

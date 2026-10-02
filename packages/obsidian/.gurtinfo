@@ -1,7 +1,7 @@
 pkgname = obsidian
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Markdown notes that link together (Flathub)
+pkgdesc = Markdown notes that link together
 url = https://flathub.org/apps/md.obsidian.Obsidian
 license = Proprietary
 maintainer = clrealy

@@ -1,7 +1,7 @@
 pkgname = goxel
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Build 3D voxel art (Flathub)
+pkgdesc = Build 3D voxel art
 url = https://flathub.org/apps/io.github.guillaumechereau.Goxel
 license = GPL-3.0-or-later
 maintainer = clrealy

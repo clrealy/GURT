@@ -3,7 +3,7 @@
 pkgname=tauon
 pkgver=flathub
 pkgrel=1
-pkgdesc="Music player built for big collections (Flathub)"
+pkgdesc="Music player built for big collections"
 url="https://flathub.org/apps/com.github.taiko2k.tauonmb"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

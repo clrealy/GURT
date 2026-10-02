@@ -3,7 +3,7 @@
 pkgname=shortwave
 pkgver=flathub
 pkgrel=1
-pkgdesc="Listen to internet radio (Flathub)"
+pkgdesc="Listen to internet radio"
 url="https://flathub.org/apps/de.haeckerfelix.Shortwave"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

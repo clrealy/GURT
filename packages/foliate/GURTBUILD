@@ -3,7 +3,7 @@
 pkgname=foliate
 pkgver=flathub
 pkgrel=1
-pkgdesc="Pretty e-book reader (Flathub)"
+pkgdesc="Pretty e-book reader"
 url="https://flathub.org/apps/com.github.johnfactotum.Foliate"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

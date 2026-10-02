@@ -3,7 +3,7 @@
 pkgname=zotero
 pkgver=flathub
 pkgrel=1
-pkgdesc="Collect and cite your research (Flathub)"
+pkgdesc="Collect, organize and cite your research"
 url="https://flathub.org/apps/org.zotero.Zotero"
 license="AGPL-3.0-only"
 maintainer="clrealy"

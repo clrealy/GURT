@@ -3,7 +3,7 @@
 pkgname=amberol
 pkgver=flathub
 pkgrel=1
-pkgdesc="Tiny, pretty music player for your local files (Flathub)"
+pkgdesc="Tiny, pretty music player for the songs on your computer"
 url="https://flathub.org/apps/io.bassi.Amberol"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

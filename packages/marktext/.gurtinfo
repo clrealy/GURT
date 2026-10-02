@@ -1,7 +1,7 @@
 pkgname = marktext
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Markdown editor that shows the result as you type (Flathub)
+pkgdesc = Markdown editor that shows the result as you type
 url = https://flathub.org/apps/com.github.marktext.marktext
 license = MIT
 maintainer = clrealy

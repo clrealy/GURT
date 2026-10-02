@@ -3,7 +3,7 @@
 pkgname=cpu-x
 pkgver=flathub
 pkgrel=1
-pkgdesc="Shows everything about your CPU, like CPU-Z on Windows (Flathub)"
+pkgdesc="Shows everything about your CPU, like CPU-Z on Windows"
 url="https://flathub.org/apps/io.github.thetumultuousunicornofdarkness.cpu-x"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

@@ -1,7 +1,7 @@
 pkgname = firefox
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Mozilla's web browser (Flathub)
+pkgdesc = Mozilla's web browser
 url = https://flathub.org/apps/org.mozilla.firefox
 license = MPL-2.0
 maintainer = clrealy

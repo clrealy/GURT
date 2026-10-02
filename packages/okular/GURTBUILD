@@ -3,7 +3,7 @@
 pkgname=okular
 pkgver=flathub
 pkgrel=1
-pkgdesc="KDE's viewer for PDFs and other documents (Flathub)"
+pkgdesc="KDE's viewer for PDFs and other documents"
 url="https://flathub.org/apps/org.kde.okular"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

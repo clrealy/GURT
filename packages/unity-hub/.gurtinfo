@@ -1,7 +1,7 @@
 pkgname = unity-hub
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Install and manage Unity versions (Flathub)
+pkgdesc = Install and manage Unity versions
 url = https://flathub.org/apps/com.unity.UnityHub
 license = Proprietary
 maintainer = clrealy

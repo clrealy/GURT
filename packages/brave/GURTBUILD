@@ -3,7 +3,7 @@
 pkgname=brave
 pkgver=flathub
 pkgrel=1
-pkgdesc="Chromium-based browser with ad blocking built in (Flathub)"
+pkgdesc="Chromium-based browser with ad blocking built in"
 url="https://flathub.org/apps/com.brave.Browser"
 license="MPL-2.0"
 maintainer="clrealy"

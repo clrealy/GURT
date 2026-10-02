@@ -3,7 +3,7 @@
 pkgname=upscayl
 pkgver=flathub
 pkgrel=1
-pkgdesc="Upscale images with AI (Flathub)"
+pkgdesc="Upscale images with AI"
 url="https://flathub.org/apps/org.upscayl.Upscayl"
 license="AGPL-3.0-only"
 maintainer="clrealy"

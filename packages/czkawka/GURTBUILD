@@ -3,7 +3,7 @@
 pkgname=czkawka
 pkgver=flathub
 pkgrel=1
-pkgdesc="Finds duplicate files and other junk taking up space (Flathub)"
+pkgdesc="Finds duplicate files and other junk taking up space"
 url="https://flathub.org/apps/com.github.qarmin.czkawka"
 license="MIT"
 maintainer="clrealy"

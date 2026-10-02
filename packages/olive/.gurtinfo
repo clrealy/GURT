@@ -1,7 +1,7 @@
 pkgname = olive
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Non-linear video editor (Flathub)
+pkgdesc = Non-linear video editor
 url = https://flathub.org/apps/org.olivevideoeditor.Olive
 license = GPL-3.0-or-later
 maintainer = clrealy

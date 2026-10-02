@@ -3,7 +3,7 @@
 pkgname=rustdesk
 pkgver=flathub
 pkgrel=1
-pkgdesc="Open source alternative to TeamViewer (Flathub)"
+pkgdesc="Open source alternative to TeamViewer"
 url="https://flathub.org/apps/com.rustdesk.RustDesk"
 license="AGPL-3.0-only"
 maintainer="clrealy"

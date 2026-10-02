@@ -3,7 +3,7 @@
 pkgname=pitivi
 pkgver=flathub
 pkgrel=1
-pkgdesc="Simple video editor (Flathub)"
+pkgdesc="Simple video editor"
 url="https://flathub.org/apps/org.pitivi.Pitivi"
 license="LGPL-2.1-or-later"
 maintainer="clrealy"

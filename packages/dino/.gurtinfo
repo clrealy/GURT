@@ -1,7 +1,7 @@
 pkgname = dino
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Modern XMPP chat client (Flathub)
+pkgdesc = Modern XMPP chat client
 url = https://flathub.org/apps/im.dino.Dino
 license = GPL-3.0-or-later
 maintainer = clrealy

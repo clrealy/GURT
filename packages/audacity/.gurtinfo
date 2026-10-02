@@ -1,7 +1,7 @@
 pkgname = audacity
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Record and edit audio (Flathub)
+pkgdesc = Record and edit audio, from podcasts to voice memos
 url = https://flathub.org/apps/org.audacityteam.Audacity
 license = GPL-3.0-or-later
 maintainer = clrealy

@@ -3,7 +3,7 @@
 pkgname=resources
 pkgver=flathub
 pkgrel=1
-pkgdesc="Keep an eye on your CPU, GPU, RAM and network (Flathub)"
+pkgdesc="Keep an eye on your CPU, GPU, RAM and network"
 url="https://flathub.org/apps/net.nokyan.Resources"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

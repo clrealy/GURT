@@ -3,7 +3,7 @@
 pkgname=konsole
 pkgver=flathub
 pkgrel=1
-pkgdesc="KDE's terminal (Flathub)"
+pkgdesc="KDE's terminal"
 url="https://flathub.org/apps/org.kde.konsole"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

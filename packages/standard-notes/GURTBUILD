@@ -3,7 +3,7 @@
 pkgname=standard-notes
 pkgver=flathub
 pkgrel=1
-pkgdesc="Private, encrypted notes (Flathub)"
+pkgdesc="Private, encrypted notes"
 url="https://flathub.org/apps/org.standardnotes.standardnotes"
 license="AGPL-3.0-only"
 maintainer="clrealy"

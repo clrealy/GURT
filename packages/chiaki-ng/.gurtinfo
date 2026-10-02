@@ -1,7 +1,7 @@
 pkgname = chiaki-ng
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Play your PlayStation remotely from your PC (Flathub)
+pkgdesc = Play your PlayStation remotely from your PC
 url = https://flathub.org/apps/io.github.streetpea.Chiaki4deck
 license = AGPL-3.0-only
 maintainer = clrealy

@@ -1,7 +1,7 @@
 pkgname = warehouse
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Manage all your flatpaks in one place (Flathub)
+pkgdesc = Manage all your flatpaks in one place
 url = https://flathub.org/apps/io.github.flattool.Warehouse
 license = GPL-3.0-only
 maintainer = clrealy

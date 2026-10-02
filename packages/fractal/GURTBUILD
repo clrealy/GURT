@@ -3,7 +3,7 @@
 pkgname=fractal
 pkgver=flathub
 pkgrel=1
-pkgdesc="Matrix chat made for GNOME (Flathub)"
+pkgdesc="Matrix chat made for GNOME"
 url="https://flathub.org/apps/org.gnome.Fractal"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

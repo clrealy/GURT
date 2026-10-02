@@ -3,7 +3,7 @@
 pkgname=telegram
 pkgver=flathub
 pkgrel=1
-pkgdesc="Messaging app (Flathub)"
+pkgdesc="Messaging app"
 url="https://flathub.org/apps/org.telegram.desktop"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

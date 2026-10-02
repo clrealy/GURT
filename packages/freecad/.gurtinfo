@@ -1,7 +1,7 @@
 pkgname = freecad
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Parametric 3D CAD for designing real parts (Flathub)
+pkgdesc = Parametric 3D CAD for designing real parts
 url = https://flathub.org/apps/org.freecad.FreeCAD
 license = LGPL-2.0-or-later
 maintainer = clrealy

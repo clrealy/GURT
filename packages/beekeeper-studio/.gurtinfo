@@ -1,7 +1,7 @@
 pkgname = beekeeper-studio
 pkgver = flathub
 pkgrel = 1
-pkgdesc = SQL editor and database manager that's nice to look at (Flathub)
+pkgdesc = SQL editor and database manager that's actually nice to look at
 url = https://flathub.org/apps/io.beekeeperstudio.Studio
 license = GPL-3.0-only
 maintainer = clrealy

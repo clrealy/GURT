@@ -1,7 +1,7 @@
 pkgname = fragments
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Simple torrent client for GNOME (Flathub)
+pkgdesc = Simple torrent client for GNOME
 url = https://flathub.org/apps/de.haeckerfelix.Fragments
 license = GPL-3.0-or-later
 maintainer = clrealy

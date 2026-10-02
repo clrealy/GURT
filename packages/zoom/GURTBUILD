@@ -3,7 +3,7 @@
 pkgname=zoom
 pkgver=flathub
 pkgrel=1
-pkgdesc="Video meetings (Flathub)"
+pkgdesc="Video meetings"
 url="https://flathub.org/apps/us.zoom.Zoom"
 license="Proprietary"
 maintainer="clrealy"

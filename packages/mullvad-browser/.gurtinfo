@@ -1,7 +1,7 @@
 pkgname = mullvad-browser
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Tor Browser's privacy without the Tor network (Flathub)
+pkgdesc = Tor Browser's privacy without the Tor network
 url = https://flathub.org/apps/net.mullvad.MullvadBrowser
 license = MPL-2.0
 maintainer = clrealy

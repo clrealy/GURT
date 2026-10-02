@@ -1,7 +1,7 @@
 pkgname = handbrake
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Convert videos to other formats (Flathub)
+pkgdesc = Convert videos to other formats
 url = https://flathub.org/apps/fr.handbrake.ghb
 license = GPL-2.0-or-later
 maintainer = clrealy

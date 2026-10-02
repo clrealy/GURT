@@ -3,7 +3,7 @@
 pkgname=nicotine-plus
 pkgver=flathub
 pkgrel=1
-pkgdesc="Share music over Soulseek (Flathub)"
+pkgdesc="Share music over Soulseek"
 url="https://flathub.org/apps/org.nicotine_plus.Nicotine"
 license="GPL-3.0-or-later"
 maintainer="clrealy"

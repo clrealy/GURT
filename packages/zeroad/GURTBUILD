@@ -3,7 +3,7 @@
 pkgname=zeroad
 pkgver=flathub
 pkgrel=1
-pkgdesc="Real-time strategy set in ancient times (Flathub)"
+pkgdesc="Real-time strategy game set in ancient times"
 url="https://flathub.org/apps/com.play0ad.zeroad"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

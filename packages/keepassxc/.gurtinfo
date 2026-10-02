@@ -1,7 +1,7 @@
 pkgname = keepassxc
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Offline password manager that keeps everything on your machine (Flathub)
+pkgdesc = Offline password manager that keeps everything on your machine
 url = https://flathub.org/apps/org.keepassxc.KeePassXC
 license = GPL-3.0-or-later
 maintainer = clrealy

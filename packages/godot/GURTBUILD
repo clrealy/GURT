@@ -3,7 +3,7 @@
 pkgname=godot
 pkgver=flathub
 pkgrel=1
-pkgdesc="Free game engine for 2D and 3D games (Flathub)"
+pkgdesc="Free game engine for 2D and 3D games"
 url="https://flathub.org/apps/org.godotengine.Godot"
 license="MIT"
 maintainer="clrealy"

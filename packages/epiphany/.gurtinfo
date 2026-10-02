@@ -1,7 +1,7 @@
 pkgname = epiphany
 pkgver = flathub
 pkgrel = 1
-pkgdesc = GNOME's simple, clean web browser (Flathub)
+pkgdesc = GNOME's simple, clean web browser
 url = https://flathub.org/apps/org.gnome.Epiphany
 license = GPL-3.0-or-later
 maintainer = clrealy

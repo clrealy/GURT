@@ -3,7 +3,7 @@
 pkgname=kate
 pkgver=flathub
 pkgrel=1
-pkgdesc="KDE's powerful text editor (Flathub)"
+pkgdesc="KDE's powerful text editor"
 url="https://flathub.org/apps/org.kde.kate"
 license="LGPL-2.0-or-later"
 maintainer="clrealy"

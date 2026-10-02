@@ -1,7 +1,7 @@
 pkgname = mediawriter
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Make bootable USB drives (Flathub)
+pkgdesc = Make bootable USB drives
 url = https://flathub.org/apps/org.fedoraproject.MediaWriter
 license = GPL-2.0-or-later
 maintainer = clrealy

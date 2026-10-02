@@ -1,7 +1,7 @@
 pkgname = libreoffice
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Documents, spreadsheets and slides (Flathub)
+pkgdesc = Documents, spreadsheets and slides, all free
 url = https://flathub.org/apps/org.libreoffice.LibreOffice
 license = MPL-2.0
 maintainer = clrealy

@@ -1,7 +1,7 @@
 pkgname = element
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Chat on Matrix (Flathub)
+pkgdesc = Chat on Matrix
 url = https://flathub.org/apps/im.riot.Riot
 license = AGPL-3.0-only
 maintainer = clrealy

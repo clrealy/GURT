@@ -3,7 +3,7 @@
 pkgname=ark
 pkgver=flathub
 pkgrel=1
-pkgdesc="KDE's archive manager for zips, tars and more (Flathub)"
+pkgdesc="KDE's archive manager for zips, tars and more"
 url="https://flathub.org/apps/org.kde.ark"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

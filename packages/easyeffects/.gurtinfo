@@ -1,7 +1,7 @@
 pkgname = easyeffects
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Audio effects, EQ and mic noise removal (Flathub)
+pkgdesc = Audio effects, an EQ and mic noise removal
 url = https://flathub.org/apps/com.github.wwmm.easyeffects
 license = GPL-3.0-or-later
 maintainer = clrealy

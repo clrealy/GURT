@@ -3,7 +3,7 @@
 pkgname=kodi
 pkgver=flathub
 pkgrel=1
-pkgdesc="Turn your PC into a home theater (Flathub)"
+pkgdesc="Turn your PC into a home theater"
 url="https://flathub.org/apps/tv.kodi.Kodi"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

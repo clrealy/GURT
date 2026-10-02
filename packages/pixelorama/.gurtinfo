@@ -1,7 +1,7 @@
 pkgname = pixelorama
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Pixel art editor (Flathub)
+pkgdesc = Pixel art editor
 url = https://flathub.org/apps/com.orama_interactive.Pixelorama
 license = MIT
 maintainer = clrealy

@@ -3,7 +3,7 @@
 pkgname=slack
 pkgver=flathub
 pkgrel=1
-pkgdesc="Team chat (Flathub)"
+pkgdesc="Team chat"
 url="https://flathub.org/apps/com.slack.Slack"
 license="Proprietary"
 maintainer="clrealy"

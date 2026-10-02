@@ -1,7 +1,7 @@
 pkgname = dconf-editor
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Dig into every hidden GNOME setting (Flathub)
+pkgdesc = Dig into every hidden GNOME setting
 url = https://flathub.org/apps/ca.desrt.dconf-editor
 license = GPL-3.0-or-later
 maintainer = clrealy

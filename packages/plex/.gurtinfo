@@ -1,7 +1,7 @@
 pkgname = plex
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Watch your stuff from your Plex server (Flathub)
+pkgdesc = Watch your stuff from your Plex server
 url = https://flathub.org/apps/tv.plex.PlexDesktop
 license = Proprietary
 maintainer = clrealy

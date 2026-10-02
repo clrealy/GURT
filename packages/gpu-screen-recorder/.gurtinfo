@@ -1,7 +1,7 @@
 pkgname = gpu-screen-recorder
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Record your screen and save instant replays, like ShadowPlay (Flathub)
+pkgdesc = Record your screen and save instant replays, like ShadowPlay
 url = https://flathub.org/apps/com.dec05eba.gpu_screen_recorder
 license = GPL-3.0-only
 maintainer = clrealy

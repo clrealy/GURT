@@ -1,7 +1,7 @@
 pkgname = floorp
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Firefox-based browser you can customize like crazy (Flathub)
+pkgdesc = Firefox-based browser you can customize like crazy
 url = https://flathub.org/apps/one.ablaze.floorp
 license = MPL-2.0
 maintainer = clrealy

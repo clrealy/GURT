@@ -214,6 +214,17 @@ gurt sysup               # only the system
 
 In the app, the Updates tab shows a 🐧 "your system" card with how many distro updates are waiting.
 
+## Utilities apps need: `gurt utils` 🔧
+
+Most apps need a few tools to install: flatpak for Flathub apps, `ar`/bsdtar/zstd/7zip/rpm2cpio to unpack `.deb`, `.rpm`, `.pkg.tar.zst`, `.dmg` and `.exe` files, git + a compiler + make + pkg-config for source builds, plus curl, unzip, gnupg, patchelf and xdg-utils. One command grabs all of them from your distro and sets up Flathub:
+
+```sh
+gurt utils        # install whatever's missing
+gurt utils list   # see what you've got (gurt doctor shows it too)
+```
+
+**Donk OS 🫏** (basically worse Ubuntu) runs on gurt, so there gurt does this by itself: the installer sets up the utilities right away, and `gurt self-update` makes sure they're still there. On every other distro nothing extra gets installed until you run `gurt utils` (gurt still grabs single tools when an install needs one).
+
 ## Build your setup + the app lottery 🧰🎰
 
 The [website](https://clrealy.github.io/GURT/) has a **Build your setup** picker (like tuxmate, but gurt): tick the apps you want, grouped by category, and copy one `gurt install …` command that works on every distro. Tick "I don't have gurt yet" and the command installs gurt first.
@@ -260,7 +271,11 @@ It only needs python3 and a browser. It runs a tiny server that only your own ma
 
 **Sound effects 🔊**: clicks, lottery ticks + a jackpot jingle, a chime when something finishes (a buzz if it fails). The 🔊 button mutes them, and the app and the website both remember it. In the app, every skin has its own sound set: Windows 11 is soft and round, XP gets bells and a big swelly startup-style chord, and 95 is chunky square waves with a brassy ta-da. Switching skins plays its "startup" sound. They're all homemade synth lookalikes, not Microsoft's actual sound files. The website has its own 🌙/☀️ dark mode button too.
 
-**Drop in files 📥**: drag a `.deb`, `.rpm`, `.pkg.tar.zst`, AppImage, `.tar.gz`, `.zip`, `.flatpak`, `.exe` or `.dmg` anywhere onto the app (or hit **📥 install a file**) and gurt installs it, same as `gurt outsource <file>`. It asks first.
+**Background music 🎵**: a chill, original shop-style bossa loop (chords, walking bass, a vibraphone-ish tune and shakers), synthesized live, no audio files. The 🎵 button pauses it and GURT remembers. It's on by default in the app and off by default on the website.
+
+**No sound?** The app window plays audio through GStreamer. If its audio plugins are missing, GURT shows a 🔇 banner with a **fix sound** button that installs them (or run `gurt gui-setup`), then reopen GURT.
+
+**Drop in files 📥**: drag a `.deb`, `.rpm`, `.pkg.tar.zst`, AppImage, `.tar.gz`, `.zip`, `.flatpak`, `.exe` or `.dmg` anywhere onto the app (or open the **📥 Install a file** tab and click the big box) and gurt installs it, same as `gurt outsource <file>`. It asks first. On a narrow window the tab hides itself and a 📥 button shows up next to the Discover search instead.
 
 **Skins 🪟**: next to the light/dark button there's a skin picker: 🦆 GURT, Windows 11, Windows XP (Luna blue + the green start button) and Windows 95 (grey bevels on teal). It remembers what you pick.
 

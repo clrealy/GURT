@@ -1,7 +1,7 @@
 pkgname = retroarch
 pkgver = flathub
 pkgrel = 1
-pkgdesc = One frontend for tons of emulators (Flathub)
+pkgdesc = One frontend for tons of emulators
 url = https://flathub.org/apps/org.libretro.RetroArch
 license = GPL-3.0-or-later
 maintainer = clrealy

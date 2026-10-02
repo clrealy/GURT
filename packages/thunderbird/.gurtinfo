@@ -1,7 +1,7 @@
 pkgname = thunderbird
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Email, calendar and contacts (Flathub)
+pkgdesc = Email, calendar and contacts
 url = https://flathub.org/apps/org.mozilla.Thunderbird
 license = MPL-2.0
 maintainer = clrealy

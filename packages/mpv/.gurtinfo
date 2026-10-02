@@ -1,7 +1,7 @@
 pkgname = mpv
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Minimal, fast video player (Flathub)
+pkgdesc = Minimal, fast video player
 url = https://flathub.org/apps/io.mpv.Mpv
 license = GPL-2.0-or-later
 maintainer = clrealy

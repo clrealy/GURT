@@ -3,7 +3,7 @@
 pkgname=baobab
 pkgver=flathub
 pkgrel=1
-pkgdesc="Shows what's eating your disk space (Flathub)"
+pkgdesc="Shows you what's eating your disk space"
 url="https://flathub.org/apps/org.gnome.baobab"
 license="GPL-2.0-or-later"
 maintainer="clrealy"

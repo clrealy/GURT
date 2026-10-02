@@ -1,7 +1,7 @@
 pkgname = wps-office
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Office suite that looks a lot like Microsoft Office (Flathub)
+pkgdesc = Office suite that looks a lot like Microsoft Office
 url = https://flathub.org/apps/com.wps.Office
 license = Proprietary
 maintainer = clrealy

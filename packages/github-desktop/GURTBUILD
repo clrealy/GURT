@@ -3,7 +3,7 @@
 pkgname=github-desktop
 pkgver=flathub
 pkgrel=1
-pkgdesc="Use git with buttons instead of commands (Linux fork)"
+pkgdesc="Use git with buttons instead of commands (community Linux build)"
 url="https://flathub.org/apps/io.github.shiftey.Desktop"
 license="MIT"
 maintainer="clrealy"

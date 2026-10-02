@@ -1,8 +1,8 @@
-# YaYaP: Yet Another "Yet Another" Program
+# YaYaP (Yet Another "Yet Another" Program): a Linux toolbox
 pkgname=yayap
 pkgver=0.1.0
 pkgrel=1
-pkgdesc="Yet Another \"Yet Another\" Program, a Linux toolbox for sysinfo, packages, ports, extracting, backups, cleanup and more 🧰"
+pkgdesc="Linux toolbox for system info, packages, ports, archives, backups and cleanup 🧰"
 url="https://github.com/clrealy/YaYaP"
 license="MIT"
 maintainer="clrealy"

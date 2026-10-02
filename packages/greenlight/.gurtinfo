@@ -1,7 +1,7 @@
 pkgname = greenlight
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Stream games from your Xbox or Xbox Cloud Gaming (Flathub)
+pkgdesc = Stream games from your Xbox or Xbox Cloud Gaming
 url = https://flathub.org/apps/io.github.unknownskl.greenlight
 license = MIT
 maintainer = clrealy
