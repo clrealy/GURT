@@ -15,10 +15,38 @@ JOBS, JOBS_LOCK = {}, threading.Lock()
 LAST_PING = [time.time()]
 SPEC_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+°:@/-]{0,200}$")
 # files you can drop into the app (same list gurt outsource understands)
-DROP_RE = re.compile(r"\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|appimage|dmg|exe|msi|snap|flatpak|flatpakref|"
+DROP_RE = re.compile(r"\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|gurt|appimage|dmg|exe|msi|snap|flatpak|flatpakref|"
                      r"tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst)$", re.I)
+CONV_FMTS = ("deb", "rpm", "pacman", "apk", "xbps", "eopkg", "appimage", "gurt", "tar.gz", "zip")
 DROP_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]{0,200}$")
 DROP_MAX = 8 << 30   # 8 GiB
+
+
+CONV_EXT = {"deb": ".deb", "rpm": ".rpm", "pacman": ".pkg.tar.zst", "apk": ".apk", "xbps": ".xbps", "eopkg": ".eopkg",
+            "appimage": ".AppImage", "gurt": ".gurt", "tar.gz": ".tar.gz", "zip": ".zip"}
+PKG_EXT_RE = re.compile(r"\.(pkg\.tar(\.[a-z0-9]+)?|tar\.[a-z0-9]+|tgz|deb|rpm|apk|xbps|eopkg|appimage|gurt|zip|exe|msi|7z)$", re.I)
+
+
+def zone_dir():   # the Download Zone™: where The Congurter™ drops what it makes
+    d = os.path.join(paths().get("cache") or os.path.expanduser("~/.cache/gurt"), "zone")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def downloads_dir():
+    d = os.path.expanduser("~/Downloads")
+    return d if os.path.isdir(d) else os.path.expanduser("~")
+
+
+def unique_path(d, name):
+    stem, ext = name, ""
+    m = PKG_EXT_RE.search(name)
+    if m:
+        stem, ext = name[:m.start()], name[m.start():]
+    p, i = os.path.join(d, name), 2
+    while os.path.exists(p):
+        p = os.path.join(d, f"{stem}-{i}{ext}"); i += 1
+    return p
 
 
 def drops_dir():
@@ -253,6 +281,11 @@ class H(BaseHTTPRequestHandler):
             return self._send(403, {"error": "bad token"})
         if u.path == "/api/state":
             return self._send(200, state())
+        if u.path == "/api/zone":
+            z = zone_dir()
+            items = [{"name": n, "size": os.path.getsize(os.path.join(z, n)), "time": os.path.getmtime(os.path.join(z, n))}
+                     for n in os.listdir(z) if os.path.isfile(os.path.join(z, n)) and not n.endswith(".part")]
+            return self._send(200, {"items": sorted(items, key=lambda x: -x["time"])})
         if u.path == "/api/ping":
             LAST_PING[0] = time.time()
             return self._send(200, {"ok": True})
@@ -270,6 +303,31 @@ class H(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         if not self._auth():
             return self._send(403, {"error": "bad token"})
+        if u.path == "/api/listup":   # a package list to import (plain text, small)
+            n = int(self.headers.get("Content-Length") or 0)
+            if n <= 0 or n > (1 << 20):
+                return self._send(400, {"error": "that list is empty or way too big"})
+            name = f"list-{int(time.time() * 1000)}.txt"
+            with open(os.path.join(drops_dir(), name), "wb") as f:
+                f.write(self.rfile.read(n))
+            return self._send(200, {"name": name})
+        if u.path == "/api/zone/retrieve":   # Download Zone™ → your Downloads folder
+            name = self._body().get("name", "")
+            src = os.path.join(zone_dir(), name)
+            if not DROP_NAME_RE.match(name) or not os.path.isfile(src):
+                return self._send(400, {"error": "that's not in the Download Zone™"})
+            dst = unique_path(downloads_dir(), name)
+            shutil.copy2(src, dst)
+            return self._send(200, {"path": dst})
+        if u.path == "/api/zone/delete":
+            name = self._body().get("name", "")
+            src = os.path.join(zone_dir(), name)
+            if DROP_NAME_RE.match(name) and os.path.isfile(src):
+                os.remove(src)
+            return self._send(200, {"ok": True})
+        if u.path == "/api/opendir":
+            subprocess.Popen(["xdg-open", downloads_dir()], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+            return self._send(200, {"ok": True})
         if u.path == "/api/drop":   # a file dropped into the app → saved to the cache, then gurt outsource installs it
             name = re.sub(r"[^A-Za-z0-9._+-]", "_", os.path.basename(unquote(self.headers.get("X-Filename", ""))))[:200].lstrip("._-")
             if not DROP_NAME_RE.match(name) or not DROP_RE.search(name):
@@ -311,6 +369,25 @@ class H(BaseHTTPRequestHandler):
                 if not DROP_NAME_RE.match(arg) or not DROP_RE.search(arg) or not os.path.isfile(p):
                     return self._send(400, {"error": "that dropped file is gone"})
                 job = start_job([GURT, "-y", "outsource", p])
+                return self._send(200, {"job": job.id})
+            if cmd == "convert":   # a dropped file → another package format, saved to your Downloads
+                p = os.path.join(drops_dir(), arg)
+                if not DROP_NAME_RE.match(arg) or not DROP_RE.search(arg) or not os.path.isfile(p):
+                    return self._send(400, {"error": "that file is gone"})
+                if body.get("fmt") not in CONV_FMTS:
+                    return self._send(400, {"error": "gurt can't make that format"})
+                out = unique_path(zone_dir(), PKG_EXT_RE.sub("", arg) + "-converted" + CONV_EXT[body["fmt"]])
+                job = start_job([GURT, "-y", "convert", p, out])
+                return self._send(200, {"job": job.id})
+            if cmd == "export":   # your package list → a text file in Downloads
+                out = unique_path(downloads_dir(), time.strftime("gurt-list-%Y-%m-%d.txt"))
+                job = start_job([GURT, "export", out])
+                return self._send(200, {"job": job.id})
+            if cmd == "import":
+                p = os.path.join(drops_dir(), arg)
+                if not re.fullmatch(r"list-[0-9]+\.txt", arg) or not os.path.isfile(p):
+                    return self._send(400, {"error": "that list is gone"})
+                job = start_job([GURT, "-y", "import", p])
                 return self._send(200, {"job": job.id})
             if cmd == "gui-setup":
                 job = start_job([GURT, "-y", "gui", "--setup"])
@@ -436,7 +513,10 @@ def native_window(tk, url, icon):
                 win.set_icon_from_file(icon)
             except Exception:
                 pass
-        view = WebKit2.WebView()
+        try:   # let the music start by itself (WebKitGTK 2.30+); older ones start it on your first click
+            view = WebKit2.WebView(website_policies=WebKit2.WebsitePolicies(autoplay=WebKit2.AutoplayPolicy.ALLOW))
+        except Exception:
+            view = WebKit2.WebView()
         st = view.get_settings()
         st.set_enable_developer_extras(False)
         # sounds + music: WebKitGTK needs web audio switched on, and lets the page play without waiting for a click
@@ -694,11 +774,54 @@ dialog .row{justify-content:flex-end}
 .dropbig:hover,.dropbig:focus{border-color:var(--accent);transform:scale(1.005);outline:none}
 .dropbig .dropicon{font-size:56px;line-height:1}.dropbig b{font-size:20px}.dropbig span{color:var(--muted)}
 .dropbig .fmts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:620px;margin-top:6px}
+/* 🔘 The Congurter™ */
+.congurter{margin:22px auto 0;max-width:820px}
+.cg-title{font-weight:800;font-size:20px;text-align:center;margin-bottom:10px;letter-spacing:.02em}
+.cg-title small{display:block;font-weight:400;font-size:13px;color:var(--muted)}
+.cg-machine{position:relative;display:grid;grid-template-columns:200px 1fr;gap:0;border-radius:22px;padding:16px;border:2px solid var(--line);
+  background:linear-gradient(160deg,color-mix(in srgb,var(--panel) 80%,#9aa4b2),color-mix(in srgb,var(--panel) 92%,#000));box-shadow:inset 0 2px 0 color-mix(in srgb,#fff 25%,transparent),0 8px 24px color-mix(in srgb,#000 18%,transparent)}
+.cg-hopper{position:relative;height:190px;border-radius:14px 14px 40px 40px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:22px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--bg) 70%,#000),var(--bg));border:3px dashed var(--line);clip-path:polygon(0 0,100% 0,82% 100%,18% 100%);transition:border-color .15s}
+.cg-hopper.hot,.cg-hopper:hover,.cg-hopper:focus{border-color:var(--accent);outline:none}
+.cg-hoptxt{font-weight:700;font-size:13px;text-align:center;padding:0 22px}.cg-hoptxt small{display:block;font-weight:400;color:var(--muted)}
+.cg-slot{position:absolute;bottom:14px;left:50%;width:60px;height:8px;margin-left:-30px;border-radius:4px;background:#000;box-shadow:inset 0 2px 4px #000}
+.cg-file{position:absolute;top:70px;left:50%;transform:translateX(-50%);max-width:150px;padding:6px 10px;border-radius:8px;background:var(--accent);color:#000;font:600 12px/1.2 "JetBrains Mono",monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
+.cg-file.in{animation:cg-in .9s ease-in forwards}
+@keyframes cg-in{0%{top:20px;opacity:0}25%{top:60px;opacity:1}100%{top:150px;transform:translateX(-50%) scale(.2);opacity:0}}
+.cg-body{display:flex;flex-direction:column;gap:12px;padding-left:16px}
+.cg-lights{display:flex;align-items:center;gap:8px}.cg-lights i{width:12px;height:12px;border-radius:50%;background:#3a3a3a;box-shadow:inset 0 1px 2px #000}
+.cg-machine.running .cg-lights i{animation:cg-blink .5s infinite alternate}.cg-machine.running .cg-lights i:nth-child(2){animation-delay:.17s}.cg-machine.running .cg-lights i:nth-child(3){animation-delay:.34s}
+@keyframes cg-blink{from{background:#3a3a3a}to{background:#ffd23f;box-shadow:0 0 10px #ffd23f}}
+.cg-machine.done .cg-lights i{background:#3ddc84;box-shadow:0 0 8px #3ddc84}.cg-machine.jam .cg-lights i{background:#ff4d4d;box-shadow:0 0 8px #ff4d4d}
+.cg-gears{margin-left:auto;font-size:26px}.cg-gears .gear{display:inline-block}.cg-gears .g2{font-size:18px;margin-left:-4px}
+.cg-machine.running .gear{animation:cg-spin 1.2s linear infinite}.cg-machine.running .g2{animation-direction:reverse}
+@keyframes cg-spin{to{transform:rotate(360deg)}}
+.cg-screen{white-space:pre-line;font:700 15px/1.3 "JetBrains Mono",monospace;color:#3ddc84;background:#0b1410;border-radius:10px;padding:12px 14px;min-height:44px;box-shadow:inset 0 2px 8px #000;text-shadow:0 0 6px #3ddc8488;word-break:break-word}
+.cg-machine.jam .cg-screen{color:#ff6b6b;text-shadow:0 0 6px #ff6b6b88}
+.cg-controls{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.cg-dial{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted);flex:1;min-width:180px}
+.cg-press{display:flex;flex-direction:column;align-items:center;gap:4px;font:800 11px/1 sans-serif;letter-spacing:.1em;color:var(--muted)}
+.cg-button{width:74px;height:74px;border-radius:50%;border:4px solid #7a1010;background:radial-gradient(circle at 35% 30%,#ff8080,#e01b1b 55%,#9b0d0d);font-size:30px;cursor:pointer;
+  box-shadow:0 6px 0 #6b0909,0 8px 16px #0006;transition:transform .08s,box-shadow .08s}
+.cg-button:active:not(:disabled),.cg-button.pressed{transform:translateY(5px);box-shadow:0 1px 0 #6b0909,0 3px 8px #0006}
+.cg-button:disabled{filter:grayscale(.85) brightness(.8);cursor:not-allowed}
+.cg-machine.loaded .cg-button:not(:disabled){animation:cg-pulse 1.2s ease-in-out infinite}
+@keyframes cg-pulse{50%{box-shadow:0 6px 0 #6b0909,0 0 0 8px #ff4d4d55}}
+.cg-chute{position:absolute;bottom:-26px;right:70px;width:70px;height:28px;background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 70%,#000),#222);clip-path:polygon(10% 0,90% 0,100% 100%,0 100%)}
+.cg-zone{margin-top:30px;border:3px solid var(--line);border-radius:16px;padding:12px;background:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--accent) 12%,transparent) 0 14px,transparent 14px 28px)}
+.cg-zonehead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.cg-zonehead small{color:var(--muted);flex:1}
+.cg-tray{display:flex;flex-direction:column;gap:8px}
+.cg-empty{color:var(--muted);text-align:center;padding:14px}
+.cg-item{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.cg-item b{font:600 13px "JetBrains Mono",monospace;word-break:break-all;flex:1}.cg-item small{color:var(--muted);white-space:nowrap}
+.cg-item.drop{animation:cg-drop .7s cubic-bezier(.3,1.6,.5,1)}
+@keyframes cg-drop{from{transform:translateY(-60px) rotate(-4deg);opacity:0}to{transform:none;opacity:1}}
+@media (max-width:640px){.cg-machine{grid-template-columns:1fr}.cg-body{padding-left:0;padding-top:12px}.cg-hopper{height:150px}}
 .dropnote{text-align:center;margin-top:14px;color:var(--muted)}
 #musicbtn.off{opacity:.5}
 /* the Install a file tab only shows when the header has room for it; otherwise the button in Discover does the job */
 :root.tight nav button[data-tab=dropfile]{display:none}
-:root:not(.tight) #dropbtn{display:none}
+:root:not(.tight) #dropbtn,:root:not(.tight) #convopen{display:none}
 #dropzone{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(3px);pointer-events:none}
 #dropzone div{border:4px dashed var(--accent);border-radius:24px;padding:48px 64px;text-align:center;background:var(--panel);font-size:22px;font-weight:700}
 #dropzone small{display:block;font-size:14px;font-weight:400;color:var(--muted);margin-top:8px}
@@ -746,7 +869,7 @@ dialog .row{justify-content:flex-end}
 :root[data-skin=w95] h2,:root[data-skin=w95] .hint,:root[data-skin=w95] .blurb,:root[data-skin=w95] .cicada,:root[data-skin=w95] .bgroup h3,:root[data-skin=w95] .setuphead p{color:#fff}
 :root[data-skin=xp] .logoimg,:root[data-skin=w95] .logoimg{filter:drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1px #fff)}
 .out-line-err{color:var(--bad)}.out-line-ok{color:var(--good)}
-@media (max-width:640px){header{flex-wrap:wrap}nav{margin-left:0}}
+@media (max-width:640px){header{flex-wrap:wrap}nav{margin-left:0;flex-wrap:wrap}}
 </style></head><body>
 <header>
   <div><img class="logoimg" src="/logo.png" alt="gurt" onerror="this.hidden=true;this.nextElementSibling.nextElementSibling.hidden=false"><img class="dirtlogo" src="/dirt-logo.png" alt="dirt."><div class="logo" hidden><span class="g">g</span><span class="u">u</span><span class="r">r</span><span class="t">t</span></div><div class="ver" id="ver"></div></div>
@@ -777,6 +900,38 @@ dialog .row{justify-content:flex-end}
       <span>gurt figures out what it is and installs it straight onto your system, any distro, no box</span>
       <span class="fmts"><code>.deb</code><code>.rpm</code><code>.pkg.tar.zst</code><code>AppImage</code><code>.flatpak</code><code>.flatpakref</code><code>.snap</code><code>.apk</code><code>.xbps</code><code>.eopkg</code><code>.tar.gz</code><code>.zip</code><code>.7z</code><code>.exe</code><code>.msi</code><code>.dmg</code></span>
     </label>
+    <div class="congurter" id="congurter">
+      <div class="cg-title">The Congurter™ <small>any Linux package goes in, any other one comes out</small></div>
+      <div class="cg-machine" id="cgmachine">
+        <div class="cg-hopper" id="hopper" tabindex="0" title="drop a package in here (or click)">
+          <span class="cg-hoptxt" id="hoptxt">⬇ drop a package in the hopper ⬇<small>or click to pick one</small></span>
+          <div class="cg-file" id="cgfile" hidden></div>
+          <div class="cg-slot"></div>
+          <input type="file" id="convin" hidden>
+        </div>
+        <div class="cg-body">
+          <div class="cg-lights"><i></i><i></i><i></i><span class="cg-gears"><b class="gear">⚙️</b><b class="gear g2">⚙️</b></span></div>
+          <div class="cg-screen" id="cgscreen">INSERT PACKAGE</div>
+          <div class="cg-controls">
+            <label class="cg-dial">turn it into
+              <select id="convfmt" title="convert to">
+                <option value="deb">.deb (Debian, Ubuntu, Mint)</option><option value="rpm">.rpm (Fedora, openSUSE)</option>
+                <option value="pacman">.pkg.tar.zst (Arch, CachyOS)</option><option value="apk">.apk (Alpine)</option>
+                <option value="xbps">.xbps (Void)</option><option value="eopkg">.eopkg (Solus)</option>
+                <option value="appimage">AppImage (any distro)</option><option value="gurt">.gurt</option>
+                <option value="tar.gz">.tar.gz</option><option value="zip">.zip</option>
+              </select>
+            </label>
+            <div class="cg-press"><button class="cg-button" id="cgbtn" disabled title="CONVERT">🔘</button><span>CONVERT</span></div>
+          </div>
+        </div>
+        <div class="cg-chute"></div>
+      </div>
+      <div class="cg-zone">
+        <div class="cg-zonehead"><b>📦 Download Zone™</b><small id="zonemsg">converted files land here. grab them whenever</small><button class="btn ghost small" id="zoneopen">📂 open Downloads</button></div>
+        <div class="cg-tray" id="zone"><div class="cg-empty">empty… for now 👀</div></div>
+      </div>
+    </div>
     <p class="dropnote">from a terminal it's <code>gurt outsource ./file.deb</code> (or a download link). only install files you trust 🙏</p>
   </section>
   <section id="t-discover">
@@ -792,7 +947,7 @@ dialog .row{justify-content:flex-end}
       <button data-src="dirt" class="dirtbtn">dirt/ <small>18+</small></button>
     </div>
     <p class="blurb" id="blurb" hidden></p>
-    <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button><button class="btn lottobtn" id="lotto" title="win a random app">🎰 lottery</button><button class="btn ghost" id="dropbtn" title="install a .deb, .rpm, AppImage, .exe… you downloaded">📥 install a file</button><input type="file" id="dropin" hidden></div>
+    <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button><button class="btn lottobtn" id="lotto" title="win a random app">🎰 lottery</button><button class="btn ghost" id="dropbtn" title="install a .deb, .rpm, AppImage, .exe… you downloaded">📥 install a file</button><button class="btn ghost" id="convopen" title="turn a package into another format">🔁 convert</button><input type="file" id="dropin" hidden></div>
     <p class="hint">tip: <code>aur/yay</code>, <code>apt/cowsay</code>, <code>flatpak/gimp</code>… type a full name with a source and hit install</p>
     <div id="direct" hidden class="row" style="margin-bottom:12px"><button class="btn" id="directbtn"></button></div>
     <div id="allres" hidden><h2>everywhere</h2><div class="grid" id="allgrid"></div><h2 style="margin-top:18px">Main GURT</h2></div>
@@ -802,7 +957,7 @@ dialog .row{justify-content:flex-end}
     <p class="cicada">Could prime Wifies solve Cicada 3301?</p>
   </section>
   <section id="t-installed" hidden>
-    <div class="search"><input id="iq" placeholder="filter installed…" autocomplete="off"></div>
+    <div class="search"><input id="iq" placeholder="filter installed…" autocomplete="off"><button class="btn ghost" id="lexport" title="save a list of everything you installed with gurt">📤 export my list</button><button class="btn ghost" id="limport" title="install everything from a list you exported">📥 import a list</button><input type="file" id="limportin" accept=".txt,text/plain" hidden></div>
     <div class="grid" id="igrid"></div>
   </section>
   <section id="t-updates" hidden>
@@ -885,7 +1040,7 @@ function ask(title, body){ return new Promise(res => { $("#ctitle2").textContent
   const done = v => { d.close(); $("#cyes").onclick = $("#cno").onclick = null; res(v); };
   $("#cyes").onclick = () => done(true); $("#cno").onclick = () => done(false); d.onclose = () => res(false); d.showModal(); }); }
 
-async function run(cmd, arg="", {all=false, quiet=false, confirm=true} = {}){
+async function run(cmd, arg="", {all=false, quiet=false, confirm=true, fmt=""} = {}){
   if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return null; }
   if (confirm && VERB[cmd]) {
     const warn = cmd === "outsource" ? " This builds + runs code from that repo — only do it if you trust it." :
@@ -893,7 +1048,7 @@ async function run(cmd, arg="", {all=false, quiet=false, confirm=true} = {}){
     if (!await ask(`${VERB[cmd]}${arg ? " " + arg : ""}?`, `gurt will ${cmd} ${arg || ""}.${warn}`)) return null;
   }
   busy = true; setBusyUI(true);
-  const r = await api("/api/run", {cmd, arg, all});
+  const r = await api("/api/run", {cmd, arg, all, fmt});
   if (r.error) { busy = false; setBusyUI(false); alert(r.error); return null; }
   cur = r.job; let from = 0, lines = [];
   $("#ctitle").textContent = `gurt ${cmd} ${arg}`; $("#cdot").className = "dot run"; if (!quiet) $("#console").classList.add("open");
@@ -1103,6 +1258,7 @@ const MUSIC = (() => {
     s.connect(hp).connect(g).connect(master); s.start(t); s.stop(t + 0.06);
   };
   const schedule = () => {
+    if (nextT < ctx.currentTime - 0.3) nextT = ctx.currentTime + 0.05;   // timers got throttled: pick the beat back up instead of blasting every missed note
     while (nextT < ctx.currentTime + 0.2) {
       const bar = Math.floor(step / 8) % 8, e = step % 8, t = nextT;
       if (COMP.includes(e)) CH[bar].forEach(m => voice(t, mtof(m), 0.55, 0.018, "sine", 2));       // soft e-piano chords
@@ -1130,7 +1286,10 @@ const MUSIC = (() => {
   };
   const stop = () => { clearInterval(timer); timer = null; };
   // browsers only allow sound after you touch the page, so the first click starts it
-  ["pointerdown", "keydown"].forEach(ev => addEventListener(ev, () => { if (on && !timer) start(); else if (ctx && ctx.state === "suspended") ctx.resume(); }, true));
+  ["pointerdown", "mousedown", "click", "touchend", "keydown"].forEach(ev => addEventListener(ev, () => { if (on && !timer) start(); else if (on && ctx && ctx.state !== "running") ctx.resume(); }, true));
+  // keep it looping: if the audio got paused behind our back (window hidden, system interrupted it), wake it back up
+  setInterval(() => { if (on && timer && ctx && ctx.state !== "running") ctx.resume().catch(() => {}); }, 1000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && on && ctx) ctx.resume().catch(() => {}); });
   if (on) start();
   return { get on() { return on; }, set(v) { on = v; v ? start() : stop(); } };
 })();
@@ -1154,6 +1313,79 @@ async function installFile(f){
   await run("dropped", r.name, {confirm:false});
 }
 $("#dropbtn").addEventListener("click", () => $("#dropin").click());
+// ── 🔘 The Congurter™: file in the hopper → press the button → it drops into the Download Zone™ ──
+let cgLoaded = null;
+const cgM = () => $("#cgmachine"), cgScreen = t => { $("#cgscreen").textContent = t; };
+const fmtSize = b => b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
+async function cgLoad(f){
+  if (!f) return;
+  cgM().classList.remove("done", "jam");
+  if (!DROPPABLE.test(f.name) && !/\.gurt$/i.test(f.name)) { cgM().classList.add("jam"); cgScreen(`CAN'T EAT THAT 🤢 (${f.name})`); SFX.play("err"); return; }
+  if (/\.(dmg|snap|flatpak|flatpakref|7z)$/i.test(f.name)) { cgM().classList.add("jam"); cgScreen("THAT ONE DOESN'T CONVERT 🤢 try a .deb .rpm .pkg.tar.zst AppImage .exe…"); SFX.play("err"); return; }
+  if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return; }
+  const chip = $("#cgfile"); chip.textContent = "📄 " + f.name; chip.hidden = false; chip.classList.remove("in"); void chip.offsetWidth; chip.classList.add("in");
+  $("#hoptxt").style.visibility = "hidden"; cgScreen(`LOADING ${f.name}…`); SFX.play("pop");
+  const r = await fetch("/api/drop", {method:"POST", headers:{"X-Gurt-Token":T, "X-Filename":encodeURIComponent(f.name)}, body:f}).then(x => x.json()).catch(() => ({error:"upload failed"}));
+  setTimeout(() => { chip.hidden = true; $("#hoptxt").style.visibility = ""; }, 900);
+  if (r.error) { cgM().classList.add("jam"); cgScreen("JAMMED 💥 " + r.error); return; }
+  cgLoaded = {name:r.name, orig:f.name};
+  cgM().classList.add("loaded"); $("#cgbtn").disabled = false;
+  cgScreen(`LOADED: ${f.name}\npick a format, smash the 🔘`);
+}
+$("#hopper").addEventListener("click", () => $("#convin").click());
+// 📋 list exporter: everything you installed with gurt → a text file (gurt import puts it all back, on any distro)
+$("#lexport").addEventListener("click", async () => {
+  const r = await run("export", "", {confirm:false});
+  const saved = r && r.lines.map(l => (l.match(/saved your package list to (\S+)/) || [])[1]).find(Boolean);
+  if (saved) alert(`📋 saved your list to ${saved}\n\non another computer (any distro): open GURT → Installed → 📥 import a list`);
+});
+$("#limport").addEventListener("click", () => $("#limportin").click());
+$("#limportin").addEventListener("change", async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  const txt = await f.text(), n = txt.split("\n").filter(l => l.replace(/#.*/, "").trim()).length;
+  if (!n) { alert("that list is empty 🤔"); return; }
+  if (!await ask(`Install ${n} package(s) from ${f.name}?`, "gurt installs everything on the list. Already-installed ones get skipped.")) return;
+  const r = await fetch("/api/listup", {method:"POST", headers:{"X-Gurt-Token":T}, body:txt}).then(x => x.json()).catch(() => ({error:"upload failed"}));
+  if (r.error) { alert(r.error); return; }
+  await run("import", r.name, {confirm:false});
+});
+$("#hopper").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("#convin").click(); } });
+$("#convin").addEventListener("change", e => { cgLoad(e.target.files[0]); e.target.value = ""; });
+// dropping onto the hopper feeds the machine instead of installing
+$("#hopper").addEventListener("dragover", e => { e.preventDefault(); e.stopPropagation(); $("#hopper").classList.add("hot"); $("#dropzone").hidden = true; });
+$("#hopper").addEventListener("dragleave", () => $("#hopper").classList.remove("hot"));
+$("#hopper").addEventListener("drop", e => { e.preventDefault(); e.stopPropagation(); dragDepth = 0; $("#dropzone").hidden = true; $("#hopper").classList.remove("hot"); cgLoad(e.dataTransfer.files[0]); });
+$("#cgbtn").addEventListener("click", async () => {
+  if (!cgLoaded || busy) return;
+  const b = $("#cgbtn"); b.classList.add("pressed"); setTimeout(() => b.classList.remove("pressed"), 150);
+  const fmt = $("#convfmt"), what = fmt.options[fmt.selectedIndex].text.split(" ")[0];
+  cgM().classList.remove("loaded", "done", "jam"); cgM().classList.add("running"); b.disabled = true;
+  cgScreen(`CONGURTING ${cgLoaded.orig} → ${what}…`);
+  const r = await run("convert", cgLoaded.name, {confirm:false, fmt:fmt.value, quiet:true});
+  cgM().classList.remove("running");
+  if (r && r.rc === 0) {
+    cgM().classList.add("done"); cgScreen("DONE ✅ it's in the Download Zone™ 👇"); cgLoaded = null;
+    await loadZone(true);
+  } else {
+    cgM().classList.add("jam"); b.disabled = false; cgM().classList.add("loaded");
+    const why = (r ? r.lines : []).filter(l => /nah:|can't|couldn't/.test(l)).pop();
+    cgScreen("JAMMED 💥 " + (why ? why.replace(/^==> nah:\s*/, "") : "check the log"));
+    if (r) { $("#cout").textContent = r.lines.join("\n"); $("#console").classList.add("open"); }
+  }
+});
+async function loadZone(fresh){
+  const z = await api("/api/zone").catch(() => ({items:[]}));
+  const items = z.items || [];
+  $("#zone").innerHTML = items.length ? items.map((it, i) => `<div class="cg-item${fresh && i === 0 ? " drop" : ""}"><span>📦</span><b>${esc(it.name)}</b><small>${fmtSize(it.size)}</small>
+      <button class="btn small" data-get="${esc(it.name)}">⬇️ retrieve</button><button class="btn ghost small" data-del="${esc(it.name)}" title="toss it">🗑</button></div>`).join("")
+    : `<div class="cg-empty">empty… for now 👀</div>`;
+}
+$("#zone").addEventListener("click", async e => {
+  const g = e.target.closest("[data-get]"), d = e.target.closest("[data-del]");
+  if (g) { const r = await api("/api/zone/retrieve", {name:g.dataset.get}); $("#zonemsg").textContent = r.error ? r.error : `retrieved ✅ saved to ${r.path}`; SFX.play(r.error ? "err" : "ok"); }
+  if (d) { await api("/api/zone/delete", {name:d.dataset.del}); SFX.play("unpick"); loadZone(false); }
+});
+$("#zoneopen").addEventListener("click", () => api("/api/opendir", {}));
 $("#dropbig").addEventListener("click", e => { e.preventDefault(); $("#dropin").click(); });
 $("#dropbig").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("#dropin").click(); } });
 // no room in the header for the Install a file tab? hide it (and bounce back to Discover if you were on it)
@@ -1161,8 +1393,17 @@ function fitNav(){
   const root = document.documentElement, h = document.querySelector("header");
   root.classList.remove("tight");
   if (innerWidth <= 900 || h.scrollWidth > h.clientWidth + 1) root.classList.add("tight");
-  if (root.classList.contains("tight") && !$("#t-dropfile").hidden) document.querySelector('nav button[data-tab="discover"]').click();
+  const tight = root.classList.contains("tight");
+  if (tight && !wasTight && !$("#t-dropfile").hidden) document.querySelector('nav button[data-tab="discover"]').click();
+  wasTight = tight;
 }
+let wasTight = false;
+// narrow window: the 🔁 button in Discover opens the Install a file page (it has the converter) without its tab
+$("#convopen").addEventListener("click", () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.remove("on"));
+  for (const t of ["discover","installed","updates","setup","desktops","dropfile"]) $("#t-"+t).hidden = t !== "dropfile";
+  loadZone(false);
+});
 addEventListener("resize", fitNav); fitNav();
 $("#dropin").addEventListener("change", e => { installFile(e.target.files[0]); e.target.value = ""; });
 let dragDepth = 0;
@@ -1263,6 +1504,7 @@ document.querySelectorAll("nav button").forEach(b => b.addEventListener("click",
   document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x === b));
   for (const t of ["discover","installed","updates","setup","desktops","dropfile"]) $("#t-"+t).hidden = b.dataset.tab !== t;
   if (b.dataset.tab === "setup") renderBuilder();
+  if (b.dataset.tab === "dropfile") loadZone(false);
   if (b.dataset.tab === "desktops" && !deLoaded) loadDesktops();
 }));
 
