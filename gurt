@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.26.0"
+GURT_VERSION="0.26.1"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -199,6 +199,14 @@ apt_install() { # apt with the usual fresh-Debian gotchas handled
   asroot apt-get "${o[@]}" -f install -y >/dev/null 2>&1 || true   # finish any half-done install
   fancy "$lbl" asroot "${ag[@]}" "${o[@]}" install -y "$@"
 }
+# zypper finds libkf6foo6 but only installs libKF6Foo6: swap in the real spelling
+zypper_names() {
+  local p real
+  for p; do
+    real=$(zypper -q info "$p" 2>/dev/null | awk -F': *' '/^Name/ { print $2; exit }')
+    if [[ -n $real && ${real,,} == "${p,,}" ]]; then echo "$real"; else echo "$p"; fi
+  done
+}
 pm_install() {
   (( $# )) || return 0
   msg "installing distro deps via $PM: $*"
@@ -209,7 +217,7 @@ pm_install() {
     # Arch doesn't support partial upgrades: installing something against a newer package list than the rest
     # of the system can break it (Qt/KDE/desktop). so deps come with a full upgrade, and pacman shows you it.
     pacman) if $NOCONFIRM; then fancy "${1}" asroot pacman -Syu --needed --noconfirm "$@"; else asroot pacman -Syu --needed "$@"; fi ;;
-    zypper) fancy "${1}" asroot zypper --non-interactive install "$@" ;;
+    zypper) local zn; mapfile -t zn < <(zypper_names "$@"); fancy "${zn[0]}" asroot zypper --non-interactive install "${zn[@]}" ;;
     apk)    asroot apk add "$@" ;;
     xbps)   asroot xbps-install -Sy "$@" ;;
     emerge) asroot emerge --noreplace "$@" ;;
@@ -991,7 +999,7 @@ gpg_keyring() { # key out
   if grep -q 'BEGIN PGP' "$1" 2>/dev/null; then gpg --dearmor < "$1" > "$2"; else cp "$1" "$2"; fi
 }
 debarch() { case $CARCH in x86_64) echo amd64 ;; aarch64) echo arm64 ;; armv7l) echo armhf ;; i?86) echo i386 ;; ppc64le) echo ppc64el ;; *) echo "$CARCH" ;; esac; }
-idx_file() { echo "$IDX_DIR/$1.tsv"; }
+idx_file() { echo "$IDX_DIR/$1.v2.tsv"; }   # v2: deps keep their "a|b" alternatives
 idx_fresh() { local f; f=$(idx_file "$1"); [[ -s $f ]] && (( $(date +%s) - $(stat -c %Y "$f") < IDX_MAX_AGE )); }
 ensure_idx() { idx_fresh "$1" || sync_source "$1"; }
 idx_lookup() { [[ -s $(idx_file "$1") ]] && awk -F'\t' -v n="$2" '$1==n {print; exit}' "$(idx_file "$1")"; }
@@ -1053,7 +1061,9 @@ APT_ROWS_AWK='BEGIN { RS=""; FS="\n"; OFS="\t" }
         else if (l ~ /^Description: /) ds=substr(l,14) }
       if (pd != "") d = (d == "" ? pd : pd ", " d)
       out=""; m=split(d, arr, /, */)
-      for (j=1; j<=m; j++) { x=arr[j]; sub(/ *\|.*/, "", x); sub(/ *\(.*/, "", x); sub(/:any$/, "", x); gsub(/ /, "", x)
+      for (j=1; j<=m; j++) { na=split(arr[j], alt, /\|/); x=""
+        for (k=1; k<=na; k++) { y=alt[k]; sub(/ *\(.*/, "", y); sub(/:any$/, "", y); gsub(/ /, "", y)
+          if (y != "") x = x (x == "" ? "" : "|") y }
         if (x != "") out = out (out == "" ? "" : ",") x }
       prov=""; m=split(pv, arr, /, */)
       for (j=1; j<=m; j++) { x=arr[j]; sub(/ *\(.*/, "", x); gsub(/ /, "", x); if (x != "") prov = prov (prov == "" ? "" : ",") x }
@@ -1261,6 +1271,20 @@ rev_map() {
 # resolve ONE dependency of a foreign package
 foreign_dep() { # src dep
   local src=$1 dep=$2 g nat
+  if [[ $dep == *"|"* ]]; then   # "a|b|c": any one of them does the job
+    local alts a; IFS='|' read -ra alts <<<"$dep"
+    for a in "${alts[@]}"; do a=${a%%[<>=]*}; { host_has "$a" || is_installed "$(pkey "$src" "$a")"; } && return 0; done
+    $NODEPS && { warn "--nodeps: not getting any of ${dep//|/ / }"; return 0; }
+    for a in "${alts[@]}"; do   # one your distro has (by its deps.map name first, then the same name)
+      a=${a%%[<>=]*}; g=$(rev_map "$(src_pm "$src")" "$a")
+      if [[ -n $g ]] && nat=$(map_dep "$g") && [[ -n $nat ]] && pm_available "${nat%% *}"; then
+        # shellcheck disable=SC2206
+        NATIVE_Q+=($nat); return 0
+      fi
+    done
+    for a in "${alts[@]}"; do a=${a%%[<>=]*}; pm_available "$a" && { NATIVE_Q+=("$a"); return 0; }; done
+    dep=${alts[0]}
+  fi
   dep=${dep%%[<>=]*}
   [[ -z $dep ]] && return 0
   if [[ $dep =~ $OSPART_RE || $dep =~ $PMLIB_RE || $dep =~ $SYSTOOL_RE ]] && ! host_has "$dep"; then
@@ -1389,7 +1413,7 @@ repack_file() { # src name ver file deps desc provides
   esac
   {
     printf 'pkgname = %s\npkgver = %s\npkgdesc = %s\narch = %s\n' "$name" "$ver" "$desc" "$CARCH"
-    local d; IFS=, read -ra dl <<<"$deps"; for d in "${dl[@]}"; do [[ -n $d ]] && printf 'depends = %s\n' "$d"; done
+    local d; IFS=, read -ra dl <<<"${deps//|/,}"; for d in "${dl[@]}"; do [[ -n $d ]] && printf 'depends = %s\n' "$d"; done
     IFS=, read -ra dl <<<"$prov"; for d in "${dl[@]}"; do [[ -n $d ]] && printf 'provides = %s\n' "$d"; done
     printf 'builddate = %s\nprefix = /usr\ngurtsource = %s\nfrom = %s\n' "$(date +%s)" "$src" "${file##*/}"
   } > "$work/.PKGINFO"

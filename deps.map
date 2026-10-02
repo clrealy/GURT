@@ -27,6 +27,8 @@ linux-headers  apt=linux-libc-dev  dnf=kernel-headers  pacman=linux-api-headers 
 zstd        emerge=app-arch/zstd
 binutils    emerge=sys-devel/binutils
 gnupg       apt=gpgv,gnupg  dnf=gnupg2  pacman=gnupg  zypper=gpg2  apk=gnupg,gpgv  xbps=gnupg  emerge=app-crypt/gnupg
+# gio: apps use it to move files to the trash
+glib-bin    apt=libglib2.0-bin  dnf=glib2  pacman=glib2  zypper=glib2-tools  apk=glib  xbps=glib  eopkg=glib2  emerge=dev-libs/glib
 bsdtar      apt=libarchive-tools  dnf=bsdtar  pacman=libarchive  zypper=bsdtar  apk=libarchive-tools  xbps=bsdtar  emerge=app-arch/libarchive
 rpm2cpio    apt=rpm2cpio,cpio  dnf=rpm,cpio  pacman=rpm-tools,cpio  zypper=rpm,cpio  apk=rpm2cpio,cpio  xbps=rpm2cpio,cpio
 7zip        apt=7zip  dnf=7zip  pacman=7zip  zypper=7zip  apk=7zip  xbps=7zip  eopkg=p7zip  emerge=app-arch/7zip
