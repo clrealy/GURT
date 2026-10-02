@@ -730,6 +730,7 @@ const MUSIC = (() => {
     s.connect(hp).connect(g).connect(master); s.start(t); s.stop(t + 0.06);
   };
   const schedule = () => {
+    if (nextT < ctx.currentTime - 0.3) nextT = ctx.currentTime + 0.05;   // timers got throttled: pick the beat back up instead of blasting every missed note
     while (nextT < ctx.currentTime + 0.2) {
       const bar = Math.floor(step / 8) % 8, e = step % 8, t = nextT;
       if (COMP.includes(e)) CH[bar].forEach(m => voice(t, mtof(m), 0.55, 0.018, "sine", 2));       // soft e-piano chords
@@ -757,7 +758,10 @@ const MUSIC = (() => {
   };
   const stop = () => { clearInterval(timer); timer = null; };
   // browsers only allow sound after you touch the page, so the first click starts it
-  ["pointerdown", "keydown"].forEach(ev => addEventListener(ev, () => { if (on && !timer) start(); else if (ctx && ctx.state === "suspended") ctx.resume(); }, true));
+  ["pointerdown", "mousedown", "click", "touchend", "keydown"].forEach(ev => addEventListener(ev, () => { if (on && !timer) start(); else if (on && ctx && ctx.state !== "running") ctx.resume(); }, true));
+  // keep it looping: if the audio got paused behind our back (window hidden, system interrupted it), wake it back up
+  setInterval(() => { if (on && timer && ctx && ctx.state !== "running") ctx.resume().catch(() => {}); }, 1000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && on && ctx) ctx.resume().catch(() => {}); });
   if (on) start();
   return { get on() { return on; }, set(v) { on = v; v ? start() : stop(); } };
 })();
