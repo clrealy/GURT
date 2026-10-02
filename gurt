@@ -1024,7 +1024,7 @@ idx_provider() {
 need_tool() { # cmd what-needs-it
   command -v "$1" >/dev/null && return 0
   local dep
-  case $1 in ar) dep=binutils ;; gpg|gpgv) dep=gnupg ;; bsdtar) dep=bsdtar ;; rpm2cpio|cpio) dep=rpm2cpio ;; rpmbuild) dep=rpmbuild ;; *) dep=$1 ;; esac
+  case $1 in ar) dep=binutils ;; gpg|gpgv) dep=gnupg ;; bsdtar) dep=bsdtar ;; rpm2cpio|cpio) dep=rpm2cpio ;; *) dep=$1 ;; esac
   $NODEPS && die "$2 needs '$1' (and --nodeps is on) — install $dep from your distro first"
   msg2 "$2 needs '$1' — getting $dep from your distro ($PM)"
   # shellcheck disable=SC2046
@@ -1867,6 +1867,67 @@ elif fmt == "eopkg":  # Solus: a zip with metadata.xml, files.xml and install.ta
         e(r), os.lstat(f).st_size, os.lstat(f).st_mode & 0o7777, "" if os.path.islink(f) else "<Hash>%s</Hash>" % hashlib.sha1(open(f, "rb").read()).hexdigest()) for r, f in files) + "</Files>"
     z = zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED)
     z.writestr("metadata.xml", meta); z.writestr("files.xml", fx); z.writestr("install.tar.xz", lzma.compress(tar_bytes(tree_entries(""))), zipfile.ZIP_STORED); z.close()
+elif fmt == "rpm":   # RPM v4: lead + signature header + main header + gzip'd cpio, written by hand (no rpmbuild needed)
+    import struct
+    up, rel_ = m["ver"].rsplit("-", 1); epoch = m.get("epoch") or ""
+    BIN, STR, ARR, I18N, I16, I32 = 7, 6, 8, 9, 3, 4
+    def header(entries, region):
+        entries = sorted(entries, key=lambda e: e[0])
+        idx, store = [], b""
+        for tag, typ, val in entries:
+            if typ == I16: align, data, cnt = 2, struct.pack(">%dH" % len(val), *val), len(val)
+            elif typ == I32: align, data, cnt = 4, struct.pack(">%dI" % len(val), *[v & 0xffffffff for v in val]), len(val)
+            elif typ == BIN: align, data, cnt = 1, val, len(val)
+            elif typ in (STR, I18N): align, data, cnt = 1, val.encode() + b"\0", 1
+            else: align, data, cnt = 1, b"".join(x.encode() + b"\0" for x in val), len(val)
+            store += b"\0" * (-len(store) % align)
+            idx.append(struct.pack(">iiii", tag, typ, len(store), cnt)); store += data
+        n = len(idx) + 1
+        trailer = struct.pack(">iiii", region, BIN, -n * 16, 16)
+        idx.insert(0, struct.pack(">iiii", region, BIN, len(store), 16)); store += trailer
+        return b"\x8e\xad\xe8\x01\0\0\0\0" + struct.pack(">ii", n, len(store)) + b"".join(idx) + store
+    ents = [(rel, full) for rel, full in walk() if not os.path.isdir(full)]   # dirs left out: rpm makes them, and owning /usr would clash with "filesystem"
+    cpio, ino = b"", 0
+    names, dirs, sizes, modes, mtimes, digests, links = [], [], [], [], [], [], []
+    def cp(name, mode, mtime, data, ino):
+        h = b"070701" + b"".join(b"%08X" % x for x in (ino, mode, 0, 0, 1, mtime, len(data), 0, 0, 0, 0, len(name) + 1, 0))
+        out = h + name.encode() + b"\0"; out += b"\0" * (-len(out) % 4); out += data; out += b"\0" * (-len(out) % 4)
+        return out
+    for rel, full in ents:
+        ino += 1; st = os.lstat(full); path = "/" + rel
+        if os.path.islink(full): data = os.readlink(full).encode(); links.append(os.readlink(full)); digests.append("")
+        else: data = open(full, "rb").read(); links.append(""); digests.append(hashlib.sha256(data).hexdigest())
+        cpio += cp("." + path, st.st_mode, int(st.st_mtime), data, ino)
+        d, b = path.rsplit("/", 1); d += "/"
+        if d not in dirs: dirs.append(d)
+        names.append((dirs.index(d), b)); sizes.append(len(data)); modes.append(st.st_mode & 0xffff); mtimes.append(int(st.st_mtime))
+    cpio += cp("TRAILER!!!", 0, 0, b"", 0)
+    payload = gzip.compress(cpio, 9, mtime=0)
+    n = len(ents); full_ver = up + "-" + rel_
+    reqn = ["rpmlib(CompressedFileNames)", "rpmlib(FileDigests)", "rpmlib(PayloadFilesHavePrefix)"]
+    reqf = [0x100000a] * 3; reqv = ["3.0.4-1", "4.6.0-1", "4.0-1"]
+    for d in m["deps"]: reqn.append(d.split("|")[0]); reqf.append(0); reqv.append("")
+    h = [(100, ARR, ["C"]), (1000, STR, m["name"]), (1001, STR, up), (1002, STR, rel_), (1004, I18N, m["desc"]),
+         (1005, I18N, m["desc"] + " (converted by gurt from %s)" % m["from"]), (1006, I32, [int(time.time())]), (1007, STR, "gurt"),
+         (1009, I32, [size]), (1014, STR, "unknown"), (1016, I18N, "Unspecified"), (1021, STR, "linux"), (1022, STR, m["arch"]),
+         (1044, STR, "%s-%s.src.rpm" % (m["name"], full_ver)), (1064, STR, "4.18.0"),
+         (1047, ARR, [m["name"]]), (1112, I32, [8]), (1113, ARR, [(epoch + ":" if epoch else "") + full_ver]),
+         (1049, ARR, reqn), (1048, I32, reqf), (1050, ARR, reqv),
+         (1124, STR, "cpio"), (1125, STR, "gzip"), (1126, STR, "9"), (5011, I32, [8]),
+         (5092, ARR, [hashlib.sha256(payload).hexdigest()]), (5093, I32, [8])]
+    if epoch: h.append((1003, I32, [int(epoch)]))
+    if n:
+        h += [(1028, I32, sizes), (1030, I16, modes), (1033, I16, [0] * n), (1034, I32, mtimes), (1035, ARR, digests), (1036, ARR, links),
+              (1037, I32, [0] * n), (1039, ARR, ["root"] * n), (1040, ARR, ["root"] * n), (1045, I32, [-1] * n), (1095, I32, [1] * n),
+              (1096, I32, list(range(1, n + 1))), (1097, ARR, [""] * n),
+              (1116, I32, [x[0] for x in names]), (1117, ARR, [x[1] for x in names]), (1118, ARR, dirs)]
+    main = header(h, 63)
+    sig = header([(269, STR, hashlib.sha1(main).hexdigest()), (273, STR, hashlib.sha256(main).hexdigest()),
+                  (1000, I32, [len(main) + len(payload)]), (1004, BIN, hashlib.md5(main + payload).digest()), (1007, I32, [len(cpio)])], 62)
+    sig += b"\0" * (-len(sig) % 8)
+    archnum = {"x86_64": 1, "i686": 1, "aarch64": 19, "noarch": 255}.get(m["arch"], 1)
+    lead = b"\xed\xab\xee\xdb\x03\x00" + struct.pack(">hh", 0, archnum) + ("%s-%s" % (m["name"], full_ver)).encode()[:65].ljust(66, b"\0") + struct.pack(">hh", 1, 5) + b"\0" * 16
+    open(out, "wb").write(lead + sig + main + payload)
 elif fmt == "zip":
     z = zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED)
     for rel, full in walk():
@@ -1877,12 +1938,12 @@ PY
 conv_pack() { # fmt tree out — CV_* already set for the target
   local fmt=$1 tree=$2 out=$3 work=${4:-} d
   case $fmt in
-    deb|apk|xbps|eopkg|zip)
+    deb|rpm|apk|xbps|eopkg|zip)
       need_tool python3 "converting to .$fmt"
       local deps_json; deps_json=$(printf '%s\n' "${CV_TDEPS[@]}" | python3 -c 'import sys, json; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')
-      CV_META=$(CV_NAME=$CV_NAME CV_TVER=$CV_TVER CV_DESC=$CV_DESC CV_TARCH=$CV_TARCH CV_FROM=$CV_FROM python3 -c '
+      CV_META=$(CV_NAME=$CV_NAME CV_TVER=$CV_TVER CV_DESC=$CV_DESC CV_TARCH=$CV_TARCH CV_FROM=$CV_FROM CVE=$CVE python3 -c '
 import os, json, sys
-print(json.dumps({"name": os.environ["CV_NAME"], "ver": os.environ["CV_TVER"], "desc": os.environ["CV_DESC"], "arch": os.environ["CV_TARCH"], "from": os.environ["CV_FROM"], "deps": json.loads(sys.argv[1])}))' "$deps_json") \
+print(json.dumps({"name": os.environ["CV_NAME"], "ver": os.environ["CV_TVER"], "epoch": os.environ["CVE"], "desc": os.environ["CV_DESC"], "arch": os.environ["CV_TARCH"], "from": os.environ["CV_FROM"], "deps": json.loads(sys.argv[1])}))' "$deps_json") \
         python3 -c "$CONV_PY" "$fmt" "$tree" "$out" ;;
     tar.gz) tar --owner=0 --group=0 --numeric-owner -czf "$out" -C "$tree" . ;;
     gurt)
@@ -1905,24 +1966,6 @@ print(json.dumps({"name": os.environ["CV_NAME"], "ver": os.environ["CV_TVER"], "
         ( cd "$tree" && tar --owner=0 --group=0 --numeric-owner -cf - .PKGINFO "${top[@]}" ) | zstd -q -19 -T0 -o "$out"
       fi
       rm -f "$tree/.PKGINFO" "$tree/.MTREE" ;;
-    rpm)
-      need_tool rpmbuild "converting to .rpm"
-      local top="$work/rpm" spec f
-      mkdir -p "$top"/{SPECS,RPMS,BUILD,BUILDROOT}
-      spec="$top/SPECS/$CV_NAME.spec"
-      { printf '%%define __os_install_post %%{nil}\n%%define debug_package %%{nil}\n%%define _build_id_links none\n%%define __strip /bin/true\n'
-        printf 'Name: %s\nVersion: %s\nRelease: %s\n' "$CV_NAME" "$CVU" "$CVR"
-        [[ -n $CVE ]] && printf 'Epoch: %s\n' "$CVE"
-        printf 'Summary: %s\nLicense: unknown\nBuildArch: %s\nAutoReqProv: no\n' "$CV_DESC" "$CV_TARCH"
-        for d in "${CV_TDEPS[@]}"; do if [[ $d == *"|"* ]]; then printf 'Requires: (%s)\n' "${d//|/ or }"; else printf 'Requires: %s\n' "$d"; fi; done
-        printf '\n%%description\n%s (converted by gurt from %s)\n\n%%install\nmkdir -p %%{buildroot}\ncp -a %q/. %%{buildroot}/\n\n%%files\n%%defattr(-,root,root,-)\n' "$CV_DESC" "$CV_FROM" "$tree"
-        ( cd "$tree" && find . -mindepth 1 \( ! -type d -o -empty \) | sed 's|^\.||' ) | while IFS= read -r f; do
-          f=${f//%/%%}; [[ -d $tree$f && ! -L $tree$f ]] && printf '%%dir "%s"\n' "$f" || printf '"%s"\n' "$f"; done
-      } > "$spec"
-      rpmbuild -bb --quiet --define "_topdir $top" --define "_rpmdir $top/RPMS" --target "$CV_TARCH" "$spec" >"$work/rpmbuild.log" 2>&1 ||
-        { tail -n 20 "$work/rpmbuild.log" >&2; die "rpmbuild couldn't build it"; }
-      f=$(find "$top/RPMS" -name '*.rpm' | head -n1); [[ -n $f ]] || die "rpmbuild didn't make an .rpm?"
-      mv "$f" "$out" ;;
     appimage)
       conv_appimage "$tree" "$out" "$work" ;;
   esac

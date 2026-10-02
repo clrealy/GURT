@@ -333,7 +333,7 @@ gurt convert app.rpm deb -o ~/Downloads  # pick where it goes
 | --- | --- |
 | `.deb` `.rpm` `.pkg.tar.*` `.apk` (Alpine) `.xbps` `.eopkg` `.gurt` AppImage `.tar.gz`/`.zip` (laid out like `usr/…`), `.exe`/`.msi` (runs through Wine) | `deb` `rpm` `pacman` `apk` `xbps` `eopkg` `appimage` `gurt` `tar.gz` `zip` |
 
-The files go across as-is. Dependencies get translated through `deps.map`, and any gurt doesn't know the new names for get listed instead of guessed. Making `.rpm` uses `rpmbuild` and making AppImages uses appimagetool; gurt grabs both for you. The **📥 Install a file** tab in the app has a converter too (it saves to your Downloads).
+The files go across as-is. Dependencies get translated through `deps.map`, and any gurt doesn't know the new names for get listed instead of guessed. gurt writes `.deb`, `.rpm`, `.apk`, `.xbps` and `.eopkg` itself (no rpmbuild or dpkg needed). Making AppImages uses appimagetool, which gurt downloads for you. The **📥 Install a file** tab in the app has a converter too (it saves to your Downloads).
 
 What it won't do: make a `.dmg`, `.exe` or `.msi`. Those are for macOS and Windows, and a Linux program doesn't run there no matter what box it's in 💀
 
