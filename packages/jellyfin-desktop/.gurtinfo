@@ -1,13 +1,15 @@
 pkgname = jellyfin-desktop
 pkgver = flathub
 pkgrel = 1
-pkgdesc = Jellyfin desktop client
+pkgdesc = Watch your stuff from your Jellyfin server
 url = https://flathub.org/apps/org.jellyfin.JellyfinDesktop
 license = GPL-2.0
 maintainer = clrealy
 category = media
 arch = x86_64
 arch = aarch64
+alias = jellyfin-media-player
+alias = jmp
 via_repo = flathub
 via_type = flatpak
 via_pkg = org.jellyfin.JellyfinDesktop

@@ -1,0 +1,19 @@
+# Self-hosted push notifications server
+pkgname=gotify
+pkgver=3.1.1
+pkgrel=1
+pkgdesc="Self-hosted server for sending yourself push notifications"
+url="https://github.com/gotify/server"
+license="MIT"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+# official prebuilt release binary
+source_x86_64=("https://github.com/gotify/server/releases/download/v${pkgver}/gotify-linux-amd64.zip")
+source_aarch64=("https://github.com/gotify/server/releases/download/v${pkgver}/gotify-linux-arm64.zip")
+sha256sums_x86_64=(d452faad071981d191d5c95f70d0f9520dc2ef2336b2b03055e12cfabfbae2d2)
+sha256sums_aarch64=(742ca7e0dd63b0902b7fb01552bd37f4df4d3bb66ced583144faff90a3e76901)
+
+package() {
+  install -Dm755 "$(find . -type f -name 'gotify-linux-*' | head -n1)" "$pkgdir$prefix/bin/gotify"
+}

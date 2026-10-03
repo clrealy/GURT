@@ -4,7 +4,7 @@ pkgname=sublime-text
 pkgver=flathub
 pkgrel=1
 pkgdesc="Fast, minimal code editor"
-url="https://flathub.org/apps/com.sublimetext.three"
+url="https://flathub.org/apps/com.sublimehq.SublimeText"
 license="Proprietary"
 maintainer="clrealy"
 category="dev"
@@ -13,4 +13,4 @@ aliases=(sublime)
 
 via_repo=flathub
 via_type=flatpak
-via_pkg=com.sublimetext.three
+via_pkg=com.sublimehq.SublimeText

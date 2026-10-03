@@ -1,0 +1,17 @@
+# Tiny, super fast terminal file manager
+pkgname=nnn
+pkgver=5.3
+pkgrel=1
+pkgdesc="Tiny, super fast terminal file manager"
+url="https://github.com/jarun/nnn"
+license="BSD-2-Clause"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64)
+# official static release binary
+source=("https://github.com/jarun/nnn/releases/download/v${pkgver}/nnn-static-${pkgver}.x86_64.tar.gz")
+sha256sums=(98b9c1b653d2090a3b509653a56ad34196044bb7854be81c10befe28167928cf)
+
+package() {
+  install -Dm755 nnn-static "$pkgdir$prefix/bin/nnn"
+}

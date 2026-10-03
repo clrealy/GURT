@@ -1,0 +1,19 @@
+# Run Kubernetes on your own machine
+pkgname=minikube
+pkgver=1.39.0
+pkgrel=1
+pkgdesc="Run Kubernetes on your own machine"
+url="https://github.com/kubernetes/minikube"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+# official prebuilt release binary
+source_x86_64=("https://github.com/kubernetes/minikube/releases/download/v${pkgver}/minikube-linux-amd64.tar.gz")
+source_aarch64=("https://github.com/kubernetes/minikube/releases/download/v${pkgver}/minikube-linux-arm64.tar.gz")
+sha256sums_x86_64=(e4216586c07c05441910cce39600f0424132c3ae69400ce1a7daaae17dc2e855)
+sha256sums_aarch64=(2ce53fe7bb99b595739b076d19ad45da5e199c4b06d6fa508b171a566cc49ed7)
+
+package() {
+  install -Dm755 "$(find . -type f -name 'minikube-linux-*' | head -n1)" "$pkgdir$prefix/bin/minikube"
+}
