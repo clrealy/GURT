@@ -2,6 +2,8 @@
 
 # gurt 🦆
 
+**GURT 1.0 is out 🎉** ([what's new](CHANGELOG.md))
+
 **G**URT **U**niversal **R**epository **T**hingy. With it, you can install **any distro's packages on any distro**, and use **Main GURT**, a community repo of its own.
 
 ```sh
@@ -160,11 +162,23 @@ Your **GitHub account is your GURT account**. There are no new passwords, and GU
 3. Install the giscus app on this repo: <https://github.com/apps/giscus>
 4. On <https://giscus.app>, enter `clrealy/GURT` and pick the **Packages** category. Copy the `data-category-id` into `GISCUS.categoryId` in `site/index.html`
 
-## Install
+## Install 🧙
 
-```sh
-curl -fsSL https://raw.githubusercontent.com/clrealy/GURT/main/install.sh | sh
-```
+**Download the GURT Setup Wizard** from the [latest release](https://github.com/clrealy/GURT/releases/latest) and open it:
+
+| your system | file |
+|---|---|
+| Windows | `GURTSetupWizard.exe` |
+| Debian, Ubuntu, Mint, Pop!_OS… | `GURTSetupWizard.deb` |
+| Fedora, openSUSE, RHEL… | `GURTSetupWizard.rpm` |
+| Arch, CachyOS, Manjaro… | `GURTSetupWizard.pkg.tar.zst` |
+| Alpine · Void · Solus | `GURTSetupWizard.apk` · `.xbps` · `.eopkg` |
+
+On Linux, your software center installs it like any other app. Then open **GURT** from your app menu (or log out and back in), and the setup wizard walks you through the rest: a system check, where apps come from, your look, a few starter apps (or 📥 import your list from your old PC), and update alerts. GURT made these files itself with `gurt convert`.
+
+`gurt setup` runs the wizard again anytime, in the terminal (or 🎨 → 🧙 setup wizard in the app). Picked apps on the website's 🧰 Build your setup? Hit 📄 save as a list, then 📥 import it in the wizard.
+
+Making the installers yourself: `tools/make-setup-wizard.sh` (Linux packages) and `tools/win/build-exe.sh` (the `.exe`, needs `nsis`). Pushing a `v*` tag makes a GitHub release with all of them attached (`.github/workflows/release.yml`). Add a `GURT_SIGNING_KEY` secret and they're all signed with the same key every release.
 
 You need `bash`, `git`, GNU `tar`, and `curl` or `wget`. The foreign sources also need:
 
@@ -176,16 +190,12 @@ You need `bash`, `git`, GNU `tar`, and `curl` or `wget`. The foreign sources als
 
 ### On Windows 🪟
 
-gurt runs on Windows through **WSL** (the Linux that's built into Windows). Paste this in PowerShell:
+gurt runs on Windows through **WSL** (the Linux that's built into Windows). Run `GURTSetupWizard.exe` from the [latest release](https://github.com/clrealy/GURT/releases/latest).
 
-```powershell
-irm https://raw.githubusercontent.com/clrealy/GURT/main/install.ps1 | iex
-```
-
-- **No WSL yet?** It installs WSL + Ubuntu for you (Windows asks for admin and might want a reboot). Open Ubuntu once to make your Linux user, then run the line again.
+- **No WSL yet?** It installs WSL + Ubuntu for you (Windows asks for admin and might want a reboot). Open Ubuntu once to make your Linux user, then run the wizard again.
 - It installs gurt inside WSL and adds a `gurt` command to Windows, so `gurt install firefox` works straight from PowerShell or cmd.
 - **GURT** shows up in your Start menu, and Linux apps you install show up there too (WSLg, on Windows 11 or Windows 10 21H2+).
-- Want a different distro than your default? `$env:GURT_WSL_DISTRO = "Debian"` before running it.
+- Want a different distro than your default? set `GURT_WSL_DISTRO=Debian` in your environment before running the wizard.
 - Linux desktops (`gurt de`) don't make sense on Windows, so they're turned off there. Snaps need systemd switched on in WSL; gurt tells you how.
 
 ## Update your whole system 🐧
@@ -340,6 +350,74 @@ The files go across as-is. Dependencies get translated through `deps.map`, and a
 **Double-click a `.gurt` file** and it opens in GURT, ready to install. GURT registers the file type the first time you open the app.
 
 What it won't do: make a `.dmg`, `.exe` or `.msi`. Those are for macOS and Windows, and a Linux program doesn't run there no matter what box it's in 💀
+
+### Signed 🔏
+
+Everything gurt convert makes is signed with your own key. gurt makes the key the first time you convert and keeps it in `~/.local/share/gurt/signing`. Each format gets the kind of signature its own package manager checks:
+
+| format | signature |
+|---|---|
+| `.rpm` | inside the package, the same as `rpmsign` makes (`rpm -K` checks it) |
+| `.deb` | inside, as a debsigs `_gpgorigin` member |
+| `.apk` | inside, the way `abuild-sign` does it |
+| AppImage | inside, made by appimagetool |
+| `.pkg.tar.zst` | `.sig` next to it, which `pacman -U` checks |
+| `.xbps` | `.sig2` next to it, like `xbps-rindex --sign-pkg` makes |
+| `.gurt` `.eopkg` `.tar.gz` `.zip` | `.asc` next to it (`gpg --verify`) |
+
+```sh
+gurt key               # your key's fingerprint and where it's kept
+gurt key trust         # make this computer's rpm / pacman / apk trust it (then no --nogpgcheck or --allow-untrusted)
+gurt key export        # the public keys, to give to other computers (gurt-key.asc + an .rsa.pub for Alpine/Void)
+gurt convert app.deb rpm --no-sign   # skip signing
+```
+
+The key has no passphrase, so anyone who can read your files can sign with it. Back up that folder: losing it means new conversions get signed with a new key, which computers that trusted the old one won't know. In the app, the Download Zone™ shows 🔏 on signed files, and ⬇️ retrieve brings the `.sig`/`.asc` along.
+
+## Trust + safety 🔏🚨
+
+```sh
+gurt verify app.rpm          # signed? by a key you trust? (works on .rpm .deb .apk AppImage, and .sig/.sig2/.asc files)
+gurt key import friend.asc   # trust someone else's key (or a repo's)
+gurt sus aur/some-pkg        # check a build script for red flags without building it
+gurt snapshots               # the snapshots gurt took before system upgrades
+```
+
+- **Installs check signatures by themselves.** A package with a bad signature (changed after it was signed) won't install. One signed by a key you don't trust gets a heads up. Unsigned ones install like before.
+- **Sus check:** before gurt builds anything from the AUR or a git repo, it scans the build scripts for scary stuff. 🔴 red flags: `curl | sh`, `rm -rf ~`, hidden base64 code, reverse shells, touching sudo/SSH/cron. 🟡 yellow flags: `sudo` in a build, `chmod 777`, plain-http downloads, downloads with no checksum. With red flags, gurt asks again, and with `-y` it stops unless you add `--force`. It only reads the scripts, it never runs them to check.
+- **Snapshots before system upgrades** when `/` is btrfs: snapper if it's set up, else timeshift, else a read-only btrfs snapshot in `/.gurt-snapshots` (gurt keeps the newest 3). `GURT_SNAPSHOTS=0` turns it off.
+- **Trust badges** on every app card in the app: 🟢 signed or reviewed sources (official repos, distro repos, Flathub), 🟡 checksum-pinned downloads and source builds, 🟠 anyone-can-upload (AUR, random git repos). Hover one for why.
+
+### Your own signed repo 📡
+
+```sh
+gurt convert Cool.AppImage deb -o ~/myrepo
+gurt repo publish ~/myrepo                 # writes signed apt + rpm indexes and gurt-key.asc
+gurt repo add myrepo apt file://$HOME/myrepo stable main --key ~/myrepo/gurt-key.asc
+```
+
+It handles `.deb`, `.rpm` and `.pkg.tar.zst` files: apt and rpm indexes, plus a pacman repo (`<name>.db`) where every package is signed. Put the folder on any web server (GitHub Pages works) and give people the `https://` address plus `gurt-key.asc`. It works with plain `apt`, `dnf` and `pacman` too. For pacman, add the key with `pacman-key`, then add `[<name>]`, `SigLevel = Required` and `Server = <url>` to `/etc/pacman.conf`.
+
+## Handy stuff 🧰
+
+```sh
+gurt search "like photoshop"   # apps like it: gimp krita pinta darktable…  (vibes.map)
+gurt compare gimp krita pinta  # side by side: where it comes from, version, license, size
+gurt why libfoo                # who wanted this? you, or which app needs it
+gurt hogs                      # the apps eating the most disk
+gurt profile save gaming       # your apps + gurt settings + the app's look, under a name
+gurt profile load gaming       # …on any computer (copy the file over)
+gurt notify on                 # a desktop notification when updates are waiting (every 6 hours)
+```
+
+In the app: type "like discord" in the search, hit ⚖️ on up to 4 cards to compare them, 🐷 on the Installed tab sorts by size, and 🔔 on the Updates tab turns alerts on.
+
+## Fun 🎮
+
+- **Achievements 🏆:** 18 of them, like baby steps, night owl, time traveler, why tho (turning a Windows .exe into a .deb) and legendary pull. `gurt achievements`, or 🏆 on the Installed tab. They pop up as you unlock them.
+- **Lottery streaks:** spin once a day to keep your 🔥 streak. Every spin rolls a rarity (⚪ common, 💙 rare, 💜 epic, 🌈 legendary), and legendary pulls come from a pool of extra weird apps. Legendary odds start at 1% and go up 0.5% per streak day, up to 5%. The app and `gurt lottery` share one streak.
+- **Skins + music:** 🌴 Vaporwave and 💻 Hacker skins join GURT, Windows 11, XP and 95, each with its own sound effects. The 🎵 picker next to them has 4 tracks (🛍️ shop, 🌧️ lofi, 👾 chiptune, 🌆 synthwave), or auto, which matches the skin. Every track is synthesized live, no audio files.
+- **Cursed Congurter™:** feed it a `.dmg`, or ask it to turn a `.deb` into a `.deb`, and it shakes, smokes and glitches out 💀 An `.exe` still converts, but it'll let you know it's cursed.
 
 ## Oops buttons: rollback, hold, export/import ⏪
 

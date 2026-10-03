@@ -15,6 +15,27 @@ jobs:
       - name: lint recipes
         run: ./tools/lint.sh
 
+  # the GURTSetupWizard installers build, and the .deb really installs (this runner is Ubuntu)
+  installers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq nsis zstd openssl python3 desktop-file-utils
+      - name: build every GURTSetupWizard
+        run: |
+          shellcheck -S warning tools/make-setup-wizard.sh tools/win/build-exe.sh
+          tools/make-setup-wizard.sh dist --no-sign
+          tools/win/build-exe.sh dist
+          ls -la dist
+          file dist/GURTSetupWizard.exe | grep -q 'PE32 executable'
+      - name: install GURTSetupWizard.deb like a double-click would
+        run: |
+          sudo apt-get install -y ./dist/GURTSetupWizard.deb
+          [ "$(gurt version)" = "gurt $(sed -n 's/^GURT_VERSION="\(.*\)"/\1/p' gurt)" ]
+          desktop-file-validate /usr/share/applications/gurt.desktop /etc/xdg/autostart/gurt-setup-wizard.desktop
+          mkdir -p ~/.config/gurt && echo '{"wizard": "done"}' > ~/.config/gurt/gui.json && timeout 20 gurt gui --first-run
+          sudo apt-get remove -y gurt && ! command -v gurt
+
   # gurt on Windows: the PowerShell installer has to parse + pass PSScriptAnalyzer on a real Windows box
   windows:
     if: github.event_name == 'pull_request'
@@ -65,12 +86,36 @@ jobs:
           printf '#!/bin/sh\necho converted by gurt\n' > /tmp/cv/gurt-cvtest-1.0/usr/bin/gurt-cvtest; chmod 755 /tmp/cv/gurt-cvtest-1.0/usr/bin/gurt-cvtest
           tar -czf /tmp/cv/gurt-cvtest-1.0.tar.gz -C /tmp/cv gurt-cvtest-1.0
           cd /tmp/cv
-          if command -v apt-get; then "$GITHUB_WORKSPACE/gurt" -y convert gurt-cvtest-1.0.tar.gz deb && dpkg -i ./gurt-cvtest_*.deb
-          elif command -v dnf; then "$GITHUB_WORKSPACE/gurt" -y convert gurt-cvtest-1.0.tar.gz rpm && dnf install -y ./gurt-cvtest-*.rpm
-          elif command -v pacman; then "$GITHUB_WORKSPACE/gurt" -y convert gurt-cvtest-1.0.tar.gz pacman && pacman -U --noconfirm ./gurt-cvtest-*.pkg.tar.zst
-          elif command -v apk; then "$GITHUB_WORKSPACE/gurt" -y convert gurt-cvtest-1.0.tar.gz apk && apk add --allow-untrusted ./gurt-cvtest-*.apk
-          elif command -v zypper; then "$GITHUB_WORKSPACE/gurt" -y convert gurt-cvtest-1.0.tar.gz rpm && zypper --non-interactive install --allow-unsigned-rpm ./gurt-cvtest-*.rpm; fi
+          # converted packages come out signed: trust the key, then install with each distro's signature checks ON
+          g="$GITHUB_WORKSPACE/gurt"
+          if command -v apt-get; then "$g" -y convert gurt-cvtest-1.0.tar.gz deb && grep -qa _gpgorigin ./gurt-cvtest_*.deb && dpkg -i ./gurt-cvtest_*.deb
+          elif command -v dnf; then "$g" -y convert gurt-cvtest-1.0.tar.gz rpm && "$g" -y key trust && rpm -Kv ./gurt-cvtest-*.rpm | tee /tmp/k.txt &&
+            grep -q 'Header V4 RSA/SHA256 Signature, key ID .*: OK' /tmp/k.txt && dnf install -y ./gurt-cvtest-*.rpm
+          elif command -v pacman; then "$g" -y convert gurt-cvtest-1.0.tar.gz pacman && [ -f ./gurt-cvtest-*.pkg.tar.zst.sig ] && "$g" -y key trust &&
+            pacman -U --noconfirm ./gurt-cvtest-*.pkg.tar.zst
+          elif command -v apk; then "$g" -y convert gurt-cvtest-1.0.tar.gz apk && "$g" -y key trust && apk verify ./gurt-cvtest-*.apk && apk add ./gurt-cvtest-*.apk
+          elif command -v zypper; then "$g" -y convert gurt-cvtest-1.0.tar.gz rpm && "$g" -y key trust && rpm -K ./gurt-cvtest-*.rpm &&
+            zypper --non-interactive install ./gurt-cvtest-*.rpm; fi
           [ "$(gurt-cvtest)" = "converted by gurt" ]
+          # Arch: a signed pacman repo from gurt repo publish, installed by real pacman with signatures required
+          if command -v pacman >/dev/null; then
+            mkdir -p /tmp/cv/prepo && cp ./gurt-cvtest-*.pkg.tar.zst /tmp/cv/prepo/
+            "$g" repo publish /tmp/cv/prepo cvpac
+            printf '\n[cvpac]\nSigLevel = Required\nServer = file:///tmp/cv/prepo\n' >> /etc/pacman.conf
+            pacman -Sy --noconfirm
+            pacman -S --noconfirm cvpac/gurt-cvtest
+            pacman -Qi gurt-cvtest | tee /tmp/qi.txt
+            grep -q 'Validated By.*Signature' /tmp/qi.txt
+          fi
+          # every other format gets a signature that checks out too
+          "$g" -y key export /tmp/cv/pub && gpg --dearmor < /tmp/cv/pub/gurt-key.asc > /tmp/cv/k.gpg
+          "$g" -y convert gurt-cvtest-1.0.tar.gz zip && gpgv --keyring /tmp/cv/k.gpg ./gurt-cvtest-1.0.zip.asc ./gurt-cvtest-1.0.zip
+          "$g" verify ./gurt-cvtest-1.0.zip
+          # a signed repo from what we converted: publish it, add it, install from it
+          mkdir -p /tmp/cv/repo && cp ./gurt-cvtest*.deb ./gurt-cvtest*.rpm /tmp/cv/repo/ 2>/dev/null || "$g" -y convert gurt-cvtest-1.0.tar.gz deb -o /tmp/cv/repo
+          "$g" repo publish /tmp/cv/repo cvrepo
+          if command -v apt-get >/dev/null; then "$g" -y repo add cvrepo apt file:///tmp/cv/repo stable main --key /tmp/cv/repo/gurt-key.asc && "$g" search cvrepo/gurt-cvtest; fi
+          "$g" -y convert gurt-cvtest-1.0.tar.gz gurt && gpgv --keyring /tmp/cv/k.gpg ./gurt-cvtest-*.gurt.asc ./gurt-cvtest-*.gurt
       - name: build changed packages
         shell: bash
         run: |
@@ -132,7 +177,7 @@ jobs:
       - run: for d in packages/*/ dirt/*/; do if [ -d "$d" ]; then ./gurt srcinfo "$d" > "$d/.gurtinfo"; fi; done
       - run: python3 tools/gen-index.py
       - name: serve the installer + script from the site too
-        run: cp install.sh gurt deps.map site/
+        run: cp install.sh gurt deps.map vibes.map site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: site }

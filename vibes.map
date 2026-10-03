@@ -1,0 +1,46 @@
+# apps like X — `gurt search "like photoshop"` and the app's search use this. format: what you know | other names: apps in Main GURT
+photoshop|adobe photoshop|photo editor|image editor: gimp krita pinta darktable rawtherapee
+lightroom|raw photos: darktable rawtherapee digikam
+illustrator|vector|svg editor: inkscape
+premiere|video editor|after effects|final cut|vegas: kdenlive shotcut openshot olive blender
+audition|audio editor: audacity tenacity
+fl studio|ableton|logic pro|daw|music production: lmms ardour bitwig-studio reaper
+obs|screen recorder|streaming: obs-studio kooha
+discord|voice chat: discord vesktop webcord teamspeak
+slack|team chat: slack mattermost zulip
+whatsapp: zapzap
+ms word|microsoft word|word|microsoft office|office|excel|powerpoint: libreoffice onlyoffice wps-office
+notion|notes app|second brain: obsidian logseq joplin anytype appflowy siyuan trilium
+evernote: joplin obsidian standard-notes simplenote
+onenote: joplin xournalpp obsidian
+visual studio|ide|code editor|vs code|vscode: vscodium zed sublime-text neovim kate
+notepad++|notepad|text editor: kate gedit mousepad sublime-text notepadqq
+postman|api client|insomnia: bruno insomnia yaak atac
+putty|ssh client|terminal: wezterm tabby
+winrar|7zip|7-zip|winzip|archive: peazip file-roller ark
+itunes|music player|winamp: rhythmbox strawberry elisa amarok lollypop audacious
+spotify: spotify spotube
+vlc|media player|video player|windows media player: vlc mpv celluloid haruna smplayer
+plex|media server: jellyfin-server
+netflix|streaming app: stremio
+chrome|browser|safari|edge: firefox brave chromium vivaldi librewolf zen-browser google-chrome
+1password|lastpass|password manager|dashlane: bitwarden keepassxc 1password proton-pass
+dropbox|google drive|onedrive|cloud sync: syncthing rclone
+teamviewer|anydesk|remote desktop: rustdesk remmina anydesk
+steam|game launcher|epic games: steam heroic lutris bottles
+minecraft: prismlauncher minecraft-launcher
+blender|3d modeling|maya|3ds max|cinema 4d: blender freecad
+autocad|cad: freecad librecad
+paint|ms paint|drawing: pinta krita drawing
+snipping tool|screenshot: flameshot ksnip
+utorrent|bittorrent|torrent: qbittorrent transmission fragments deluge
+filezilla|ftp: filezilla
+virtualbox|vmware|virtual machine|vm: gnome-boxes
+task manager|system monitor: mission-center btop
+ccleaner|cleaner|disk cleaner: bleachbit
+outlook|email|mail client|thunderbird: thunderbird betterbird evolution geary
+zoom|video call|teams|microsoft teams: zoom teams-for-linux jitsi-meet
+anki|flashcards: anki
+calibre|ebook|kindle: calibre foliate
+adobe reader|acrobat|pdf reader|pdf: okular evince zathura
+handbrake|video converter: handbrake

@@ -1,0 +1,41 @@
+name: release
+# push a tag like v1.0.0 → a GitHub release with every GURTSetupWizard installer attached
+on:
+  push: { tags: ['v*'] }
+permissions: { contents: write }
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: tools
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq nsis zstd gnupg openssl python3
+      - name: the tag matches gurt's version
+        run: |
+          v=$(sed -n 's/^GURT_VERSION="\(.*\)"/\1/p' gurt)
+          [ "v$v" = "${GITHUB_REF_NAME}" ] || { echo "::error::tag ${GITHUB_REF_NAME} but gurt says $v"; exit 1; }
+      # optional: the GURT_SIGNING_KEY secret (tar czf - -C ~/.local/share/gurt signing | base64 -w0) signs
+      # every package with the same key each release. without it the packages are unsigned.
+      - name: signing key
+        env: { KEY: "${{ secrets.GURT_SIGNING_KEY }}" }
+        run: |
+          if [ -n "$KEY" ]; then
+            mkdir -p "$HOME/.local/share/gurt" && echo "$KEY" | base64 -d | tar xzf - -C "$HOME/.local/share/gurt"
+            chmod -R go-rwx "$HOME/.local/share/gurt/signing"; echo "SIGN=" >> "$GITHUB_ENV"
+          else echo "::warning::no GURT_SIGNING_KEY secret, so the packages are unsigned"; echo "SIGN=--no-sign" >> "$GITHUB_ENV"; fi
+      - name: GURTSetupWizard for every distro
+        run: tools/make-setup-wizard.sh dist $SIGN
+      - name: GURTSetupWizard.exe
+        run: tools/win/build-exe.sh dist
+      - name: the public key + checksums
+        run: |
+          if [ -z "$SIGN" ]; then ./gurt key export dist; fi
+          ( cd dist && sha256sum GURTSetupWizard.* > SHA256SUMS )
+      - name: publish the release
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          awk '/^## /{n++} n==1' CHANGELOG.md > notes.md
+          { echo; echo "### Install"; echo "- **Windows:** GURTSetupWizard.exe"
+            echo "- **Linux:** download the GURTSetupWizard file for your distro and open it (.deb Debian/Ubuntu/Mint · .rpm Fedora/openSUSE · .pkg.tar.zst Arch · .apk Alpine · .xbps Void · .eopkg Solus)"; } >> notes.md
+          gh release create "$GITHUB_REF_NAME" --title "GURT ${GITHUB_REF_NAME#v}" --notes-file notes.md dist/*
