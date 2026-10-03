@@ -398,6 +398,13 @@ class H(BaseHTTPRequestHandler):
             return self._send(200, {"distro": distro, "pm": p.get("pm", "?"), "wsl": p.get("wsl") == "yes", "mode": MODE, "audio": audio_ok(),
                                     "sudo": os.geteuid() == 0 or bool(shutil.which("sudo") or shutil.which("doas")), "utils": utils,
                                     "notify": notify_on(), "version": p.get("version", "?")})
+        if u.path == "/api/history":   # 📜 gurt history: date \t install|remove \t app \t version
+            f = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state"), "gurt", "history")
+            try:
+                with open(f, encoding="utf-8", errors="replace") as h: lines = h.read().splitlines()[-300:]
+            except OSError: lines = []
+            items = [dict(zip(("when", "what", "app", "ver"), l.split("\t"))) for l in lines if l.count("\t") == 3]
+            return self._send(200, {"items": items[::-1]})
         if u.path == "/api/achievements":
             out = subprocess.run([GURT, "achievements", "--tsv"], capture_output=True, text=True, timeout=30, env=dict(os.environ, NO_COLOR="1")).stdout
             items = [dict(zip(("id", "title", "what", "got"), l.split("\t"))) for l in out.splitlines() if l.count("\t") == 3]
@@ -1118,7 +1125,7 @@ dialog .row{justify-content:flex-end}
 @media (max-width:640px){.wiz-body{grid-template-columns:1fr;height:min(70vh,560px)}.wiz-rail{display:none}}
 .v1hero{font:900 64px/1 Verdana,"DejaVu Sans",sans-serif;letter-spacing:-.04em;display:inline-block;padding:2px 14px;margin-bottom:10px;background:var(--accent);color:var(--accent-ink);border:3px solid var(--edge,#141414);border-radius:10px;box-shadow:5px 5px 0 var(--shadow,#141414)}
 .v1list{margin:0 0 16px;padding-left:20px;display:grid;gap:6px}#v1dlg{max-width:520px}
-#achlist{display:grid;gap:8px;max-height:60vh;overflow:auto;margin:6px 0 12px}
+#achlist,#histlist{display:grid;gap:8px;max-height:60vh;overflow:auto;margin:6px 0 12px}
 .ach{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.ach.locked{opacity:.5;filter:grayscale(1)}.ach b{display:block}.ach small{color:var(--muted)}.ach .when{margin-left:auto;font-size:12px;color:var(--muted)}
 .rarity{display:inline-block;font:800 12px/1 ui-monospace,monospace;padding:4px 9px;border-radius:999px;margin:0 6px 6px;letter-spacing:.06em}
 .r-common{background:var(--tag)}.r-rare{background:#2f6fde;color:#fff}.r-epic{background:#8e3ae0;color:#fff}
@@ -1280,7 +1287,7 @@ dialog .row{justify-content:flex-end}
     <p class="cicada">Could prime Wifies solve Cicada 3301?</p>
   </section>
   <section id="t-installed" hidden>
-    <div class="search"><input id="iq" placeholder="filter installed…" autocomplete="off"><button class="btn ghost" id="lexport" title="save a list of everything you installed with gurt">📤 export my list</button><button class="btn ghost" id="limport" title="install everything from a list you exported">📥 import a list</button><button class="btn ghost" id="achbtn" title="your gurt achievements">🏆</button><button class="btn ghost" id="hogbtn" title="sort by how much disk each app takes">🐷 biggest first</button><input type="file" id="limportin" accept=".txt,text/plain" hidden></div>
+    <div class="search"><input id="iq" placeholder="filter installed…" autocomplete="off"><button class="btn ghost" id="lexport" title="save a list of everything you installed with gurt">📤 export my list</button><button class="btn ghost" id="limport" title="install everything from a list you exported">📥 import a list</button><button class="btn ghost" id="achbtn" title="your gurt achievements">🏆</button><button class="btn ghost" id="histbtn" title="what you installed + removed, and when">📜</button><button class="btn ghost" id="hogbtn" title="sort by how much disk each app takes">🐷 biggest first</button><input type="file" id="limportin" accept=".txt,text/plain" hidden></div>
     <div class="grid" id="igrid"></div>
   </section>
   <section id="t-updates" hidden>
@@ -1317,6 +1324,7 @@ dialog .row{justify-content:flex-end}
   <div class="wiz-body"><ol class="wiz-rail" id="wizrail"></ol><div class="wiz-page" id="wizpage"></div></div>
   <div class="wiz-foot"><button class="btn ghost" id="wizcancel">Cancel</button><span class="spacer"></span><button class="btn ghost" id="wizback">&lt; Back</button><button class="btn" id="wiznext">Next &gt;</button></div>
 </dialog>
+<dialog id="histdlg"><h3>📜 history</h3><div id="histlist"></div><div class="row"><span class="spacer"></span><button class="btn" id="histclose">done</button></div></dialog>
 <dialog id="achdlg"><h3>🏆 achievements</h3><div id="achlist"></div><div class="row"><span class="spacer"></span><button class="btn" id="achclose">nice</button></div></dialog>
 <div id="cmptray" hidden><span>⚖️</span><span id="cmplist"></span><span class="spacer"></span><button class="btn ghost small" id="cmpclear">clear</button><button class="btn small" id="cmpgo">compare</button></div>
 <dialog id="cmpdlg"><h3>⚖️ side by side</h3><div id="cmptable"></div><div class="row"><span class="spacer"></span><button class="btn" id="cmpclose">done</button></div></dialog>
@@ -1439,6 +1447,19 @@ let toastT = null;
 function toast(html){ const t = $("#toast"); t.innerHTML = html; t.hidden = false; t.style.animation = "none"; void t.offsetWidth; t.style.animation = ""; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 4200); }
 function achLines(lines){ lines.forEach(l => { const m = l.match(/🏆 achievement unlocked: (.+)/); if (m) { toast("🏆 " + esc(m[1])); SFX.play("achieve"); } }); }
 async function achieve(id){ const r = await api("/api/achieve", {id}).catch(() => ({})); if (r.line) achLines([r.line]); }
+$("#histbtn").addEventListener("click", async () => {
+  const r = await api("/api/history").catch(() => ({items:[]})), items = r.items || [];
+  $("#histlist").innerHTML = items.length ? items.map(i => `<div class="ach"><span>${i.what === "install" ? "➕" : "🗑️"}</span><span><b>${esc(i.app)}</b><small>${i.what === "install" ? "installed" : "removed"}${i.ver ? " · " + esc(i.ver) : ""}</small></span><span class="when">${esc(i.when)}</span></div>`).join("")
+    : `<p>nothing yet, your installs and removals show up here.</p>`;
+  $("#histdlg").showModal();
+});
+$("#histclose").addEventListener("click", () => $("#histdlg").close());
+// ⌨️ press / anywhere to jump to the search box (like GitHub + YouTube)
+document.addEventListener("keydown", e => {
+  if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey || document.querySelector("dialog[open]")) return;
+  const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+  const q = [...document.querySelectorAll("#q, #iq")].find(x => x.offsetParent); if (q) { e.preventDefault(); q.focus(); q.select(); }
+});
 $("#achbtn").addEventListener("click", async () => {
   const r = await api("/api/achievements").catch(() => ({items:[]})), items = r.items || [], n = items.filter(i => i.got).length;
   $("#achlist").innerHTML = `<div class="streak">${n}/${items.length} unlocked${n === items.length && n ? " — you beat gurt 👑" : ""}</div>` + items.map(i =>

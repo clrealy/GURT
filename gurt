@@ -646,6 +646,7 @@ install_file() { # file.gurt [reason]
   asroot cp "$tmp/pkgfile"  "$dbd/pkgfile"
   rm -rf "$tmp"
   post_install "$key"
+  log_hist install "$key"
   msg "$(pretty "$key") installed ✅"
 }
 
@@ -809,15 +810,27 @@ cmd_autoremove() {
   FORCE=$was
 }
 
+# ── 📜 gurt history: what you installed + removed, and when ──
+HIST_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/gurt/history"
+log_hist() { # install|remove key
+  { mkdir -p "${HIST_FILE%/*}" && printf '%s\t%s\t%s\t%s\n' "$(date '+%F %H:%M')" "$1" "$(pretty "$2")" "$( [[ $1 == install ]] && inst_ver "$2" 2>/dev/null)" >> "$HIST_FILE"; } 2>/dev/null || true
+}
+cmd_history() { # [n | <app>]
+  [[ -s $HIST_FILE ]] || { msg "no history yet — it starts with your next install"; return 0; }
+  local n=30 pat=""
+  if [[ ${1:-} =~ ^[0-9]+$ ]]; then n=$1; elif [[ -n ${1:-} ]]; then pat=$1; fi
+  awk -F'\t' -v p="$pat" -v g="$GRN" -v r="$RED" -v z="$R0" 'p == "" || index($3, p) {
+      printf "  %s  %s%-7s%s %s %s\n", $1, ($2 == "install" ? g : r), ($2 == "install" ? "+ add" : "- yeet"), z, $3, $4 }' "$HIST_FILE" | tail -n "$n"
+}
 remove_pkg() {
   local key name o
   key=$(resolve_key "$1") || die "$1 isn't installed"
   name=${key#*:}
   case $key in
     flatpak:*) msg "removing $(pretty "$key")"; flatpak uninstall --user -y --noninteractive "$name" || warn "flatpak couldn't remove it (already gone?)"
-               asroot rm -rf -- "$DB/$key"; msg "$(pretty "$key") removed 🗑️"; return ;;
+               asroot rm -rf -- "$DB/$key"; log_hist remove "$key"; msg "$(pretty "$key") removed 🗑️"; return ;;
     snap:*)    msg "removing $(pretty "$key")"; asroot snap remove "$name" || warn "snap couldn't remove it (already gone?)"
-               asroot rm -rf -- "$DB/$key"; msg "$(pretty "$key") removed 🗑️"; return ;;
+               asroot rm -rf -- "$DB/$key"; log_hist remove "$key"; msg "$(pretty "$key") removed 🗑️"; return ;;
     box-*:*)   box_remove "$key"; return ;;
   esac
   local dbd="$DB/$key" rdeps=()
@@ -836,6 +849,7 @@ remove_pkg() {
     [[ -n $rel ]] && asroot rmdir -- "$R/$rel" 2>/dev/null || true
   done
   asroot rm -rf -- "$dbd"
+  log_hist remove "$key"
   msg "$(pretty "$key") removed 🗑️"
 }
 
@@ -849,12 +863,27 @@ flush_native() {
   NATIVE_Q=()
 }
 
+# ── "no package X" + did you mean (secret + hidden packages never get suggested, and the secret
+#    alias gets the exact same message as any name that doesn't exist 🤫) ──
+suggest_names() { # name → up to 3 close Main GURT names
+  command -v python3 >/dev/null || return 0
+  local d n
+  for d in "$GURT_REPO_DIR/$PKG_TREE"/*/.gurtinfo; do
+    grep -qx 'secret = true\|hidden = true' "$d" && continue
+    n=${d%/.gurtinfo}; echo "${n##*/}"
+  done | python3 -c 'import sys,difflib; n=sys.argv[1].lower(); print(" ".join(difflib.get_close_matches(n,[l.strip() for l in sys.stdin],3,0.72)))' "$1" 2>/dev/null
+}
+no_such_pkg() { # name
+  local s; s=$(suggest_names "$1")
+  [[ $TREE_SRC == dirt ]] && die "no package '$1' in DIRT${s:+ — did you mean: ${s// /, }?}"
+  die "no package '$1' in main GURT${s:+ — did you mean: ${s// /, }?} (or try: gurt search $1, gurt search -a $1 for every source)"
+}
 # ── main GURT repo ──
 resolve_and_install() { # name reason
   local name=$1 reason=${2:-dep} real
   if ! is_gurt_pkg "$name" && real=$(alias_lookup "$name"); then msg2 "$name is an alias → $real"; name=$real
   elif is_gurt_pkg "$name" && grep -qx 'secret = true' "$(repo_info "$name")" && ! is_installed "$(pkey "$TREE_SRC" "$name")"; then
-    die "no package '$name' in main GURT (try: gurt search $name, or gurt search -a $name for every source)"   # 🤫 only the secret alias works
+    no_such_pkg "$name"   # 🤫 only the secret alias works
   fi
   local key; key=$(pkey "$TREE_SRC" "$name")
   [[ -n ${VISITED[$key]:-} ]] && return 0
@@ -862,8 +891,7 @@ resolve_and_install() { # name reason
   local rdir="$GURT_REPO_DIR/$PKG_TREE/$name" info
   info=$(repo_info "$name")
   if [[ ! -f $info ]]; then
-    [[ $TREE_SRC == dirt ]] && die "no package '$name' in DIRT"
-    die "no package '$name' in main GURT (try: gurt search $name, or gurt search -a $name for every source)"
+    no_such_pkg "$name"
   fi
 
   # official-repo recipe → add the vendor's repo (key fingerprint pinned by the recipe), install from it
@@ -2649,6 +2677,7 @@ flatpak_install() { # name reason
   flatpak install --user -y --noninteractive flathub "$id" || die "flatpak couldn't install $id"
   local ver; ver=$(flatpak info --user "$id" 2>/dev/null | awk -F': *' '/^ *Version:/ {print $2; exit}')
   record_meta "$key" "$id" "${ver:-latest}" "Flathub app" "${2:-explicit}" flatpak
+  log_hist install "$key"
   msg "$(pretty "$key") installed ✅  (it's in your app menu, or run: flatpak run $id)"
 }
 
@@ -2696,6 +2725,7 @@ snap_install() { # name reason
   fi
   local ver; ver=$(snap list "$name" 2>/dev/null | awk 'NR == 2 {print $2}')
   record_meta "$key" "$name" "${ver:-latest}" "Snap Store app" "${2:-explicit}" snap
+  log_hist install "$key"
   msg "$(pretty "$key") installed ✅"
 }
 
@@ -2812,6 +2842,7 @@ box_install() { # src pkg reason
   asroot mkdir -p "$DB/$key"; for f in info files dirs reason; do asroot cp "$tmp/$f" "$DB/$key/$f"; done; rm -rf "$tmp"
   (( ${#exported[@]} )) || warn "$pkg didn't have any apps or commands to export — use it with: distrobox enter $n"
   [[ ":$PATH:" == *":$HOME/.local/bin:"* ]] || warn "$HOME/.local/bin isn't in your PATH — add this to ~/.bashrc:  export PATH=\"\$HOME/.local/bin:\$PATH\""
+  log_hist install "$key"
   msg "$(pretty "$key") installed ✅ (it runs inside $n, so it can't touch your real system's files)"
 }
 box_remove() { # key
@@ -2828,6 +2859,7 @@ box_remove() { # key
     distrobox enter "$n" -- sh -c "$(box_cmd "$src" remove "$pkg")" || warn "couldn't uninstall it inside $n"
   fi
   asroot rm -rf -- "$DB/$key"
+  log_hist remove "$key"
   msg "$(pretty "$key") removed 🗑️ (the $n box itself stays — delete it with: distrobox rm $n)"
 }
 
@@ -3657,6 +3689,51 @@ cmd_import() {
 
 # ───────────────────────── tab completion helper ─────────────────────────
 # gurt __complete installed|available|commands  (used by the bash/zsh/fish completions)
+# ── 🧹 gurt cache: what gurt's downloads + builds take up, and clean them ──
+CACHE_JUNK="sources pkg aur downloads foreign outsource logs index"   # all of it comes back by itself when needed
+cmd_cache() { # [clean [--all]]
+  local d sz tot=0 k
+  case ${1:-} in
+    clean|clear)
+      local what=$CACHE_JUNK; [[ ${2:-} == --all ]] && what+=" rollback"
+      for d in $what; do [[ -d $GURT_CACHE/$d ]] && tot=$((tot + $(du -sk "$GURT_CACHE/$d" | cut -f1))) && rm -rf -- "${GURT_CACHE:?}/$d"; done
+      msg "freed $(( tot / 1024 )) MB 🧹$( [[ ${2:-} == --all ]] || echo " (old versions for gurt rollback stay — gurt cache clean --all removes those too)")" ;;
+    ""|show|list)
+      [[ -d $GURT_CACHE ]] || { msg "the cache is empty ✨"; return 0; }
+      msg "gurt's cache: $GURT_CACHE"
+      for d in "$GURT_CACHE"/*/; do
+        d=${d%/}; sz=$(du -sk "$d" | cut -f1); tot=$((tot + sz))
+        case " $CACHE_JUNK " in *" ${d##*/} "*) k="safe to clean" ;; *) case ${d##*/} in rollback) k="old versions, for gurt rollback" ;; repo) k="Main GURT recipes" ;; *) k="kept" ;; esac ;; esac
+        printf '  %8s  %-10s %s\n' "$(( sz / 1024 )) MB" "${d##*/}" "$k"
+      done
+      msg2 "$(( tot / 1024 )) MB in total · free space with: gurt cache clean" ;;
+    *) die "usage: gurt cache [clean [--all]]" ;;
+  esac
+}
+
+# ── ▶️ gurt run: start an app you installed with gurt (or install it first) ──
+cmd_run() { # app [args…]
+  local app=${1:?usage: gurt run <app> [args]} key f bin="" best=""; shift
+  if ! key=$(resolve_key "$app" 2>/dev/null); then
+    ask "$app isn't installed — install it, then run it?" || die "not running $app"
+    install_any "$app" explicit
+    key=$(resolve_key "$app") || die "couldn't install $app"
+  fi
+  case $key in
+    flatpak:*) exec flatpak run "${key#flatpak:}" "$@" ;;
+    snap:*)    exec snap run "${key#snap:}" "$@" ;;
+  esac
+  # a program it installed: the one named like the app wins, else the first one
+  while IFS= read -r f; do
+    [[ $f =~ (^|/)bin/[^/]+$ && -x $R/$f ]] || continue
+    [[ -z $bin ]] && bin="$R/$f"
+    [[ ${f##*/} == "${key##*:}" || ${f##*/} == "${app##*/}" ]] && { best="$R/$f"; break; }
+  done < "$DB/$key/files"
+  bin=${best:-$bin}
+  [[ -n $bin ]] || die "$(pretty "$key") doesn't have a program to run (see what it installed: gurt files $app)"
+  msg2 "running ${bin#"$R"} ▶️"
+  exec "$bin" "$@"
+}
 cmd_complete() {
   local d f
   case ${1:-} in
@@ -3665,7 +3742,7 @@ cmd_complete() {
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
     commands)  printf '%s\n' sync search info install update upgrade self-update uninstall remove autoremove list files owns lottery sysup \
                  build add srcinfo checksum new repo dirt gui de outsource rollback hold unhold export import completions doctor version help yo \
-                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup ;;
+                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman flatpak snap dirt ;;
   esac
   return 0
@@ -4289,7 +4366,7 @@ _gurt() {
   local cur=${COMP_WORDS[COMP_CWORD]} cmd=${COMP_WORDS[1]}
   if (( COMP_CWORD == 1 )); then COMPREPLY=($(compgen -W "$(gurt __complete commands)" -- "$cur")); return; fi
   case $cmd in
-    remove|rm|yeet|files|rollback|undo|hold|unhold|pin|unpin) COMPREPLY=($(compgen -W "$(gurt __complete installed)" -- "$cur")) ;;
+    remove|rm|yeet|files|run|rollback|undo|hold|unhold|pin|unpin) COMPREPLY=($(compgen -W "$(gurt __complete installed)" -- "$cur")) ;;
     install|i|get|info|search|s) compopt -o nospace 2>/dev/null
       COMPREPLY=($(compgen -W "$(gurt __complete available; gurt __complete sources)" -- "$cur"))
       [[ ${#COMPREPLY[@]} == 1 && ${COMPREPLY[0]} != */ ]] && COMPREPLY[0]+=" " ;;
@@ -4308,7 +4385,7 @@ EOF
 _gurt() {
   if (( CURRENT == 2 )); then compadd -- ${(f)"$(gurt __complete commands)"}; return; fi
   case $words[2] in
-    remove|rm|yeet|files|rollback|undo|hold|unhold|pin|unpin) compadd -- ${(f)"$(gurt __complete installed)"} ;;
+    remove|rm|yeet|files|run|rollback|undo|hold|unhold|pin|unpin) compadd -- ${(f)"$(gurt __complete installed)"} ;;
     install|i|get|info|search|s) compadd -- ${(f)"$(gurt __complete available)"}; compadd -S '' -- ${(f)"$(gurt __complete sources)"} ;;
     dirt) compadd on off status list ;;
     repo|repos) compadd add list remove ;;
@@ -5044,6 +5121,9 @@ ${B}using packages${R0}
   autoremove           remove deps nothing needs anymore
   list                 what you've got installed
   files pkg            files a package owns
+  run app [args]       start an app gurt installed (offers to install it first) ▶️
+  history [n|app]      what you installed + removed, and when 📜
+  cache [clean]        how much space gurt's downloads use · clean frees it (--all: old versions too) 🧹
   owns <path>          which package owns a file
   why <pkg>            who wanted this? (you, or which app needs it)
   hogs [n]             the apps eating the most disk 🐷
@@ -5187,6 +5267,9 @@ main() {
     autoremove|clean)  cmd_autoremove ;;
     list|ls)           cmd_list ;;
     files)             cmd_files "$@" ;;
+    history|log)       cmd_history "$@" ;;
+    cache)             cmd_cache "$@" ;;
+    run|open|launch)   cmd_run "$@" ;;
     owns)              cmd_owns "$@" ;;
     build)             build_pkg "${1:-.}" "${2:-$PWD}"; echo "$BUILT_PKG" ;;
     add)               (( $# )) || die "add what tho"; for p; do if is_pkgfile "$p"; then pkgfile_install "$p" explicit; else install_file "$p" explicit; fi; done; ach_installs ;;

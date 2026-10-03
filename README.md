@@ -414,9 +414,13 @@ gurt hogs                      # the apps eating the most disk
 gurt profile save gaming       # your apps + gurt settings + the app's look, under a name
 gurt profile load gaming       # …on any computer (copy the file over)
 gurt notify on                 # a desktop notification when updates are waiting (every 6 hours)
+gurt run btop                  # start an app gurt installed (not installed yet? it offers to install it first)
+gurt history                   # what you installed + removed, and when (gurt history firefox · gurt history 100)
+gurt cache                     # how much space gurt's downloads use · gurt cache clean frees it
+gurt install fierfox           # typo? gurt asks "did you mean: firefox?"
 ```
 
-In the app: type "like discord" in the search, hit ⚖️ on up to 4 cards to compare them, 🐷 on the Installed tab sorts by size, and 🔔 on the Updates tab turns alerts on.
+In the app: type "like discord" in the search, hit ⚖️ on up to 4 cards to compare them, 🐷 on the Installed tab sorts by size, 📜 shows your history, 🔔 on the Updates tab turns alerts on, and `/` jumps to the search box.
 
 ## Fun 🎮
 
