@@ -1,0 +1,15 @@
+pkgname = ventoy
+pkgver = 1.1.17
+pkgrel = 1
+pkgdesc = Make a bootable USB once, then just copy ISO files onto it and boot any of them
+url = https://www.ventoy.net
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+arch = i686
+source = https://github.com/ventoy/Ventoy/releases/download/v1.1.17/ventoy-1.1.17-linux.tar.gz
+alias = ventoy2diskgui
+alias = ventoygui
+alias = ventoy2disk
