@@ -1,0 +1,15 @@
+# Nook is an application that plays Animal Crossing hourly themes on the hour (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=nook-desktop
+pkgver=flathub
+pkgrel=1
+pkgdesc="Nook is an application that plays Animal Crossing hourly themes on the hour"
+url="https://flathub.org/apps/camp.nook.nookdesktop"
+license="ISC"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=camp.nook.nookdesktop

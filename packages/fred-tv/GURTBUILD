@@ -1,0 +1,15 @@
+# Fast And Powerful IPTV App (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=fred-tv
+pkgver=flathub
+pkgrel=1
+pkgdesc="Fast And Powerful IPTV App"
+url="https://flathub.org/apps/dev.fredol.open-tv"
+license="GPL-2.0"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.fredol.open-tv

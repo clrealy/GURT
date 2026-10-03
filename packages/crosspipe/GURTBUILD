@@ -1,0 +1,15 @@
+# Route audio and video streams (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=crosspipe
+pkgver=flathub
+pkgrel=1
+pkgdesc="Route audio and video streams"
+url="https://flathub.org/apps/io.github.dp0sk.Crosspipe"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.dp0sk.Crosspipe

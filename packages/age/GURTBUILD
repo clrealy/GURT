@@ -1,0 +1,25 @@
+# Simple, modern file encryption (age and age-keygen)
+pkgname=age
+pkgver=1.3.2
+pkgrel=1
+pkgdesc="Simple, modern file encryption (age and age-keygen)"
+url="https://github.com/FiloSottile/age"
+license="BSD-3-Clause"
+maintainer="clrealy"
+category="security"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("age::git+https://github.com/FiloSottile/age.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd age
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X main.Version=v$pkgver" -o out/ ./cmd/age ./cmd/age-keygen
+}
+
+package() {
+  install -Dm755 age/out/age "$pkgdir$prefix/bin/age"
+  install -Dm755 age/out/age-keygen "$pkgdir$prefix/bin/age-keygen"
+}

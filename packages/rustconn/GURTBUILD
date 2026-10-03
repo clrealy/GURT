@@ -1,0 +1,15 @@
+# Manage SSH, RDP, and VNC connections (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=rustconn
+pkgver=flathub
+pkgrel=1
+pkgdesc="Manage SSH, RDP, and VNC connections"
+url="https://flathub.org/apps/io.github.totoshko88.RustConn"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.totoshko88.RustConn

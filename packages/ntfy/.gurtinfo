@@ -1,0 +1,11 @@
+pkgname = ntfy
+pkgver = 2.28.0
+pkgrel = 1
+pkgdesc = Send push notifications to your phone with a simple HTTP call
+url = https://github.com/binwiederhier/ntfy
+license = Apache-2.0
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = https://github.com/binwiederhier/ntfy/releases/download/v2.28.0/ntfy_2.28.0_linux_amd64.tar.gz

@@ -1,0 +1,15 @@
+# Edit audio file tags (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=ear-tag
+pkgver=flathub
+pkgrel=1
+pkgdesc="Edit audio file tags"
+url="https://flathub.org/apps/app.drey.EarTag"
+license="MIT"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=app.drey.EarTag

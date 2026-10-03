@@ -1,0 +1,13 @@
+pkgname = kbreakout
+pkgver = flathub
+pkgrel = 1
+pkgdesc = KBreakOut is a Breakout-like game by KDE
+url = https://flathub.org/apps/org.kde.kbreakout
+license = GPL-2.0+
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.kde.kbreakout

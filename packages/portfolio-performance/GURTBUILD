@@ -1,0 +1,15 @@
+# Track the performance of an investment portfolio (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=portfolio-performance
+pkgver=flathub
+pkgrel=1
+pkgdesc="Track the performance of an investment portfolio"
+url="https://flathub.org/apps/info.portfolio_performance.PortfolioPerformance"
+license="EPL-1.0"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=info.portfolio_performance.PortfolioPerformance

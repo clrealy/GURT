@@ -1,0 +1,15 @@
+# Fast raster image editor (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=lazpaint
+pkgver=flathub
+pkgrel=1
+pkgdesc="Fast raster image editor"
+url="https://flathub.org/apps/io.github.bgrabitmap.LazPaint"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.bgrabitmap.LazPaint

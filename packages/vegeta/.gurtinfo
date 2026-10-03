@@ -1,0 +1,11 @@
+pkgname = vegeta
+pkgver = 12.13.0
+pkgrel = 1
+pkgdesc = HTTP load testing at a constant rate
+url = https://github.com/tsenart/vegeta
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/tsenart/vegeta/releases/download/v12.13.0/vegeta_12.13.0_linux_amd64.tar.gz

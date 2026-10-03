@@ -1,0 +1,13 @@
+pkgname = datcord
+pkgver = flathub
+pkgrel = 1
+pkgdesc = An open-source Discord client that uses Firefox
+url = https://flathub.org/apps/io.github.gamingdoom.Datcord
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = chat
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.gamingdoom.Datcord

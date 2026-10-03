@@ -1,0 +1,15 @@
+# Open-source audio effect processor for Pipewire (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=jamesdsp
+pkgver=flathub
+pkgrel=1
+pkgdesc="Open-source audio effect processor for Pipewire"
+url="https://flathub.org/apps/me.timschneeberger.jdsp4linux"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=me.timschneeberger.jdsp4linux

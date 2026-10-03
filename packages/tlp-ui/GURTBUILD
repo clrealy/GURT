@@ -1,0 +1,15 @@
+# TLP configuration utility (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tlp-ui
+pkgver=flathub
+pkgrel=1
+pkgdesc="TLP configuration utility"
+url="https://flathub.org/apps/com.github.d4nj1.tlpui"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.d4nj1.tlpui

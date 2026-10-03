@@ -1,0 +1,13 @@
+pkgname = doom-runner
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Preset-oriented graphical launcher of various ported Doom engines (an alternative to ZDL)
+url = https://flathub.org/apps/io.github.Youda008.DoomRunner
+license = GPL-3.0-only
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.Youda008.DoomRunner

@@ -1,0 +1,13 @@
+pkgname = passwords-and-keys
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Manage your passwords and encryption keys
+url = https://flathub.org/apps/org.gnome.seahorse.Application
+license = GPL-2.0+ and LGPL-2.0+
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.gnome.seahorse.Application

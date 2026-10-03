@@ -1,0 +1,13 @@
+pkgname = caddy
+pkgver = 2.11.6
+pkgrel = 1
+pkgdesc = Web server with automatic HTTPS that just works
+url = https://github.com/caddyserver/caddy
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = caddy::git+https://github.com/caddyserver/caddy.git#tag=v2.11.6

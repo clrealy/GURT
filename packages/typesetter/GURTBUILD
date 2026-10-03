@@ -1,0 +1,15 @@
+# Typst editor for focused writing (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=typesetter
+pkgver=flathub
+pkgrel=1
+pkgdesc="Typst editor for focused writing"
+url="https://flathub.org/apps/net.trowell.typesetter"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.trowell.typesetter

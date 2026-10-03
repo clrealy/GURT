@@ -1,0 +1,15 @@
+# LX Music Desktop (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=lx-music-desktop
+pkgver=flathub
+pkgrel=1
+pkgdesc="LX Music Desktop"
+url="https://flathub.org/apps/cn.toside.lxmusic.lx-music-desktop"
+license="Apache-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=cn.toside.lxmusic.lx-music-desktop

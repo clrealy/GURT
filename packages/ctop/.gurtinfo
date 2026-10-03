@@ -1,0 +1,11 @@
+pkgname = ctop
+pkgver = 0.7.7
+pkgrel = 1
+pkgdesc = Top for containers
+url = https://github.com/bcicen/ctop
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+source = ctop::https://github.com/bcicen/ctop/releases/download/v0.7.7/ctop-0.7.7-linux-amd64

@@ -1,0 +1,15 @@
+# Fast gui autoclicker for x11 linux desktops (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=xclicker
+pkgver=flathub
+pkgrel=1
+pkgdesc="Fast gui autoclicker for x11 linux desktops"
+url="https://flathub.org/apps/xyz.xclicker.xclicker"
+license="GPL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=xyz.xclicker.xclicker

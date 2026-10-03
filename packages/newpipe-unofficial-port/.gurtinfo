@@ -1,0 +1,13 @@
+pkgname = newpipe-unofficial-port
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Free and lightweight YouTube frontend for Android
+url = https://flathub.org/apps/net.newpipe.NewPipe
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.newpipe.NewPipe

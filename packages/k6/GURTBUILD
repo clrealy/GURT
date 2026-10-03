@@ -1,0 +1,22 @@
+# Load testing tool you script in JavaScript
+pkgname=k6
+pkgver=2.3.0
+pkgrel=1
+pkgdesc="Load testing tool you script in JavaScript"
+url="https://github.com/grafana/k6"
+license="AGPL-3.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/grafana/k6/releases/download/${_tag}/k6-${_tag}-linux-amd64.tar.gz")
+source_aarch64=("https://github.com/grafana/k6/releases/download/${_tag}/k6-${_tag}-linux-arm64.tar.gz")
+sha256sums_x86_64=(39c3117b6af817592dcd0ce4242105c0a7af10948c2a425306f0be8f7a8a8ab1)
+sha256sums_aarch64=(5ca3433e8201da72a284aaa241a1bb5fb47f4abb4e384d39410ddd8062f49b90)
+
+package() {
+  local f
+  f=$(find . -type f -name k6 -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name k6 | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/k6"
+}

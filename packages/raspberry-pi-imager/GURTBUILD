@@ -1,0 +1,15 @@
+# Raspberry Pi Imaging utility (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=raspberry-pi-imager
+pkgver=flathub
+pkgrel=1
+pkgdesc="Raspberry Pi Imaging utility"
+url="https://flathub.org/apps/org.raspberrypi.rpi-imager"
+license="Apache-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.raspberrypi.rpi-imager

@@ -1,0 +1,15 @@
+# Image acquisition utilities for Epson (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=image-scan
+pkgver=flathub
+pkgrel=1
+pkgdesc="Image acquisition utilities for Epson"
+url="https://flathub.org/apps/com.github.utsushi.Utsushi"
+license="GPL-3.0"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.utsushi.Utsushi

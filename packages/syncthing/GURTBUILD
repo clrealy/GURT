@@ -1,0 +1,22 @@
+# Sync folders between your devices, no cloud needed
+pkgname=syncthing
+pkgver=2.1.5
+pkgrel=1
+pkgdesc="Sync folders between your devices, no cloud needed"
+url="https://github.com/syncthing/syncthing"
+license="MPL-2.0"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/syncthing/syncthing/releases/download/${_tag}/syncthing-linux-amd64-${_tag}.tar.gz")
+source_aarch64=("https://github.com/syncthing/syncthing/releases/download/${_tag}/syncthing-linux-arm64-${_tag}.tar.gz")
+sha256sums_x86_64=(3d222b609f7ab2944e02748cb10488b4160d446b49e0eafc107ef2a525ab3486)
+sha256sums_aarch64=(3666f3069feeee3651e185f867759206059755101797bdd69ea5317610130855)
+
+package() {
+  local f
+  f=$(find . -type f -name syncthing -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name syncthing | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/syncthing"
+}

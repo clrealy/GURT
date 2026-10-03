@@ -1,0 +1,15 @@
+# Browser with built-in acceleration for DOS/Win9x games (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=dos-browser
+pkgver=flathub
+pkgrel=1
+pkgdesc="Browser with built-in acceleration for DOS/Win9x games"
+url="https://flathub.org/apps/zone.dos.Browser"
+license="GPL-2.0"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=zone.dos.Browser

@@ -1,0 +1,11 @@
+pkgname = difftastic
+pkgver = 0.71.0
+pkgrel = 1
+pkgdesc = Diffs that understand code structure, not just lines (run difft)
+url = https://github.com/Wilfred/difftastic
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+source = https://github.com/Wilfred/difftastic/releases/download/0.71.0/difft-0.71.0-x86_64-unknown-linux-musl.tar.gz
+alias = difft

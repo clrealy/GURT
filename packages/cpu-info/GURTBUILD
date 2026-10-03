@@ -1,0 +1,15 @@
+# Information about device hardware and software (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=cpu-info
+pkgver=flathub
+pkgrel=1
+pkgdesc="Information about device hardware and software"
+url="https://flathub.org/apps/com.kgurgul.cpuinfo"
+license="Apache-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.kgurgul.cpuinfo

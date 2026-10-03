@@ -1,0 +1,15 @@
+# Browse, install and manage your Flatpak applications (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=klia-store
+pkgver=flathub
+pkgrel=1
+pkgdesc="Browse, install and manage your Flatpak applications"
+url="https://flathub.org/apps/io.github.N3kosempai.klia-store"
+license="see Flathub"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.N3kosempai.klia-store

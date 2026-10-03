@@ -1,0 +1,15 @@
+# An open source platform for developer collaboration (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=mattermost
+pkgver=flathub
+pkgrel=1
+pkgdesc="An open source platform for developer collaboration"
+url="https://flathub.org/apps/com.mattermost.Desktop"
+license="Apache-2.0"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.mattermost.Desktop

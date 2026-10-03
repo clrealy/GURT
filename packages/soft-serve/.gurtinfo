@@ -1,0 +1,12 @@
+pkgname = soft-serve
+pkgver = 0.12.2
+pkgrel = 1
+pkgdesc = Self-hosted git server you can browse over SSH (run soft)
+url = https://github.com/charmbracelet/soft-serve
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/charmbracelet/soft-serve/releases/download/v0.12.2/soft-serve_0.12.2_Linux_x86_64.tar.gz
+alias = soft

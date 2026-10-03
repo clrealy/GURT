@@ -1,0 +1,13 @@
+pkgname = photocollage
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Graphical tool to make photo collage posters
+url = https://flathub.org/apps/io.github.adrienverge.PhotoCollage
+license = GPL-2.0+
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.adrienverge.PhotoCollage

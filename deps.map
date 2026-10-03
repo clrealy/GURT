@@ -27,6 +27,7 @@ linux-headers  apt=linux-libc-dev  dnf=kernel-headers  pacman=linux-api-headers 
 zstd        emerge=app-arch/zstd
 binutils    emerge=sys-devel/binutils
 gnupg       apt=gpgv,gnupg  dnf=gnupg2  pacman=gnupg  zypper=gpg2  apk=gnupg,gpgv  xbps=gnupg  emerge=app-crypt/gnupg
+nvim        apt=neovim  dnf=neovim  pacman=neovim  zypper=neovim  apk=neovim  xbps=neovim  eopkg=neovim  emerge=app-editors/neovim
 # gio: apps use it to move files to the trash
 glib-bin    apt=libglib2.0-bin  dnf=glib2  pacman=glib2  zypper=glib2-tools  apk=glib  xbps=glib  eopkg=glib2  emerge=dev-libs/glib
 bsdtar      apt=libarchive-tools  dnf=bsdtar  pacman=libarchive  zypper=bsdtar  apk=libarchive-tools  xbps=bsdtar  emerge=app-arch/libarchive

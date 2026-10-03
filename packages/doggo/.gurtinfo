@@ -1,0 +1,11 @@
+pkgname = doggo
+pkgver = 1.4.0
+pkgrel = 1
+pkgdesc = Modern DNS client for humans
+url = https://github.com/mr-karan/doggo
+license = GPL-3.0
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = https://github.com/mr-karan/doggo/releases/download/v1.4.0/doggo-linux-x86_64.tar.gz

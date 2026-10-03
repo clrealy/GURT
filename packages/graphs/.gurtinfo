@@ -1,0 +1,13 @@
+pkgname = graphs
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Plot and manipulate data
+url = https://flathub.org/apps/se.sjoerd.Graphs
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = se.sjoerd.Graphs

@@ -1,0 +1,15 @@
+# View and clean metadata in files (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=metadata-cleaner
+pkgver=flathub
+pkgrel=1
+pkgdesc="View and clean metadata in files"
+url="https://flathub.org/apps/io.gitlab.metadatacleaner.metadatacleaner"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.gitlab.metadatacleaner.metadatacleaner

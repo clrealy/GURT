@@ -1,0 +1,13 @@
+pkgname = syncthing-tray
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Tray application for Syncthing
+url = https://flathub.org/apps/io.github.martchus.syncthingtray
+license = GPL-2.0+
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.martchus.syncthingtray

@@ -1,0 +1,13 @@
+pkgname = music
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Play and organize your music collection
+url = https://flathub.org/apps/org.gnome.Music
+license = GPL-2.0+ and LGPL-2.0+ and CC-BY-SA-4.0
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.gnome.Music

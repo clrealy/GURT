@@ -1,0 +1,15 @@
+# Fast and private VPN with no traffic or speed limits (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=vpn-unlimited
+pkgver=flathub
+pkgrel=1
+pkgdesc="Fast and private VPN with no traffic or speed limits"
+url="https://flathub.org/apps/com.keepsolid.VpnUnlimited"
+license="see Flathub"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.keepsolid.VpnUnlimited

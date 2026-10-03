@@ -1,0 +1,15 @@
+# Work with regular breaks (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=focus-timer
+pkgver=flathub
+pkgrel=1
+pkgdesc="Work with regular breaks"
+url="https://flathub.org/apps/io.github.focustimerhq.FocusTimer"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.focustimerhq.FocusTimer

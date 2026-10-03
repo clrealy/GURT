@@ -1,0 +1,15 @@
+# Video Editor - Fast, Precise, Stable (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=flowblade
+pkgver=flathub
+pkgrel=1
+pkgdesc="Video Editor - Fast, Precise, Stable"
+url="https://flathub.org/apps/io.github.jliljebl.Flowblade"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.jliljebl.Flowblade

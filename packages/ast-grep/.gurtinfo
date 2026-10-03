@@ -1,0 +1,12 @@
+pkgname = ast-grep
+pkgver = 0.45.3
+pkgrel = 1
+pkgdesc = Search and rewrite code by its structure
+url = https://github.com/ast-grep/ast-grep
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/ast-grep/ast-grep/releases/download/0.45.3/app-x86_64-unknown-linux-gnu.zip
+alias = sg

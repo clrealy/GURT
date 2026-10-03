@@ -1,0 +1,15 @@
+# An emulator for classic IBM PC clones (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=86box
+pkgver=flathub
+pkgrel=1
+pkgdesc="An emulator for classic IBM PC clones"
+url="https://flathub.org/apps/net._86box._86Box"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net._86box._86Box

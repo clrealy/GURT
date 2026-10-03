@@ -1,0 +1,15 @@
+# FOSS, cross-platform 2FA app (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=ente-auth
+pkgver=flathub
+pkgrel=1
+pkgdesc="FOSS, cross-platform 2FA app"
+url="https://flathub.org/apps/io.ente.auth"
+license="AGPL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.ente.auth

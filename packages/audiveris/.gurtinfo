@@ -1,0 +1,13 @@
+pkgname = audiveris
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Optical Music Recognition (OMR) Application
+url = https://flathub.org/apps/org.audiveris.audiveris
+license = AGPL-3.0
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.audiveris.audiveris

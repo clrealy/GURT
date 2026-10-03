@@ -1,0 +1,15 @@
+# Plex HTPC client for the big screen (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=plex-htpc
+pkgver=flathub
+pkgrel=1
+pkgdesc="Plex HTPC client for the big screen"
+url="https://flathub.org/apps/tv.plex.PlexHTPC"
+license="see Flathub"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=tv.plex.PlexHTPC

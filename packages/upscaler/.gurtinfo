@@ -1,0 +1,13 @@
+pkgname = upscaler
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Upscale and enhance images
+url = https://flathub.org/apps/io.gitlab.theevilskeleton.Upscaler
+license = GPL-3.0
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.gitlab.theevilskeleton.Upscaler

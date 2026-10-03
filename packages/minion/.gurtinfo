@@ -1,0 +1,13 @@
+pkgname = minion
+pkgver = flathub
+pkgrel = 1
+pkgdesc = An AddOn manager for The Elder Scrolls Online and World of Warcraft
+url = https://flathub.org/apps/gg.minion.Minion
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = gg.minion.Minion

@@ -1,0 +1,13 @@
+pkgname = clementine-music-player
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Plays music files and Internet radio
+url = https://flathub.org/apps/org.clementine_player.Clementine
+license = GPL-3.0+
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.clementine_player.Clementine

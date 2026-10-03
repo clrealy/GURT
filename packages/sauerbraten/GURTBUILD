@@ -1,0 +1,15 @@
+# Free fast paced arena shooter (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=sauerbraten
+pkgver=flathub
+pkgrel=1
+pkgdesc="Free fast paced arena shooter"
+url="https://flathub.org/apps/org.sauerbraten.Sauerbraten"
+license="Zlib"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.sauerbraten.Sauerbraten

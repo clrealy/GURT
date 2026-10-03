@@ -1,0 +1,13 @@
+pkgname = opera-gx
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Opera GX: THE gaming browser
+url = https://flathub.org/apps/com.opera.opera-gx
+license = see Flathub
+maintainer = clrealy
+category = chat
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.opera.opera-gx

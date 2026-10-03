@@ -1,0 +1,11 @@
+pkgname = uv
+pkgver = 0.12.22
+pkgrel = 1
+pkgdesc = Super fast Python package and project manager
+url = https://github.com/astral-sh/uv
+license = MIT OR Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/astral-sh/uv/releases/download/0.12.22/uv-x86_64-unknown-linux-musl.tar.gz

@@ -1,0 +1,10 @@
+pkgname = responsively
+pkgver = 1.18.0
+pkgrel = 1
+pkgdesc = See your website on many screen sizes at once
+url = https://github.com/responsively-org/responsively-app-releases
+license = AGPL-3.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+source = responsively.AppImage::https://github.com/responsively-org/responsively-app-releases/releases/download/v1.18.0/ResponsivelyApp-1.18.0.AppImage

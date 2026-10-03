@@ -1,0 +1,15 @@
+# Online music streaming service (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=deezer
+pkgver=flathub
+pkgrel=1
+pkgdesc="Online music streaming service"
+url="https://flathub.org/apps/dev.aunetx.deezer"
+license="see Flathub"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.aunetx.deezer

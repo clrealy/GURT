@@ -1,0 +1,13 @@
+pkgname = ultimate-media-downloader
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Media Downloader for YouTube and 1500+ other websites
+url = https://flathub.org/apps/com.ktechpit.ultimate-media-downloader
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.ktechpit.ultimate-media-downloader

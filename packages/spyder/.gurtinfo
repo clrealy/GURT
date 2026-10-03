@@ -1,0 +1,13 @@
+pkgname = spyder
+pkgver = flathub
+pkgrel = 1
+pkgdesc = The Scientific Python Development Environment
+url = https://flathub.org/apps/org.spyder_ide.spyder
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.spyder_ide.spyder

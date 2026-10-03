@@ -1,0 +1,22 @@
+# Smarter Ctrl+R shell history search
+pkgname=mcfly
+pkgver=0.9.4
+pkgrel=1
+pkgdesc="Smarter Ctrl+R shell history search"
+url="https://github.com/cantino/mcfly"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/cantino/mcfly/releases/download/${_tag}/mcfly-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/cantino/mcfly/releases/download/${_tag}/mcfly-${_tag}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(72d2c6fdaa111ac96c2cf725fc40e313e2856643482be58608911a09440313f1)
+sha256sums_aarch64=(57eb23c3c40b3a7675dc1fe3b785501a6a41598b9b3cbe35d80f8d65267cf1cd)
+
+package() {
+  local f
+  f=$(find . -type f -name mcfly -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name mcfly | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/mcfly"
+}

@@ -1,0 +1,15 @@
+# A powerful batch file renamer (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=krename
+pkgver=flathub
+pkgrel=1
+pkgdesc="A powerful batch file renamer"
+url="https://flathub.org/apps/org.kde.krename"
+license="GPL-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.krename

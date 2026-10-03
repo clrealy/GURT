@@ -1,0 +1,10 @@
+pkgname = hyper
+pkgver = 3.4.1
+pkgrel = 1
+pkgdesc = Terminal built on web tech you can theme and extend
+url = https://github.com/vercel/hyper
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+source = hyper.AppImage::https://github.com/vercel/hyper/releases/download/v3.4.1/Hyper-3.4.1.AppImage

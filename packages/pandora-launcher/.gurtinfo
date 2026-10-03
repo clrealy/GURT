@@ -1,0 +1,13 @@
+pkgname = pandora-launcher
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A balanced, easy to use, and powerful modern Minecraft launcher
+url = https://flathub.org/apps/com.moulberry.PandoraLauncher
+license = MIT
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.moulberry.PandoraLauncher

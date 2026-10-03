@@ -1,0 +1,11 @@
+pkgname = cheat
+pkgver = 5.1.0
+pkgrel = 1
+pkgdesc = Create and view your own cheatsheets for commands
+url = https://github.com/cheat/cheat
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = cheat.gz::https://github.com/cheat/cheat/releases/download/5.1.0/cheat-linux-amd64.gz

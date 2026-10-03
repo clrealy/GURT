@@ -1,0 +1,15 @@
+# Steam bulk importer & art manager! (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=steam-rom-manager
+pkgver=flathub
+pkgrel=1
+pkgdesc="Steam bulk importer & art manager!"
+url="https://flathub.org/apps/com.steamgriddb.steam-rom-manager"
+license="GPL-3"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.steamgriddb.steam-rom-manager

@@ -1,0 +1,15 @@
+# Fast and lightweight IDE (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=geany
+pkgver=flathub
+pkgrel=1
+pkgdesc="Fast and lightweight IDE"
+url="https://flathub.org/apps/org.geany.Geany"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.geany.Geany

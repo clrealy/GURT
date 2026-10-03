@@ -1,0 +1,20 @@
+# Self-hosted Tailscale control server
+pkgname=headscale
+pkgver=0.29.4
+pkgrel=1
+pkgdesc="Self-hosted Tailscale control server"
+url="https://github.com/juanfont/headscale"
+license="BSD-3-Clause"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("headscale::https://github.com/juanfont/headscale/releases/download/${_tag}/headscale_${pkgver}_linux_amd64")
+source_aarch64=("headscale::https://github.com/juanfont/headscale/releases/download/${_tag}/headscale_${pkgver}_linux_arm64")
+sha256sums_x86_64=(212ed0a884c0d3541e094c4bebbe94397df6f4e01bd3d7f059c520cb55e0d757)
+sha256sums_aarch64=(cbad8f02524cc6a94955a107a72e1d4cc652ae3f22e740d5c60884e7f384d60e)
+
+package() {
+  install -Dm755 headscale "$pkgdir$prefix/bin/headscale"
+}

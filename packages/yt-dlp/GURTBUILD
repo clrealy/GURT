@@ -1,0 +1,17 @@
+# Download videos and audio from YouTube and tons of other sites
+pkgname=yt-dlp
+pkgver=2026.08.19
+pkgrel=1
+pkgdesc="Download videos and audio from YouTube and tons of other sites"
+url="https://github.com/yt-dlp/yt-dlp"
+license="Unlicense"
+maintainer="clrealy"
+category="media"
+arch=(x86_64)
+# official prebuilt release binary
+source=("yt-dlp::https://github.com/yt-dlp/yt-dlp/releases/download/${pkgver}/yt-dlp_linux")
+sha256sums=(58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a)
+
+package() {
+  install -Dm755 yt-dlp "$pkgdir$prefix/bin/yt-dlp"
+}

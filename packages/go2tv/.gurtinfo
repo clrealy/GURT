@@ -1,0 +1,13 @@
+pkgname = go2tv
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Cast media files to Smart TVs and Chromecast devices
+url = https://flathub.org/apps/app.go2tv.go2tv
+license = MIT
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = app.go2tv.go2tv

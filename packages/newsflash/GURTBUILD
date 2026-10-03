@@ -1,0 +1,15 @@
+# Keep up with your feeds (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=newsflash
+pkgver=flathub
+pkgrel=1
+pkgdesc="Keep up with your feeds"
+url="https://flathub.org/apps/io.gitlab.news_flash.NewsFlash"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.gitlab.news_flash.NewsFlash

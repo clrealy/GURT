@@ -1,0 +1,15 @@
+# GUI for ClamAV (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=clamui
+pkgver=flathub
+pkgrel=1
+pkgdesc="GUI for ClamAV"
+url="https://flathub.org/apps/io.github.linx_systems.ClamUI"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.linx_systems.ClamUI

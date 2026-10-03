@@ -1,0 +1,19 @@
+# Save and run your project's commands, like make but nicer
+pkgname=just
+pkgver=1.58.0
+pkgrel=1
+pkgdesc="Save and run your project's commands, like make but nicer"
+url="https://github.com/casey/just"
+license="CC0-1.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+# official prebuilt release binaries
+source_x86_64=("https://github.com/casey/just/releases/download/$pkgver/just-$pkgver-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/casey/just/releases/download/$pkgver/just-$pkgver-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(4a5cc2f53e6f0f8c59092a6cc38291eb729d46a7dd95d3ae582008881b84931d)
+sha256sums_aarch64=(748237128c4c40cbdabc65e841d05ceba13cc23a91eaba395495894c1d9764df)
+
+package() {
+  install -Dm755 "$(find . -type f -name just -perm -u+x | head -n1)" "$pkgdir$prefix/bin/just"
+}

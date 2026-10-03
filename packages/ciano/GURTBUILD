@@ -1,0 +1,15 @@
+# A multimedia file converter (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=ciano
+pkgver=flathub
+pkgrel=1
+pkgdesc="A multimedia file converter"
+url="https://flathub.org/apps/com.github.robertsanseries.ciano"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.robertsanseries.ciano

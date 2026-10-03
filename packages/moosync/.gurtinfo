@@ -1,0 +1,13 @@
+pkgname = moosync
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Customizable music player
+url = https://flathub.org/apps/app.moosync.moosync
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = app.moosync.moosync

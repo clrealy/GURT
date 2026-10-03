@@ -1,0 +1,15 @@
+# PDF viewer (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=adobe-reader
+pkgver=flathub
+pkgrel=1
+pkgdesc="PDF viewer"
+url="https://flathub.org/apps/com.adobe.Reader"
+license="see Flathub"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.adobe.Reader

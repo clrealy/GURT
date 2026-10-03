@@ -1,0 +1,15 @@
+# A turn-based survival game set in a post-apocalyptic world (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=cataclysm-dark-days-ahead
+pkgver=flathub
+pkgrel=1
+pkgdesc="A turn-based survival game set in a post-apocalyptic world"
+url="https://flathub.org/apps/org.cataclysmdda.CataclysmDDA"
+license="CC-BY-SA-3.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.cataclysmdda.CataclysmDDA

@@ -1,0 +1,11 @@
+pkgname = typst
+pkgver = 0.15.1
+pkgrel = 1
+pkgdesc = Write documents with markup and get beautiful PDFs, a modern LaTeX
+url = https://github.com/typst/typst
+license = Apache-2.0
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+source = https://github.com/typst/typst/releases/download/v0.15.1/typst-x86_64-unknown-linux-musl.tar.xz

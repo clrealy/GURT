@@ -1,0 +1,13 @@
+pkgname = syncthing-gtk
+pkgver = flathub
+pkgrel = 1
+pkgdesc = GUI and notification area icon for Syncthing
+url = https://flathub.org/apps/me.kozec.syncthingtk
+license = GPL-2.0
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = me.kozec.syncthingtk

@@ -1,0 +1,23 @@
+# File tree view with disk usage, like tree and du in one (run erd)
+pkgname=erdtree
+pkgver=3.1.2
+pkgrel=1
+pkgdesc="File tree view with disk usage, like tree and du in one (run erd)"
+url="https://github.com/solidiquis/erdtree"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+aliases=(erd)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/solidiquis/erdtree/releases/download/${_tag}/erd-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/solidiquis/erdtree/releases/download/${_tag}/erd-${_tag}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(bfa4ebea71f59fdc175f67451c0b42b23a0cd2873ac44648857e14f0d3a78c98)
+sha256sums_aarch64=(5ad6d70a7ba9636f80a724e669e7ffe9daf2370f8a3f6095e33779e166ced4c2)
+
+package() {
+  local f
+  f=$(find . -type f -name erd -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name erd | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/erd"
+}

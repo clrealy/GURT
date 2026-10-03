@@ -1,0 +1,15 @@
+# Code editing. Redefined (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=visual-studio-code-code
+pkgver=flathub
+pkgrel=1
+pkgdesc="Code editing. Redefined"
+url="https://flathub.org/apps/com.visualstudio.code"
+license="see Flathub"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.visualstudio.code

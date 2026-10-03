@@ -1,0 +1,24 @@
+# Friendlier sysctl with a terminal UI and docs built in
+pkgname=systeroid
+pkgver=0.4.6
+pkgrel=1
+pkgdesc="Friendlier sysctl with a terminal UI and docs built in"
+url="https://github.com/orhun/systeroid"
+license="MIT OR Apache-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binaries
+source_x86_64=("https://github.com/orhun/systeroid/releases/download/${_tag}/systeroid-${pkgver}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/orhun/systeroid/releases/download/${_tag}/systeroid-${pkgver}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(3f65d48500eec1a3b3cc0e757c1fe919931ea8b5276f7244b0ec5a261f96f983)
+sha256sums_aarch64=(ebed6ce9b8eb460381925dc93996553e46820b62bdd745976c8a26d6ec86a35a)
+
+package() {
+  local f
+  f=$(find . -type f -name systeroid -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name systeroid | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/systeroid"
+  f=$(find . -type f -name systeroid-tui -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name systeroid-tui | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/systeroid-tui"
+}

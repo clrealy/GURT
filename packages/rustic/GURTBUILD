@@ -1,0 +1,22 @@
+# Fast encrypted backups, compatible with restic
+pkgname=rustic
+pkgver=0.11.4
+pkgrel=1
+pkgdesc="Fast encrypted backups, compatible with restic"
+url="https://github.com/rustic-rs/rustic"
+license="MIT OR Apache-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/rustic-rs/rustic/releases/download/${_tag}/rustic-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/rustic-rs/rustic/releases/download/${_tag}/rustic-${_tag}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(628b26785f3787fa1d52e61b3289493f483230a1ed6e86a84ae9c76d7a41a81e)
+sha256sums_aarch64=(35ccd40ff565b9760245dd391f9fef04c46778ce5e073d833288abe2e5eabd20)
+
+package() {
+  local f
+  f=$(find . -type f -name rustic -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name rustic | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/rustic"
+}

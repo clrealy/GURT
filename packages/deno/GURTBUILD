@@ -1,0 +1,22 @@
+# Modern JavaScript and TypeScript runtime with tools built in
+pkgname=deno
+pkgver=2.9.7
+pkgrel=1
+pkgdesc="Modern JavaScript and TypeScript runtime with tools built in"
+url="https://github.com/denoland/deno"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/denoland/deno/releases/download/${_tag}/deno-x86_64-unknown-linux-gnu.zip")
+source_aarch64=("https://github.com/denoland/deno/releases/download/${_tag}/deno-aarch64-unknown-linux-gnu.zip")
+sha256sums_x86_64=(c6527f24f4b16031d3ae4fa9f658d5f11534c8d84ce7dc8502420280919c3490)
+sha256sums_aarch64=(c832298b1ad4422481334855f6003e0f54145762c5a134f20a489511d2f65bbf)
+
+package() {
+  local f
+  f=$(find . -type f -name deno -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name deno | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/deno"
+}

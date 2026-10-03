@@ -1,0 +1,15 @@
+# Manage your containers (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=pods
+pkgver=flathub
+pkgrel=1
+pkgdesc="Manage your containers"
+url="https://flathub.org/apps/com.github.marhkb.Pods"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.marhkb.Pods

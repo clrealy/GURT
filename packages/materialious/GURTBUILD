@@ -1,0 +1,15 @@
+# Watch and browse YouTube privately (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=materialious
+pkgver=flathub
+pkgrel=1
+pkgdesc="Watch and browse YouTube privately"
+url="https://flathub.org/apps/us.materialio.Materialious"
+license="AGPL-3.0"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=us.materialio.Materialious

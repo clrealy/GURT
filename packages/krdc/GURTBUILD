@@ -1,0 +1,15 @@
+# Connect with RDP or VNC to another computer (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=krdc
+pkgver=flathub
+pkgrel=1
+pkgdesc="Connect with RDP or VNC to another computer"
+url="https://flathub.org/apps/org.kde.krdc"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.krdc

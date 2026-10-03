@@ -1,0 +1,13 @@
+pkgname = gpt4all
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Open-source assistant
+url = https://flathub.org/apps/io.gpt4all.gpt4all
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.gpt4all.gpt4all

@@ -1,0 +1,15 @@
+# Polish your videos (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=footage
+pkgver=flathub
+pkgrel=1
+pkgdesc="Polish your videos"
+url="https://flathub.org/apps/io.gitlab.adhami3310.Footage"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.gitlab.adhami3310.Footage

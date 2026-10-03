@@ -1,0 +1,15 @@
+# Open Source Notion Alternative (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=appflowy
+pkgver=flathub
+pkgrel=1
+pkgdesc="Open Source Notion Alternative"
+url="https://flathub.org/apps/io.appflowy.AppFlowy"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.appflowy.AppFlowy

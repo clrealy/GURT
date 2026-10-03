@@ -1,0 +1,15 @@
+# Edit metadata (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=metamorphosis
+pkgver=flathub
+pkgrel=1
+pkgdesc="Edit metadata"
+url="https://flathub.org/apps/dev.deimoshall.Metamorphosis"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.deimoshall.Metamorphosis

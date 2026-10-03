@@ -1,0 +1,15 @@
+# Qt-based Multimedia Player (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=qmmp
+pkgver=flathub
+pkgrel=1
+pkgdesc="Qt-based Multimedia Player"
+url="https://flathub.org/apps/com.ylsoftware.qmmp.Qmmp"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.ylsoftware.qmmp.Qmmp

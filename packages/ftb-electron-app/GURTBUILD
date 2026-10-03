@@ -1,0 +1,15 @@
+# Explore and manage FTB modpacks! (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=ftb-electron-app
+pkgver=flathub
+pkgrel=1
+pkgdesc="Explore and manage FTB modpacks!"
+url="https://flathub.org/apps/dev.ftb.ftb-app"
+license="LGPL-2.1-only"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.ftb.ftb-app

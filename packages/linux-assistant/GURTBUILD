@@ -1,0 +1,15 @@
+# A daily linux helper with powerful integrated search, routines and checks (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=linux-assistant
+pkgver=flathub
+pkgrel=1
+pkgdesc="A daily linux helper with powerful integrated search, routines and checks"
+url="https://flathub.org/apps/io.github.jean28518.Linux-Assistant"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.jean28518.Linux-Assistant

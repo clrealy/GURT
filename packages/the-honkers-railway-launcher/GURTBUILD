@@ -1,0 +1,15 @@
+# Play your favorite Honkai Railway game on Linux (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=the-honkers-railway-launcher
+pkgver=flathub
+pkgrel=1
+pkgdesc="Play your favorite Honkai Railway game on Linux"
+url="https://flathub.org/apps/moe.launcher.the-honkers-railway-launcher"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=moe.launcher.the-honkers-railway-launcher

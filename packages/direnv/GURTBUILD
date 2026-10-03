@@ -1,0 +1,20 @@
+# Load and unload env vars when you cd into a folder
+pkgname=direnv
+pkgver=2.37.1
+pkgrel=1
+pkgdesc="Load and unload env vars when you cd into a folder"
+url="https://github.com/direnv/direnv"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("direnv::https://github.com/direnv/direnv/releases/download/${_tag}/direnv.linux-amd64")
+source_aarch64=("direnv::https://github.com/direnv/direnv/releases/download/${_tag}/direnv.linux-arm64")
+sha256sums_x86_64=(1f1b93dd6f38523fde26dfac96151ef9d31a374e3005cd3345fb93555ae0c9b5)
+sha256sums_aarch64=(2a9cef8d73521d6a3ec3f2871c4b747b8c4cc038628c1b57a7efa42b393a2d82)
+
+package() {
+  install -Dm755 direnv "$pkgdir$prefix/bin/direnv"
+}

@@ -1,0 +1,13 @@
+pkgname = cosmic-comics
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Read Comics, Manga and Ebooks the easy way
+url = https://flathub.org/apps/fr.nytuo.cosmiccomics
+license = GPL-3.0-only
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = fr.nytuo.cosmiccomics

@@ -1,0 +1,11 @@
+pkgname = freeze
+pkgver = 0.2.2
+pkgrel = 1
+pkgdesc = Turn code and terminal output into pretty images
+url = https://github.com/charmbracelet/freeze
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/charmbracelet/freeze/releases/download/v0.2.2/freeze_0.2.2_Linux_x86_64.tar.gz

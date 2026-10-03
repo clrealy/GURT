@@ -1,0 +1,15 @@
+# Have always at a glance the usage of system resources (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=monitorets
+pkgver=flathub
+pkgrel=1
+pkgdesc="Have always at a glance the usage of system resources"
+url="https://flathub.org/apps/io.github.jorchube.monitorets"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.jorchube.monitorets

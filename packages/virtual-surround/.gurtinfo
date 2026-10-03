@@ -1,0 +1,13 @@
+pkgname = virtual-surround
+pkgver = flathub
+pkgrel = 1
+pkgdesc = 3D sound for headphones
+url = https://flathub.org/apps/de.berny23.virtual_surround_manager
+license = MIT
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = de.berny23.virtual_surround_manager

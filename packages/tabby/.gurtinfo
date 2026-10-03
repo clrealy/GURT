@@ -1,0 +1,10 @@
+pkgname = tabby
+pkgver = 1.0.237
+pkgrel = 1
+pkgdesc = Modern terminal with SSH, serial and tabs built in
+url = https://github.com/Eugeny/tabby
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+source = tabby.AppImage::https://github.com/Eugeny/tabby/releases/download/v1.0.237/tabby-1.0.237-linux-x64.AppImage

@@ -1,0 +1,15 @@
+# Play Nintendo 64 games easily (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=rosalie-s-mupen-gui
+pkgver=flathub
+pkgrel=1
+pkgdesc="Play Nintendo 64 games easily"
+url="https://flathub.org/apps/com.github.Rosalie241.RMG"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.Rosalie241.RMG

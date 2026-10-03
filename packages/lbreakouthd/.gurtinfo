@@ -1,0 +1,13 @@
+pkgname = lbreakouthd
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Arkanoid / Breakout alike game
+url = https://flathub.org/apps/net.sourceforge.lgames.LBreakoutHD
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.sourceforge.lgames.LBreakoutHD

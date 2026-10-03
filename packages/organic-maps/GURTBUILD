@@ -1,0 +1,15 @@
+# Free offline maps for everyone (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=organic-maps
+pkgver=flathub
+pkgrel=1
+pkgdesc="Free offline maps for everyone"
+url="https://flathub.org/apps/app.organicmaps.desktop"
+license="Apache-2.0"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=app.organicmaps.desktop

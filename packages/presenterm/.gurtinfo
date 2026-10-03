@@ -1,0 +1,11 @@
+pkgname = presenterm
+pkgver = 0.16.1
+pkgrel = 1
+pkgdesc = Give slideshows from Markdown right in your terminal
+url = https://github.com/mfontanini/presenterm
+license = BSD-2-Clause
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+source = https://github.com/mfontanini/presenterm/releases/download/v0.16.1/presenterm-0.16.1-x86_64-unknown-linux-musl.tar.gz

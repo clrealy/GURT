@@ -1,0 +1,21 @@
+# A smarter cd that remembers where you go (jump with z)
+pkgname=zoxide
+pkgver=0.10.0
+pkgrel=1
+pkgdesc="A smarter cd that remembers where you go (jump with z)"
+url="https://github.com/ajeetdsouza/zoxide"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+aliases=(z)
+_tag=v$pkgver
+# official prebuilt release binaries
+source_x86_64=("https://github.com/ajeetdsouza/zoxide/releases/download/$_tag/zoxide-$pkgver-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/ajeetdsouza/zoxide/releases/download/$_tag/zoxide-$pkgver-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(2d93385b99f3e82cf2701609a1bffcad863fbeb75aa3fe7eb6be4d29be68b1ae)
+sha256sums_aarch64=(f1f16c5d6298d63dee467eedea1cdcd8490e43e493bea43acd416dc9033ef641)
+
+package() {
+  install -Dm755 "$(find . -type f -name zoxide -perm -u+x | head -n1)" "$pkgdir$prefix/bin/zoxide"
+}

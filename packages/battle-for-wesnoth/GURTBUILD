@@ -1,0 +1,15 @@
+# A turn-based strategy game with a high fantasy theme (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=battle-for-wesnoth
+pkgver=flathub
+pkgrel=1
+pkgdesc="A turn-based strategy game with a high fantasy theme"
+url="https://flathub.org/apps/org.wesnoth.Wesnoth"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.wesnoth.Wesnoth

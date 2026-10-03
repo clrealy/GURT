@@ -1,0 +1,15 @@
+# Manage and optimize PDF files (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=qpdf-tools
+pkgver=flathub
+pkgrel=1
+pkgdesc="Manage and optimize PDF files"
+url="https://flathub.org/apps/br.eng.silas.qpdftools"
+license="Unlicense"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=br.eng.silas.qpdftools

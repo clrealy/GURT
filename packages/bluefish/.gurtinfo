@@ -1,0 +1,13 @@
+pkgname = bluefish
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Code and text editor with many web and software development extras
+url = https://flathub.org/apps/nl.openoffice.bluefish
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = nl.openoffice.bluefish

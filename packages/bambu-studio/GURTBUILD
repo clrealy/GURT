@@ -1,0 +1,15 @@
+# Get perfect 3D prints! (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=bambu-studio
+pkgver=flathub
+pkgrel=1
+pkgdesc="Get perfect 3D prints!"
+url="https://flathub.org/apps/com.bambulab.BambuStudio"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.bambulab.BambuStudio

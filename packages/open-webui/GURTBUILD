@@ -1,0 +1,15 @@
+# The freedom AI stack (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=open-webui
+pkgver=flathub
+pkgrel=1
+pkgdesc="The freedom AI stack"
+url="https://flathub.org/apps/com.openwebui.open-webui"
+license="AGPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.openwebui.open-webui

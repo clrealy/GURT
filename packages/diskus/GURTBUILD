@@ -1,0 +1,20 @@
+# Way faster du -sh for checking folder sizes
+pkgname=diskus
+pkgver=0.9.0
+pkgrel=1
+pkgdesc="Way faster du -sh for checking folder sizes"
+url="https://github.com/sharkdp/diskus"
+license="MIT OR Apache-2.0"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/sharkdp/diskus/releases/download/${_tag}/diskus-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+sha256sums=(6ed6fbbd8b14c9daf2e56e690ee16761ceea5bf73b48813b3d723d8498146dc4)
+
+package() {
+  local f
+  f=$(find . -type f -name diskus -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name diskus | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/diskus"
+}

@@ -1,0 +1,15 @@
+# Parametric 3D CAD (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=dune-3d
+pkgver=flathub
+pkgrel=1
+pkgdesc="Parametric 3D CAD"
+url="https://flathub.org/apps/org.dune3d.dune3d"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.dune3d.dune3d

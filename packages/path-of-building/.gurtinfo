@@ -1,0 +1,13 @@
+pkgname = path-of-building
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A powerful build planner for Path of Exile
+url = https://flathub.org/apps/community.pathofbuilding.PathOfBuilding
+license = MIT
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = community.pathofbuilding.PathOfBuilding

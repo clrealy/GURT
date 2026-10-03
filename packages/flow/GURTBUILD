@@ -1,0 +1,15 @@
+# Cleaner browsing, sharper focus (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=flow
+pkgver=flathub
+pkgrel=1
+pkgdesc="Cleaner browsing, sharper focus"
+url="https://flathub.org/apps/com.flow_browser.flow"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="browsers"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.flow_browser.flow

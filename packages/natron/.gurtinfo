@@ -1,0 +1,13 @@
+pkgname = natron
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Compose industry-grade VFX and Motion Graphics
+url = https://flathub.org/apps/fr.natron.Natron
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = fr.natron.Natron

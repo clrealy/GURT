@@ -1,0 +1,15 @@
+# Multimedia to audio conversion (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=transition
+pkgver=flathub
+pkgrel=1
+pkgdesc="Multimedia to audio conversion"
+url="https://flathub.org/apps/page.codeberg.grinka.Transition"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=page.codeberg.grinka.Transition

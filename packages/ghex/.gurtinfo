@@ -1,0 +1,13 @@
+pkgname = ghex
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Inspect and edit binary files
+url = https://flathub.org/apps/org.gnome.GHex
+license = GPL-2.0+
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.gnome.GHex

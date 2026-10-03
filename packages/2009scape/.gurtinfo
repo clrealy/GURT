@@ -1,0 +1,13 @@
+pkgname = 2009scape
+pkgver = flathub
+pkgrel = 1
+pkgdesc = 2009 Runescape Emulation
+url = https://flathub.org/apps/org._2009scape.Launcher
+license = AGPL-3.0-or-later
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org._2009scape.Launcher

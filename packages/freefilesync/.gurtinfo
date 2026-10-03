@@ -1,0 +1,13 @@
+pkgname = freefilesync
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Visual folder comparison and synchronization
+url = https://flathub.org/apps/org.freefilesync.FreeFileSync
+license = GPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.freefilesync.FreeFileSync

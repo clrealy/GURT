@@ -1,0 +1,12 @@
+pkgname = zoxide
+pkgver = 0.10.0
+pkgrel = 1
+pkgdesc = A smarter cd that remembers where you go (jump with z)
+url = https://github.com/ajeetdsouza/zoxide
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = https://github.com/ajeetdsouza/zoxide/releases/download/v0.10.0/zoxide-0.10.0-x86_64-unknown-linux-musl.tar.gz
+alias = z

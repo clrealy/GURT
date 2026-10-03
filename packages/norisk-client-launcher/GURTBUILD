@@ -1,0 +1,15 @@
+# A Launcher for the NoRisk Client (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=norisk-client-launcher
+pkgver=flathub
+pkgrel=1
+pkgdesc="A Launcher for the NoRisk Client"
+url="https://flathub.org/apps/gg.norisk.NoRiskClientLauncherV3"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=gg.norisk.NoRiskClientLauncherV3

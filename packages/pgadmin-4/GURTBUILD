@@ -1,0 +1,15 @@
+# Admin and development platform for PostgreSQL (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=pgadmin-4
+pkgver=flathub
+pkgrel=1
+pkgdesc="Admin and development platform for PostgreSQL"
+url="https://flathub.org/apps/org.pgadmin.pgadmin4"
+license="PostgreSQL"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.pgadmin.pgadmin4

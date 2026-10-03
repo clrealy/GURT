@@ -1,0 +1,15 @@
+# A QR code scanner/generator (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=qr-scanner
+pkgver=flathub
+pkgrel=1
+pkgdesc="A QR code scanner/generator"
+url="https://flathub.org/apps/dev.lasheen.qr"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.lasheen.qr

@@ -1,0 +1,11 @@
+pkgname = git-lfs
+pkgver = 3.8.0
+pkgrel = 1
+pkgdesc = Store big files in git without bloating the repo
+url = https://github.com/git-lfs/git-lfs
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/git-lfs/git-lfs/releases/download/v3.8.0/git-lfs-linux-amd64-v3.8.0.tar.gz

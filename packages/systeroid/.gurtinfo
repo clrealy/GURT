@@ -1,0 +1,11 @@
+pkgname = systeroid
+pkgver = 0.4.6
+pkgrel = 1
+pkgdesc = Friendlier sysctl with a terminal UI and docs built in
+url = https://github.com/orhun/systeroid
+license = MIT OR Apache-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+source = https://github.com/orhun/systeroid/releases/download/v0.4.6/systeroid-0.4.6-x86_64-unknown-linux-musl.tar.gz

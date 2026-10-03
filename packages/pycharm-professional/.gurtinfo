@@ -1,0 +1,13 @@
+pkgname = pycharm-professional
+pkgver = flathub
+pkgrel = 1
+pkgdesc = The most intelligent Python IDE
+url = https://flathub.org/apps/com.jetbrains.PyCharm-Professional
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.jetbrains.PyCharm-Professional

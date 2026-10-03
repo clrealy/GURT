@@ -1,0 +1,13 @@
+pkgname = retro
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Customizable clock widget
+url = https://flathub.org/apps/re.sonny.Retro
+license = GPL-3.0
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = re.sonny.Retro

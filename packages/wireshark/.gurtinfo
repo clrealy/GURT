@@ -1,0 +1,13 @@
+pkgname = wireshark
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Network protocol analyzer (without capture support)
+url = https://flathub.org/apps/org.wireshark.Wireshark
+license = GPL-2.0
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.wireshark.Wireshark

@@ -1,0 +1,13 @@
+pkgname = wolfenstein-blade-of-agony
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Story-driven FPS inspired by WWII shooters from the 90's and early 2000's
+url = https://flathub.org/apps/com.realm667.Wolfenstein_Blade_of_Agony
+license = CC-BY-NC-SA-3.0
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.realm667.Wolfenstein_Blade_of_Agony

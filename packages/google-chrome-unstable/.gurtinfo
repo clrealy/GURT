@@ -1,0 +1,13 @@
+pkgname = google-chrome-unstable
+pkgver = flathub
+pkgrel = 1
+pkgdesc = The browser built to be yours
+url = https://flathub.org/apps/com.google.ChromeDev
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = browsers
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.google.ChromeDev

@@ -1,0 +1,15 @@
+# Read PDFs and ebooks horizontally (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=scrolex
+pkgver=flathub
+pkgrel=1
+pkgdesc="Read PDFs and ebooks horizontally"
+url="https://flathub.org/apps/com.andr2i.scrolex"
+license="AGPL-3.0-or-later"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.andr2i.scrolex

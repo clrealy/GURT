@@ -1,0 +1,15 @@
+# MeshCore mesh network client (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=meshy
+pkgver=flathub
+pkgrel=1
+pkgdesc="MeshCore mesh network client"
+url="https://flathub.org/apps/page.codeberg.sesivany.Meshy"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=page.codeberg.sesivany.Meshy

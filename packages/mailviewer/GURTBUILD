@@ -1,0 +1,15 @@
+# EML and MSG file viewer (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=mailviewer
+pkgver=flathub
+pkgrel=1
+pkgdesc="EML and MSG file viewer"
+url="https://flathub.org/apps/io.github.alescdb.mailviewer"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.alescdb.mailviewer

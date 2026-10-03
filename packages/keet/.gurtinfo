@@ -1,0 +1,13 @@
+pkgname = keet
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Secure Messenger, No tracking
+url = https://flathub.org/apps/io.keet.Keet
+license = see Flathub
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.keet.Keet

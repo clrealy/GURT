@@ -1,0 +1,15 @@
+# Nomacs is a free, open source image viewer (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=nomacs-image-lounge
+pkgver=flathub
+pkgrel=1
+pkgdesc="Nomacs is a free, open source image viewer"
+url="https://flathub.org/apps/org.nomacs.ImageLounge"
+license="GPL-3.0"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.nomacs.ImageLounge

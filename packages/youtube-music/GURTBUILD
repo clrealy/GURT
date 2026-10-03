@@ -1,0 +1,37 @@
+# YouTube Music desktop app with ad blocking and plugins (official AppImage)
+pkgname=youtube-music
+pkgver=3.12.0
+pkgrel=1
+pkgdesc="YouTube Music desktop app with ad blocking and plugins"
+url="https://github.com/th-ch/youtube-music"
+license="MIT"
+maintainer="clrealy"
+category="media"
+arch=(x86_64)
+_tag=v${pkgver}
+# the official AppImage, kept as an AppImage
+source=("youtube-music.AppImage::https://github.com/th-ch/youtube-music/releases/download/${_tag}/YouTube-Music-${pkgver}.AppImage")
+sha256sums=(c0975fc8aab1853b29a63bc3b33f79acf0f7fe3a49fb7d8541749de02044054d)
+
+package() {
+  local dir="$prefix/lib/gurt-apps/$pkgname" d icon="" ic
+  install -Dm755 "$pkgname.AppImage" "$pkgdir$dir/$pkgname.AppImage"
+  # no FUSE 2 on your system? it still runs (extract-and-run mode)
+  printf '#!/bin/sh\nldconfig -p 2>/dev/null | grep -q "libfuse\\.so\\.2" || export APPIMAGE_EXTRACT_AND_RUN=1\nexec "%s/%s.AppImage" "$@"\n' "$dir" "$pkgname" > launcher
+  install -Dm755 launcher "$pkgdir$prefix/bin/$pkgname"
+  # borrow its app menu entry + icon (the download isn't executable yet, so copy it first)
+  mkdir -p x; install -m755 "$pkgname.AppImage" x/app.AppImage
+  ( cd x && ./app.AppImage --appimage-extract >/dev/null 2>&1 || true )
+  d=$(find x/squashfs-root -maxdepth 1 -name '*.desktop' | head -n1)
+  ic=$( [ -n "$d" ] && sed -n 's/^Icon=//p' "$d" | head -n1 )
+  for f in $(find -L x/squashfs-root/usr/share/icons x/squashfs-root -maxdepth 6 -type f \( -name "${ic:-none}.png" -o -name "${ic:-none}.svg" \) 2>/dev/null | sort -V) \
+           $(find -L x/squashfs-root -maxdepth 1 -type f \( -name '*.png' -o -name '*.svg' \) 2>/dev/null); do icon=$f; done
+  if [ -n "$icon" ]; then install -Dm644 "$icon" "$pkgdir$prefix/share/pixmaps/$pkgname.${icon##*.}"; icon="$prefix/share/pixmaps/$pkgname.${icon##*.}"; fi
+  if [ -n "$d" ]; then
+    sed -E "s|^Exec=[^ ]+|Exec=$prefix/bin/$pkgname|; /^TryExec=/d${icon:+; s|^Icon=.*|Icon=$icon|}" "$d" > app.desktop
+  else
+    printf '[Desktop Entry]\nType=Application\nName=%s\nExec=%s/bin/%s\nIcon=%s\nTerminal=false\nCategories=Utility;\n' "$pkgname" "$prefix" "$pkgname" "${icon:-application-x-executable}" > app.desktop
+  fi
+  install -Dm644 app.desktop "$pkgdir$prefix/share/applications/$pkgname.desktop"
+  rm -rf x
+}

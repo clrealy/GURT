@@ -1,0 +1,11 @@
+pkgname = topgrade
+pkgver = 17.12.3
+pkgrel = 1
+pkgdesc = Update everything on your system with one command
+url = https://github.com/topgrade-rs/topgrade
+license = GPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+source = https://github.com/topgrade-rs/topgrade/releases/download/v17.12.3/topgrade-v17.12.3-x86_64-unknown-linux-musl.tar.gz

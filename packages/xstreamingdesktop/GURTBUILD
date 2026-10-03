@@ -1,0 +1,15 @@
+# XStreaming: Lets you stream Xbox games to your device, supporting Xbox streaming and Xbox Cloud Gaming (XCloud) (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=xstreamingdesktop
+pkgver=flathub
+pkgrel=1
+pkgdesc="XStreaming: Lets you stream Xbox games to your device, supporting Xbox streaming and Xbox Cloud Gaming (XCloud)"
+url="https://flathub.org/apps/io.github.Geocld.XStreamingDesktop"
+license="MIT"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.Geocld.XStreamingDesktop

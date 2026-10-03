@@ -1,0 +1,13 @@
+pkgname = chatterino
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Chat client for twitch.tv
+url = https://flathub.org/apps/com.chatterino.chatterino
+license = MIT
+maintainer = clrealy
+category = chat
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.chatterino.chatterino

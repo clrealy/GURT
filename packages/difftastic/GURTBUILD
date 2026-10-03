@@ -1,0 +1,20 @@
+# Diffs that understand code structure, not just lines (run difft)
+pkgname=difftastic
+pkgver=0.71.0
+pkgrel=1
+pkgdesc="Diffs that understand code structure, not just lines (run difft)"
+url="https://github.com/Wilfred/difftastic"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64)
+aliases=(difft)
+# official prebuilt release binary
+source=("https://github.com/Wilfred/difftastic/releases/download/${pkgver}/difft-${pkgver}-x86_64-unknown-linux-musl.tar.gz")
+sha256sums=(0a65e6715df992b0adae012e606bd9cc74fa6cfe90eaf13bbae165a0a19b3086)
+
+package() {
+  local f
+  f=$(find . -type f -name difft -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name difft | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/difft"
+}

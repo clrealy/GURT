@@ -1,0 +1,22 @@
+# Search inside PDFs, ebooks, office docs, zips and more, like ripgrep
+pkgname=rga
+pkgver=0.10.10
+pkgrel=1
+pkgdesc="Search inside PDFs, ebooks, office docs, zips and more, like ripgrep"
+url="https://github.com/phiresky/ripgrep-all"
+license="AGPL-3.0"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binaries
+source=("https://github.com/phiresky/ripgrep-all/releases/download/${_tag}/ripgrep_all-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+sha256sums=(a969c25b182ac84aa672518313b5f741091decf7d93d03a020bcfe517b9ff4e8)
+
+package() {
+  local f
+  f=$(find . -type f -name rga -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name rga | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/rga"
+  f=$(find . -type f -name rga-preproc -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name rga-preproc | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/rga-preproc"
+}

@@ -1,0 +1,15 @@
+# 3D planet viewer (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=google-earth-pro
+pkgver=flathub
+pkgrel=1
+pkgdesc="3D planet viewer"
+url="https://flathub.org/apps/com.google.EarthPro"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.google.EarthPro

@@ -1,0 +1,13 @@
+pkgname = vokoscreenng
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Easy to use screencast creator
+url = https://flathub.org/apps/com.github.vkohaupt.vokoscreenNG
+license = GPL-2.0-only
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.vkohaupt.vokoscreenNG

@@ -1,0 +1,22 @@
+# Install and switch between versions of Node, Python, Go and more
+pkgname=mise
+pkgver=2026.10.0
+pkgrel=1
+pkgdesc="Install and switch between versions of Node, Python, Go and more"
+url="https://github.com/jdx/mise"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/jdx/mise/releases/download/${_tag}/mise-${_tag}-linux-x64-musl.tar.gz")
+source_aarch64=("https://github.com/jdx/mise/releases/download/${_tag}/mise-${_tag}-linux-arm64-musl.tar.gz")
+sha256sums_x86_64=(df32ce8cb98e801ad48ed523e30ff6bcfe7311c45567a8b0dbb2c5181f09d436)
+sha256sums_aarch64=(7e0a2bcfc44fad4dd19654bd1261915802e2334becdc985ffa8becfe9de9cb01)
+
+package() {
+  local f
+  f=$(find . -type f -name mise -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name mise | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/mise"
+}

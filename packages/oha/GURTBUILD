@@ -1,0 +1,20 @@
+# Load test a website and watch the results live
+pkgname=oha
+pkgver=1.16.0
+pkgrel=1
+pkgdesc="Load test a website and watch the results live"
+url="https://github.com/hatoo/oha"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("oha::https://github.com/hatoo/oha/releases/download/${_tag}/oha-linux-amd64")
+source_aarch64=("oha::https://github.com/hatoo/oha/releases/download/${_tag}/oha-linux-arm64")
+sha256sums_x86_64=(620bb9e16fb53eabc9a3fc45f88bdb41fefa3fee5c05e75892011ce320391716)
+sha256sums_aarch64=(99a790eb8c3e0feaca974bd6b32f0f8d4426a0c5b289f39e833e5b2c7529cd39)
+
+package() {
+  install -Dm755 oha "$pkgdir$prefix/bin/oha"
+}

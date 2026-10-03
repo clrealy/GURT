@@ -1,0 +1,15 @@
+# Free and Open Source Remote Play Client (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=pylux
+pkgver=flathub
+pkgrel=1
+pkgdesc="Free and Open Source Remote Play Client"
+url="https://flathub.org/apps/io.github.ForWard_Technologies_LLC.Pylux"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.ForWard_Technologies_LLC.Pylux

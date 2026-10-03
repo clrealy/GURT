@@ -1,0 +1,10 @@
+pkgname = openshot
+pkgver = 4.0.1
+pkgrel = 1
+pkgdesc = Easy video editor with drag and drop
+url = https://github.com/OpenShot/openshot-qt
+license = GPL-3.0
+maintainer = clrealy
+category = media
+arch = x86_64
+source = openshot.AppImage::https://github.com/OpenShot/openshot-qt/releases/download/v4.0.1/OpenShot-v4.0.1-x86_64.AppImage

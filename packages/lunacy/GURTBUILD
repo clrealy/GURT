@@ -1,0 +1,15 @@
+# Free graphic design tool for UX/UI (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=lunacy
+pkgver=flathub
+pkgrel=1
+pkgdesc="Free graphic design tool for UX/UI"
+url="https://flathub.org/apps/com.icons8.Lunacy"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.icons8.Lunacy

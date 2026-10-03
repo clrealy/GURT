@@ -1,0 +1,20 @@
+# A modern ps that's actually readable
+pkgname=procs
+pkgver=0.14.12
+pkgrel=1
+pkgdesc="A modern ps that's actually readable"
+url="https://github.com/dalance/procs"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binaries
+source_x86_64=("https://github.com/dalance/procs/releases/download/$_tag/procs-$_tag-x86_64-linux.zip")
+source_aarch64=("https://github.com/dalance/procs/releases/download/$_tag/procs-$_tag-aarch64-linux.zip")
+sha256sums_x86_64=(81964faf9d5cd0e9f399d5d0954fb6fe4d4d9f7d3cbec4507633df5a45b11713)
+sha256sums_aarch64=(74b4f82acc6fe553cbd5af20ba0baac420b42bef9bb0cbb38fef14b8317d9f91)
+
+package() {
+  install -Dm755 "$(find . -type f -name procs -perm -u+x | head -n1)" "$pkgdir$prefix/bin/procs"
+}

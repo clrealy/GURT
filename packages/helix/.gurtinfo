@@ -1,0 +1,12 @@
+pkgname = helix
+pkgver = 25.07.1
+pkgrel = 1
+pkgdesc = Modal text editor with language smarts built in, no plugins needed (run hx)
+url = https://github.com/helix-editor/helix
+license = MPL-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/helix-editor/helix/releases/download/25.07.1/helix-25.07.1-x86_64-linux.tar.xz
+alias = hx

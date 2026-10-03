@@ -1,0 +1,13 @@
+pkgname = qt-creator
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Cross-platform integrated development environment (IDE)
+url = https://flathub.org/apps/io.qt.QtCreator
+license = GPL-3.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.qt.QtCreator

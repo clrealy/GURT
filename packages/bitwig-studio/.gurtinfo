@@ -1,0 +1,13 @@
+pkgname = bitwig-studio
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Modern music production and performance
+url = https://flathub.org/apps/com.bitwig.BitwigStudio
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.bitwig.BitwigStudio

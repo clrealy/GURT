@@ -1,0 +1,15 @@
+# Application that allows you to translate and speak text using Mozhi (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=crow-translate
+pkgver=flathub
+pkgrel=1
+pkgdesc="Application that allows you to translate and speak text using Mozhi"
+url="https://flathub.org/apps/org.kde.CrowTranslate"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.CrowTranslate

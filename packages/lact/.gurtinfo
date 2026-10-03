@@ -1,0 +1,13 @@
+pkgname = lact
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Control your graphics cards
+url = https://flathub.org/apps/io.github.ilya_zlobintsev.LACT
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.ilya_zlobintsev.LACT

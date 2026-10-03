@@ -1,0 +1,11 @@
+pkgname = jq
+pkgver = 1.8.2
+pkgrel = 1
+pkgdesc = Slice, filter and reshape JSON from the command line
+url = https://github.com/jqlang/jq
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = jq::https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-linux-amd64

@@ -1,0 +1,11 @@
+pkgname = sd
+pkgver = 1.1.0
+pkgrel = 1
+pkgdesc = Find and replace text, simpler than sed
+url = https://github.com/chmln/sd
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = https://github.com/chmln/sd/releases/download/v1.1.0/sd-v1.1.0-x86_64-unknown-linux-musl.tar.gz

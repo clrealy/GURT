@@ -1,0 +1,10 @@
+pkgname = nnn
+pkgver = 5.3
+pkgrel = 1
+pkgdesc = Tiny, super fast terminal file manager
+url = https://github.com/jarun/nnn
+license = BSD-2-Clause
+maintainer = clrealy
+category = cli
+arch = x86_64
+source = https://github.com/jarun/nnn/releases/download/v5.3/nnn-static-5.3.x86_64.tar.gz

@@ -1,0 +1,13 @@
+pkgname = bluej
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Java IDE for beginners
+url = https://flathub.org/apps/org.bluej.BlueJ
+license = GPL-2.0-only WITH Classpath-exception-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.bluej.BlueJ

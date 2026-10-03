@@ -1,0 +1,15 @@
+# Mind Mapping, Knowledge Management, Project Management. Develop, organize and communicate your ideas and knowledge in the most effective way (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=freeplane
+pkgver=flathub
+pkgrel=1
+pkgdesc="Mind Mapping, Knowledge Management, Project Management. Develop, organize and communicate your ideas and knowledge in the most effective way"
+url="https://flathub.org/apps/org.freeplane.App"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.freeplane.App

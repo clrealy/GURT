@@ -1,0 +1,11 @@
+pkgname = lazysql
+pkgver = 0.5.9
+pkgrel = 1
+pkgdesc = Terminal UI for your SQL databases
+url = https://github.com/jorgerojas26/lazysql
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/jorgerojas26/lazysql/releases/download/v0.5.9/lazysql_Linux_x86_64.tar.gz

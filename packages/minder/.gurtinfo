@@ -1,0 +1,13 @@
+pkgname = minder
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Create, develop and visualize your ideas
+url = https://flathub.org/apps/com.github.phase1geo.minder
+license = GPL-3.0+
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.phase1geo.minder

@@ -1,0 +1,19 @@
+# Shows info and stats about a git repo next to its logo
+pkgname=onefetch
+pkgver=2.28.1
+pkgrel=1
+pkgdesc="Shows info and stats about a git repo next to its logo"
+url="https://github.com/o2sh/onefetch"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64)
+# official prebuilt release binary
+source=("https://github.com/o2sh/onefetch/releases/download/${pkgver}/onefetch-linux.tar.gz")
+sha256sums=(ddf1b1b9f057cdbf71172324de24074e4615fcefd70ce09ab782e9ad5fe41b66)
+
+package() {
+  local f
+  f=$(find . -type f -name onefetch -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name onefetch | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/onefetch"
+}

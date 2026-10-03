@@ -1,0 +1,15 @@
+# Free medical DICOM viewer (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=weasis
+pkgver=flathub
+pkgrel=1
+pkgdesc="Free medical DICOM viewer"
+url="https://flathub.org/apps/io.github.nroduit.Weasis"
+license="EPL-2.0 OR Apache-2.0"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.nroduit.Weasis

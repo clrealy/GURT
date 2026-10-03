@@ -1,0 +1,15 @@
+# Block-based multiplayer game platform (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=luanti
+pkgver=flathub
+pkgrel=1
+pkgdesc="Block-based multiplayer game platform"
+url="https://flathub.org/apps/org.luanti.luanti"
+license="LGPL-2.1+ AND CC-BY-SA-3.0 AND MIT AND Apache-2.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.luanti.luanti

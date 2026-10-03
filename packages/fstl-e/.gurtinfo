@@ -1,0 +1,13 @@
+pkgname = fstl-e
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Fast stl viewer
+url = https://flathub.org/apps/io.github.wdaniau.fstl
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.wdaniau.fstl

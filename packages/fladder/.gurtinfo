@@ -1,0 +1,13 @@
+pkgname = fladder
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A cross-platform Jellyfin client
+url = https://flathub.org/apps/nl.jknaapen.fladder
+license = GPL-3.0-only
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = nl.jknaapen.fladder

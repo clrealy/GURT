@@ -1,0 +1,15 @@
+# Audio Plugin Host (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=carla
+pkgver=flathub
+pkgrel=1
+pkgdesc="Audio Plugin Host"
+url="https://flathub.org/apps/studio.kx.carla"
+license="GPL-2.0"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=studio.kx.carla

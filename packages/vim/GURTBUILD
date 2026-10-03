@@ -1,0 +1,15 @@
+# The ubiquitous text editor (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=vim
+pkgver=flathub
+pkgrel=1
+pkgdesc="The ubiquitous text editor"
+url="https://flathub.org/apps/org.vim.Vim"
+license="Vim"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.vim.Vim

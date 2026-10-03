@@ -1,0 +1,22 @@
+# Deploy lots of Helm charts in one go
+pkgname=helmfile
+pkgver=1.8.1
+pkgrel=1
+pkgdesc="Deploy lots of Helm charts in one go"
+url="https://github.com/helmfile/helmfile"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/helmfile/helmfile/releases/download/${_tag}/helmfile_${pkgver}_linux_amd64.tar.gz")
+source_aarch64=("https://github.com/helmfile/helmfile/releases/download/${_tag}/helmfile_${pkgver}_linux_arm64.tar.gz")
+sha256sums_x86_64=(ccabbe75dddbc25008d055fe92a44f95a184342211e7244d32b870409239c7a3)
+sha256sums_aarch64=(2217788de9fb42cd0b3d84f1ee99c63617e19dea7af4995a59e45e4952c86ec4)
+
+package() {
+  local f
+  f=$(find . -type f -name helmfile -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name helmfile | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/helmfile"
+}

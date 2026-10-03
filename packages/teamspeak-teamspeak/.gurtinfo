@@ -1,0 +1,13 @@
+pkgname = teamspeak-teamspeak
+pkgver = flathub
+pkgrel = 1
+pkgdesc = TeamSpeak VoIP application
+url = https://flathub.org/apps/com.teamspeak.TeamSpeak
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = chat
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.teamspeak.TeamSpeak

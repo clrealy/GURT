@@ -1,0 +1,10 @@
+pkgname = hadolint
+pkgver = 2.15.1
+pkgrel = 1
+pkgdesc = Linter for Dockerfiles that catches common mistakes
+url = https://github.com/hadolint/hadolint
+license = GPL-3.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+source = hadolint::https://github.com/hadolint/hadolint/releases/download/v2.15.1/hadolint-linux-x86_64

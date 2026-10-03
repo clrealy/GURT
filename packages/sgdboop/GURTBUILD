@@ -1,0 +1,15 @@
+# Apply SteamGridDB assets to Steam (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=sgdboop
+pkgver=flathub
+pkgrel=1
+pkgdesc="Apply SteamGridDB assets to Steam"
+url="https://flathub.org/apps/com.steamgriddb.SGDBoop"
+license="Zlib"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.steamgriddb.SGDBoop

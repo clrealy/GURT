@@ -1,0 +1,13 @@
+pkgname = simulide
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Circuit simulator
+url = https://flathub.org/apps/com.simulide.simulide
+license = GPL-3.0
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.simulide.simulide

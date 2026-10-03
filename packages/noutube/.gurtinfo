@@ -1,0 +1,13 @@
+pkgname = noutube
+pkgver = flathub
+pkgrel = 1
+pkgdesc = YouTube and YouTube Music in a single app
+url = https://flathub.org/apps/jp.nonbili.noutube
+license = AGPL-3.0-or-later
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = jp.nonbili.noutube

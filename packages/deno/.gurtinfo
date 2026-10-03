@@ -1,0 +1,11 @@
+pkgname = deno
+pkgver = 2.9.7
+pkgrel = 1
+pkgdesc = Modern JavaScript and TypeScript runtime with tools built in
+url = https://github.com/denoland/deno
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/denoland/deno/releases/download/v2.9.7/deno-x86_64-unknown-linux-gnu.zip

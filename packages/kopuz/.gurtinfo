@@ -1,0 +1,13 @@
+pkgname = kopuz
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Hi-Res multi-backend music player
+url = https://flathub.org/apps/moe.kopuz.kopuz
+license = EUPL-1.2
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = moe.kopuz.kopuz

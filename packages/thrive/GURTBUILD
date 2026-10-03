@@ -1,0 +1,15 @@
+# An evolution simulation game. Take control of your species in the environment and edit your species as a whole. Compete with other evolving species (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=thrive
+pkgver=flathub
+pkgrel=1
+pkgdesc="An evolution simulation game. Take control of your species in the environment and edit your species as a whole. Compete with other evolving species"
+url="https://flathub.org/apps/com.revolutionarygamesstudio.ThriveLauncher"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.revolutionarygamesstudio.ThriveLauncher

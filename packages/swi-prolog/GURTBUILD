@@ -1,0 +1,15 @@
+# ISO/Edinburgh-style Prolog interpreter (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=swi-prolog
+pkgver=flathub
+pkgrel=1
+pkgdesc="ISO/Edinburgh-style Prolog interpreter"
+url="https://flathub.org/apps/org.swi_prolog.swipl"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.swi_prolog.swipl

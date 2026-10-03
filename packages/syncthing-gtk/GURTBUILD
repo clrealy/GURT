@@ -1,0 +1,15 @@
+# GUI and notification area icon for Syncthing (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=syncthing-gtk
+pkgver=flathub
+pkgrel=1
+pkgdesc="GUI and notification area icon for Syncthing"
+url="https://flathub.org/apps/me.kozec.syncthingtk"
+license="GPL-2.0"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=me.kozec.syncthingtk

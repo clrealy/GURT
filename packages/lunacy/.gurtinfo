@@ -1,0 +1,13 @@
+pkgname = lunacy
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Free graphic design tool for UX/UI
+url = https://flathub.org/apps/com.icons8.Lunacy
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.icons8.Lunacy

@@ -1,0 +1,11 @@
+pkgname = trufflehog
+pkgver = 3.97.9
+pkgrel = 1
+pkgdesc = Hunt for leaked secrets in repos, files and more
+url = https://github.com/trufflesecurity/trufflehog
+license = AGPL-3.0
+maintainer = clrealy
+category = security
+arch = x86_64
+arch = aarch64
+source = https://github.com/trufflesecurity/trufflehog/releases/download/v3.97.9/trufflehog_3.97.9_linux_amd64.tar.gz

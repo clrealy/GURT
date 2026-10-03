@@ -1,0 +1,15 @@
+# Manage your flatpaks with a simple GUI (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=easyflatpak
+pkgver=flathub
+pkgrel=1
+pkgdesc="Manage your flatpaks with a simple GUI"
+url="https://flathub.org/apps/org.dupot.easyflatpak"
+license="LGPL-2.1-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.dupot.easyflatpak

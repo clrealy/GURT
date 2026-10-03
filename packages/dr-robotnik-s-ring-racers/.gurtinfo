@@ -1,0 +1,13 @@
+pkgname = dr-robotnik-s-ring-racers
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Racing at the Next Level
+url = https://flathub.org/apps/org.kartkrew.RingRacers
+license = GPL-2.0+
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.kartkrew.RingRacers

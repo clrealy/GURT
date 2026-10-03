@@ -1,0 +1,15 @@
+# The Scientific Python Development Environment (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=spyder
+pkgver=flathub
+pkgrel=1
+pkgdesc="The Scientific Python Development Environment"
+url="https://flathub.org/apps/org.spyder_ide.spyder"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.spyder_ide.spyder

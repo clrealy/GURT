@@ -1,0 +1,20 @@
+# Generate LS_COLORS themes so ls looks good
+pkgname=vivid
+pkgver=0.11.1
+pkgrel=1
+pkgdesc="Generate LS_COLORS themes so ls looks good"
+url="https://github.com/sharkdp/vivid"
+license="MIT OR Apache-2.0"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/sharkdp/vivid/releases/download/${_tag}/vivid-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+sha256sums=(f1a80a39c75ceae43c4187f302e66c0a45d941ed1479456a0d5ddef665663181)
+
+package() {
+  local f
+  f=$(find . -type f -name vivid -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name vivid | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/vivid"
+}

@@ -1,0 +1,11 @@
+pkgname = minikube
+pkgver = 1.39.0
+pkgrel = 1
+pkgdesc = Run Kubernetes on your own machine
+url = https://github.com/kubernetes/minikube
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/kubernetes/minikube/releases/download/v1.39.0/minikube-linux-amd64.tar.gz

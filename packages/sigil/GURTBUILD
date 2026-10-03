@@ -1,0 +1,15 @@
+# Multi-platform EPUB ebook editor (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=sigil
+pkgver=flathub
+pkgrel=1
+pkgdesc="Multi-platform EPUB ebook editor"
+url="https://flathub.org/apps/com.sigil_ebook.Sigil"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.sigil_ebook.Sigil

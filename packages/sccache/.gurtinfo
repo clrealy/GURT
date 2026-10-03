@@ -1,0 +1,11 @@
+pkgname = sccache
+pkgver = 0.18.0
+pkgrel = 1
+pkgdesc = Cache compiler output so rebuilds are way faster
+url = https://github.com/mozilla/sccache
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/mozilla/sccache/releases/download/v0.18.0/sccache-v0.18.0-x86_64-unknown-linux-musl.tar.gz

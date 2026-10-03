@@ -1,0 +1,20 @@
+# Formats shell scripts neatly
+pkgname=shfmt
+pkgver=3.14.1
+pkgrel=1
+pkgdesc="Formats shell scripts neatly"
+url="https://github.com/mvdan/sh"
+license="BSD-3-Clause"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("shfmt::https://github.com/mvdan/sh/releases/download/${_tag}/shfmt_${_tag}_linux_amd64")
+source_aarch64=("shfmt::https://github.com/mvdan/sh/releases/download/${_tag}/shfmt_${_tag}_linux_arm64")
+sha256sums_x86_64=(76e77641faa025814b77f153b29796b8e6fa2fca03e0c76a691608b86c7ea7bf)
+sha256sums_aarch64=(5f2db09dae91fca848f7adbdd014632e921a383863a2ad7e0450ad3aba0c6489)
+
+package() {
+  install -Dm755 shfmt "$pkgdir$prefix/bin/shfmt"
+}

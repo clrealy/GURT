@@ -1,0 +1,13 @@
+pkgname = image-optimizer
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Shrink images losslessly
+url = https://flathub.org/apps/com.github.gijsgoudzwaard.image-optimizer
+license = MIT
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.gijsgoudzwaard.image-optimizer

@@ -1,0 +1,13 @@
+pkgname = exhibit
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Preview your 3D models
+url = https://flathub.org/apps/io.github.nokse22.Exhibit
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.nokse22.Exhibit

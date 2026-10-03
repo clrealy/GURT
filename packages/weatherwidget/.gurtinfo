@@ -1,0 +1,13 @@
+pkgname = weatherwidget
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Live weather and world clocks
+url = https://flathub.org/apps/uk.co.easysmartapps.WeatherWidget
+license = AGPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = uk.co.easysmartapps.WeatherWidget

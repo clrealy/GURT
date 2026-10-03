@@ -1,0 +1,13 @@
+pkgname = cider
+pkgver = flathub
+pkgrel = 1
+pkgdesc = An exquisitely crafted and customizable Apple Music app
+url = https://flathub.org/apps/sh.cider.Cider
+license = see Flathub
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = sh.cider.Cider

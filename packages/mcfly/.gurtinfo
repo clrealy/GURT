@@ -1,0 +1,11 @@
+pkgname = mcfly
+pkgver = 0.9.4
+pkgrel = 1
+pkgdesc = Smarter Ctrl+R shell history search
+url = https://github.com/cantino/mcfly
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = https://github.com/cantino/mcfly/releases/download/v0.9.4/mcfly-v0.9.4-x86_64-unknown-linux-musl.tar.gz

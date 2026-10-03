@@ -1,0 +1,13 @@
+pkgname = restic
+pkgver = 0.19.1
+pkgrel = 1
+pkgdesc = Fast, encrypted backups to your disk, a server or the cloud
+url = https://github.com/restic/restic
+license = BSD-2-Clause
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = restic::git+https://github.com/restic/restic.git#tag=v0.19.1

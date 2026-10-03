@@ -1,0 +1,11 @@
+pkgname = k6
+pkgver = 2.3.0
+pkgrel = 1
+pkgdesc = Load testing tool you script in JavaScript
+url = https://github.com/grafana/k6
+license = AGPL-3.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/grafana/k6/releases/download/v2.3.0/k6-v2.3.0-linux-amd64.tar.gz

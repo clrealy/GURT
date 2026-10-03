@@ -1,0 +1,23 @@
+# Spotify in your terminal
+pkgname=spotify-player
+pkgver=0.25.1
+pkgrel=1
+pkgdesc="Spotify in your terminal"
+url="https://github.com/aome510/spotify-player"
+license="MIT"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+aliases=(spotify_player)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/aome510/spotify-player/releases/download/${_tag}/spotify_player-x86_64-unknown-linux-gnu.tar.gz")
+source_aarch64=("https://github.com/aome510/spotify-player/releases/download/${_tag}/spotify_player-aarch64-unknown-linux-gnu.tar.gz")
+sha256sums_x86_64=(e68dce205e995f80107149c55ace7b93125dbf73805363b7b0f9bfe8475c50ba)
+sha256sums_aarch64=(c8e02b108ed4d0abc8d705510deaa2db1dfb03af60489b67cd037cd864cb5e53)
+
+package() {
+  local f
+  f=$(find . -type f -name spotify_player -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name spotify_player | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/spotify_player"
+}

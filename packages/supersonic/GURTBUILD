@@ -1,0 +1,15 @@
+# A lightweight cross-platform desktop client for Subsonic and Jellyfin music servers (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=supersonic
+pkgver=flathub
+pkgrel=1
+pkgdesc="A lightweight cross-platform desktop client for Subsonic and Jellyfin music servers"
+url="https://flathub.org/apps/io.github.dweymouth.supersonic"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.dweymouth.supersonic

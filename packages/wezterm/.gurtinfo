@@ -1,0 +1,13 @@
+pkgname = wezterm
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Powerful terminal and multiplexer
+url = https://flathub.org/apps/org.wezfurlong.wezterm
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.wezfurlong.wezterm

@@ -1,0 +1,30 @@
+# Make a bootable USB once, then just copy ISO files onto it (Ventoy2Disk GUI included)
+pkgname=ventoy
+pkgver=1.1.17
+pkgrel=1
+pkgdesc="Make a bootable USB once, then just copy ISO files onto it and boot any of them"
+url="https://www.ventoy.net"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64 i686)
+aliases=(ventoy2diskgui ventoygui ventoy2disk)
+source=("https://github.com/ventoy/Ventoy/releases/download/v$pkgver/ventoy-$pkgver-linux.tar.gz")
+sha256sums=(7fb4ed08cef6a6b4d39dd19260d8c80291a78dfdf9af7d461571e23cbbc43805)
+
+package() {
+  local dir="$prefix/lib/ventoy" gui
+  mkdir -p "$pkgdir$dir"
+  cp -a "ventoy-$pkgver/." "$pkgdir$dir/"
+  case $CARCH in x86_64) gui=x86_64 ;; aarch64) gui=aarch64 ;; *) gui=i386 ;; esac
+  # Ventoy runs from its own folder (it reads ./tool and writes its log next to itself)
+  printf '#!/bin/sh\ncd "%s" || exit 1\nexec ./VentoyGUI.%s "$@"\n' "$dir" "$gui" > ventoygui
+  printf '#!/bin/sh\ncd "%s" || exit 1\nexec bash ./Ventoy2Disk.sh "$@"\n' "$dir" > ventoy
+  printf '#!/bin/sh\ncd "%s" || exit 1\nexec bash ./VentoyWeb.sh "$@"\n' "$dir" > ventoyweb
+  for f in ventoygui ventoy ventoyweb; do install -Dm755 "$f" "$pkgdir$prefix/bin/$f"; done
+  ln -s ventoygui "$pkgdir$prefix/bin/ventoy2diskgui"
+  install -Dm644 "ventoy-$pkgver/WebUI/static/img/VentoyLogo.png" "$pkgdir$prefix/share/pixmaps/ventoy.png"
+  printf '[Desktop Entry]\nType=Application\nName=Ventoy\nGenericName=Bootable USB maker\nComment=%s\nExec=%s/bin/ventoygui\nIcon=%s/share/pixmaps/ventoy.png\nTerminal=false\nCategories=System;Utility;\nKeywords=usb;iso;boot;ventoy2disk;\n' \
+    "$pkgdesc" "$prefix" "$prefix" > ventoy.desktop
+  install -Dm644 ventoy.desktop "$pkgdir$prefix/share/applications/ventoy.desktop"
+}

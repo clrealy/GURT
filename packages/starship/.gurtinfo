@@ -1,0 +1,11 @@
+pkgname = starship
+pkgver = 1.26.0
+pkgrel = 1
+pkgdesc = Fast, pretty shell prompt that works in any shell
+url = https://github.com/starship/starship
+license = ISC
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = https://github.com/starship/starship/releases/download/v1.26.0/starship-x86_64-unknown-linux-musl.tar.gz

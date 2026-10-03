@@ -1,0 +1,20 @@
+# Interactive cheatsheets for the command line
+pkgname=navi
+pkgver=2.24.0
+pkgrel=1
+pkgdesc="Interactive cheatsheets for the command line"
+url="https://github.com/denisidoro/navi"
+license="Apache-2.0"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/denisidoro/navi/releases/download/${_tag}/navi-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+sha256sums=(f334047479241f7c8b48d091f4e814dcc798a51a74dfd04ee63cbf67e8c921ba)
+
+package() {
+  local f
+  f=$(find . -type f -name navi -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name navi | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/navi"
+}

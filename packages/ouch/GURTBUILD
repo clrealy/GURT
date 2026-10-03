@@ -1,0 +1,19 @@
+# Compress and decompress anything with one command (zip, tar, 7z, zst and more)
+pkgname=ouch
+pkgver=0.8.3
+pkgrel=1
+pkgdesc="Compress and decompress anything with one command (zip, tar, 7z, zst and more)"
+url="https://github.com/ouch-org/ouch"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+# official prebuilt release binaries
+source_x86_64=("https://github.com/ouch-org/ouch/releases/download/$pkgver/ouch-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/ouch-org/ouch/releases/download/$pkgver/ouch-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(eaab9b997a823f584557ac5f85205105ae577a4c4fbd23926b686469cfa19881)
+sha256sums_aarch64=(4619158de69e65e8d23147c3d8b46b116feb0259c8a1704df7d792394c2b5847)
+
+package() {
+  install -Dm755 "$(find . -type f -name ouch -perm -u+x | head -n1)" "$pkgdir$prefix/bin/ouch"
+}

@@ -1,0 +1,15 @@
+# Capture text from any screen area (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=normcap
+pkgver=flathub
+pkgrel=1
+pkgdesc="Capture text from any screen area"
+url="https://flathub.org/apps/com.github.dynobo.normcap"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.dynobo.normcap

@@ -1,0 +1,13 @@
+pkgname = readest
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Modern, feature-rich ebook reader
+url = https://flathub.org/apps/com.bilingify.readest
+license = AGPL-3.0-or-later
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.bilingify.readest

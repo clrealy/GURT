@@ -1,0 +1,15 @@
+# Electronic circuit simulator (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=coulomb
+pkgver=flathub
+pkgrel=1
+pkgdesc="Electronic circuit simulator"
+url="https://flathub.org/apps/io.github.hamza_algohary.Coulomb"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.hamza_algohary.Coulomb

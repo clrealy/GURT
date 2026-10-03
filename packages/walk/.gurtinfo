@@ -1,0 +1,11 @@
+pkgname = walk
+pkgver = 1.13.0
+pkgrel = 1
+pkgdesc = Browse folders in the terminal and cd where you land
+url = https://github.com/antonmedv/walk
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = walk::https://github.com/antonmedv/walk/releases/download/v1.13.0/walk_linux_amd64

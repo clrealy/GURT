@@ -1,0 +1,15 @@
+# The web version of listen.tidal.com with Hi-Fi (High and Max) support (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tidal-hi-fi
+pkgver=flathub
+pkgrel=1
+pkgdesc="The web version of listen.tidal.com with Hi-Fi (High and Max) support"
+url="https://flathub.org/apps/com.mastermindzh.tidal-hifi"
+license="MIT"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.mastermindzh.tidal-hifi

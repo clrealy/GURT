@@ -1,0 +1,15 @@
+# Send free messages and make free calls (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=viber
+pkgver=flathub
+pkgrel=1
+pkgdesc="Send free messages and make free calls"
+url="https://flathub.org/apps/com.viber.Viber"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.viber.Viber

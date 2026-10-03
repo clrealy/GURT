@@ -1,0 +1,10 @@
+pkgname = choose
+pkgver = 1.3.7
+pkgrel = 1
+pkgdesc = Pick columns out of text, friendlier than cut and awk
+url = https://github.com/theryangeary/choose
+license = GPL-3.0
+maintainer = clrealy
+category = cli
+arch = x86_64
+source = choose::https://github.com/theryangeary/choose/releases/download/v1.3.7/choose-x86_64-unknown-linux-musl

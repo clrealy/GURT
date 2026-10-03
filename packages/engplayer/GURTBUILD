@@ -1,0 +1,15 @@
+# Modern IPTV and Media Center (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=engplayer
+pkgver=flathub
+pkgrel=1
+pkgdesc="Modern IPTV and Media Center"
+url="https://flathub.org/apps/io.github.falldaemon.engplayer"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.falldaemon.engplayer

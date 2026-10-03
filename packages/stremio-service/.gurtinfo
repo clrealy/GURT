@@ -1,0 +1,13 @@
+pkgname = stremio-service
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Freedom to Stream
+url = https://flathub.org/apps/com.stremio.Service
+license = GPL-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.stremio.Service

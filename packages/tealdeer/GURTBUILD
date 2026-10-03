@@ -1,0 +1,21 @@
+# Quick examples for any command instead of reading the man page (run tldr)
+pkgname=tealdeer
+pkgver=1.9.0
+pkgrel=1
+pkgdesc="Quick examples for any command instead of reading the man page (run tldr)"
+url="https://github.com/tealdeer-rs/tealdeer"
+license="MIT OR Apache-2.0"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+aliases=(tldr)
+_tag=v$pkgver
+# official prebuilt release binaries
+source_x86_64=("tldr::https://github.com/tealdeer-rs/tealdeer/releases/download/$_tag/tealdeer-linux-x86_64-musl")
+source_aarch64=("tldr::https://github.com/tealdeer-rs/tealdeer/releases/download/$_tag/tealdeer-linux-aarch64-musl")
+sha256sums_x86_64=(dc7263b550e90c0689ea2cb434e3144469805d5dddecbb1f7fc534e1185b7408)
+sha256sums_aarch64=(a748f181c00933980cb850f4a24199c45900fc523787f6c524232a6bfc66b895)
+
+package() {
+  install -Dm755 tldr "$pkgdir$prefix/bin/tldr"
+}

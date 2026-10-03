@@ -1,0 +1,13 @@
+pkgname = avogadro
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Advanced molecular editor
+url = https://flathub.org/apps/org.openchemistry.Avogadro2
+license = BSD-3-Clause AND GPL-2.0-only
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.openchemistry.Avogadro2

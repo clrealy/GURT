@@ -1,0 +1,15 @@
+# Just pick a Torrent, stream and download (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=pikatorrent
+pkgver=flathub
+pkgrel=1
+pkgdesc="Just pick a Torrent, stream and download"
+url="https://flathub.org/apps/com.pikatorrent.PikaTorrent"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.pikatorrent.PikaTorrent

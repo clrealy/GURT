@@ -1,0 +1,15 @@
+# Classic instrument based rhythm game (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=clone-hero
+pkgver=flathub
+pkgrel=1
+pkgdesc="Classic instrument based rhythm game"
+url="https://flathub.org/apps/net.clonehero.CloneHero"
+license="see Flathub"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.clonehero.CloneHero

@@ -1,0 +1,20 @@
+# Write documents with markup and get beautiful PDFs, a modern LaTeX
+pkgname=typst
+pkgver=0.15.1
+pkgrel=1
+pkgdesc="Write documents with markup and get beautiful PDFs, a modern LaTeX"
+url="https://github.com/typst/typst"
+license="Apache-2.0"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binaries
+source_x86_64=("https://github.com/typst/typst/releases/download/$_tag/typst-x86_64-unknown-linux-musl.tar.xz")
+source_aarch64=("https://github.com/typst/typst/releases/download/$_tag/typst-aarch64-unknown-linux-musl.tar.xz")
+sha256sums_x86_64=(a6d077d0a95eed5a2eba715b2dae06be954f624ccbf85758a03f389ded33118c)
+sha256sums_aarch64=(5aa8d74a3d906e60ea12a66ac2f37f8eef1b14cbad7182a745e393a10c23dcee)
+
+package() {
+  install -Dm755 "$(find . -type f -name typst -perm -u+x | head -n1)" "$pkgdir$prefix/bin/typst"
+}

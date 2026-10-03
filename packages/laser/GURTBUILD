@@ -1,0 +1,15 @@
+# Rip CDs with ease (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=laser
+pkgver=flathub
+pkgrel=1
+pkgdesc="Rip CDs with ease"
+url="https://flathub.org/apps/nl.andreasknoben.Laser"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=nl.andreasknoben.Laser

@@ -1,0 +1,18 @@
+# Linter for Dockerfiles that catches common mistakes
+pkgname=hadolint
+pkgver=2.15.1
+pkgrel=1
+pkgdesc="Linter for Dockerfiles that catches common mistakes"
+url="https://github.com/hadolint/hadolint"
+license="GPL-3.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("hadolint::https://github.com/hadolint/hadolint/releases/download/${_tag}/hadolint-linux-x86_64")
+sha256sums=(c7187db94eeeeca956519a6af171adc31453941a1e777961f6e680f697c8c507)
+
+package() {
+  install -Dm755 hadolint "$pkgdir$prefix/bin/hadolint"
+}

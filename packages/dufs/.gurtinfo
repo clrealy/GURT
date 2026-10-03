@@ -1,0 +1,11 @@
+pkgname = dufs
+pkgver = 0.46.0
+pkgrel = 1
+pkgdesc = File server with uploads, search and a web UI
+url = https://github.com/sigoden/dufs
+license = MIT OR Apache-2.0
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = https://github.com/sigoden/dufs/releases/download/v0.46.0/dufs-v0.46.0-x86_64-unknown-linux-musl.tar.gz

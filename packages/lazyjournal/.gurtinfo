@@ -1,0 +1,11 @@
+pkgname = lazyjournal
+pkgver = 0.8.6
+pkgrel = 1
+pkgdesc = Terminal UI for journalctl, docker and log files
+url = https://github.com/Lifailon/lazyjournal
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+source = lazyjournal::https://github.com/Lifailon/lazyjournal/releases/download/0.8.6/lazyjournal-0.8.6-linux-amd64

@@ -1,0 +1,15 @@
+# Create and modify subtitles (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=aegisub
+pkgver=flathub
+pkgrel=1
+pkgdesc="Create and modify subtitles"
+url="https://flathub.org/apps/org.aegisub.Aegisub"
+license="BSD-3-Clause AND MIT AND MPL-1.1"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.aegisub.Aegisub

@@ -1,0 +1,15 @@
+# A note-taking application for those who prefer handwriting over typing (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=scrivano-for-handwritten-notes
+pkgver=flathub
+pkgrel=1
+pkgdesc="A note-taking application for those who prefer handwriting over typing"
+url="https://flathub.org/apps/com.github.scrivanolabs.scrivano"
+license="CC-BY-NC-ND-4.0"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.scrivanolabs.scrivano

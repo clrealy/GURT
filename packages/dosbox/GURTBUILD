@@ -1,0 +1,15 @@
+# Run old DOS applications (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=dosbox
+pkgver=flathub
+pkgrel=1
+pkgdesc="Run old DOS applications"
+url="https://flathub.org/apps/com.dosbox.DOSBox"
+license="GPL-2.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.dosbox.DOSBox

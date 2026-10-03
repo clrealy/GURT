@@ -1,0 +1,15 @@
+# An addictive game about frozen bubbles (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=frozen-bubble
+pkgver=flathub
+pkgrel=1
+pkgdesc="An addictive game about frozen bubbles"
+url="https://flathub.org/apps/org.frozen_bubble.frozen-bubble"
+license="GPL-2.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.frozen_bubble.frozen-bubble

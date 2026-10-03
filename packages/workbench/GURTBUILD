@@ -1,0 +1,15 @@
+# Prototype with GNOME technologies (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=workbench
+pkgver=flathub
+pkgrel=1
+pkgdesc="Prototype with GNOME technologies"
+url="https://flathub.org/apps/re.sonny.Workbench"
+license="GPL-3.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=re.sonny.Workbench

@@ -1,0 +1,15 @@
+# A Super Nintendo emulator (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=snes9x
+pkgver=flathub
+pkgrel=1
+pkgdesc="A Super Nintendo emulator"
+url="https://flathub.org/apps/com.snes9x.Snes9x"
+license="see Flathub"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.snes9x.Snes9x

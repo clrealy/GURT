@@ -1,0 +1,13 @@
+pkgname = gdm-settings
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Customize your login screen
+url = https://flathub.org/apps/io.github.realmazharhussain.GdmSettings
+license = AGPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.realmazharhussain.GdmSettings

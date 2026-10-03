@@ -1,0 +1,13 @@
+pkgname = geogebra
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Dynamic mathematics software
+url = https://flathub.org/apps/org.geogebra.GeoGebra
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.geogebra.GeoGebra

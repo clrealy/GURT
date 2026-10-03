@@ -1,0 +1,13 @@
+pkgname = coulr
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Enjoy colors and feel happy
+url = https://flathub.org/apps/com.github.huluti.Coulr
+license = MIT
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.huluti.Coulr

@@ -1,0 +1,13 @@
+pkgname = citations
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Manage your bibliography
+url = https://flathub.org/apps/org.gnome.World.Citations
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.gnome.World.Citations

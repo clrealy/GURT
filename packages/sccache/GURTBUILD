@@ -1,0 +1,22 @@
+# Cache compiler output so rebuilds are way faster
+pkgname=sccache
+pkgver=0.18.0
+pkgrel=1
+pkgdesc="Cache compiler output so rebuilds are way faster"
+url="https://github.com/mozilla/sccache"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/mozilla/sccache/releases/download/${_tag}/sccache-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/mozilla/sccache/releases/download/${_tag}/sccache-${_tag}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(45f1447fbe231e3037bde351ef70677dd212216c8d62ae7ca409fecc4d6acc89)
+sha256sums_aarch64=(2b3284d5da3b46a47dc4229e75bb7b88ac4aa99c8d754fb7d2f84997e5a4354a)
+
+package() {
+  local f
+  f=$(find . -type f -name sccache -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name sccache | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/sccache"
+}

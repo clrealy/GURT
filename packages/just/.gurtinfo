@@ -1,0 +1,11 @@
+pkgname = just
+pkgver = 1.58.0
+pkgrel = 1
+pkgdesc = Save and run your project's commands, like make but nicer
+url = https://github.com/casey/just
+license = CC0-1.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/casey/just/releases/download/1.58.0/just-1.58.0-x86_64-unknown-linux-musl.tar.gz

@@ -335,6 +335,8 @@ gurt convert app.rpm deb -o ~/Downloads  # pick where it goes
 
 The files go across as-is. Dependencies get translated through `deps.map`, and any gurt doesn't know the new names for get listed instead of guessed. gurt writes `.deb`, `.rpm`, `.apk`, `.xbps` and `.eopkg` itself (no rpmbuild or dpkg needed). Making AppImages uses appimagetool, which gurt downloads for you. In the app it's **The Congurter™** (📥 Install a file tab): drop a package in the hopper, pick a format, smash the 🔘, and it drops into the **Download Zone™** as `<file>-converted.<ext>`. Hit ⬇️ retrieve to put it in your Downloads.
 
+**Double-click a `.gurt` file** and it opens in GURT, ready to install. GURT registers the file type the first time you open the app.
+
 What it won't do: make a `.dmg`, `.exe` or `.msi`. Those are for macOS and Windows, and a Linux program doesn't run there no matter what box it's in 💀
 
 ## Oops buttons: rollback, hold, export/import ⏪

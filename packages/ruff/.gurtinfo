@@ -1,0 +1,11 @@
+pkgname = ruff
+pkgver = 0.16.10
+pkgrel = 1
+pkgdesc = Extremely fast Python linter and formatter
+url = https://github.com/astral-sh/ruff
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/astral-sh/ruff/releases/download/0.16.10/ruff-x86_64-unknown-linux-musl.tar.gz

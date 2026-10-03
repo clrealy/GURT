@@ -1,0 +1,13 @@
+pkgname = emby-theater
+pkgver = flathub
+pkgrel = 1
+pkgdesc = The open media solution
+url = https://flathub.org/apps/media.emby.EmbyTheater
+license = GPL-2.0
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = media.emby.EmbyTheater

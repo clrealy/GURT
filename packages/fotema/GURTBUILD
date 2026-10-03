@@ -1,0 +1,15 @@
+# Admire your photos (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=fotema
+pkgver=flathub
+pkgrel=1
+pkgdesc="Admire your photos"
+url="https://flathub.org/apps/app.fotema.Fotema"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=app.fotema.Fotema

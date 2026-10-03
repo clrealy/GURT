@@ -1,0 +1,10 @@
+pkgname = mockoon
+pkgver = 9.9.0
+pkgrel = 1
+pkgdesc = Make mock APIs locally in seconds
+url = https://github.com/mockoon/mockoon
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+source = mockoon.AppImage::https://github.com/mockoon/mockoon/releases/download/v9.9.0/mockoon-9.9.0.x86_64.AppImage

@@ -1,0 +1,20 @@
+# Way better shell history you can search and sync
+pkgname=atuin
+pkgver=18.23.0
+pkgrel=1
+pkgdesc="Way better shell history you can search and sync"
+url="https://github.com/atuinsh/atuin"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binaries
+source_x86_64=("https://github.com/atuinsh/atuin/releases/download/$_tag/atuin-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/atuinsh/atuin/releases/download/$_tag/atuin-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(d1b40dd6e7cd3d823867ffe22b39a025bc420f7875926ae9ca974155378da14d)
+sha256sums_aarch64=(faf91adc71e6b661b21ed4f486babbd7af9d17363d4276da4a0251f83c72498d)
+
+package() {
+  install -Dm755 "$(find . -type f -name atuin -perm -u+x | head -n1)" "$pkgdir$prefix/bin/atuin"
+}

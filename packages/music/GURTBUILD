@@ -1,0 +1,15 @@
+# Play and organize your music collection (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=music
+pkgver=flathub
+pkgrel=1
+pkgdesc="Play and organize your music collection"
+url="https://flathub.org/apps/org.gnome.Music"
+license="GPL-2.0+ and LGPL-2.0+ and CC-BY-SA-4.0"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.Music

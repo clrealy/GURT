@@ -1,0 +1,20 @@
+# Hackable terminal file explorer
+pkgname=xplr
+pkgver=1.1.2
+pkgrel=1
+pkgdesc="Hackable terminal file explorer"
+url="https://github.com/sayanarijit/xplr"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/sayanarijit/xplr/releases/download/${_tag}/xplr-linux.tar.gz")
+sha256sums=(0e678a053f9ae46ae771b59369e1f7a74794ad427c1df0dc5ce4d1ce3ed010fc)
+
+package() {
+  local f
+  f=$(find . -type f -name xplr -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name xplr | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/xplr"
+}

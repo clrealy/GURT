@@ -1,0 +1,15 @@
+# Nvidia System Monitor Qt (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=nvidia-system-monitor
+pkgver=flathub
+pkgrel=1
+pkgdesc="Nvidia System Monitor Qt"
+url="https://flathub.org/apps/io.github.congard.qnvsm"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.congard.qnvsm

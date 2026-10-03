@@ -1,0 +1,13 @@
+pkgname = neodlp
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Modern feature-rich video/audio downloader based on yt-dlp
+url = https://flathub.org/apps/com.neosubhamoy.neodlp
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.neosubhamoy.neodlp

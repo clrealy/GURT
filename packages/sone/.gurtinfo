@@ -1,0 +1,13 @@
+pkgname = sone
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Native TIDAL client for Linux, modern UI, bit-perfect lossless FLAC and Hi-Res audio
+url = https://flathub.org/apps/io.github.lullabyX.sone
+license = GPL-3.0-only
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.lullabyX.sone

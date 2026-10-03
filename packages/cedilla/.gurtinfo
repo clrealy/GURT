@@ -1,0 +1,13 @@
+pkgname = cedilla
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Markdown Text Editor
+url = https://flathub.org/apps/dev.mariinkys.Cedilla
+license = GPL-3.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = dev.mariinkys.Cedilla

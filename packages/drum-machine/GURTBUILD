@@ -1,0 +1,15 @@
+# Create and play drum beats (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=drum-machine
+pkgver=flathub
+pkgrel=1
+pkgdesc="Create and play drum beats"
+url="https://flathub.org/apps/io.github.revisto.drum-machine"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.revisto.drum-machine

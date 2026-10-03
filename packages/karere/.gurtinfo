@@ -1,0 +1,13 @@
+pkgname = karere
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Chat on WhatsApp
+url = https://flathub.org/apps/io.github.tobagin.karere
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = chat
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.tobagin.karere

@@ -1,0 +1,15 @@
+# Notepad++-like editor (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=notepadng
+pkgver=flathub
+pkgrel=1
+pkgdesc="Notepad++-like editor"
+url="https://flathub.org/apps/org.notepadng.Notepadng"
+license="GPL-3.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.notepadng.Notepadng

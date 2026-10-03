@@ -1,0 +1,15 @@
+# Wilderness survival sandbox game (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=vintage-story
+pkgver=flathub
+pkgrel=1
+pkgdesc="Wilderness survival sandbox game"
+url="https://flathub.org/apps/at.vintagestory.VintageStory"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=at.vintagestory.VintageStory

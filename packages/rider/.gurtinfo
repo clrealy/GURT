@@ -1,0 +1,13 @@
+pkgname = rider
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Fast & powerful, cross platform .NET IDE
+url = https://flathub.org/apps/com.jetbrains.Rider
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.jetbrains.Rider

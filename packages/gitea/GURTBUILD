@@ -1,0 +1,20 @@
+# Self-hosted git service, lightweight GitHub alternative
+pkgname=gitea
+pkgver=28.0.0
+pkgrel=1
+pkgdesc="Self-hosted git service, lightweight GitHub alternative"
+url="https://github.com/go-gitea/gitea"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("gitea::https://github.com/go-gitea/gitea/releases/download/${_tag}/gitea-${pkgver}-linux-amd64")
+source_aarch64=("gitea::https://github.com/go-gitea/gitea/releases/download/${_tag}/gitea-${pkgver}-linux-arm64")
+sha256sums_x86_64=(7f82b522c4a98191e8ace49d85e17a2056a3cedc3054a6367c13c0a813d015a8)
+sha256sums_aarch64=(c2d9cd7b038cdaf1994350dd7ced4b48f6f34bcbddd1b624f6fac752c05d899a)
+
+package() {
+  install -Dm755 gitea "$pkgdir$prefix/bin/gitea"
+}

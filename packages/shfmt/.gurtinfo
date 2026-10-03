@@ -1,0 +1,11 @@
+pkgname = shfmt
+pkgver = 3.14.1
+pkgrel = 1
+pkgdesc = Formats shell scripts neatly
+url = https://github.com/mvdan/sh
+license = BSD-3-Clause
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = shfmt::https://github.com/mvdan/sh/releases/download/v3.14.1/shfmt_v3.14.1_linux_amd64

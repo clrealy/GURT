@@ -1,0 +1,15 @@
+# X86/DOS emulator with sound and graphics (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=dosbox-x
+pkgver=flathub
+pkgrel=1
+pkgdesc="X86/DOS emulator with sound and graphics"
+url="https://flathub.org/apps/com.dosbox_x.DOSBox-X"
+license="GPL-2.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.dosbox_x.DOSBox-X

@@ -1,0 +1,11 @@
+pkgname = hugo
+pkgver = 0.167.0
+pkgrel = 1
+pkgdesc = One of the fastest static site generators around
+url = https://github.com/gohugoio/hugo
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/gohugoio/hugo/releases/download/v0.167.0/hugo_0.167.0_Linux-64bit.tar.gz

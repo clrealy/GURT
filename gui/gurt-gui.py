@@ -13,6 +13,8 @@ TOKEN = secrets.token_urlsafe(24)
 GURT = "gurt"
 JOBS, JOBS_LOCK = {}, threading.Lock()
 LAST_PING = [time.time()]
+LAST_DROP = [0.0, []]   # [when, paths]: files dropped on the app window (WebKitGTK won't hand them to the page)
+OPEN_FILE = [""]        # a file GURT was opened with (double-clicking a .gurt)
 SPEC_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+°:@/-]{0,200}$")
 # files you can drop into the app (same list gurt outsource understands)
 DROP_RE = re.compile(r"\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|gurt|appimage|dmg|exe|msi|snap|flatpak|flatpakref|"
@@ -47,6 +49,14 @@ def unique_path(d, name):
     while os.path.exists(p):
         p = os.path.join(d, f"{stem}-{i}{ext}"); i += 1
     return p
+
+
+def html_attr(v):
+    return v.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def drop_name(path):
+    return re.sub(r"[^A-Za-z0-9._+-]", "_", os.path.basename(path))[:200].lstrip("._-")
 
 
 def drops_dir():
@@ -268,7 +278,7 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/":
             if not self._host_ok() or not secrets.compare_digest((q.get("t") or [""])[0], TOKEN):
                 return self._send(403, "nope 🔒 open GURT with: gurt gui", "text/plain")
-            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()).replace("__SFX__", "off" if conf().get("sfx") is False else "on").replace("__MUSIC__", "off" if conf().get("music") is False else "on"), "text/html")
+            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()).replace("__SFX__", "off" if conf().get("sfx") is False else "on").replace("__MUSIC__", "off" if conf().get("music") is False else "on").replace("__OPEN__", html_attr(OPEN_FILE[0])), "text/html")
         if u.path in ("/icon.png", "/logo.png", "/dirt-logo.png"):
             repo = paths().get("repo", "")
             want = {"/logo.png": "gurt-logo.png", "/dirt-logo.png": "dirt-logo.png"}.get(u.path, "apple-touch-icon.png")
@@ -281,6 +291,10 @@ class H(BaseHTTPRequestHandler):
             return self._send(403, {"error": "bad token"})
         if u.path == "/api/state":
             return self._send(200, state())
+        if u.path == "/api/lastdrop":   # what the app window saw dropped (the page only sees "a link")
+            when, paths = LAST_DROP
+            LAST_DROP[:] = [0.0, []]
+            return self._send(200, {"paths": paths if time.time() - when < 15 else []})
         if u.path == "/api/zone":
             z = zone_dir()
             items = [{"name": n, "size": os.path.getsize(os.path.join(z, n)), "time": os.path.getmtime(os.path.join(z, n))}
@@ -303,6 +317,16 @@ class H(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         if not self._auth():
             return self._send(403, {"error": "bad token"})
+        if u.path == "/api/droppath":   # a file already on this computer: link it in instead of uploading it
+            path = os.path.realpath(str(self._body().get("path", "")))
+            name = drop_name(path)
+            if not os.path.isfile(path) or not DROP_NAME_RE.match(name) or not DROP_RE.search(name):
+                return self._send(400, {"error": f"gurt can't open {os.path.basename(path)} 🤔"})
+            dst = os.path.join(drops_dir(), name)
+            if os.path.lexists(dst):
+                os.remove(dst)
+            os.symlink(path, dst)
+            return self._send(200, {"name": name, "orig": os.path.basename(path), "size": os.path.getsize(path)})
         if u.path == "/api/listup":   # a package list to import (plain text, small)
             n = int(self.headers.get("Content-Length") or 0)
             if n <= 0 or n > (1 << 20):
@@ -368,7 +392,7 @@ class H(BaseHTTPRequestHandler):
                 p = os.path.join(drops_dir(), arg)
                 if not DROP_NAME_RE.match(arg) or not DROP_RE.search(arg) or not os.path.isfile(p):
                     return self._send(400, {"error": "that dropped file is gone"})
-                job = start_job([GURT, "-y", "outsource", p])
+                job = start_job([GURT, "-y", "add" if arg.lower().endswith(".gurt") else "outsource", p])
                 return self._send(200, {"job": job.id})
             if cmd == "convert":   # a dropped file → another package format, saved to your Downloads
                 p = os.path.join(drops_dir(), arg)
@@ -517,6 +541,15 @@ def native_window(tk, url, icon):
             view = WebKit2.WebView(website_policies=WebKit2.WebsitePolicies(autoplay=WebKit2.AutoplayPolicy.ALLOW))
         except Exception:
             view = WebKit2.WebView()
+        def on_drag_data(_w, _ctx, _x, _y, data, *_):   # runs before WebKit's own handler; the page asks for these
+            try:
+                uris = data.get_uris() or [u for u in (data.get_text() or "").split() if u.startswith("file://")]
+                paths = [GLib.filename_from_uri(u)[0] for u in uris if u.startswith("file://")]
+                if paths:
+                    LAST_DROP[:] = [time.time(), paths]
+            except Exception:
+                pass
+        view.connect("drag-data-received", on_drag_data)
         st = view.get_settings()
         st.set_enable_developer_extras(False)
         # sounds + music: WebKitGTK needs web audio switched on, and lets the page play without waiting for a click
@@ -600,7 +633,13 @@ def main():
     ap.add_argument("--no-window", action="store_true")
     ap.add_argument("--browser", action="store_true", help="use a browser window even if a native one is possible")
     ap.add_argument("--probe", action="store_true", help="exit 0 if a native app window is possible")
+    ap.add_argument("files", nargs="*", help="a package to open (double-clicking a .gurt file)")
     a = ap.parse_args()
+    if a.files:
+        f = a.files[0]
+        if f.startswith("file://"):
+            f = unquote(urlparse(f).path)
+        OPEN_FILE[0] = os.path.abspath(f) if os.path.isfile(f) else ""
     if a.probe:
         tk = find_toolkit()
         print(tk or "none")
@@ -665,7 +704,7 @@ def audio_ok():
         return False
 
 PAGE = r"""<!doctype html>
-<html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__" data-music="__MUSIC__"><head>
+<html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__" data-music="__MUSIC__" data-open="__OPEN__"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GURT</title><link rel="icon" href="/icon.png">
 <style>
@@ -1302,11 +1341,29 @@ $("#soundx").addEventListener("click", () => { soundDismissed = true; $("#soundb
 $("#soundfix").addEventListener("click", async () => { const r = await run("gui-setup", "", {confirm:false}); if (r && r.rc === 0) { $("#soundbar").hidden = true; alert("sound's installed ✅ close GURT and open it again to hear it"); } });
 // ── 📥 drop in foreign files (or pick one): gurt figures out what it is and installs it ──
 const DROPPABLE = /\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|appimage|dmg|exe|msi|snap|flatpak|flatpakref|tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst)$/i;
+const fmtSize = b => b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
+// what got dropped? a real File (browsers), or a path the app window caught (WebKitGTK only tells the page "a link")
+async function droppedThing(e){
+  const f = e.dataTransfer?.files?.[0];
+  if (f) return f;
+  const r = await api("/api/lastdrop").catch(() => ({paths:[]}));
+  return r.paths && r.paths.length ? {path:r.paths[0], name:r.paths[0].split("/").pop()} : null;
+}
+// a file that's already on this computer (dropped on the app window, or double-clicked): link it in, no upload
+const linkPath = path => api("/api/droppath", {path}).catch(() => ({error:"couldn't open that file"}));
 async function installFile(f){
   if (!f) return;
-  if (!DROPPABLE.test(f.name)) { alert(`gurt can't install "${f.name}" 🤔 — try a .deb, .rpm, AppImage, .tar.gz, .exe, .dmg…`); return; }
+  if (f.path) {
+    const r = await linkPath(f.path);
+    if (r.error) { alert(r.error); return; }
+    if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return; }
+    if (!await ask(`Install ${r.orig}?`, `gurt ${/\.gurt$/i.test(r.orig) ? "installs this GURT package" : "figures out what it is and installs it straight onto your system (no box)"}. ${fmtSize(r.size)}. Only install files you trust.`)) return;
+    await run("dropped", r.name, {confirm:false});
+    return;
+  }
+  if (!DROPPABLE.test(f.name) && !/\.gurt$/i.test(f.name)) { alert(`gurt can't install "${f.name}" 🤔 — try a .deb, .rpm, AppImage, .tar.gz, .exe, .dmg…`); return; }
   if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return; }
-  if (!await ask(`Install ${f.name}?`, `gurt figures out what it is and installs it straight onto your system (no box). ${(f.size / 1048576).toFixed(1)} MB. Only install files you trust.`)) return;
+  if (!await ask(`Install ${f.name}?`, `gurt figures out what it is and installs it straight onto your system (no box). ${fmtSize(f.size)}. Only install files you trust.`)) return;
   $("#ctitle").textContent = `uploading ${f.name}…`; $("#cdot").className = "dot run"; $("#console").classList.add("open");
   const r = await fetch("/api/drop", {method:"POST", headers:{"X-Gurt-Token":T, "X-Filename":encodeURIComponent(f.name)}, body:f}).then(x => x.json()).catch(() => ({error:"upload failed"}));
   if (r.error) { $("#cdot").className = "dot bad"; alert(r.error); return; }
@@ -1316,10 +1373,21 @@ $("#dropbtn").addEventListener("click", () => $("#dropin").click());
 // ── 🔘 The Congurter™: file in the hopper → press the button → it drops into the Download Zone™ ──
 let cgLoaded = null;
 const cgM = () => $("#cgmachine"), cgScreen = t => { $("#cgscreen").textContent = t; };
-const fmtSize = b => b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
 async function cgLoad(f){
   if (!f) return;
   cgM().classList.remove("done", "jam");
+  if (f.path) {   // already on this computer: no upload, just link it in
+    if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return; }
+    const chip = $("#cgfile"); chip.textContent = "📄 " + f.name; chip.hidden = false; chip.classList.remove("in"); void chip.offsetWidth; chip.classList.add("in");
+    $("#hoptxt").style.visibility = "hidden"; SFX.play("pop");
+    const r = await linkPath(f.path);
+    setTimeout(() => { chip.hidden = true; $("#hoptxt").style.visibility = ""; }, 900);
+    if (r.error || /\.(dmg|snap|flatpak|flatpakref|7z)$/i.test(r.name || "")) { cgM().classList.add("jam"); cgScreen(r.error ? "CAN'T EAT THAT 🤢 " + r.error : "THAT ONE DOESN'T CONVERT 🤢 try a .deb .rpm .pkg.tar.zst AppImage .exe…"); SFX.play("err"); return; }
+    cgLoaded = {name:r.name, orig:r.orig};
+    cgM().classList.add("loaded"); $("#cgbtn").disabled = false;
+    cgScreen(`LOADED: ${r.orig}\npick a format, smash the 🔘`);
+    return;
+  }
   if (!DROPPABLE.test(f.name) && !/\.gurt$/i.test(f.name)) { cgM().classList.add("jam"); cgScreen(`CAN'T EAT THAT 🤢 (${f.name})`); SFX.play("err"); return; }
   if (/\.(dmg|snap|flatpak|flatpakref|7z)$/i.test(f.name)) { cgM().classList.add("jam"); cgScreen("THAT ONE DOESN'T CONVERT 🤢 try a .deb .rpm .pkg.tar.zst AppImage .exe…"); SFX.play("err"); return; }
   if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return; }
@@ -1354,7 +1422,7 @@ $("#convin").addEventListener("change", e => { cgLoad(e.target.files[0]); e.targ
 // dropping onto the hopper feeds the machine instead of installing
 $("#hopper").addEventListener("dragover", e => { e.preventDefault(); e.stopPropagation(); $("#hopper").classList.add("hot"); $("#dropzone").hidden = true; });
 $("#hopper").addEventListener("dragleave", () => $("#hopper").classList.remove("hot"));
-$("#hopper").addEventListener("drop", e => { e.preventDefault(); e.stopPropagation(); dragDepth = 0; $("#dropzone").hidden = true; $("#hopper").classList.remove("hot"); cgLoad(e.dataTransfer.files[0]); });
+$("#hopper").addEventListener("drop", async e => { e.preventDefault(); e.stopPropagation(); dragDepth = 0; $("#dropzone").hidden = true; $("#hopper").classList.remove("hot"); cgLoad(await droppedThing(e)); });
 $("#cgbtn").addEventListener("click", async () => {
   if (!cgLoaded || busy) return;
   const b = $("#cgbtn"); b.classList.add("pressed"); setTimeout(() => b.classList.remove("pressed"), 150);
@@ -1407,11 +1475,13 @@ $("#convopen").addEventListener("click", () => {
 addEventListener("resize", fitNav); fitNav();
 $("#dropin").addEventListener("change", e => { installFile(e.target.files[0]); e.target.value = ""; });
 let dragDepth = 0;
-const hasFiles = e => [...(e.dataTransfer?.types || [])].includes("Files");
+const hasFiles = e => { const t = [...(e.dataTransfer?.types || [])]; return t.includes("Files") || t.includes("text/uri-list"); };
 addEventListener("dragenter", e => { if (!hasFiles(e)) return; e.preventDefault(); if (!dragDepth++) SFX.play("pop"); $("#dropzone").hidden = false; });
 addEventListener("dragover", e => { if (hasFiles(e)) e.preventDefault(); });
 addEventListener("dragleave", e => { if (hasFiles(e) && --dragDepth <= 0) { dragDepth = 0; $("#dropzone").hidden = true; } });
-addEventListener("drop", e => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth = 0; $("#dropzone").hidden = true; installFile(e.dataTransfer.files[0]); });
+addEventListener("drop", async e => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth = 0; $("#dropzone").hidden = true; installFile(await droppedThing(e)); });
+// opened with a file (double-clicking a .gurt in your file manager)
+if (document.documentElement.dataset.open) { const p = document.documentElement.dataset.open; setTimeout(() => installFile({path:p, name:p.split("/").pop()}), 600); }
 // 🎰 lottery: spin through Main GURT, land on one, install it if you dare
 let spinning = false;
 function spinLottery(box, show, after){

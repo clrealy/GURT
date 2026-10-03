@@ -1,0 +1,13 @@
+pkgname = vinegar
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Run Roblox Studio on Linux
+url = https://flathub.org/apps/org.vinegarhq.Vinegar
+license = GPL-3.0-only
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.vinegarhq.Vinegar

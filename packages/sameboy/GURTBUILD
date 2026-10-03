@@ -1,0 +1,15 @@
+# Game Boy and Game Boy Color emulator (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=sameboy
+pkgver=flathub
+pkgrel=1
+pkgdesc="Game Boy and Game Boy Color emulator"
+url="https://flathub.org/apps/io.github.sameboy.SameBoy"
+license="MIT"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.sameboy.SameBoy

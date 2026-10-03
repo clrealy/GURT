@@ -1,0 +1,15 @@
+# Manage mods for Sonic games (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=hedge-mod-manager
+pkgver=flathub
+pkgrel=1
+pkgdesc="Manage mods for Sonic games"
+url="https://flathub.org/apps/io.github.hedge_dev.hedgemodmanager"
+license="MIT"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.hedge_dev.hedgemodmanager

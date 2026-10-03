@@ -1,0 +1,13 @@
+pkgname = notes-notes
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Note-taking app. Write down your thoughts
+url = https://flathub.org/apps/io.github.nuttyartist.notes
+license = MPL-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.nuttyartist.notes

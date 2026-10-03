@@ -1,0 +1,13 @@
+pkgname = idescriptor
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Manage and interact with Apple mobile devices (iPhone, iPad, iPod...)
+url = https://flathub.org/apps/io.github.idescriptor.iDescriptor
+license = AGPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.idescriptor.iDescriptor

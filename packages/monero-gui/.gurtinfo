@@ -1,0 +1,13 @@
+pkgname = monero-gui
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Monero: the secure, private, untraceable cryptocurrency
+url = https://flathub.org/apps/org.getmonero.Monero
+license = BSD-3-Clause
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.getmonero.Monero

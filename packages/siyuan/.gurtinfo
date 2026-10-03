@@ -1,0 +1,10 @@
+pkgname = siyuan
+pkgver = 3.8.6
+pkgrel = 1
+pkgdesc = Privacy-first personal knowledge manager
+url = https://github.com/siyuan-note/siyuan
+license = AGPL-3.0
+maintainer = clrealy
+category = office
+arch = x86_64
+source = siyuan.AppImage::https://github.com/siyuan-note/siyuan/releases/download/v3.8.6/siyuan-3.8.6-linux.AppImage

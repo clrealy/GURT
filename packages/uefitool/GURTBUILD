@@ -1,0 +1,15 @@
+# UEFI firmware image viewer and editor (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=uefitool
+pkgver=flathub
+pkgrel=1
+pkgdesc="UEFI firmware image viewer and editor"
+url="https://flathub.org/apps/com.github.LongSoft.UEFITool"
+license="BSD-2-Clause"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.LongSoft.UEFITool

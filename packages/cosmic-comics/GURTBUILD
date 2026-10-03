@@ -1,0 +1,15 @@
+# Read Comics, Manga and Ebooks the easy way (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=cosmic-comics
+pkgver=flathub
+pkgrel=1
+pkgdesc="Read Comics, Manga and Ebooks the easy way"
+url="https://flathub.org/apps/fr.nytuo.cosmiccomics"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=fr.nytuo.cosmiccomics

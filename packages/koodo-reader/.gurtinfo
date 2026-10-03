@@ -1,0 +1,13 @@
+pkgname = koodo-reader
+pkgver = flathub
+pkgrel = 1
+pkgdesc = All-in-one ebook reader
+url = https://flathub.org/apps/io.github.troyeguo.koodo-reader
+license = AGPL-3.0
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.troyeguo.koodo-reader

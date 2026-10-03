@@ -1,0 +1,15 @@
+# Feature filled, open source, ad-free, bittorrent client (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=biglybt
+pkgver=flathub
+pkgrel=1
+pkgdesc="Feature filled, open source, ad-free, bittorrent client"
+url="https://flathub.org/apps/com.biglybt.BiglyBT"
+license="GPL-2.0"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.biglybt.BiglyBT

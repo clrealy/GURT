@@ -1,0 +1,20 @@
+# Define and run multi-container Docker apps
+pkgname=docker-compose
+pkgver=5.6.0
+pkgrel=1
+pkgdesc="Define and run multi-container Docker apps"
+url="https://github.com/docker/compose"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("docker-compose::https://github.com/docker/compose/releases/download/${_tag}/docker-compose-linux-x86_64")
+source_aarch64=("docker-compose::https://github.com/docker/compose/releases/download/${_tag}/docker-compose-linux-aarch64")
+sha256sums_x86_64=(40343e21ca777173e69cff5dbafeb37c6f81f3b0d57d9e597f036e95eb63e76a)
+sha256sums_aarch64=(733ec76717ceb59052a9609b9dadfb523b2df8eab57a54212872d10a58078ea2)
+
+package() {
+  install -Dm755 docker-compose "$pkgdir$prefix/bin/docker-compose"
+}

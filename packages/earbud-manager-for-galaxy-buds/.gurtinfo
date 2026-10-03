@@ -1,0 +1,13 @@
+pkgname = earbud-manager-for-galaxy-buds
+pkgver = flathub
+pkgrel = 1
+pkgdesc = An unofficial app to manage any Galaxy Buds device manufactured by Samsung
+url = https://flathub.org/apps/me.timschneeberger.GalaxyBudsClient
+license = GPL-3.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = me.timschneeberger.GalaxyBudsClient

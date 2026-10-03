@@ -1,0 +1,15 @@
+# Web-based server interface via ssh (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=cockpit-client
+pkgver=flathub
+pkgrel=1
+pkgdesc="Web-based server interface via ssh"
+url="https://flathub.org/apps/org.cockpit_project.CockpitClient"
+license="LGPL-2.1-or-later"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.cockpit_project.CockpitClient

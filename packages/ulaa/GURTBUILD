@@ -1,0 +1,15 @@
+# Private, Secure & Fast Browsing (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=ulaa
+pkgver=flathub
+pkgrel=1
+pkgdesc="Private, Secure & Fast Browsing"
+url="https://flathub.org/apps/com.ulaa.Ulaa"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="browsers"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.ulaa.Ulaa

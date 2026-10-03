@@ -1,0 +1,15 @@
+# WPS 365 Suite (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=wps-365
+pkgver=flathub
+pkgrel=1
+pkgdesc="WPS 365 Suite"
+url="https://flathub.org/apps/cn.wps.wps_365"
+license="see Flathub"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=cn.wps.wps_365

@@ -1,0 +1,10 @@
+pkgname = trilium
+pkgver = 0.106.0
+pkgrel = 1
+pkgdesc = Hierarchical notes app for building a big knowledge base
+url = https://github.com/TriliumNext/Trilium
+license = AGPL-3.0
+maintainer = clrealy
+category = office
+arch = x86_64
+source = trilium.AppImage::https://github.com/TriliumNext/Trilium/releases/download/v0.106.0/TriliumNotes-v0.106.0-linux-x64.AppImage

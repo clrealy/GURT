@@ -1,0 +1,15 @@
+# Chat on Matrix (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=neochat
+pkgver=flathub
+pkgrel=1
+pkgdesc="Chat on Matrix"
+url="https://flathub.org/apps/org.kde.neochat"
+license="GPL-3.0"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.neochat

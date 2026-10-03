@@ -1,0 +1,22 @@
+# Calculator that understands units, like 5 km/h to mph
+pkgname=numbat
+pkgver=1.24.0
+pkgrel=1
+pkgdesc="Calculator that understands units, like 5 km/h to mph"
+url="https://github.com/sharkdp/numbat"
+license="MIT OR Apache-2.0"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/sharkdp/numbat/releases/download/${_tag}/numbat-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/sharkdp/numbat/releases/download/${_tag}/numbat-${_tag}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(2025bc4196774336b774c1f7a9c6f45a003b9b2cbac62e577809ddd3a431c9ca)
+sha256sums_aarch64=(c6ceb781a860ea0aa3369b37c9503b20068034e2eaf70388d898a2e679410148)
+
+package() {
+  local f
+  f=$(find . -type f -name numbat -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name numbat | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/numbat"
+}

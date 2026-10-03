@@ -1,0 +1,15 @@
+# Pick and format colors (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=eyedropper
+pkgver=flathub
+pkgrel=1
+pkgdesc="Pick and format colors"
+url="https://flathub.org/apps/com.github.finefindus.eyedropper"
+license="GPL-3.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.finefindus.eyedropper

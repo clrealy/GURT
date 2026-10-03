@@ -1,0 +1,13 @@
+pkgname = censor
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Redact PDF documents
+url = https://flathub.org/apps/page.codeberg.censor.Censor
+license = AGPL-3.0-only
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = page.codeberg.censor.Censor

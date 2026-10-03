@@ -1,0 +1,15 @@
+# A snappy Discord desktop client (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=equibop
+pkgver=flathub
+pkgrel=1
+pkgdesc="A snappy Discord desktop client"
+url="https://flathub.org/apps/org.equicord.equibop"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.equicord.equibop

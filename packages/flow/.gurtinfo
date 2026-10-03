@@ -1,0 +1,13 @@
+pkgname = flow
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Cleaner browsing, sharper focus
+url = https://flathub.org/apps/com.flow_browser.flow
+license = GPL-3.0-only
+maintainer = clrealy
+category = browsers
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.flow_browser.flow

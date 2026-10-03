@@ -1,0 +1,22 @@
+# Turns example text into a regex for you
+pkgname=grex
+pkgver=1.4.6
+pkgrel=1
+pkgdesc="Turns example text into a regex for you"
+url="https://github.com/pemistahl/grex"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/pemistahl/grex/releases/download/${_tag}/grex-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/pemistahl/grex/releases/download/${_tag}/grex-${_tag}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(8f02f4ebe72d9e3098c646b77f7bc53ec8a8c1fb51ed042db06b739d08e56af8)
+sha256sums_aarch64=(65ac2010ffc4a02690b091819f2971c0b26081b2ce7cb717a0de3f10409010b9)
+
+package() {
+  local f
+  f=$(find . -type f -name grex -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name grex | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/grex"
+}

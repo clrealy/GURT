@@ -1,0 +1,13 @@
+pkgname = ente-photos
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Safe home for your photos
+url = https://flathub.org/apps/io.ente.photos
+license = AGPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.ente.photos

@@ -1,0 +1,15 @@
+# Convert Images Into PDF File (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=jpeg2pdf
+pkgver=flathub
+pkgrel=1
+pkgdesc="Convert Images Into PDF File"
+url="https://flathub.org/apps/com.warlordsoftwares.jpeg2pdf"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.warlordsoftwares.jpeg2pdf

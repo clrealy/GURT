@@ -1,0 +1,13 @@
+pkgname = micro
+pkgver = 2.0.15
+pkgrel = 1
+pkgdesc = Terminal text editor that works like a normal one (Ctrl+S saves, Ctrl+Q quits)
+url = https://github.com/zyedidia/micro
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = micro::git+https://github.com/zyedidia/micro.git#tag=v2.0.15

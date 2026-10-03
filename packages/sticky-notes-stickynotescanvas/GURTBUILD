@@ -1,0 +1,15 @@
+# Spatial sticky notes canvas for Linux (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=sticky-notes-stickynotescanvas
+pkgver=flathub
+pkgrel=1
+pkgdesc="Spatial sticky notes canvas for Linux"
+url="https://flathub.org/apps/io.github.faridjaff.StickyNotesCanvas"
+license="MIT"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.faridjaff.StickyNotesCanvas

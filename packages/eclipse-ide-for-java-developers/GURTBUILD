@@ -1,0 +1,15 @@
+# The essential tools for any Java developer, including a Java IDE, a Git client, XML Editor, Maven and Gradle integration (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=eclipse-ide-for-java-developers
+pkgver=flathub
+pkgrel=1
+pkgdesc="The essential tools for any Java developer, including a Java IDE, a Git client, XML Editor, Maven and Gradle integration"
+url="https://flathub.org/apps/org.eclipse.Java"
+license="EPL-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.eclipse.Java

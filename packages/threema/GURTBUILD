@@ -1,0 +1,15 @@
+# Threema for desktop is a desktop client for Threema, a privacy-focused end-to-end encrypted mobile messenger hosted and developed in Switzerland. (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=threema
+pkgver=flathub
+pkgrel=1
+pkgdesc="Threema for desktop is a desktop client for Threema, a privacy-focused end-to-end encrypted mobile messenger hosted and developed in Switzerland."
+url="https://flathub.org/apps/ch.threema.threema-web-desktop"
+license="AGPL-3.0"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=ch.threema.threema-web-desktop

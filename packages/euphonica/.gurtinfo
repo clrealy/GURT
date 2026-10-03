@@ -1,0 +1,13 @@
+pkgname = euphonica
+pkgver = flathub
+pkgrel = 1
+pkgdesc = MPD client with delusions of grandeur
+url = https://flathub.org/apps/io.github.htkhiem.Euphonica
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.htkhiem.Euphonica

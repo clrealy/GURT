@@ -1,0 +1,13 @@
+pkgname = q4wine
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Utility for Wine applications and prefixes management
+url = https://flathub.org/apps/ua.org.brezblock.q4wine
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = ua.org.brezblock.q4wine

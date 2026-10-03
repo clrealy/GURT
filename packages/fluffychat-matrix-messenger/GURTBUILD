@@ -1,0 +1,15 @@
+# Your communication should be yours (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=fluffychat-matrix-messenger
+pkgver=flathub
+pkgrel=1
+pkgdesc="Your communication should be yours"
+url="https://flathub.org/apps/im.fluffychat.Fluffychat"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=im.fluffychat.Fluffychat

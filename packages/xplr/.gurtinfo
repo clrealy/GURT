@@ -1,0 +1,10 @@
+pkgname = xplr
+pkgver = 1.1.2
+pkgrel = 1
+pkgdesc = Hackable terminal file explorer
+url = https://github.com/sayanarijit/xplr
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+source = https://github.com/sayanarijit/xplr/releases/download/v1.1.2/xplr-linux.tar.gz

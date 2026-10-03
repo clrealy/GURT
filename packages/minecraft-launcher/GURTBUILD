@@ -1,0 +1,15 @@
+# Create your own world in one of the most popular video games (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=minecraft-launcher
+pkgver=flathub
+pkgrel=1
+pkgdesc="Create your own world in one of the most popular video games"
+url="https://flathub.org/apps/com.mojang.Minecraft"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.mojang.Minecraft

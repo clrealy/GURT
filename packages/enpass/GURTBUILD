@@ -1,0 +1,15 @@
+# Enpass is a password manager to securely store and manage your passwords and other credentials (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=enpass
+pkgver=flathub
+pkgrel=1
+pkgdesc="Enpass is a password manager to securely store and manage your passwords and other credentials"
+url="https://flathub.org/apps/io.enpass.Enpass"
+license="see Flathub"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.enpass.Enpass

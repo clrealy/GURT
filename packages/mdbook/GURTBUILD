@@ -1,0 +1,22 @@
+# Turn Markdown files into a nice online book
+pkgname=mdbook
+pkgver=0.5.4
+pkgrel=1
+pkgdesc="Turn Markdown files into a nice online book"
+url="https://github.com/rust-lang/mdBook"
+license="MPL-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/rust-lang/mdBook/releases/download/${_tag}/mdbook-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/rust-lang/mdBook/releases/download/${_tag}/mdbook-${_tag}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(5222beabd3e37dc5be0d18ff99b79058469354db5c220153a1b92db5ba12be89)
+sha256sums_aarch64=(753e5c5c363ee8a56972344dcf91466f005a51db84a7aeffe427ae3ef83d6d44)
+
+package() {
+  local f
+  f=$(find . -type f -name mdbook -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name mdbook | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/mdbook"
+}

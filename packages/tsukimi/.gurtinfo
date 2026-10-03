@@ -1,0 +1,13 @@
+pkgname = tsukimi
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A simple third-party Jellyfin client
+url = https://flathub.org/apps/moe.tsuna.tsukimi
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = moe.tsuna.tsukimi

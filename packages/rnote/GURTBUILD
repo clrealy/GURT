@@ -1,0 +1,15 @@
+# Sketch and take handwritten notes (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=rnote
+pkgver=flathub
+pkgrel=1
+pkgdesc="Sketch and take handwritten notes"
+url="https://flathub.org/apps/com.github.flxzt.rnote"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.flxzt.rnote

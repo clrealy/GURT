@@ -1,0 +1,15 @@
+# ChessMD is a Qt-based chess app to play, analysis, review chess game and browse chess opening database (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=chessmd
+pkgver=flathub
+pkgrel=1
+pkgdesc="ChessMD is a Qt-based chess app to play, analysis, review chess game and browse chess opening database"
+url="https://flathub.org/apps/org.chessmd.chessmd"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.chessmd.chessmd

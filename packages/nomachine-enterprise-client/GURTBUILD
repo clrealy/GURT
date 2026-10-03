@@ -1,0 +1,15 @@
+# Access NoMachine computers over the network (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=nomachine-enterprise-client
+pkgver=flathub
+pkgrel=1
+pkgdesc="Access NoMachine computers over the network"
+url="https://flathub.org/apps/com.nomachine.nxplayer"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.nomachine.nxplayer

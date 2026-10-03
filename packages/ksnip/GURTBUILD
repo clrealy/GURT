@@ -1,0 +1,15 @@
+# Cross-Platform Screenshot tool with annotation features (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=ksnip
+pkgver=flathub
+pkgrel=1
+pkgdesc="Cross-Platform Screenshot tool with annotation features"
+url="https://flathub.org/apps/org.ksnip.ksnip"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.ksnip.ksnip

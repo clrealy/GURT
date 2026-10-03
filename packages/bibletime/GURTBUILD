@@ -1,0 +1,15 @@
+# Bible Study Program (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=bibletime
+pkgver=flathub
+pkgrel=1
+pkgdesc="Bible Study Program"
+url="https://flathub.org/apps/info.bibletime.BibleTime"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=info.bibletime.BibleTime

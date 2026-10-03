@@ -1,0 +1,15 @@
+# Flatpak leftover cleaner (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=flatsweep
+pkgver=flathub
+pkgrel=1
+pkgdesc="Flatpak leftover cleaner"
+url="https://flathub.org/apps/io.github.giantpinkrobots.flatsweep"
+license="MPL-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.giantpinkrobots.flatsweep

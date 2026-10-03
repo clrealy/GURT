@@ -81,15 +81,23 @@ jobs:
           for p in $changed; do
             [ -d packages/$p ] || continue
             if grep -q '^via_type=flatpak' packages/$p/GURTBUILD; then
-              # a Flathub app: check its id really exists (downloading every app + runtime on 5 distros would fill the runner)
+              # a Flathub app: check its id really exists (downloading every app + runtime on 5 distros would fill the runner).
+              # the first one sets up flatpak through gurt, then one Flathub listing checks the rest fast
               id=$(sed -n 's/^via_pkg=//p' packages/$p/GURTBUILD)
-              ./gurt -y info "flatpak/$id" >/dev/null || { echo "::error::$p: $id isn't on Flathub"; exit 1; }
+              if [ ! -s /tmp/flathub-ids.txt ]; then
+                ./gurt -y info "flatpak/$id" >/dev/null || { echo "::error::$p: $id isn't on Flathub"; exit 1; }
+                flatpak remote-ls --user --app flathub --columns=application > /tmp/flathub-ids.txt
+              fi
+              grep -qxF "$id" /tmp/flathub-ids.txt || { echo "::error::$p: $id isn't on Flathub"; exit 1; }
               echo "✅ $p → $id is on Flathub"
             elif grep -q '^secret=true' packages/$p/GURTBUILD; then
               # secret packages only answer to their alias
               ./gurt -y install "$(./gurt srcinfo packages/$p | sed -n 's/^alias = //p' | head -n1)"
             else
               ./gurt -y install "$p"
+              # lots of recipes in one PR: clean up as we go so the runner's disk doesn't fill up
+              ./gurt -y remove "$p" >/dev/null 2>&1 || true
+              rm -rf "${GURT_CACHE:-$HOME/.cache/gurt}/sources" "${GURT_CACHE:-$HOME/.cache/gurt}/pkg"
             fi
           done
 

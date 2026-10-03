@@ -1,0 +1,11 @@
+pkgname = docker-compose
+pkgver = 5.6.0
+pkgrel = 1
+pkgdesc = Define and run multi-container Docker apps
+url = https://github.com/docker/compose
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = docker-compose::https://github.com/docker/compose/releases/download/v5.6.0/docker-compose-linux-x86_64

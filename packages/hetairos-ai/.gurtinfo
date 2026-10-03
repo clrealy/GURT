@@ -1,0 +1,13 @@
+pkgname = hetairos-ai
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Your AI Waifu Assistant with Voice and Animated Interactions
+url = https://flathub.org/apps/io.github.N3kosempai.hetairos-ai
+license = see Flathub
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.N3kosempai.hetairos-ai

@@ -1,0 +1,13 @@
+pkgname = resonance
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Test and explore web services
+url = https://flathub.org/apps/io.github.db_mobile.resonance
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.db_mobile.resonance

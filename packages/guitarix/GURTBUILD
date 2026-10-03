@@ -1,0 +1,15 @@
+# Virtual versatile amplification for Jack/Linux (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=guitarix
+pkgver=flathub
+pkgrel=1
+pkgdesc="Virtual versatile amplification for Jack/Linux"
+url="https://flathub.org/apps/org.guitarix.Guitarix"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.guitarix.Guitarix

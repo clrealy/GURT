@@ -1,0 +1,13 @@
+pkgname = chirp
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A free, open-source tool for programming your radio
+url = https://flathub.org/apps/com.chirpmyradio.chirp
+license = GPL-3.0-only
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.chirpmyradio.chirp

@@ -1,0 +1,13 @@
+pkgname = protonplus
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Manage Proton, Wine, DXVK, and VKD3D tools for Linux game launchers
+url = https://flathub.org/apps/com.vysp3r.ProtonPlus
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.vysp3r.ProtonPlus

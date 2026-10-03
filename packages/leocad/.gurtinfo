@@ -1,0 +1,13 @@
+pkgname = leocad
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Design virtual models you can build with LEGO bricks
+url = https://flathub.org/apps/org.leocad.LeoCAD
+license = GPL-2.0
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.leocad.LeoCAD

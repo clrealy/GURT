@@ -1,0 +1,15 @@
+# Lightning-fast and powerful code editor written in Rust (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=lapce
+pkgver=flathub
+pkgrel=1
+pkgdesc="Lightning-fast and powerful code editor written in Rust"
+url="https://flathub.org/apps/dev.lapce.lapce"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.lapce.lapce

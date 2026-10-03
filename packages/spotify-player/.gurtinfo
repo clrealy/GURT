@@ -1,0 +1,12 @@
+pkgname = spotify-player
+pkgver = 0.25.1
+pkgrel = 1
+pkgdesc = Spotify in your terminal
+url = https://github.com/aome510/spotify-player
+license = MIT
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+source = https://github.com/aome510/spotify-player/releases/download/v0.25.1/spotify_player-x86_64-unknown-linux-gnu.tar.gz
+alias = spotify_player

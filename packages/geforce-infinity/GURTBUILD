@@ -1,0 +1,15 @@
+# Next-gen GeForce NOW application (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=geforce-infinity
+pkgver=flathub
+pkgrel=1
+pkgdesc="Next-gen GeForce NOW application"
+url="https://flathub.org/apps/io.github.astralvixen.geforce-infinity"
+license="MIT"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.astralvixen.geforce-infinity

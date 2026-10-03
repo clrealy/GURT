@@ -1,0 +1,15 @@
+# Shisen-Sho Mahjongg-like Tile Game (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=kshisen
+pkgver=flathub
+pkgrel=1
+pkgdesc="Shisen-Sho Mahjongg-like Tile Game"
+url="https://flathub.org/apps/org.kde.kshisen"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.kshisen

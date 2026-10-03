@@ -1,0 +1,15 @@
+# Slicer for the FlashForge 3D printers (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=flashprint
+pkgver=flathub
+pkgrel=1
+pkgdesc="Slicer for the FlashForge 3D printers"
+url="https://flathub.org/apps/com.flashforge.FlashPrint"
+license="see Flathub"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.flashforge.FlashPrint

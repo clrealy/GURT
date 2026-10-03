@@ -1,0 +1,15 @@
+# Write on colourful little squares (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=jorts
+pkgver=flathub
+pkgrel=1
+pkgdesc="Write on colourful little squares"
+url="https://flathub.org/apps/page.codeberg.elly_code.jorts"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=page.codeberg.elly_code.jorts

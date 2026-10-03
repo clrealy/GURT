@@ -1,0 +1,24 @@
+# Explore JSON in the terminal by clicking around and folding it
+pkgname=fx
+pkgver=39.2.0
+pkgrel=1
+pkgdesc="Explore JSON in the terminal by clicking around and folding it"
+url="https://github.com/antonmedv/fx"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("fx::git+https://github.com/antonmedv/fx.git#tag=$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd fx
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w" -o out/fx .
+}
+
+package() {
+  install -Dm755 fx/out/fx "$pkgdir$prefix/bin/fx"
+}

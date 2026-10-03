@@ -1,0 +1,15 @@
+# The Collabora Office productivity suite (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=collabora-office
+pkgver=flathub
+pkgrel=1
+pkgdesc="The Collabora Office productivity suite"
+url="https://flathub.org/apps/com.collaboraoffice.Office"
+license="MPL-2.0"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.collaboraoffice.Office

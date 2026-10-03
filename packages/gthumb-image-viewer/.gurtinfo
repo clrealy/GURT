@@ -1,0 +1,13 @@
+pkgname = gthumb-image-viewer
+pkgver = flathub
+pkgrel = 1
+pkgdesc = View and organize your images
+url = https://flathub.org/apps/org.gnome.gThumb
+license = GPL-2.0+
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.gnome.gThumb

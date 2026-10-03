@@ -1,0 +1,13 @@
+pkgname = gdevelop
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Fast and Easy Game-Making
+url = https://flathub.org/apps/io.gdevelop.ide
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.gdevelop.ide

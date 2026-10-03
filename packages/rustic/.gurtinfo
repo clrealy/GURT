@@ -1,0 +1,11 @@
+pkgname = rustic
+pkgver = 0.11.4
+pkgrel = 1
+pkgdesc = Fast encrypted backups, compatible with restic
+url = https://github.com/rustic-rs/rustic
+license = MIT OR Apache-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+source = https://github.com/rustic-rs/rustic/releases/download/v0.11.4/rustic-v0.11.4-x86_64-unknown-linux-musl.tar.gz

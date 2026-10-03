@@ -1,0 +1,13 @@
+pkgname = geekbench-6
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Cross-platform system benchmark
+url = https://flathub.org/apps/com.geekbench.Geekbench6
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.geekbench.Geekbench6

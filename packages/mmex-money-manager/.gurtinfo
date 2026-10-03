@@ -1,0 +1,13 @@
+pkgname = mmex-money-manager
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Organize finances and track cash flow
+url = https://flathub.org/apps/org.moneymanagerex.MMEX
+license = GPL-2.0-only
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.moneymanagerex.MMEX

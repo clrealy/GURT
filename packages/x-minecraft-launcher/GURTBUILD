@@ -1,0 +1,15 @@
+# Play and manage Minecraft (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=x-minecraft-launcher
+pkgver=flathub
+pkgrel=1
+pkgdesc="Play and manage Minecraft"
+url="https://flathub.org/apps/app.xmcl.voxelum"
+license="MIT"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=app.xmcl.voxelum

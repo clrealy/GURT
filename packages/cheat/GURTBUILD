@@ -1,0 +1,19 @@
+# Create and view your own cheatsheets for commands
+pkgname=cheat
+pkgver=5.1.0
+pkgrel=1
+pkgdesc="Create and view your own cheatsheets for commands"
+url="https://github.com/cheat/cheat"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+# official prebuilt release binary
+source_x86_64=("cheat.gz::https://github.com/cheat/cheat/releases/download/${pkgver}/cheat-linux-amd64.gz")
+source_aarch64=("cheat.gz::https://github.com/cheat/cheat/releases/download/${pkgver}/cheat-linux-arm64.gz")
+sha256sums_x86_64=(8c8405574d51d63ee89594bfed241f478d507d96af78e5c370dcbe65633d7b34)
+sha256sums_aarch64=(78fd70fedd7c2cd297af827c29c495c8f6d2b9a880739450ac13e18eefa2f17b)
+
+package() {
+  install -Dm755 cheat "$pkgdir$prefix/bin/cheat"
+}

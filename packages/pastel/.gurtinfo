@@ -1,0 +1,10 @@
+pkgname = pastel
+pkgver = 0.12.0
+pkgrel = 1
+pkgdesc = Generate, convert and play with colors in the terminal
+url = https://github.com/sharkdp/pastel
+license = MIT OR Apache-2.0
+maintainer = clrealy
+category = creative
+arch = x86_64
+source = https://github.com/sharkdp/pastel/releases/download/v0.12.0/pastel-v0.12.0-x86_64-unknown-linux-musl.tar.gz

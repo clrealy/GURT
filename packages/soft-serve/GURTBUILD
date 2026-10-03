@@ -1,0 +1,23 @@
+# Self-hosted git server you can browse over SSH (run soft)
+pkgname=soft-serve
+pkgver=0.12.2
+pkgrel=1
+pkgdesc="Self-hosted git server you can browse over SSH (run soft)"
+url="https://github.com/charmbracelet/soft-serve"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+aliases=(soft)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/charmbracelet/soft-serve/releases/download/${_tag}/soft-serve_${pkgver}_Linux_x86_64.tar.gz")
+source_aarch64=("https://github.com/charmbracelet/soft-serve/releases/download/${_tag}/soft-serve_${pkgver}_Linux_arm64.tar.gz")
+sha256sums_x86_64=(4f0759907dcbbdbf204e3a7e1bc4e76bcbfe6101c11c42c73a2b40388b67944a)
+sha256sums_aarch64=(9187a662b2b8e8478a09ece13026f58689eaa341cbfb46c24a4475fcb37b0205)
+
+package() {
+  local f
+  f=$(find . -type f -name soft -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name soft | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/soft"
+}

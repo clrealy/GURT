@@ -1,0 +1,15 @@
+# Transcribe meetings locally (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=loomfy
+pkgver=flathub
+pkgrel=1
+pkgdesc="Transcribe meetings locally"
+url="https://flathub.org/apps/ai.loomfy.Loomfy"
+license="see Flathub"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=ai.loomfy.Loomfy

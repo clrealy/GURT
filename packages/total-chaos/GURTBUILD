@@ -1,0 +1,15 @@
+# Survival horror set on a remote island known as Fort Oasis (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=total-chaos
+pkgver=flathub
+pkgrel=1
+pkgdesc="Survival horror set on a remote island known as Fort Oasis"
+url="https://flathub.org/apps/com.moddb.TotalChaos"
+license="CC-BY-NC-SA-3.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.moddb.TotalChaos

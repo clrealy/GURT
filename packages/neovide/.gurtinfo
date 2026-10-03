@@ -1,0 +1,11 @@
+pkgname = neovide
+pkgver = 0.16.2
+pkgrel = 1
+pkgdesc = Neovim in a smooth, good-looking GUI window with buttery animations
+url = https://neovide.dev
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+depends = nvim
+source = neovide.AppImage::https://github.com/neovide/neovide/releases/download/0.16.2/neovide.AppImage

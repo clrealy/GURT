@@ -1,0 +1,15 @@
+# Powerful private cloud storage with no recurring fees (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=synology-drive
+pkgver=flathub
+pkgrel=1
+pkgdesc="Powerful private cloud storage with no recurring fees"
+url="https://flathub.org/apps/com.synology.SynologyDrive"
+license="see Flathub"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.synology.SynologyDrive

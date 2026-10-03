@@ -1,0 +1,11 @@
+pkgname = atuin
+pkgver = 18.23.0
+pkgrel = 1
+pkgdesc = Way better shell history you can search and sync
+url = https://github.com/atuinsh/atuin
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = https://github.com/atuinsh/atuin/releases/download/v18.23.0/atuin-x86_64-unknown-linux-musl.tar.gz

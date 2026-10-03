@@ -1,0 +1,11 @@
+pkgname = gotify
+pkgver = 3.1.1
+pkgrel = 1
+pkgdesc = Self-hosted server for sending yourself push notifications
+url = https://github.com/gotify/server
+license = MIT
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = https://github.com/gotify/server/releases/download/v3.1.1/gotify-linux-amd64.zip

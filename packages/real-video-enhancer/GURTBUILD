@@ -1,0 +1,15 @@
+# Free and Open Source Video Enhancement Tool (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=real-video-enhancer
+pkgver=flathub
+pkgrel=1
+pkgdesc="Free and Open Source Video Enhancement Tool"
+url="https://flathub.org/apps/io.github.tntwise.REAL-Video-Enhancer"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.tntwise.REAL-Video-Enhancer

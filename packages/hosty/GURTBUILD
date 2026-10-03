@@ -1,0 +1,15 @@
+# Host Minecraft servers (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=hosty
+pkgver=flathub
+pkgrel=1
+pkgdesc="Host Minecraft servers"
+url="https://flathub.org/apps/io.github.sugarycandybar.Hosty"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.sugarycandybar.Hosty

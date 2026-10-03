@@ -1,0 +1,15 @@
+# Secure email that protects your privacy (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=proton-mail
+pkgver=flathub
+pkgrel=1
+pkgdesc="Secure email that protects your privacy"
+url="https://flathub.org/apps/me.proton.Mail"
+license="GPL-3.0"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=me.proton.Mail

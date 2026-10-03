@@ -1,0 +1,22 @@
+# Queue up long terminal commands and run them in the background
+pkgname=pueue
+pkgver=4.0.4
+pkgrel=1
+pkgdesc="Queue up long terminal commands and run them in the background (start the daemon with pueued -d)"
+url="https://github.com/Nukesor/pueue"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+# official prebuilt release binaries: pueue (the client) and pueued (the daemon)
+source_x86_64=("pueue::https://github.com/Nukesor/pueue/releases/download/v${pkgver}/pueue-x86_64-unknown-linux-musl"
+               "pueued::https://github.com/Nukesor/pueue/releases/download/v${pkgver}/pueued-x86_64-unknown-linux-musl")
+source_aarch64=("pueue::https://github.com/Nukesor/pueue/releases/download/v${pkgver}/pueue-aarch64-unknown-linux-musl"
+                "pueued::https://github.com/Nukesor/pueue/releases/download/v${pkgver}/pueued-aarch64-unknown-linux-musl")
+sha256sums_x86_64=(c1b10d7e4e62211075ddd0e1dc3e8cbfc5a43d662cb3be7402a28504e23fcb51 5afeff6adbafb909e8d54e2caff158e6966c2adffa2c09e60fd631cc51b60390)
+sha256sums_aarch64=(759bf5100a51024997111c6913aaf3330a0cdfd893ff552dcf429ae9b5e01e09 332c5ef74270b64aeaf04894c8c04826f3422eb7d50dbd1a8e0706d74a42f653)
+
+package() {
+  install -Dm755 pueue "$pkgdir$prefix/bin/pueue"
+  install -Dm755 pueued "$pkgdir$prefix/bin/pueued"
+}

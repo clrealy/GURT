@@ -1,0 +1,11 @@
+pkgname = frp
+pkgver = 0.71.0
+pkgrel = 1
+pkgdesc = Expose local servers behind NAT to the internet
+url = https://github.com/fatedier/frp
+license = Apache-2.0
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = https://github.com/fatedier/frp/releases/download/v0.71.0/frp_0.71.0_linux_amd64.tar.gz

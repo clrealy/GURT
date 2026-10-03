@@ -1,0 +1,15 @@
+# Open Source PDF Editor (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=pdf4qt
+pkgver=flathub
+pkgrel=1
+pkgdesc="Open Source PDF Editor"
+url="https://flathub.org/apps/io.github.JakubMelka.Pdf4qt"
+license="MIT"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.JakubMelka.Pdf4qt

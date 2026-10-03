@@ -1,0 +1,13 @@
+pkgname = glide
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Play movies and audio files
+url = https://flathub.org/apps/net.base_art.Glide
+license = MIT
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.base_art.Glide

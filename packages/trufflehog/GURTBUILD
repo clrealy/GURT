@@ -1,0 +1,22 @@
+# Hunt for leaked secrets in repos, files and more
+pkgname=trufflehog
+pkgver=3.97.9
+pkgrel=1
+pkgdesc="Hunt for leaked secrets in repos, files and more"
+url="https://github.com/trufflesecurity/trufflehog"
+license="AGPL-3.0"
+maintainer="clrealy"
+category="security"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/trufflesecurity/trufflehog/releases/download/${_tag}/trufflehog_${pkgver}_linux_amd64.tar.gz")
+source_aarch64=("https://github.com/trufflesecurity/trufflehog/releases/download/${_tag}/trufflehog_${pkgver}_linux_arm64.tar.gz")
+sha256sums_x86_64=(40377e6572495412fb9ba0bc21c9401f73b72f1d2afd11b9931bc4a5ed622866)
+sha256sums_aarch64=(372c568695d49e53517075b5f74d1ee9a19053f13661d689c7928ee1fc27d705)
+
+package() {
+  local f
+  f=$(find . -type f -name trufflehog -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name trufflehog | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/trufflehog"
+}

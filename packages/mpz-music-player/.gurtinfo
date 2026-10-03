@@ -1,0 +1,13 @@
+pkgname = mpz-music-player
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Play local music by folder
+url = https://flathub.org/apps/org.mpz_player.mpz
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.mpz_player.mpz

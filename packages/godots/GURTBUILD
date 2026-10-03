@@ -1,0 +1,15 @@
+# Godot game engine version manager (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=godots
+pkgver=flathub
+pkgrel=1
+pkgdesc="Godot game engine version manager"
+url="https://flathub.org/apps/io.github.MakovWait.Godots"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.MakovWait.Godots

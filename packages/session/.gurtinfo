@@ -1,0 +1,10 @@
+pkgname = session
+pkgver = 1.18.1
+pkgrel = 1
+pkgdesc = Private messenger that doesn't need a phone number
+url = https://github.com/session-foundation/session-desktop
+license = GPL-3.0
+maintainer = clrealy
+category = chat
+arch = x86_64
+source = session.AppImage::https://github.com/session-foundation/session-desktop/releases/download/v1.18.1/session-desktop-linux-x86_64-1.18.1.AppImage

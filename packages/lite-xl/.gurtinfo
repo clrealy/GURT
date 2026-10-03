@@ -1,0 +1,10 @@
+pkgname = lite-xl
+pkgver = 2.1.8
+pkgrel = 1
+pkgdesc = Lightweight, fast code editor written in Lua
+url = https://github.com/lite-xl/lite-xl
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+source = lite-xl.AppImage::https://github.com/lite-xl/lite-xl/releases/download/v2.1.8/LiteXL-v2.1.8-addons-x86_64.AppImage

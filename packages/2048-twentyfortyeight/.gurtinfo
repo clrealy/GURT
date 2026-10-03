@@ -1,0 +1,13 @@
+pkgname = 2048-twentyfortyeight
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Obtain the 2048 tile
+url = https://flathub.org/apps/org.gnome.TwentyFortyEight
+license = GPL-3.0+
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.gnome.TwentyFortyEight

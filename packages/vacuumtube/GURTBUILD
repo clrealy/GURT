@@ -1,0 +1,15 @@
+# YouTube for TV, on your PC (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=vacuumtube
+pkgver=flathub
+pkgrel=1
+pkgdesc="YouTube for TV, on your PC"
+url="https://flathub.org/apps/rocks.shy.VacuumTube"
+license="MIT"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=rocks.shy.VacuumTube

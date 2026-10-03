@@ -1,0 +1,13 @@
+pkgname = basemark-gpu
+pkgver = flathub
+pkgrel = 1
+pkgdesc = GPU performance evaluation tool
+url = https://flathub.org/apps/com.basemark.BasemarkGPU
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.basemark.BasemarkGPU

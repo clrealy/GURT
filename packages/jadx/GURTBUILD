@@ -1,0 +1,15 @@
+# Dex to Java decompiler (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=jadx
+pkgver=flathub
+pkgrel=1
+pkgdesc="Dex to Java decompiler"
+url="https://flathub.org/apps/com.github.skylot.jadx"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.skylot.jadx

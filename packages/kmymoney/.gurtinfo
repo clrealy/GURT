@@ -1,0 +1,13 @@
+pkgname = kmymoney
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Personal finance manager based on double-entry bookkeeping
+url = https://flathub.org/apps/org.kde.kmymoney
+license = GPL-2.0+
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.kde.kmymoney

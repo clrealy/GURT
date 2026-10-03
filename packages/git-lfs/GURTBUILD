@@ -1,0 +1,22 @@
+# Store big files in git without bloating the repo
+pkgname=git-lfs
+pkgver=3.8.0
+pkgrel=1
+pkgdesc="Store big files in git without bloating the repo"
+url="https://github.com/git-lfs/git-lfs"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/git-lfs/git-lfs/releases/download/${_tag}/git-lfs-linux-amd64-${_tag}.tar.gz")
+source_aarch64=("https://github.com/git-lfs/git-lfs/releases/download/${_tag}/git-lfs-linux-arm64-${_tag}.tar.gz")
+sha256sums_x86_64=(e455e00f15d9b95661b8d53498ffb0c3367962cf1ec73c31ab7369516cd6ab8d)
+sha256sums_aarch64=(ac9c8efac980bb0505ead384d087e2acb6486fd8498691a2165fa174ec6118c2)
+
+package() {
+  local f
+  f=$(find . -type f -name git-lfs -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name git-lfs | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/git-lfs"
+}

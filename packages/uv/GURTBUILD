@@ -1,0 +1,20 @@
+# Super fast Python package and project manager
+pkgname=uv
+pkgver=0.12.22
+pkgrel=1
+pkgdesc="Super fast Python package and project manager"
+url="https://github.com/astral-sh/uv"
+license="MIT OR Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+# official prebuilt release binaries
+source_x86_64=("https://github.com/astral-sh/uv/releases/download/$pkgver/uv-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/astral-sh/uv/releases/download/$pkgver/uv-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(a50fd68c653b0cfb1c85e0a7db62cb78cf5c22b6f3dcf3ae173e5f222d084470)
+sha256sums_aarch64=(228bd32c180421a94eef91378a92b2dd63c768bd278430e833250524c4a13382)
+
+package() {
+  install -Dm755 "$(find . -type f -name uv -perm -u+x | head -n1)" "$pkgdir$prefix/bin/uv"
+  install -Dm755 "$(find . -type f -name uvx -perm -u+x | head -n1)" "$pkgdir$prefix/bin/uvx"
+}

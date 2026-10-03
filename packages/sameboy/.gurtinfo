@@ -1,0 +1,13 @@
+pkgname = sameboy
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Game Boy and Game Boy Color emulator
+url = https://flathub.org/apps/io.github.sameboy.SameBoy
+license = MIT
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.sameboy.SameBoy

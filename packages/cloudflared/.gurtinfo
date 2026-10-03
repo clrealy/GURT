@@ -1,0 +1,11 @@
+pkgname = cloudflared
+pkgver = 2026.9.3
+pkgrel = 1
+pkgdesc = Cloudflare Tunnel client, expose local sites safely
+url = https://github.com/cloudflare/cloudflared
+license = Apache-2.0
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = cloudflared::https://github.com/cloudflare/cloudflared/releases/download/2026.9.3/cloudflared-linux-amd64
