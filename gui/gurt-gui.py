@@ -201,7 +201,8 @@ def theme():
 SKINS = ("gurt", "win11", "xp", "w95", "vapor", "hacker")
 TRACKS = ("auto", "shop", "lofi", "chip", "synth")
 LEGENDARY = ("hpa2", "tsudore", "opsec", "oneko", "zsnes", "frozen-bubble")
-ACH_IDS = ("legendary", "streak7", "lottery", "compare", "v1")
+ACH_IDS = ("legendary", "streak7", "lottery", "compare", "v1", "wizard")
+SYNC_SRCS = ("aur", "apt", "dnf", "zypper", "pacman")
 
 
 def skin():
@@ -370,7 +371,7 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/":
             if not self._host_ok() or not secrets.compare_digest((q.get("t") or [""])[0], TOKEN):
                 return self._send(403, "nope 🔒 open GURT with: gurt gui", "text/plain")
-            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()).replace("__SFX__", "off" if conf().get("sfx") is False else "on").replace("__MUSIC__", "off" if conf().get("music") is False else "on").replace("__TRACK__", conf().get("track") if conf().get("track") in TRACKS else "auto").replace("__SEEN__", html_attr(str(conf().get("seen", "")))).replace("__OPEN__", html_attr(OPEN_FILE[0])), "text/html")
+            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()).replace("__SFX__", "off" if conf().get("sfx") is False else "on").replace("__MUSIC__", "off" if conf().get("music") is False else "on").replace("__TRACK__", conf().get("track") if conf().get("track") in TRACKS else "auto").replace("__SEEN__", html_attr(str(conf().get("seen", "")))).replace("__WIZ__", "new" if WIZARD[0] or not conf() else str(conf().get("wizard", ""))).replace("__OPEN__", html_attr(OPEN_FILE[0])), "text/html")
         if u.path in ("/icon.png", "/logo.png", "/dirt-logo.png"):
             repo = paths().get("repo", "")
             want = {"/logo.png": "gurt-logo.png", "/dirt-logo.png": "dirt-logo.png"}.get(u.path, "apple-touch-icon.png")
@@ -383,6 +384,20 @@ class H(BaseHTTPRequestHandler):
             return self._send(403, {"error": "bad token"})
         if u.path == "/api/state":
             return self._send(200, state())
+        if u.path == "/api/doctor":   # what the setup wizard's system check shows
+            env = dict(os.environ, NO_COLOR="1")
+            out = subprocess.run([GURT, "utils", "list"], capture_output=True, text=True, timeout=120, env=env)
+            utils = [{"name": m.group(2), "ok": m.group(1) == "✓"} for m in re.finditer(r"^\s*([✓✗])\s+(\S+)", out.stdout + out.stderr, re.M)]
+            distro = ""
+            try:
+                osr = dict(l.rstrip("\n").split("=", 1) for l in open("/etc/os-release") if "=" in l)
+                distro = osr.get("PRETTY_NAME", osr.get("ID", "")).strip('"')
+            except OSError:
+                pass
+            p = paths()
+            return self._send(200, {"distro": distro, "pm": p.get("pm", "?"), "wsl": p.get("wsl") == "yes", "mode": MODE, "audio": audio_ok(),
+                                    "sudo": os.geteuid() == 0 or bool(shutil.which("sudo") or shutil.which("doas")), "utils": utils,
+                                    "notify": notify_on(), "version": p.get("version", "?")})
         if u.path == "/api/achievements":
             out = subprocess.run([GURT, "achievements", "--tsv"], capture_output=True, text=True, timeout=30, env=dict(os.environ, NO_COLOR="1")).stdout
             items = [dict(zip(("id", "title", "what", "got"), l.split("\t"))) for l in out.splitlines() if l.count("\t") == 3]
@@ -527,6 +542,14 @@ class H(BaseHTTPRequestHandler):
             if cmd == "gui-setup":
                 job = start_job([GURT, "-y", "gui", "--setup"])
                 return self._send(200, {"job": job.id})
+            if cmd == "utils":
+                job = start_job([GURT, "-y", "utils"])
+                return self._send(200, {"job": job.id})
+            if cmd == "sync-src":
+                if arg not in SYNC_SRCS:
+                    return self._send(400, {"error": "unknown source"})
+                job = start_job([GURT, "sync", arg])
+                return self._send(200, {"job": job.id})
             if cmd == "notify":
                 if arg not in ("on", "off"):
                     return self._send(400, {"error": "not allowed"})
@@ -558,6 +581,9 @@ class H(BaseHTTPRequestHandler):
                 return self._send(400, {"error": "nope"})
             r = subprocess.run([GURT, "__achieve", a], capture_output=True, text=True, timeout=20, env=dict(os.environ, NO_COLOR="1"))
             return self._send(200, {"line": ANSI.sub("", r.stderr).strip()})
+        if u.path == "/api/wizard":   # the setup wizard ran (or was skipped): don't pop it up again
+            save_conf(wizard="done", seen=str(body.get("v", ""))[:20])
+            return self._send(200, {"ok": True})
         if u.path == "/api/seen":   # the "welcome to a new version" card shows once per version
             save_conf(seen=str(body.get("v", ""))[:20])
             return self._send(200, {"ok": True})
@@ -765,8 +791,10 @@ def main():
     ap.add_argument("--no-window", action="store_true")
     ap.add_argument("--browser", action="store_true", help="use a browser window even if a native one is possible")
     ap.add_argument("--probe", action="store_true", help="exit 0 if a native app window is possible")
+    ap.add_argument("--wizard", action="store_true", help="open the setup wizard (the installer uses this)")
     ap.add_argument("files", nargs="*", help="a package to open (double-clicking a .gurt file)")
     a = ap.parse_args()
+    WIZARD[0] = a.wizard
     if a.files:
         f = a.files[0]
         if f.startswith("file://"):
@@ -819,6 +847,7 @@ def main():
 
 
 PORT, ASKPASS, ICONS, MODE = 0, "", [], "browser"
+WIZARD = [False]   # gurt gui --wizard: open the setup wizard once
 TK = [""]
 
 
@@ -836,7 +865,7 @@ def audio_ok():
         return False
 
 PAGE = r"""<!doctype html>
-<html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__" data-music="__MUSIC__" data-track="__TRACK__" data-seen="__SEEN__" data-open="__OPEN__"><head>
+<html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__" data-music="__MUSIC__" data-track="__TRACK__" data-seen="__SEEN__" data-wiz="__WIZ__" data-open="__OPEN__"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GURT</title><link rel="icon" href="/icon.png">
 <style>
@@ -1056,7 +1085,38 @@ dialog .row{justify-content:flex-end}
 #skinsel,#tracksel,#convfmt{font:inherit;font-size:14px;background:var(--panel);color:var(--ink);border:2px solid var(--edge,var(--line));border-radius:8px;padding:6px 8px;cursor:pointer}
 #toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:60;background:var(--panel);border:2px solid var(--accent);border-radius:14px;padding:10px 16px;font-weight:700;box-shadow:5px 5px 0 var(--shadow,#0004);animation:toast-in .4s cubic-bezier(.2,1.6,.4,1);max-width:calc(100vw - 32px)}
 @keyframes toast-in{from{transform:translate(-50%,-30px) scale(.8);opacity:0}}
-.v1hero{font:900 64px/1 Verdana,"DejaVu Sans",sans-serif;letter-spacing:-.04em;display:inline-block;padding:2px 14px;margin-bottom:10px;background:var(--accent);color:#141414;border:3px solid var(--edge,#141414);border-radius:10px;box-shadow:5px 5px 0 var(--shadow,#141414)}
+/* 🧙 setup wizard: a classic installer — steps on the left, Back / Next at the bottom */
+#wizard{max-width:min(860px,calc(100vw - 24px));width:100%;padding:0;overflow:hidden}
+#wizard[open]{display:flex;flex-direction:column;max-height:calc(100vh - 24px)}
+.wiz-top{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--accent);color:var(--accent-ink);flex:none;border-bottom:2px solid var(--edge,var(--line))}
+.wiz-top b{display:block;font-size:18px;font-weight:800}.wiz-top small{display:block;font-size:12px;opacity:.8}
+.wiz-mascot{font-size:34px;line-height:1}
+.wiz-body{display:grid;grid-template-columns:200px minmax(0,1fr);height:min(62vh,540px);min-height:0;flex:1 1 auto}
+.wiz-rail{margin:0;padding:14px 10px 14px 30px;background:var(--tag);border-right:2px solid var(--edge,var(--line));font-size:13px;display:grid;align-content:start;gap:8px}
+.wiz-rail li{color:var(--muted)}.wiz-rail li.on{color:var(--ink);font-weight:800}.wiz-rail li.done{color:var(--good)}.wiz-rail li.done::marker{content:"✓ "}
+.wiz-page{padding:18px 20px;overflow:auto;min-height:0}
+.wiz-page h3{margin:0 0 6px;font-size:20px}.wiz-page p{color:var(--muted);margin:0 0 14px}
+.wiz-foot{display:flex;gap:8px;align-items:center;flex:none;padding:12px 16px;border-top:2px solid var(--edge,var(--line));background:var(--panel)}
+.wiz-checks{display:grid;gap:6px;margin:0 0 14px}
+.wiz-check{display:flex;gap:10px;align-items:center;padding:8px 10px;border:2px solid var(--edge,var(--line));border-radius:8px;background:var(--panel)}
+.wiz-check small{color:var(--muted);display:block}.wiz-check .st{margin-left:auto;font-weight:700;white-space:nowrap}
+.wiz-opt{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border:2px solid var(--edge,var(--line));border-radius:8px;background:var(--panel);cursor:pointer;margin-bottom:8px}
+.wiz-opt input{margin-top:3px;accent-color:var(--accent);flex:none}.wiz-opt small{display:block;color:var(--muted)}
+.wiz-opt:has(input:checked){background:color-mix(in srgb,var(--accent) 22%,var(--panel))}
+.wiz-grp{margin:0 0 12px}.wiz-grp h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.wiz-apps{display:flex;flex-wrap:wrap;gap:6px}
+.wiz-app{font:inherit;font-size:13px;font-weight:700;padding:5px 11px;border:2px solid var(--edge,var(--line));border-radius:7px;background:var(--panel);color:var(--ink);cursor:pointer}
+.wiz-app.on{background:var(--accent);color:var(--accent-ink);box-shadow:2px 2px 0 var(--shadow,#0003)}
+.wiz-looks{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:14px}
+.wiz-look{font:inherit;font-weight:700;padding:12px 8px;border:2px solid var(--edge,var(--line));border-radius:8px;background:var(--panel);color:var(--ink);cursor:pointer}
+.wiz-look.on{background:var(--accent);color:var(--accent-ink);box-shadow:3px 3px 0 var(--shadow,#0003)}
+.wiz-tasks{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.wiz-tasks li{display:flex;gap:10px;align-items:center;padding:8px 10px;border:2px solid var(--edge,var(--line));border-radius:8px;background:var(--panel)}
+.wiz-tasks .st{margin-left:auto;font-weight:700;white-space:nowrap}
+.wiz-bar{height:16px;border:2px solid var(--edge,var(--line));border-radius:4px;background:var(--panel);margin:12px 0;overflow:hidden}
+.wiz-bar i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,var(--accent) 0 14px,color-mix(in srgb,var(--accent) 70%,#000) 14px 16px);transition:width .3s}
+@media (max-width:640px){.wiz-body{grid-template-columns:1fr;height:min(70vh,560px)}.wiz-rail{display:none}}
+.v1hero{font:900 64px/1 Verdana,"DejaVu Sans",sans-serif;letter-spacing:-.04em;display:inline-block;padding:2px 14px;margin-bottom:10px;background:var(--accent);color:var(--accent-ink);border:3px solid var(--edge,#141414);border-radius:10px;box-shadow:5px 5px 0 var(--shadow,#141414)}
 .v1list{margin:0 0 16px;padding-left:20px;display:grid;gap:6px}#v1dlg{max-width:520px}
 #achlist{display:grid;gap:8px;max-height:60vh;overflow:auto;margin:6px 0 12px}
 .ach{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.ach.locked{opacity:.5;filter:grayscale(1)}.ach b{display:block}.ach small{color:var(--muted)}.ach .when{margin-left:auto;font-size:12px;color:var(--muted)}
@@ -1147,6 +1207,7 @@ dialog .row{justify-content:flex-end}
           <option value="gurt">🦆 GURT</option><option value="win11">🪟 Windows 11</option><option value="xp">🟩 Windows XP</option><option value="w95">💾 Windows 95</option><option value="vapor">🌴 Vaporwave</option><option value="hacker">💻 Hacker</option>
         </select></label>
         <label>music <select id="tracksel"><option value="auto" title="matches the skin">🎵 auto</option><option value="shop">🛍️ shop</option><option value="lofi">🌧️ lofi</option><option value="chip">👾 chiptune</option><option value="synth">🌆 synthwave</option></select></label>
+        <button class="btn ghost small" id="wizopen" title="walk through setting GURT up">🧙 setup wizard</button>
         <div class="prefrow"><button class="btn ghost small" id="musicbtn" title="background music"></button><button class="btn ghost small" id="sfxbtn" title="sound effects"></button><button class="btn ghost small" id="themebtn" title="light / dark"></button></div>
       </div>
     </div>
@@ -1250,7 +1311,12 @@ dialog .row{justify-content:flex-end}
   <li>⚖️ compare apps, 🐷 see what eats your disk, search "like photoshop"</li>
   <li>🏆 achievements, 🔥 lottery streaks, 🌈 legendary pulls</li>
   <li>🎨 a fresh look, + Vaporwave and Hacker skins and 4 music tracks (in the 🎨 menu)</li></ul>
-  <div class="row"><span class="spacer"></span><button class="btn" id="v1ok">let's gooo</button></div></dialog>
+  <div class="row"><button class="btn ghost" id="v1wiz">🧙 run the setup wizard</button><span class="spacer"></span><button class="btn" id="v1ok">let's gooo</button></div></dialog>
+<dialog id="wizard" aria-labelledby="wiztitle">
+  <div class="wiz-top"><span class="wiz-mascot" aria-hidden="true">🧙</span><div><b id="wiztitle">GURT Setup Wizard</b><small id="wizstepname"></small></div></div>
+  <div class="wiz-body"><ol class="wiz-rail" id="wizrail"></ol><div class="wiz-page" id="wizpage"></div></div>
+  <div class="wiz-foot"><button class="btn ghost" id="wizcancel">Cancel</button><span class="spacer"></span><button class="btn ghost" id="wizback">&lt; Back</button><button class="btn" id="wiznext">Next &gt;</button></div>
+</dialog>
 <dialog id="achdlg"><h3>🏆 achievements</h3><div id="achlist"></div><div class="row"><span class="spacer"></span><button class="btn" id="achclose">nice</button></div></dialog>
 <div id="cmptray" hidden><span>⚖️</span><span id="cmplist"></span><span class="spacer"></span><button class="btn ghost small" id="cmpclear">clear</button><button class="btn small" id="cmpgo">compare</button></div>
 <dialog id="cmpdlg"><h3>⚖️ side by side</h3><div id="cmptable"></div><div class="row"><span class="spacer"></span><button class="btn" id="cmpclose">done</button></div></dialog>
@@ -1380,9 +1446,11 @@ $("#achclose").addEventListener("click", () => $("#achdlg").close());
 (() => {
   const seen = document.documentElement.dataset.seen || "", ver = () => (S && S.version) || "";
   const show = () => {
+    if (document.documentElement.dataset.wiz === "new") { wizOpen(); return; }   // brand new: the wizard covers what's new too
     if (!/^1\./.test(ver()) || /^1\./.test(seen)) return;
     $("#v1dlg").showModal(); SFX.play("legendary");
     $("#v1ok").onclick = () => $("#v1dlg").close();
+    $("#v1wiz").onclick = () => { $("#v1dlg").close(); wizOpen(); };
     $("#v1dlg").addEventListener("close", () => { api("/api/seen", {v: ver()}).catch(() => {}); achieve("v1"); }, {once: true});
   };
   const wait = setInterval(() => { if (typeof S !== "undefined" && S && S.version) { clearInterval(wait); show(); } }, 300);
@@ -2017,6 +2085,150 @@ if (MODE === "browser") {
     } else { $("#appbartxt").textContent = "couldn't install the app window 😔 check the activity log below"; }
   };
 }
+
+// ── 🧙 GURT Setup Wizard: a classic installer. opens by itself the first time, or from the 🎨 menu ──
+const WIZ_STEPS = ["Welcome", "System check", "App sources", "Your look", "Starter apps", "Extras", "Install"];
+const STARTER = {"🌐 Browsers": ["firefox", "brave", "librewolf", "zen-browser", "chromium"], "💬 Chat": ["discord", "vesktop", "telegram", "signal", "element"],
+  "🎬 Media": ["vlc", "mpv", "spotify", "obs-studio", "kdenlive"], "🎨 Creative": ["gimp", "krita", "inkscape", "blender"],
+  "📚 Office": ["libreoffice", "onlyoffice", "obsidian", "thunderbird"], "🧑‍💻 Dev": ["vscodium", "vscode", "zed", "neovim", "btop"],
+  "🎮 Gaming": ["steam", "heroic", "lutris", "prismlauncher", "bottles"]};
+const WIZ_SRCS = [["flatpak", "Flathub", "sandboxed apps, and where most Main GURT apps come from"], ["aur", "the AUR", "Arch's user repo, built from source on your PC (gurt checks the build scripts for red flags first)"],
+  ["apt", "Debian / Ubuntu repos", "apt/ packages on any distro"], ["dnf", "Fedora repos", "dnf/ packages on any distro"],
+  ["zypper", "openSUSE repos", "zypper/ packages on any distro"], ["pacman", "Arch repos", "pacman/ packages on any distro"]];
+const WIZ_SKINS = [["gurt", "🦆 GURT"], ["win11", "🪟 Windows 11"], ["xp", "🟩 Windows XP"], ["w95", "💾 Windows 95"], ["vapor", "🌴 Vaporwave"], ["hacker", "💻 Hacker"]];
+const WIZ_TRACKS = [["auto", "🎵 auto"], ["shop", "🛍️ shop"], ["lofi", "🌧️ lofi"], ["chip", "👾 chiptune"], ["synth", "🌆 synthwave"]];
+let W = null, wizStep = 0, wizDoc = null, wizState = "edit";   // edit → running → done
+function wizOpen(){
+  W = {utils: true, srcs: new Set(["flatpak"]), apps: new Set(), notify: true, appwin: MODE === "browser", tasks: []};
+  wizStep = 0; wizState = "edit"; wizDoc = null; prefOpen(false);
+  if (!$("#wizard").open) $("#wizard").showModal();
+  wizRender();
+  api("/api/doctor").then(d => { wizDoc = d; if (wizStep === 1 || wizStep === 6) wizRender(); }).catch(() => { wizDoc = {utils: [], failed: true}; wizRender(); });
+}
+const wizMissing = () => ((wizDoc && wizDoc.utils) || []).filter(u => !u.ok).map(u => u.name);
+function wizTasks(){
+  const t = [], miss = wizMissing();
+  if (miss.length && (W.utils || (W.srcs.has("flatpak") && miss.includes("flatpak")))) t.push({label: `install the utilities apps need (${miss.join(", ")})`, cmd: "utils"});
+  for (const s of W.srcs) if (s !== "flatpak") t.push({label: `get the ${WIZ_SRCS.find(x => x[0] === s)[1]} package list`, cmd: "sync-src", arg: s});
+  if (W.apps.size) t.push({label: `install ${W.apps.size} app${W.apps.size === 1 ? "" : "s"}: ${[...W.apps].join(", ")}`, cmd: "install-many", arg: [...W.apps].join(" ")});
+  if (W.notify && !(wizDoc && wizDoc.notify)) t.push({label: "turn on update alerts 🔔", cmd: "notify", arg: "on"});
+  if (W.appwin && MODE === "browser") t.push({label: "install the app window (GURT reopens as a real app at the end)", cmd: "gui-setup", relaunch: true});
+  return t;
+}
+const opt = (id, on, title, sub, dis = false) => `<label class="wiz-opt"><input type="checkbox" data-w="${id}"${on ? " checked" : ""}${dis ? " disabled" : ""}><span><b>${title}</b>${sub ? `<small>${sub}</small>` : ""}</span></label>`;
+function wizRender(){
+  $("#wizrail").innerHTML = WIZ_STEPS.map((n, i) => `<li class="${i === wizStep ? "on" : i < wizStep ? "done" : ""}">${n}</li>`).join("");
+  $("#wizstepname").textContent = `step ${wizStep + 1} of ${WIZ_STEPS.length}: ${WIZ_STEPS[wizStep]}`;
+  const d = wizDoc, pg = $("#wizpage");
+  if (wizStep === 0) pg.innerHTML = `<h3>Welcome to the GURT Setup Wizard 🦆</h3>${document.documentElement.dataset.wiz === "new" ? `<p><b>GURT ${esc((S && S.version) || "")} is installed ✅</b></p>` : ""}
+    <p>This wizard gets GURT ready on your computer: it checks your system, sets up the places apps come from, picks your look, and installs a few starter apps if you want some.</p>
+    <p>It takes about a minute, and you can change all of it later. Click <b>Next</b> to continue.</p>`;
+  if (wizStep === 1) {
+    if (!d) pg.innerHTML = `<h3>System check</h3><p>checking your system… ⏳</p>`;
+    else {
+      const miss = wizMissing(), chk = (ok, title, sub, st) => `<div class="wiz-check"><span>${ok ? "✅" : "⚠️"}</span><span><b>${title}</b>${sub ? `<small>${sub}</small>` : ""}</span><span class="st">${st || ""}</span></div>`;
+      pg.innerHTML = `<h3>System check</h3><p>here's what GURT found.</p><div class="wiz-checks">
+        ${chk(true, esc(d.distro || "your distro"), `package manager: ${esc(d.pm || "?")}${d.wsl ? " · running in WSL on Windows" : ""}`)}
+        ${chk(d.sudo, d.sudo ? "sudo works" : "no sudo or doas", d.sudo ? "GURT asks for your password when it installs things system-wide" : "install sudo, or run GURT as root")}
+        ${chk(!miss.length, miss.length ? `${miss.length} utilit${miss.length === 1 ? "y" : "ies"} missing` : "every utility apps need is here", miss.length ? esc(miss.join(", ")) : "flatpak, git, unzip tools, a compiler…")}
+        ${d.audio === false ? chk(false, "no sound in the app window", "the app window needs GStreamer's audio plugins (the app offers a fix)") : ""}
+      </div>${miss.length ? opt("utils", W.utils, "install the missing utilities", "recommended: most apps need some of these to install") : ""}`;
+    }
+  }
+  if (wizStep === 2) pg.innerHTML = `<h3>App sources</h3><p>where should GURT get apps? your own distro's repos${d ? ` (${esc(d.pm)})` : ""} and Main GURT always work. these are extra, and you can use any of them later too.</p>`
+    + WIZ_SRCS.map(([id, name, sub]) => opt("src:" + id, W.srcs.has(id), name, sub)).join("");
+  if (wizStep === 3) {
+    const cur = document.documentElement.dataset.skin || "gurt", tr = MUSIC.track, th = document.documentElement.dataset.theme || "auto";
+    pg.innerHTML = `<h3>Your look</h3><p>pick a skin (every skin has its own sound effects), a music track, and light or dark. try them, it changes right away.</p>
+      <div class="wiz-looks">${WIZ_SKINS.map(([id, n]) => `<button class="wiz-look${cur === id ? " on" : ""}" data-skin="${id}">${n}</button>`).join("")}</div>
+      <div class="wiz-grp"><h4>music</h4><div class="wiz-apps">${WIZ_TRACKS.map(([id, n]) => `<button class="wiz-app${tr === id ? " on" : ""}" data-track="${id}">${n}</button>`).join("")}<button class="wiz-app${MUSIC.on ? "" : " on"}" data-mute="1">🔇 no music</button></div></div>
+      <div class="wiz-grp"><h4>light or dark</h4><div class="wiz-apps">${[["auto", "🌓 match my system"], ["light", "☀️ light"], ["dark", "🌙 dark"]].map(([id, n]) => `<button class="wiz-app${th === id ? " on" : ""}" data-theme="${id}">${n}</button>`).join("")}</div></div>`;
+  }
+  if (wizStep === 4) {
+    const groups = Object.entries(STARTER).map(([g, names]) => [g, names.filter(n => S.main.some(p => p.name === n))]).filter(([, n]) => n.length);
+    pg.innerHTML = `<h3>Starter apps</h3><p>tick a few to install now, or skip this. there are ${S.main.length.toLocaleString()} more in Discover.</p>`
+      + groups.map(([g, names]) => `<div class="wiz-grp"><h4>${g}</h4><div class="wiz-apps">${names.map(n => inst(n)
+          ? `<button class="wiz-app" disabled title="already installed">${esc(n)} ✓</button>` : `<button class="wiz-app${W.apps.has(n) ? " on" : ""}" data-app="${esc(n)}">${esc(n)}</button>`).join("")}</div></div>`).join("")
+      + `<div class="row"><button class="btn ghost small" id="wizlotto">🎰 surprise me</button><button class="btn ghost small" id="wizimport" title="a list you exported (📤 export my list) or a profile from your old PC">📥 import a list from your old PC</button><span class="hint">${W.apps.size} picked</span></div>`
+      + (W.imported ? `<p class="hint" style="margin-top:8px">${esc(W.imported)}</p>` : "")
+      + `<input type="file" id="wizimportin" accept=".txt,.profile,text/plain" hidden>`;
+  }
+  if (wizStep === 5) pg.innerHTML = `<h3>Extras</h3><p>a couple more things.</p>`
+    + opt("notify", W.notify || (d && d.notify), "🔔 tell me when updates are waiting", d && d.notify ? "already on" : "a desktop notification, checked every 6 hours", !!(d && d.notify))
+    + (MODE === "browser" ? opt("appwin", W.appwin, "🖥️ install the real app window", "right now GURT is running in your browser. this gives it its own window + a menu entry") : "");
+  if (wizStep === 6) {
+    if (wizState === "edit") {
+      W.tasks = wizTasks();
+      pg.innerHTML = W.tasks.length ? `<h3>Ready to install</h3><p>GURT is about to:</p><ul class="wiz-tasks">${W.tasks.map(t => `<li><span>▫️</span><span>${esc(t.label)}</span></li>`).join("")}</ul>
+        <p style="margin-top:12px">click <b>Install</b> to start. it might ask for your password.</p>`
+        : `<h3>Nothing to install</h3><p>you're all set 😎 click <b>Finish</b> and go explore.</p>`;
+    } else {
+      const done = W.tasks.filter(t => t.st && t.st !== "run").length;
+      pg.innerHTML = `<h3>${wizState === "done" ? "All done 🎉" : "Installing…"}</h3><div class="wiz-bar"><i style="width:${W.tasks.length ? Math.round(done / W.tasks.length * 100) : 100}%"></i></div>
+        <ul class="wiz-tasks">${W.tasks.map(t => `<li><span>${t.st === "ok" ? "✅" : t.st === "bad" ? "❌" : t.st === "run" ? "⏳" : "▫️"}</span><span>${esc(t.label)}</span><span class="st">${t.st === "bad" ? "didn't work (see the activity log)" : ""}</span></li>`).join("")}</ul>
+        ${wizState === "done" ? `<p style="margin-top:12px">${W.tasks.some(t => t.st === "bad") ? "some of it didn't work, but everything else is ready. " : ""}GURT is set up 🦆 click <b>Finish</b>.</p>` : ""}`;
+    }
+  }
+  $("#wizback").disabled = wizStep === 0 || wizState !== "edit";
+  $("#wizcancel").hidden = wizState !== "edit";
+  $("#wiznext").disabled = wizState === "running";
+  $("#wiznext").textContent = wizStep < 6 ? "Next >" : wizState === "edit" ? (W.tasks.length ? "Install" : "Finish") : "Finish";
+}
+async function wizRun(){
+  wizState = "running"; wizRender();
+  let relaunch = false;
+  for (const t of W.tasks) {
+    t.st = "run"; wizRender();
+    const r = await run(t.cmd, t.arg || "", {confirm: false, quiet: true});
+    t.st = r && r.rc === 0 ? "ok" : "bad";
+    if (r && r.rc !== 0) $("#cout").textContent = r.lines.join("\n");
+    if (t.relaunch && t.st === "ok") relaunch = true;
+    wizRender();
+  }
+  wizState = "done"; wizRender(); SFX.play("ok");
+  await wizDone();
+  if (relaunch) { await api("/api/relaunch", {}).catch(() => {}); setTimeout(() => { document.body.innerHTML = `<div class="empty" style="padding:80px 20px">GURT reopened in its own window 🦆 you can close this tab</div>`; }, 1500); }
+}
+async function wizDone(){ document.documentElement.dataset.wiz = "done"; await api("/api/wizard", {v: (S && S.version) || ""}).catch(() => {}); achieve("wizard"); }
+$("#wiznext").addEventListener("click", () => {
+  if (wizStep < 6) { wizStep++; return wizRender(); }
+  if (wizState === "edit" && W.tasks.length) return wizRun();
+  if (wizState === "edit") wizDone();
+  $("#wizard").close();
+});
+$("#wizback").addEventListener("click", () => { if (wizStep > 0) { wizStep--; wizRender(); } });
+$("#wizcancel").addEventListener("click", () => { $("#wizard").close(); });
+$("#wizard").addEventListener("cancel", e => { if (wizState === "running") e.preventDefault(); });   // no Esc mid-install
+$("#wizard").addEventListener("close", () => { if (document.documentElement.dataset.wiz === "new") api("/api/wizard", {v: (S && S.version) || ""}).catch(() => {}); });   // skipped: don't nag
+$("#wizopen").addEventListener("click", wizOpen);
+$("#wizpage").addEventListener("change", async e => {
+  if (e.target.id === "wizimportin") {   // an exported list or a profile → its apps join the install
+    const f = e.target.files[0]; if (!f) return;
+    let text = await f.text(), skipped = 0, added = 0;
+    if (/^\[apps\]$/m.test(text)) text = (text.split(/^\[apps\]$/m)[1] || "").split(/^\[/m)[0];   // a profile: just its [apps] part
+    for (let line of text.split("\n")) {
+      line = line.replace(/#.*/, "").trim(); if (!line) continue;
+      if (/^outsource /.test(line) || !/^[a-z0-9-]+\/[A-Za-z0-9._+-]+$|^[A-Za-z0-9._+-]+$/.test(line)) { skipped++; continue; }
+      if (!inst(line) && !W.apps.has(line)) { W.apps.add(line); added++; }
+    }
+    W.imported = `📥 ${f.name}: added ${added} app${added === 1 ? "" : "s"}${skipped ? `, skipped ${skipped} (git repos: gurt import ${f.name} does those)` : ""}`;
+    SFX.play(added ? "ok" : "pop"); return wizRender();
+  }
+  const k = e.target.dataset.w; if (!k) return;
+  if (k.startsWith("src:")) e.target.checked ? W.srcs.add(k.slice(4)) : W.srcs.delete(k.slice(4)); else W[k] = e.target.checked;
+});
+$("#wizpage").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.skin) { applySkin(b.dataset.skin); api("/api/skin", {skin: b.dataset.skin}).catch(() => {}); SFX.play("startup"); wizRender(); }
+  else if (b.dataset.track) { MUSIC.setTrack(b.dataset.track); $("#tracksel").value = b.dataset.track; api("/api/track", {track: b.dataset.track}).catch(() => {});
+    if (!MUSIC.on) { MUSIC.set(true); api("/api/music", {on: true}).catch(() => {}); } paintMusic(); wizRender(); }
+  else if (b.dataset.mute) { MUSIC.set(false); paintMusic(); api("/api/music", {on: false}).catch(() => {}); wizRender(); }
+  else if (b.dataset.theme) { const t = b.dataset.theme; if (t === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+    themeIcon(); api("/api/theme", {theme: t}).catch(() => {}); wizRender(); }
+  else if (b.dataset.app) { const n = b.dataset.app; W.apps.has(n) ? W.apps.delete(n) : W.apps.add(n); SFX.play(W.apps.has(n) ? "pick" : "unpick"); wizRender(); }
+  else if (b.id === "wizimport") $("#wizimportin").click();
+  else if (b.id === "wizlotto") { const pool = S.main.filter(p => !inst(p.name) && !W.apps.has(p.name)); if (pool.length) { W.apps.add(pool[Math.floor(Math.random() * pool.length)].name); SFX.play("jackpot"); wizRender(); } }
+});
 load();
 </script></body></html>"""
 

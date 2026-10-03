@@ -3497,6 +3497,46 @@ for i, lab in enumerate(labels):
 '
 }
 
+# ── 🧙 gurt setup: the setup wizard, terminal edition (the app has the clicky one) ──
+SETUP_PICKS="firefox brave librewolf discord vesktop telegram signal vlc spotify obs-studio gimp krita libreoffice obsidian vscodium vscode neovim btop steam heroic prismlauncher"
+cmd_setup() {
+  local d miss n=1 picks=() p f line want=()
+  ensure_repo
+  printf '\n%s🧙 GURT Setup Wizard%s — a minute of questions, and you can change all of it later (Ctrl+C stops it)\n' "$B" "$R0"
+  printf '\n%s[1/4] system check%s\n' "$B" "$R0"
+  d=$( . /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-unknown distro}" )
+  msg2 "$d · package manager: $PM$(is_wsl && echo ' · WSL on Windows')"
+  if (( EUID == 0 )) || command -v sudo >/dev/null || command -v doas >/dev/null; then msg2 "sudo works ✅"; else warn "no sudo or doas: install one, or run gurt as root"; fi
+  miss=$(cmd_utils list 2>&1 | grep -c '✗' || true)
+  if (( miss )); then cmd_utils list; ask "install the $miss missing utilities (most apps need them)?" && cmd_utils
+  else msg2 "every utility apps need is here ✅"; fi
+  printf '\n%s[2/4] app sources%s\n' "$B" "$R0"
+  msg2 "your distro's repos ($PM) and Main GURT always work. Flathub came with the utilities."
+  if ! $NOCONFIRM && ask "download the package lists for other distros' repos (apt dnf zypper pacman), so searching them is instant?"; then
+    for p in apt dnf zypper pacman; do ( sync_source "$p" ) || warn "$p didn't sync (no internet?), skipped"; done
+  fi
+  printf '\n%s[3/4] starter apps%s\n' "$B" "$R0"
+  for p in $SETUP_PICKS; do
+    f="$GURT_REPO_DIR/packages/$p/.gurtinfo"; [[ -f $f ]] || continue; is_installed "$p" && continue
+    picks+=("$p"); printf '  %2d) %-14s %s\n' "$n" "$p" "$(info_get "$f" pkgdesc | cut -c1-60)"; n=$((n + 1))
+  done
+  if (( ${#picks[@]} )) && [[ -t 0 ]] && ! $NOCONFIRM; then
+    read -rp "  numbers to install (like: 1 4 7), or Enter to skip: " line || line=""
+    for p in $line; do [[ $p =~ ^[0-9]+$ ]] && (( p >= 1 && p <= ${#picks[@]} )) && want+=("${picks[p - 1]}"); done
+    if (( ${#want[@]} )); then
+      local was=$NOCONFIRM; NOCONFIRM=true
+      for p in "${want[@]}"; do ( install_any "$p" explicit ) || warn "$p didn't install, skipped"; done
+      NOCONFIRM=$was; ach_installs
+    fi
+  else msg2 "skipped (more in: gurt search, gurt lottery, or the app)"; fi
+  printf '\n%s[4/4] extras%s\n' "$B" "$R0"
+  if [[ $(cmd_notify status) == on ]]; then msg2 "update alerts are already on 🔔"
+  elif ask "🔔 a desktop notification when updates are waiting?"; then cmd_notify on || true; fi
+  if ! $NOCONFIRM && has_display && ask "🖥️ set up the GURT app (its own window + a menu entry)?"; then cmd_gui --setup || warn "the app window didn't set up, gurt gui still opens it in your browser"; fi
+  printf '\n'; achieve wizard
+  msg "you're all set 🦆 try: gurt search like photoshop · gurt lottery · gurt gui"
+}
+
 # ── profiles: your whole setup (apps + gurt settings + the app's look) under a name ──
 PROFILE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/profiles"
 GUI_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/gui.json"
@@ -3625,7 +3665,7 @@ cmd_complete() {
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
     commands)  printf '%s\n' sync search info install update upgrade self-update remove autoremove list files owns lottery sysup \
                  build add srcinfo checksum new repo dirt gui de outsource rollback hold unhold export import completions doctor version help yo \
-                 convert key verify sus why hogs compare profile notify snapshots achievements utils ;;
+                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman flatpak snap dirt ;;
   esac
   return 0
@@ -4355,7 +4395,8 @@ verify|trust issues 🔏|check a package's signature
 publish|publisher 📡|publish your own signed repo
 profile|save state 💾|save a profile
 compare|indecisive ⚖️|compare apps side by side
-v1|day one 🎂|be there for GURT 1.0"
+v1|day one 🎂|be there for GURT 1.0
+wizard|you're a wizard 🧙|finish the setup wizard"
 achieved() { [[ -f $ACH_FILE ]] && grep -q "^$1 " "$ACH_FILE"; }
 achieve() { # id — unlock it (once), with a little fanfare
   [[ ${GURT_ACHIEVEMENTS:-1} == 0 ]] && return 0
@@ -4954,6 +4995,7 @@ ${B}misc${R0}
   export [file]        save the list of stuff you installed
   lottery [category]   🎰 spin for a random app (browsers chat media creative office dev gaming system cli …)
   import <file>        install everything from an export (new PC speedrun)
+  setup                the setup wizard 🧙 system check, sources, starter apps, extras (the app has one too)
   profile save|load|list <name>   your apps + gurt settings + the app's look, under a name (gaming, work…) 📁
   notify on|off|now    a desktop notification when updates are waiting (checks every 6 hours) 🔔
   snapshots            the snapshots gurt took before system upgrades (btrfs: snapper/timeshift/plain) 📸
@@ -5054,6 +5096,7 @@ main() {
     hogs|sizes|du)     cmd_hogs "$@" ;;
     compare|vs)        cmd_compare "$@" && achieve compare ;;
     profile|profiles)  cmd_profile "$@" ;;
+    setup|wizard)      cmd_setup ;;
     notify|alerts)     cmd_notify "$@" ;;
     snapshots|snaps)   cmd_snapshots ;;
     self-update|selfupdate) cmd_self_update ;;

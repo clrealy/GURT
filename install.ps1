@@ -39,7 +39,7 @@ function Install-Gurt {
   if ($distro -and $distros -notcontains $distro) { Nah "no WSL distro called '$distro' (you have: $($distros -join ', '))"; return }
   $pick = if ($distro) { @('-d', $distro) } else { @() }
   Say "installing gurt inside WSL$(if ($distro) { " ($distro)" } else { ' (your default distro)' }) — it may ask for your Linux password"
-  & wsl.exe @pick -e bash -lc "command -v curl >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq curl git; }; curl -fsSL '$raw/install.sh' | sh"
+  & wsl.exe @pick -e bash -lc "command -v curl >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq curl git; }; curl -fsSL '$raw/install.sh' | GURT_WIZARD=0 sh"
   if ($LASTEXITCODE -ne 0) { Nah "gurt's Linux installer failed inside WSL (scroll up for why)"; return }
 
   # `gurt` on the Windows side → runs the real one in WSL
@@ -72,7 +72,9 @@ function Install-Gurt {
     Info "couldn't make the Start menu shortcut ($($_.Exception.Message)) — run: gurt gui"
   }
 
-  Say "gurt is on Windows 🦆🪟"
+  Say "gurt is on Windows 🦆🪟 opening the GURT Setup Wizard 🧙"
+  try { Start-Process -WindowStyle Minimized -FilePath (Get-Command wsl.exe).Source -ArgumentList "$($wslArgs)-e /usr/local/bin/gurt gui --wizard" }
+  catch { Info "couldn't open the wizard window, run it from a terminal instead: gurt setup" }
   Info "open a new terminal, then:  gurt install firefox   (or: gurt gui)"
   Info "Linux apps you install show up in your Start menu (WSLg, Windows 11 or Windows 10 21H2+)"
 }
