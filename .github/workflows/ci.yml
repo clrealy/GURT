@@ -36,6 +36,33 @@ jobs:
           mkdir -p ~/.config/gurt && echo '{"wizard": "done"}' > ~/.config/gurt/gui.json && timeout 20 gurt gui --first-run
           sudo apt-get remove -y gurt && ! command -v gurt
 
+  # the dev build: install dev build 1 from the gurt-dev repo, publish dev build 2, and the distro's own update picks it up
+  dev-rpm:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: { distro: ["fedora:latest", "opensuse/tumbleweed"] }
+    container: ${{ matrix.distro }}
+    steps:
+      - name: tools
+        run: if command -v dnf; then dnf install -y git tar gzip python3 zstd gnupg2 findutils; else zypper -n install git tar gzip python3 zstd gpg2 findutils; fi
+      - uses: actions/checkout@v4
+      - name: dev build 1 → install → dev build 2 → update
+        shell: bash
+        run: |
+          r=/tmp/devrepo; mkdir -p $r
+          tools/make-setup-wizard.sh $r --dev=1 --no-sign && ./gurt -y repo publish $r gurt-dev
+          rpm -qlp $r/GURTSetupWizard-dev.rpm | grep -q /etc/zypp/repos.d/gurt-dev.repo
+          if command -v dnf >/dev/null; then dnf install -y $r/GURTSetupWizard-dev.rpm; else zypper -n --no-gpg-checks install $r/GURTSetupWizard-dev.rpm; fi
+          [ "$(gurt version)" = "gurt $(sed -n 's/^GURT_VERSION="\(.*\)"/\1/p' gurt)+dev.1" ]
+          # point the installed repo at this test repo instead of the website, then publish build 2
+          sed -i "s|^baseurl=.*|baseurl=file://$r|" /etc/yum.repos.d/gurt-dev.repo /etc/zypp/repos.d/gurt-dev.repo
+          rm -f $r/*.rpm; tools/make-setup-wizard.sh $r --dev=2 --no-sign && ./gurt -y repo publish $r gurt-dev
+          if command -v dnf >/dev/null; then dnf upgrade -y --refresh gurt; else zypper -n --gpg-auto-import-keys refresh gurt-dev && zypper -n up gurt; fi
+          rpm -q gurt | tee /tmp/q.txt; grep -q '+dev.2' /tmp/q.txt
+          [ "$(gurt version)" = "gurt $(sed -n 's/^GURT_VERSION="\(.*\)"/\1/p' gurt)+dev.2" ]
+
   # gurt on Windows: the PowerShell installer has to parse + pass PSScriptAnalyzer on a real Windows box
   windows:
     if: github.event_name == 'pull_request'
@@ -178,6 +205,22 @@ jobs:
       - run: python3 tools/gen-index.py
       - name: serve the installer + script from the site too
         run: cp install.sh gurt deps.map vibes.map site/
+      # 🧪 the dev build: GURTSetupWizard-dev.rpm + an rpm repo at /dev/rpm, rebuilt on every push to main.
+      # the dev rpm adds that repo to zypper / dnf, so zypper up / dnf upgrade bring each new dev build
+      - name: signing key (same GURT_SIGNING_KEY secret as releases; without it the dev repo is unsigned)
+        env: { KEY: "${{ secrets.GURT_SIGNING_KEY }}" }
+        run: |
+          if [ -n "$KEY" ]; then
+            mkdir -p "$HOME/.local/share/gurt" && echo "$KEY" | base64 -d | tar xzf - -C "$HOME/.local/share/gurt"
+            chmod -R go-rwx "$HOME/.local/share/gurt/signing"; echo "SIGN=" >> "$GITHUB_ENV"
+          else echo "SIGN=--no-sign" >> "$GITHUB_ENV"; fi
+      - name: GURTSetupWizard-dev.rpm + the gurt-dev repo
+        run: |
+          sudo apt-get install -y -qq zstd gnupg python3 >/dev/null
+          mkdir -p site/dev/rpm
+          tools/make-setup-wizard.sh site/dev/rpm --dev=${{ github.run_number }} $SIGN
+          ./gurt -y repo publish site/dev/rpm gurt-dev
+          cp site/dev/rpm/GURTSetupWizard-dev.rpm site/dev/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: site }

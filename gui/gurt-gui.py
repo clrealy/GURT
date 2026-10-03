@@ -956,8 +956,8 @@ h2{font-size:18px;margin:4px 0 12px}
 dialog{border:none;border-radius:16px;padding:22px;max-width:420px;width:calc(100% - 32px);background:var(--panel);color:var(--ink)}
 dialog::backdrop{background:rgba(0,0,0,.55)}
 dialog h3{margin:0 0 6px;font-size:20px}dialog p{color:var(--muted);margin:0 0 16px}
-dialog input{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--ink);margin-bottom:14px;outline:none}
-dialog input:focus{border-color:var(--accent)}
+dialog input:is([type=text],[type=password],[type=search],:not([type])){width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--ink);margin-bottom:14px;outline:none}
+dialog input:is([type=text],[type=password],[type=search],:not([type])):focus{border-color:var(--accent)}
 dialog .row{justify-content:flex-end}
 .lottobtn{background:linear-gradient(90deg,#ff3b3b,#ffc629,#33e06b,#4f7bff);color:#111;font-weight:800}
 .btn.big{font-size:16px;padding:12px 20px}
@@ -1057,8 +1057,8 @@ dialog .row{justify-content:flex-end}
 :root[data-skin=gurt] .btn.ghost{background:var(--panel)}
 :root[data-skin=gurt] .btn.small{box-shadow:2px 2px 0 var(--shadow)}
 :root[data-skin=gurt] .lottobtn,:root[data-skin=gurt] #t-setup .btn.big{background:var(--panel) linear-gradient(90deg,var(--c-red) 0 25%,var(--accent) 25% 50%,var(--c-green) 50% 75%,var(--c-blue) 75%) bottom/100% 6px no-repeat;color:var(--ink)}
-:root[data-skin=gurt] .search input,:root[data-skin=gurt] dialog input{border:2px solid var(--edge);border-radius:8px;background:var(--panel)}
-:root[data-skin=gurt] .search input:focus,:root[data-skin=gurt] dialog input:focus{border-color:var(--edge);box-shadow:3px 3px 0 var(--accent)}
+:root[data-skin=gurt] .search input,:root[data-skin=gurt] dialog input:is([type=text],[type=password],[type=search],:not([type])){border:2px solid var(--edge);border-radius:8px;background:var(--panel)}
+:root[data-skin=gurt] .search input:focus,:root[data-skin=gurt] dialog input:is([type=text],[type=password],[type=search],:not([type])):focus{border-color:var(--edge);box-shadow:3px 3px 0 var(--accent)}
 :root[data-skin=gurt] .srcs button,:root[data-skin=gurt] .bcat{border:2px solid var(--edge);border-radius:7px;background:var(--panel)}
 :root[data-skin=gurt] .srcs button.on,:root[data-skin=gurt] .bcat.on{background:var(--accent);color:var(--accent-ink);box-shadow:2px 2px 0 var(--shadow)}
 :root[data-skin=gurt] .srcs button.dirtbtn{background:#141012;border-color:#141012}
@@ -1372,6 +1372,10 @@ function installBtns(spec){
   if (i && i.external) return `<span class="chip ok" title="installed with flatpak, outside gurt">installed ✓ (flatpak)</span>`;
   return i ? `<span class="chip ok">installed ✓</span>${actBtn("remove","remove",spec,"ghost")}` : actBtn("install","install",spec);
 }
+// 🧪 dev builds: ✏️ edit / 🗑️ delete any recipe, straight on GitHub (GitHub still checks you can push to the repo)
+const isDev = () => !!(S && /\+dev/.test(S.version || ""));
+const devBtns = (name, tree="packages") => isDev() ? `<a class="btn ghost small" href="https://github.com/clrealy/GURT/edit/main/${tree}/${encodeURIComponent(name)}/GURTBUILD" target="_blank" rel="noopener" title="dev: edit this recipe on GitHub">✏️</a>`
+  + `<a class="btn ghost small" href="https://github.com/clrealy/GURT/tree/main/${tree}/${encodeURIComponent(name)}" target="_blank" rel="noopener" title="dev: delete this package on GitHub (⋯ → Delete directory)">🗑️</a>` : "";
 let CMP = [];
 const cmpBtn = n => `<button class="btn ghost small cmpbtn${CMP.includes(n) ? " on" : ""}" data-cmp="${esc(n)}" title="compare side by side">⚖️</button>`;
 const vibeKey = q => q.replace(/^(something |apps |an app )?(like |alternatives? to |instead of )?/, "").trim();
@@ -1380,7 +1384,7 @@ function renderMain(){
   const vk = vibeKey(q), vapps = (S.vibes || {})[vk] || [];
   const vhits = vapps.map(n => S.main.find(p => p.name === n)).filter(Boolean);
   const hits = S.main.filter(p => !vapps.includes(p.name) && (!q || (p.name+" "+p.desc+" "+p.alias.join(" ")).toLowerCase().includes(q)));
-  const mk = p => card({name:p.name, ver:p.ver, desc:p.desc, trust:p.trust, actions: installBtns(p.name) + cmpBtn(p.name)});
+  const mk = p => card({name:p.name, ver:p.ver, desc:p.desc, trust:p.trust, actions: installBtns(p.name) + cmpBtn(p.name) + devBtns(p.name)});
   $("#maingrid").innerHTML = (vhits.length ? `<div class="vibehead">apps like ${esc(vk)} 👇</div>` + vhits.map(mk).join("") + (hits.length ? `<div class="vibehead">everything else that matched</div>` : "") : "")
     + (hits.length ? hits.map(mk).join("") : vhits.length ? "" : `<div class="empty">nothing in Main GURT matched 😔 — try "search everywhere" (or "like photoshop")</div>`);
   const direct = /^[a-z0-9-]+\/[A-Za-z0-9._+-]+$/.test($("#q").value.trim()) && !/^(https?:)/.test($("#q").value);
@@ -1513,7 +1517,7 @@ let SRC = "gurt";
 function renderDirt(){
   const q = $("#q").value.trim().toLowerCase().replace(/^dirt\//, "");
   const list = (S.dirtpkgs || []).filter(p => !q || (p.name + " " + p.desc + " " + (p.alias||[]).join(" ")).toLowerCase().includes(q));
-  $("#srcgrid").innerHTML = list.length ? list.map(p => card({name:p.name, src:"dirt", ver:p.ver, desc:p.desc, actions: installBtns(`dirt/${p.name}`)})).join("")
+  $("#srcgrid").innerHTML = list.length ? list.map(p => card({name:p.name, src:"dirt", ver:p.ver, desc:p.desc, actions: installBtns(`dirt/${p.name}`) + devBtns(p.name, "dirt")})).join("")
     : `<div class="empty">${(S.dirtpkgs || []).length ? "nothing in DIRT matched" : "DIRT is empty rn 🫥"}</div>`;
 }
 async function openDirt(){

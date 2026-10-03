@@ -178,6 +178,10 @@ On Linux, your software center installs it like any other app. Then open **GURT*
 
 `gurt setup` runs the wizard again anytime, in the terminal (or 🎨 → 🧙 setup wizard in the app). Picked apps on the website's 🧰 Build your setup? Hit 📄 save as a list, then 📥 import it in the wizard.
 
+**🧪 Dev build (openSUSE, Fedora and other rpm distros):** [`GURTSetupWizard-dev.rpm`](https://clrealy.github.io/GURT/dev/GURTSetupWizard-dev.rpm) is rebuilt on every change to `main`. It adds the `gurt-dev` repo, so `sudo zypper up` / `sudo dnf upgrade` keep you on the newest dev build. Dev builds come with every achievement unlocked 🏆, and every package in the app gets ✏️ edit / 🗑️ delete buttons that open it on GitHub (GitHub still decides who can change the repo). Expect bugs 🐛. Going back to stable: `sudo zypper rr gurt-dev` (or delete `/etc/yum.repos.d/gurt-dev.repo`), then install the stable `.rpm`.
+
+**Uninstall:** `gurt uninstall`. It saves your app list to `~/gurt-apps-<date>.txt`, asks whether to remove the apps gurt installed too, then takes gurt off (through your package manager if you used a GURTSetupWizard package). `gurt uninstall <app>` still just removes that app.
+
 Making the installers yourself: `tools/make-setup-wizard.sh` (Linux packages) and `tools/win/build-exe.sh` (the `.exe`, needs `nsis`). Pushing a `v*` tag makes a GitHub release with all of them attached (`.github/workflows/release.yml`). Add a `GURT_SIGNING_KEY` secret and they're all signed with the same key every release.
 
 You need `bash`, `git`, GNU `tar`, and `curl` or `wget`. The foreign sources also need:
