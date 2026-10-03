@@ -7,7 +7,7 @@ pkgdesc="A powerful build planner for Path of Exile"
 url="https://flathub.org/apps/community.pathofbuilding.PathOfBuilding"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

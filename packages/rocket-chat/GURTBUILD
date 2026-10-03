@@ -7,7 +7,7 @@ pkgdesc="Open Source Team Communication"
 url="https://flathub.org/apps/chat.rocket.RocketChat"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="chat"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

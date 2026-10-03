@@ -7,7 +7,7 @@ pkgdesc="Interior Design Application"
 url="https://flathub.org/apps/com.sweethome3d.Sweethome3d"
 license="GPL-2.0-or-later"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

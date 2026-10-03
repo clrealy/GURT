@@ -7,7 +7,7 @@ pkgdesc="Fast raster image editor"
 url="https://flathub.org/apps/io.github.bgrabitmap.LazPaint"
 license="GPL-3.0-only"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

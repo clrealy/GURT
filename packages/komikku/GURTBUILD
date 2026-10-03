@@ -7,7 +7,7 @@ pkgdesc="Discover and read manga & comics"
 url="https://flathub.org/apps/info.febvre.Komikku"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

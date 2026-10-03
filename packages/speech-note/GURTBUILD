@@ -7,7 +7,7 @@ pkgdesc="Notes with offline Speech to Text, Text to Speech and Machine Translati
 url="https://flathub.org/apps/net.mkiol.SpeechNote"
 license="MPL-2.0"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

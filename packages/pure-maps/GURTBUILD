@@ -7,7 +7,7 @@ pkgdesc="Maps and navigation"
 url="https://flathub.org/apps/io.github.rinigus.PureMaps"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Edit audio file tags"
 url="https://flathub.org/apps/app.drey.EarTag"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

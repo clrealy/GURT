@@ -7,7 +7,7 @@ pkgdesc="Free graphic design tool for UX/UI"
 url="https://flathub.org/apps/com.icons8.Lunacy"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

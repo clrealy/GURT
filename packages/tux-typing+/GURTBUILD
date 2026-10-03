@@ -7,7 +7,7 @@ pkgdesc="Typing challenge featuring Tux"
 url="https://flathub.org/apps/lol.siembra.tuxtypeplus"
 license="GPL-2.0-only"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

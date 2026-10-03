@@ -7,7 +7,7 @@ pkgdesc="Unofficial application for ChatGPT"
 url="https://flathub.org/apps/io.github.koromelodev.mindmate"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

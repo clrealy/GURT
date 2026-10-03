@@ -7,7 +7,7 @@ pkgdesc="Unofficial GeForce NOW application written in Electron"
 url="https://flathub.org/apps/io.github.hmlendea.geforcenow-electron"
 license="GPL-3.0"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

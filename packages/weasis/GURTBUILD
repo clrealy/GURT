@@ -7,7 +7,7 @@ pkgdesc="Free medical DICOM viewer"
 url="https://flathub.org/apps/io.github.nroduit.Weasis"
 license="EPL-2.0 OR Apache-2.0"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

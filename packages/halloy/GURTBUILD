@@ -7,7 +7,7 @@ pkgdesc="IRC client written in Rust"
 url="https://flathub.org/apps/org.squidowl.halloy"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="chat"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

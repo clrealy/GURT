@@ -7,7 +7,7 @@ pkgdesc="The most intelligent Python IDE"
 url="https://flathub.org/apps/com.jetbrains.PyCharm-Professional"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

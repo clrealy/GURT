@@ -7,7 +7,7 @@ pkgdesc="Private, Secure & Fast Browsing"
 url="https://flathub.org/apps/com.ulaa.Ulaa"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="browsers"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

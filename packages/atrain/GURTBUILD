@@ -7,7 +7,7 @@ pkgdesc="Offline transcription of speech recordings"
 url="https://flathub.org/apps/io.github.juergenfleiss.aTrain"
 license="AGPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="A graphical tool for configuring STM32 microcontrollers and microproces
 url="https://flathub.org/apps/com.st.STM32CubeMX"
 license="see Flathub"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

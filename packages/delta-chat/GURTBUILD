@@ -7,7 +7,7 @@ pkgdesc="Decentralized private messenger with chat-shared tools and games"
 url="https://flathub.org/apps/chat.delta.desktop"
 license="GPL-3.0+"
 maintainer="clrealy"
-category="system"
+category="chat"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

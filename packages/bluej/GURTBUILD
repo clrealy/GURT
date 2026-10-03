@@ -7,7 +7,7 @@ pkgdesc="Java IDE for beginners"
 url="https://flathub.org/apps/org.bluej.BlueJ"
 license="GPL-2.0-only WITH Classpath-exception-2.0"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

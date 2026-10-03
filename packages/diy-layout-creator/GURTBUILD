@@ -7,7 +7,7 @@ pkgdesc="Circuit layout design tool supporting PCB, vero-board, point-to-point, 
 url="https://flathub.org/apps/com.diy_fever.DIYLayoutCreator"
 license="GPL-3.0-only"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

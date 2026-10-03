@@ -7,7 +7,7 @@ pkgdesc="Install web apps"
 url="https://flathub.org/apps/io.github.zaedus.spider"
 license="GPL-3.0-only"
 maintainer="clrealy"
-category="system"
+category="browsers"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

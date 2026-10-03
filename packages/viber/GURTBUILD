@@ -7,7 +7,7 @@ pkgdesc="Send free messages and make free calls"
 url="https://flathub.org/apps/com.viber.Viber"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="chat"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

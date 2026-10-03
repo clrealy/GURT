@@ -7,7 +7,7 @@ pkgdesc="A non-destructive, and GPU-accelerated RAW image editor built with perf
 url="https://flathub.org/apps/io.github.CyberTimon.RapidRAW"
 license="AGPL-3.0-only"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

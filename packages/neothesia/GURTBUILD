@@ -7,7 +7,7 @@ pkgdesc="Learn how to play the piano"
 url="https://flathub.org/apps/com.github.polymeilex.neothesia"
 license="GPL-3.0-only"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

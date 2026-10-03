@@ -7,7 +7,7 @@ pkgdesc="Play and manage Minecraft"
 url="https://flathub.org/apps/app.xmcl.voxelum"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

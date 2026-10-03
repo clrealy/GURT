@@ -7,7 +7,7 @@ pkgdesc="Plot and manipulate data"
 url="https://flathub.org/apps/se.sjoerd.Graphs"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

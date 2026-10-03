@@ -7,7 +7,7 @@ pkgdesc="Music, podcast and internet radio player"
 url="https://flathub.org/apps/org.feichtmeier.Musicpod"
 license="GPL-3.0"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Obtain the 2048 tile"
 url="https://flathub.org/apps/org.gnome.TwentyFortyEight"
 license="GPL-3.0+"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

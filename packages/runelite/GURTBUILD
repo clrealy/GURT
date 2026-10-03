@@ -7,7 +7,7 @@ pkgdesc="RuneLite OSRS Client"
 url="https://flathub.org/apps/net.runelite.RuneLite"
 license="BSD-2-Clause"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

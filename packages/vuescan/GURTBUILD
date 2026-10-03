@@ -7,7 +7,7 @@ pkgdesc="Scanning software for 6000+ scanners"
 url="https://flathub.org/apps/com.hamrick.VueScan"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

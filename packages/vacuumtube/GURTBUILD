@@ -7,7 +7,7 @@ pkgdesc="YouTube for TV, on your PC"
 url="https://flathub.org/apps/rocks.shy.VacuumTube"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

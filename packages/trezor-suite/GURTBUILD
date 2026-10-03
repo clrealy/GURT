@@ -7,7 +7,7 @@ pkgdesc="The app made for your Trezor"
 url="https://flathub.org/apps/io.trezor.suite"
 license="LicenseRef-T-RSL"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

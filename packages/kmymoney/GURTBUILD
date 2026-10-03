@@ -7,7 +7,7 @@ pkgdesc="Personal finance manager based on double-entry bookkeeping"
 url="https://flathub.org/apps/org.kde.kmymoney"
 license="GPL-2.0+"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

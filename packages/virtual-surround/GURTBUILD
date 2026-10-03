@@ -7,7 +7,7 @@ pkgdesc="3D sound for headphones"
 url="https://flathub.org/apps/de.berny23.virtual_surround_manager"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

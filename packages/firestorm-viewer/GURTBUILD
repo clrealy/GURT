@@ -7,7 +7,7 @@ pkgdesc="Client for accessing 3D virtual worlds"
 url="https://flathub.org/apps/org.firestormviewer.FirestormViewer"
 license="LGPL-2.1"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

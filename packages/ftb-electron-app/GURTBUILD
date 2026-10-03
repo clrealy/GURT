@@ -7,7 +7,7 @@ pkgdesc="Explore and manage FTB modpacks!"
 url="https://flathub.org/apps/dev.ftb.ftb-app"
 license="LGPL-2.1-only"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

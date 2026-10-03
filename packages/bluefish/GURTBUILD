@@ -7,7 +7,7 @@ pkgdesc="Code and text editor with many web and software development extras"
 url="https://flathub.org/apps/nl.openoffice.bluefish"
 license="GPL-2.0-or-later"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

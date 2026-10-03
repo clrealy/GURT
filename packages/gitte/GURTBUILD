@@ -7,7 +7,7 @@ pkgdesc="Manage your code history"
 url="https://flathub.org/apps/de.wwwtech.gitte"
 license="AGPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

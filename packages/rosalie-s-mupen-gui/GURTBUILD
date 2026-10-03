@@ -7,7 +7,7 @@ pkgdesc="Play Nintendo 64 games easily"
 url="https://flathub.org/apps/com.github.Rosalie241.RMG"
 license="GPL-3.0-only"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

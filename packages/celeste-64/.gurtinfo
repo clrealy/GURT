@@ -1,0 +1,13 @@
+pkgname = celeste-64
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Celeste 64: Fragments of the Mountain
+url = https://flathub.org/apps/com.exok.Celeste64
+license = MIT
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.exok.Celeste64

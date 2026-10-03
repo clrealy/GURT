@@ -7,7 +7,7 @@ pkgdesc="Code editing. Redefined"
 url="https://flathub.org/apps/com.visualstudio.code"
 license="see Flathub"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

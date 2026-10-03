@@ -7,7 +7,7 @@ pkgdesc="Chat on Matrix"
 url="https://flathub.org/apps/org.kde.neochat"
 license="GPL-3.0"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

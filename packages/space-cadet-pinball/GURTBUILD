@@ -7,7 +7,7 @@ pkgdesc="Game engine for Space Cadet Pinball"
 url="https://flathub.org/apps/com.github.k4zmu2a.spacecadetpinball"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

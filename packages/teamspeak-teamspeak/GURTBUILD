@@ -7,7 +7,7 @@ pkgdesc="TeamSpeak VoIP application"
 url="https://flathub.org/apps/com.teamspeak.TeamSpeak"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="chat"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Play media on UPnP/DLNA devices"
 url="https://flathub.org/apps/net.mkiol.Jupii"
 license="MPL-2.0"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

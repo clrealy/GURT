@@ -7,7 +7,7 @@ pkgdesc="Admin and development platform for PostgreSQL"
 url="https://flathub.org/apps/org.pgadmin.pgadmin4"
 license="PostgreSQL"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

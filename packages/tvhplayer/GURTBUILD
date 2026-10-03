@@ -7,7 +7,7 @@ pkgdesc="A desktop client for Tvheadend for watching and recording live TV chann
 url="https://flathub.org/apps/io.github.mfat.tvhplayer"
 license="GPL-3.0+"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

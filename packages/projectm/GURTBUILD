@@ -7,7 +7,7 @@ pkgdesc="Music visualizer which uses 3D accelerated iterative image based render
 url="https://flathub.org/apps/net.sourceforge.projectM"
 license="GPL-2.0"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

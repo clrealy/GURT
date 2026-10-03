@@ -7,7 +7,7 @@ pkgdesc="An emulator for Sega 8 and 16-bit consoles"
 url="https://flathub.org/apps/com.carpeludum.KegaFusion"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

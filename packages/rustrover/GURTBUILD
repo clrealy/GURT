@@ -7,7 +7,7 @@ pkgdesc="Powerful IDE for Rust"
 url="https://flathub.org/apps/com.jetbrains.RustRover"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

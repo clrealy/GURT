@@ -7,7 +7,7 @@ pkgdesc="Compose industry-grade VFX and Motion Graphics"
 url="https://flathub.org/apps/fr.natron.Natron"
 license="GPL-2.0-or-later"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

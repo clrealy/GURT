@@ -7,7 +7,7 @@ pkgdesc="Send and receive email"
 url="https://flathub.org/apps/net.donnybeelo.Convey"
 license="LGPL-2.1-or-later"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="A PipeWire Graph Qt GUI Interface"
 url="https://flathub.org/apps/org.rncbc.qpwgraph"
 license="GPL-2.0+"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

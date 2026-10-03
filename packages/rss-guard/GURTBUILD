@@ -7,7 +7,7 @@ pkgdesc="Simple, yet powerful news feed reader"
 url="https://flathub.org/apps/io.github.martinrotter.rssguard"
 license="GPL-3.0"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

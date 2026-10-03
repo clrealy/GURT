@@ -7,7 +7,7 @@ pkgdesc="Fullscreen word processor"
 url="https://flathub.org/apps/org.gottcode.FocusWriter"
 license="GPL-3.0+"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

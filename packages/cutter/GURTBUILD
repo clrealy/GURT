@@ -1,0 +1,15 @@
+# Free and Open Source Reverse Engineering Platform powered by Rizin and Qt (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=cutter
+pkgver=flathub
+pkgrel=1
+pkgdesc="Free and Open Source Reverse Engineering Platform powered by Rizin and Qt"
+url="https://flathub.org/apps/re.rizin.cutter"
+license="GPL-3.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=re.rizin.cutter

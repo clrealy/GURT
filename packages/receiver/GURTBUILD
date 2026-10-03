@@ -7,7 +7,7 @@ pkgdesc="Discover radio stations worldwide"
 url="https://flathub.org/apps/io.github.meehow.Receiver"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

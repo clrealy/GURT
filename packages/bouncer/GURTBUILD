@@ -7,7 +7,7 @@ pkgdesc="Keep the riffraff out"
 url="https://flathub.org/apps/io.github.justinrdonnelly.bouncer"
 license="MPL-2.0"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Software for Epson scanners & multifunction printer"
 url="https://flathub.org/apps/net.epson.epsonscan2"
 license="LGPL-2.1 AND"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

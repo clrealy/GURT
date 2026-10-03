@@ -7,7 +7,7 @@ pkgdesc="Losslessly trim audio and video"
 url="https://flathub.org/apps/no.mifi.losslesscut"
 license="GPL-2.0"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

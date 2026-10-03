@@ -7,7 +7,7 @@ pkgdesc="Graphical Git client designed to help you understand and manage your so
 url="https://flathub.org/apps/com.github.Murmele.Gittyup"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

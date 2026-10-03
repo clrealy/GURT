@@ -7,7 +7,7 @@ pkgdesc="Graphical diary and journal"
 url="https://flathub.org/apps/app.rednotebook.RedNotebook"
 license="GPL-2.0+"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

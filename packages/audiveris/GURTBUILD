@@ -7,7 +7,7 @@ pkgdesc="Optical Music Recognition (OMR) Application"
 url="https://flathub.org/apps/org.audiveris.audiveris"
 license="AGPL-3.0"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

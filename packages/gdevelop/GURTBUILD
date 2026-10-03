@@ -7,7 +7,7 @@ pkgdesc="Fast and Easy Game-Making"
 url="https://flathub.org/apps/io.gdevelop.ide"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

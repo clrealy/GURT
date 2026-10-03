@@ -7,7 +7,7 @@ pkgdesc="Digital Audio Workstation"
 url="https://flathub.org/apps/fm.reaper.Reaper"
 license="see Flathub"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

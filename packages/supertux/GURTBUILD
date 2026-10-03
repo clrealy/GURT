@@ -7,7 +7,7 @@ pkgdesc="A jump-and-run game starring Tux the Penguin"
 url="https://flathub.org/apps/org.supertuxproject.SuperTux"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

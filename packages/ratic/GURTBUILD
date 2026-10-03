@@ -7,7 +7,7 @@ pkgdesc="Complete music player"
 url="https://flathub.org/apps/org.skaven.ratic"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

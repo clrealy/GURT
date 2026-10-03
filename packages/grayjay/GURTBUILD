@@ -7,7 +7,7 @@ pkgdesc="Universal media aggregator"
 url="https://flathub.org/apps/app.grayjay.Grayjay"
 license="see Flathub"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

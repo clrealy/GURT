@@ -1,0 +1,15 @@
+# Checksum generation and verification (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=hashverifier
+pkgver=flathub
+pkgrel=1
+pkgdesc="Checksum generation and verification"
+url="https://flathub.org/apps/io.github.ostapkonst.HashVerifier"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.ostapkonst.HashVerifier

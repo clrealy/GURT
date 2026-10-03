@@ -7,7 +7,7 @@ pkgdesc="Thunderbird is a free and open source email, newsfeed, chat, and calend
 url="https://flathub.org/apps/org.mozilla.thunderbird"
 license="MPL-2.0"
 maintainer="clrealy"
-category="system"
+category="chat"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

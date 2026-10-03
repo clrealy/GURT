@@ -7,7 +7,7 @@ pkgdesc="Test and explore web services"
 url="https://flathub.org/apps/io.github.db_mobile.resonance"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

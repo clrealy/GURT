@@ -7,7 +7,7 @@ pkgdesc="General purpose map editor"
 url="https://flathub.org/apps/org.mapeditor.Tiled"
 license="GPL-2.0+ and BSD-2-Clause"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

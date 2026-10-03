@@ -7,7 +7,7 @@ pkgdesc="Circuit simulator"
 url="https://flathub.org/apps/com.simulide.simulide"
 license="GPL-3.0"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="The browser built to be yours"
 url="https://flathub.org/apps/com.google.ChromeDev"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="browsers"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

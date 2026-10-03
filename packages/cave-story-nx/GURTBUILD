@@ -7,7 +7,7 @@ pkgdesc="A nostalgic side-action adventure game"
 url="https://flathub.org/apps/com.gitlab.coringao.cavestory-nx"
 license="BSD-2-Clause GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

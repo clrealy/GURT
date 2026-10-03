@@ -7,7 +7,7 @@ pkgdesc="See what's on your network"
 url="https://flathub.org/apps/io.github.zingytomato.netpeek"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

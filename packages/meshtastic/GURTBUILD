@@ -7,7 +7,7 @@ pkgdesc="Decentralized mesh communication"
 url="https://flathub.org/apps/org.meshtastic.meshtasticd"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="chat"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

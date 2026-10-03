@@ -1,0 +1,13 @@
+pkgname = play
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A Playstation 2 emulator
+url = https://flathub.org/apps/org.purei.Play
+license = BSD-2-Clause
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.purei.Play

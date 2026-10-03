@@ -7,7 +7,7 @@ pkgdesc="A minimal Markdown reading & writing app"
 url="https://flathub.org/apps/io.typora.Typora"
 license="see Flathub"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

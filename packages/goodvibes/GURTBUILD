@@ -7,7 +7,7 @@ pkgdesc="Play web radios"
 url="https://flathub.org/apps/io.gitlab.Goodvibes"
 license="GPL-3.0"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

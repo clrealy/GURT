@@ -7,7 +7,7 @@ pkgdesc="Stream games from another computer with Steam"
 url="https://flathub.org/apps/com.valvesoftware.SteamLink"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

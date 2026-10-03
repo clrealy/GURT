@@ -7,7 +7,7 @@ pkgdesc="Yet another Matrix client with simple, elegant and secure interface"
 url="https://flathub.org/apps/in.cinny.Cinny"
 license="AGPL-3.0-only"
 maintainer="clrealy"
-category="system"
+category="chat"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

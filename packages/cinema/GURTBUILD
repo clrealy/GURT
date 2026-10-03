@@ -7,7 +7,7 @@ pkgdesc="A video player for watching local video files"
 url="https://flathub.org/apps/com.github.artemanufrij.playmyvideos"
 license="GPL-3.0+"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

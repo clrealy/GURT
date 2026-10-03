@@ -7,7 +7,7 @@ pkgdesc="Story-driven FPS inspired by WWII shooters from the 90's and early 2000
 url="https://flathub.org/apps/com.realm667.Wolfenstein_Blade_of_Agony"
 license="CC-BY-NC-SA-3.0"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

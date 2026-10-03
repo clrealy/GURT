@@ -7,7 +7,7 @@ pkgdesc="Python IDE for beginners"
 url="https://flathub.org/apps/org.thonny.Thonny"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

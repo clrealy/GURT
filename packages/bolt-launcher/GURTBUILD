@@ -7,7 +7,7 @@ pkgdesc="Third-party Jagex launcher"
 url="https://flathub.org/apps/com.adamcake.Bolt"
 license="AGPL-3.0"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

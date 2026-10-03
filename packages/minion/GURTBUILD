@@ -7,7 +7,7 @@ pkgdesc="An AddOn manager for The Elder Scrolls Online and World of Warcraft"
 url="https://flathub.org/apps/gg.minion.Minion"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

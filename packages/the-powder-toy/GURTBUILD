@@ -7,7 +7,7 @@ pkgdesc="Physics sandbox game"
 url="https://flathub.org/apps/uk.co.powdertoy.tpt"
 license="GPL-3.0"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

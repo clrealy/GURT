@@ -7,7 +7,7 @@ pkgdesc="Flacon extracts individual tracks from one big audio file containing th
 url="https://flathub.org/apps/com.github.Flacon"
 license="LGPL-3.0"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

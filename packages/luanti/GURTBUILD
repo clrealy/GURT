@@ -7,7 +7,7 @@ pkgdesc="Block-based multiplayer game platform"
 url="https://flathub.org/apps/org.luanti.luanti"
 license="LGPL-2.1+ AND CC-BY-SA-3.0 AND MIT AND Apache-2.0"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

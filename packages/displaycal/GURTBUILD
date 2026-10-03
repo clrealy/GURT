@@ -7,7 +7,7 @@ pkgdesc="Display calibration and profiling with a focus on accuracy and versatil
 url="https://flathub.org/apps/net.displaycal.DisplayCAL"
 license="GPL-3.0+"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="A graphical (gtk) frontend to tesseract-ocr"
 url="https://flathub.org/apps/io.github.manisandro.gImageReader"
 license="GPL-3.0+"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

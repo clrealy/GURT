@@ -7,7 +7,7 @@ pkgdesc="Graphical tool to make photo collage posters"
 url="https://flathub.org/apps/io.github.adrienverge.PhotoCollage"
 license="GPL-2.0+"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

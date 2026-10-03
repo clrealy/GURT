@@ -7,7 +7,7 @@ pkgdesc="Mind Mapping & Brainstorming"
 url="https://flathub.org/apps/net.xmind.XMind"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

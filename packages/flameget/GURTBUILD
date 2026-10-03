@@ -7,7 +7,7 @@ pkgdesc="Manage and speed up downloads"
 url="https://flathub.org/apps/io.github.C_Yassin.FlameGet"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Messenger for the desktop"
 url="https://flathub.org/apps/com.meetfranz.Franz"
 license="Apache-2.0"
 maintainer="clrealy"
-category="system"
+category="chat"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

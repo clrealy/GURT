@@ -7,7 +7,7 @@ pkgdesc="A community-led, hyper-hackable text editor"
 url="https://flathub.org/apps/dev.pulsar_edit.Pulsar"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

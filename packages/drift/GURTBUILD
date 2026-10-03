@@ -7,7 +7,7 @@ pkgdesc="Edit and export videos easily"
 url="https://flathub.org/apps/org.cutwire.Drift"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

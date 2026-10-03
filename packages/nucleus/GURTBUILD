@@ -7,7 +7,7 @@ pkgdesc="Browse the chemical elements"
 url="https://flathub.org/apps/page.codeberg.lo_vely.Nucleus"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

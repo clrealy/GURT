@@ -7,7 +7,7 @@ pkgdesc="GUI and notification area icon for Syncthing"
 url="https://flathub.org/apps/me.kozec.syncthingtk"
 license="GPL-2.0"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

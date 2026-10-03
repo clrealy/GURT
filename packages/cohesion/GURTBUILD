@@ -7,7 +7,7 @@ pkgdesc="Unofficial Notion Desktop client"
 url="https://flathub.org/apps/io.github.brunofin.Cohesion"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

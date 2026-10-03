@@ -7,7 +7,7 @@ pkgdesc="A privacy minded and highly configurable Discord client"
 url="https://flathub.org/apps/io.github.milkshiift.GoofCord"
 license="OSL-3.0"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

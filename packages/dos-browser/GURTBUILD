@@ -7,7 +7,7 @@ pkgdesc="Browser with built-in acceleration for DOS/Win9x games"
 url="https://flathub.org/apps/zone.dos.Browser"
 license="GPL-2.0"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Transcribe and translate audio"
 url="https://flathub.org/apps/io.github.chidiwilliams.Buzz"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

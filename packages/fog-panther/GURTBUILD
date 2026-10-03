@@ -7,7 +7,7 @@ pkgdesc="Professional Image Editor"
 url="https://flathub.org/apps/com.fogpanther.FogPanther"
 license="see Flathub"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

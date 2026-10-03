@@ -7,7 +7,7 @@ pkgdesc="Multi-system console emulation suite"
 url="https://flathub.org/apps/dev.ares.ares"
 license="ISC"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

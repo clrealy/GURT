@@ -7,7 +7,7 @@ pkgdesc="Free messaging and calling app"
 url="https://flathub.org/apps/com.tencent.WeChat"
 license="see Flathub"
 maintainer="clrealy"
-category="system"
+category="chat"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Racing at the Next Level"
 url="https://flathub.org/apps/org.kartkrew.RingRacers"
 license="GPL-2.0+"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

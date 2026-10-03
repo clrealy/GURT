@@ -7,7 +7,7 @@ pkgdesc="Create your own world in one of the most popular video games"
 url="https://flathub.org/apps/com.mojang.Minecraft"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Color selector and palette editor"
 url="https://flathub.org/apps/org.kde.kcolorchooser"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

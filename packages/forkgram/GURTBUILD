@@ -7,7 +7,7 @@ pkgdesc="Enhanced twist on Telegram"
 url="https://flathub.org/apps/io.github.forkgram.tdesktop"
 license="GPL-3.0"
 maintainer="clrealy"
-category="system"
+category="chat"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

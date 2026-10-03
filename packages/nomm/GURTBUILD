@@ -7,7 +7,7 @@ pkgdesc="Modern Linux-First Mod Manager"
 url="https://flathub.org/apps/moe.nomm.Nomm"
 license="GPL-3.0"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

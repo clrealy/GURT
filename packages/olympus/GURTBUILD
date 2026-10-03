@@ -7,7 +7,7 @@ pkgdesc="Cross-platform Celeste Mod Manager"
 url="https://flathub.org/apps/io.github.everestapi.Olympus"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

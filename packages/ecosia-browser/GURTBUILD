@@ -7,7 +7,7 @@ pkgdesc="The greenest browser on Earth"
 url="https://flathub.org/apps/org.ecosia.Browser"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

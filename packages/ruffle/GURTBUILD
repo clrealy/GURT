@@ -7,7 +7,7 @@ pkgdesc="Play Flash games & movies"
 url="https://flathub.org/apps/rs.ruffle.Ruffle"
 license="MIT OR Apache-2.0"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

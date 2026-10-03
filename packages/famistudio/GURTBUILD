@@ -7,7 +7,7 @@ pkgdesc="FamiStudio NES Music Editor"
 url="https://flathub.org/apps/org.famistudio.FamiStudio"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

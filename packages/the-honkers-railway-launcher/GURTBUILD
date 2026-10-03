@@ -7,7 +7,7 @@ pkgdesc="Play your favorite Honkai Railway game on Linux"
 url="https://flathub.org/apps/moe.launcher.the-honkers-railway-launcher"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

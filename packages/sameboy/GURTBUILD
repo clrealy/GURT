@@ -7,7 +7,7 @@ pkgdesc="Game Boy and Game Boy Color emulator"
 url="https://flathub.org/apps/io.github.sameboy.SameBoy"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

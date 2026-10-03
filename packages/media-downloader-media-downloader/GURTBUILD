@@ -7,7 +7,7 @@ pkgdesc="Download 4k Videos from YouTube"
 url="https://flathub.org/apps/com.warlordsoftwares.media-downloader"
 license="see Flathub"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

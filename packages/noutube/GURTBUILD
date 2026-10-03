@@ -7,7 +7,7 @@ pkgdesc="YouTube and YouTube Music in a single app"
 url="https://flathub.org/apps/jp.nonbili.noutube"
 license="AGPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -1,0 +1,13 @@
+pkgname = srb2-reveries
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Gameplay overhaul mod for Sonic Robo Blast 2
+url = https://flathub.org/apps/io.github.srb2.rphys
+license = GPL-2.0+
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.srb2.rphys

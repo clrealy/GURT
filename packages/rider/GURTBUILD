@@ -7,7 +7,7 @@ pkgdesc="Fast & powerful, cross platform .NET IDE"
 url="https://flathub.org/apps/com.jetbrains.Rider"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

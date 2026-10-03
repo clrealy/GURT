@@ -7,7 +7,7 @@ pkgdesc="Sinclair ZX Spectrum Emulator"
 url="https://flathub.org/apps/net.sourceforge.fuse_emulator.Fuse"
 license="GPL-2.0+"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

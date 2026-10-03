@@ -7,7 +7,7 @@ pkgdesc="Music streaming app"
 url="https://flathub.org/apps/com.nuclearplayer.Nuclear"
 license="AGPL-3.0-only"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="An app designed for reading and listening to the Holy Bible"
 url="https://flathub.org/apps/org.temple.Bible"
 license="LGPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Play Windows and Linux Games"
 url="https://flathub.org/apps/xyz.hyperplay.HyperPlay"
 license="GPL-3.0-only"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Dex to Java decompiler"
 url="https://flathub.org/apps/com.github.skylot.jadx"
 license="Apache-2.0"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

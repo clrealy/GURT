@@ -1,0 +1,15 @@
+# Observe power management (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=gnome-power-statistics
+pkgver=flathub
+pkgrel=1
+pkgdesc="Observe power management"
+url="https://flathub.org/apps/org.gnome.PowerStats"
+license="GPL-2.0+ and GFDL-1.3"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.PowerStats

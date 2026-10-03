@@ -7,7 +7,7 @@ pkgdesc="3D planet viewer"
 url="https://flathub.org/apps/com.google.EarthPro"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Software for writing"
 url="https://flathub.org/apps/eu.skribisto.skribisto"
 license="GPL-3.0-only"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

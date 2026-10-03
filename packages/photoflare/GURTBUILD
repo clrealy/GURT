@@ -7,7 +7,7 @@ pkgdesc="Simple but powerful Cross Platform Image Editor"
 url="https://flathub.org/apps/io.photoflare.photoflare"
 license="GPL-3.0+"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

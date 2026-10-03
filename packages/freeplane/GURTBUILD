@@ -7,7 +7,7 @@ pkgdesc="Mind Mapping, Knowledge Management, Project Management. Develop, organi
 url="https://flathub.org/apps/org.freeplane.App"
 license="GPL-2.0-or-later"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

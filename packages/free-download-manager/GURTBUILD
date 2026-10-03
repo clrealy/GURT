@@ -7,7 +7,7 @@ pkgdesc="FDM is a powerful modern download accelerator and organizer"
 url="https://flathub.org/apps/org.freedownloadmanager.Manager"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

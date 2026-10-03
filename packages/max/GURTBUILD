@@ -7,7 +7,7 @@ pkgdesc="Fast and lightweight app for communication and everyday tasks"
 url="https://flathub.org/apps/ru.max.MAX"
 license="see Flathub"
 maintainer="clrealy"
-category="system"
+category="chat"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

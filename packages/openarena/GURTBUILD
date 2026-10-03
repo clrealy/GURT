@@ -7,7 +7,7 @@ pkgdesc="Free and open source first-person shooter"
 url="https://flathub.org/apps/io.github.ec_.Quake3e.OpenArena"
 license="GPL-2.0+"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

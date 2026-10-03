@@ -7,7 +7,7 @@ pkgdesc="Rename media files perfectly"
 url="https://flathub.org/apps/net.filebot.FileBot"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Choose colors from the picker or the screen"
 url="https://flathub.org/apps/nl.hjdskes.gcolor3"
 license="GPL-2.0+"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

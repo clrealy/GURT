@@ -7,7 +7,7 @@ pkgdesc="An application to perform common editing operations on PDF files"
 url="https://flathub.org/apps/eu.scarpetta.PDFMixTool"
 license="GPL-3.0+"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

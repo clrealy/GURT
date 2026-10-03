@@ -7,7 +7,7 @@ pkgdesc="Manage Proton, Wine, DXVK, and VKD3D tools for Linux game launchers"
 url="https://flathub.org/apps/com.vysp3r.ProtonPlus"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

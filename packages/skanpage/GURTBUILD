@@ -7,7 +7,7 @@ pkgdesc="Scan multi-page documents and images"
 url="https://flathub.org/apps/org.kde.skanpage"
 license="GPL-2.0+"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

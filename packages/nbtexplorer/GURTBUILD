@@ -7,7 +7,7 @@ pkgdesc="A graphical NBT editor for all Minecraft NBT data sources"
 url="https://flathub.org/apps/com.jaquadro.NBTExplorer"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Keep up with your feeds"
 url="https://flathub.org/apps/io.gitlab.news_flash.NewsFlash"
 license="GPL-3.0+"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

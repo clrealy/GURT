@@ -7,7 +7,7 @@ pkgdesc="Advanced image editor"
 url="https://flathub.org/apps/com.github.vikdevelop.photopea_app"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Interpreter for numerous adventure games and role-playing games"
 url="https://flathub.org/apps/org.scummvm.ScummVM"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

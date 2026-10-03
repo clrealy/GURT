@@ -7,7 +7,7 @@ pkgdesc="Hardware Accelerated Video Player"
 url="https://flathub.org/apps/io.github.ecotubehq.player"
 license="GPL-3.0+"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

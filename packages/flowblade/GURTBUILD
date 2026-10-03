@@ -7,7 +7,7 @@ pkgdesc="Video Editor - Fast, Precise, Stable"
 url="https://flathub.org/apps/io.github.jliljebl.Flowblade"
 license="GPL-3.0+"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

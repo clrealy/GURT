@@ -7,7 +7,7 @@ pkgdesc="A chat app that puts you first"
 url="https://flathub.org/apps/app.fluxer.Fluxer"
 license="AGPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="chat"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

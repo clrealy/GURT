@@ -7,7 +7,7 @@ pkgdesc="Batch audio converter and effects processor"
 url="https://flathub.org/apps/com.github.Bleuzen.FFaudioConverter"
 license="GPL-3.0"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

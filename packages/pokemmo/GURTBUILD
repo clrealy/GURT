@@ -7,7 +7,7 @@ pkgdesc="Multiplayer Nintendo DS and GBA game emulator"
 url="https://flathub.org/apps/com.pokemmo.PokeMMO"
 license="see Flathub"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

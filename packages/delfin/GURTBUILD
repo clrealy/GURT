@@ -7,7 +7,7 @@ pkgdesc="Stream movies and TV shows from Jellyfin"
 url="https://flathub.org/apps/cafe.avery.Delfin"
 license="GPL-3.0"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

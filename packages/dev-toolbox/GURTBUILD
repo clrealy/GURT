@@ -7,7 +7,7 @@ pkgdesc="Dev tools at your fingertips"
 url="https://flathub.org/apps/me.iepure.devtoolbox"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

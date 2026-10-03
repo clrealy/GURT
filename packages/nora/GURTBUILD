@@ -7,7 +7,7 @@ pkgdesc="SNS browser"
 url="https://flathub.org/apps/jp.nonbili.nora"
 license="AGPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

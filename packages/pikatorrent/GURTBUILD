@@ -7,7 +7,7 @@ pkgdesc="Just pick a Torrent, stream and download"
 url="https://flathub.org/apps/com.pikatorrent.PikaTorrent"
 license="GPL-3.0-only"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

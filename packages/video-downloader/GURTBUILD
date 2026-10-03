@@ -7,7 +7,7 @@ pkgdesc="Download web videos"
 url="https://flathub.org/apps/com.github.unrud.VideoDownloader"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

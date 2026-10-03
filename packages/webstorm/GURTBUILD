@@ -7,7 +7,7 @@ pkgdesc="JavaScript and TypeScript IDE"
 url="https://flathub.org/apps/com.jetbrains.WebStorm"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

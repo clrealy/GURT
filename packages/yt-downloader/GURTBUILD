@@ -7,7 +7,7 @@ pkgdesc="Download videos and music from various sources"
 url="https://flathub.org/apps/page.codeberg.impromptux.ytdl-gui"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

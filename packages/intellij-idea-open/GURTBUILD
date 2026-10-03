@@ -7,7 +7,7 @@ pkgdesc="Leading Java and Kotlin editor"
 url="https://flathub.org/apps/com.jetbrains.IntelliJ-IDEA-Community"
 license="Apache-2.0"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

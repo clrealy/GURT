@@ -7,7 +7,7 @@ pkgdesc="Online music streaming service"
 url="https://flathub.org/apps/dev.aunetx.deezer"
 license="see Flathub"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

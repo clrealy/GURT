@@ -7,7 +7,7 @@ pkgdesc="Create and modify PDF files"
 url="https://flathub.org/apps/io.gitlab.gjwu.pdf-tinkerer"
 license="LGPL-2.1-or-later"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

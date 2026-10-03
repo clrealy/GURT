@@ -7,7 +7,7 @@ pkgdesc="Screencasting for GNOME"
 url="https://flathub.org/apps/org.gnome.NetworkDisplays"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

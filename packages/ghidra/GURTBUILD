@@ -7,7 +7,7 @@ pkgdesc="Ghidra Reverse Engineering Suite"
 url="https://flathub.org/apps/org.ghidra_sre.Ghidra"
 license="Apache-2.0"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

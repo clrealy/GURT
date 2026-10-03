@@ -7,7 +7,7 @@ pkgdesc="Quite universal circuit simulator with SPICE"
 url="https://flathub.org/apps/io.github.ra3xdh.qucs_s"
 license="GPL-2.0-or-later"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

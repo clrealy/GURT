@@ -7,7 +7,7 @@ pkgdesc="Free and Open Source Remote Play Client"
 url="https://flathub.org/apps/io.github.ForWard_Technologies_LLC.Pylux"
 license="AGPL-3.0-only"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

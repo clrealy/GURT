@@ -7,7 +7,7 @@ pkgdesc="Roguelike RPG, with pixel art graphics and lots of variety and replayab
 url="https://flathub.org/apps/com.shatteredpixel.shatteredpixeldungeon"
 license="GPL-3.0-only"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

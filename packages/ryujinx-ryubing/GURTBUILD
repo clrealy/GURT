@@ -7,7 +7,7 @@ pkgdesc="Nintendo Switch emulator"
 url="https://flathub.org/apps/io.github.ryubing.Ryujinx"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

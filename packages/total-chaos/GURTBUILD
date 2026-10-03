@@ -7,7 +7,7 @@ pkgdesc="Survival horror set on a remote island known as Fort Oasis"
 url="https://flathub.org/apps/com.moddb.TotalChaos"
 license="CC-BY-NC-SA-3.0"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Record and edit audio files"
 url="https://flathub.org/apps/org.tenacityaudio.Tenacity"
 license="GPL-2.0 and CC-BY-3.0"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

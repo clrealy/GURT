@@ -7,7 +7,7 @@ pkgdesc="Write down your thoughts"
 url="https://flathub.org/apps/org.kde.marknote"
 license="GPL-2.0-or-later"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

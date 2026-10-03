@@ -7,7 +7,7 @@ pkgdesc="Open source AI coding agent"
 url="https://flathub.org/apps/ai.opencode.opencode"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

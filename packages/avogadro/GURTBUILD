@@ -7,7 +7,7 @@ pkgdesc="Advanced molecular editor"
 url="https://flathub.org/apps/org.openchemistry.Avogadro2"
 license="BSD-3-Clause AND GPL-2.0-only"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

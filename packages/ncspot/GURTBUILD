@@ -7,7 +7,7 @@ pkgdesc="Cross-platform ncurses Spotify client"
 url="https://flathub.org/apps/io.github.hrkfdn.ncspot"
 license="BSD-2-Clause"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Feature filled, open source, ad-free, bittorrent client"
 url="https://flathub.org/apps/com.biglybt.BiglyBT"
 license="GPL-2.0"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

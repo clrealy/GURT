@@ -7,7 +7,7 @@ pkgdesc="Wilderness survival sandbox game"
 url="https://flathub.org/apps/at.vintagestory.VintageStory"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

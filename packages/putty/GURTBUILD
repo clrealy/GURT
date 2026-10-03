@@ -7,7 +7,7 @@ pkgdesc="SSH, Telnet and Rlogin client"
 url="https://flathub.org/apps/uk.org.greenend.chiark.sgtatham.putty"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

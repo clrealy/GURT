@@ -7,7 +7,7 @@ pkgdesc="Custom 3rd-party launcher for a critically acclaimed MMO"
 url="https://flathub.org/apps/dev.goats.xivlauncher"
 license="GPL-3.0"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

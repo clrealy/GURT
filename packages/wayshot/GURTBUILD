@@ -7,7 +7,7 @@ pkgdesc="GNOME/Wayland screenshot and annotation tool"
 url="https://flathub.org/apps/io.github.gutopardini.wayshot"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

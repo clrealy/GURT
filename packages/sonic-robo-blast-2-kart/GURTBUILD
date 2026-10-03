@@ -1,0 +1,15 @@
+# A kart racing mod based on the 3D Sonic the Hedgehog fangame Sonic Robo Blast 2 (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=sonic-robo-blast-2-kart
+pkgver=flathub
+pkgrel=1
+pkgdesc="A kart racing mod based on the 3D Sonic the Hedgehog fangame Sonic Robo Blast 2"
+url="https://flathub.org/apps/org.srb2.SRB2Kart"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.srb2.SRB2Kart

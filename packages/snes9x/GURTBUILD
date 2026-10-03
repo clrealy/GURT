@@ -7,7 +7,7 @@ pkgdesc="A Super Nintendo emulator"
 url="https://flathub.org/apps/com.snes9x.Snes9x"
 license="see Flathub"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

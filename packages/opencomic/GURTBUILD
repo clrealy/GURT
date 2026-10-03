@@ -7,7 +7,7 @@ pkgdesc="Comic and Manga reader"
 url="https://flathub.org/apps/app.opencomic.OpenComic"
 license="GPL-3.0-only"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

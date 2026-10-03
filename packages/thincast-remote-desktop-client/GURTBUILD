@@ -7,7 +7,7 @@ pkgdesc="A free RDP (Remote Desktop Protocol) Client for Linux, macOS and Window
 url="https://flathub.org/apps/com.thincast.client"
 license="see Flathub"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="A powerful PDF editor for Linux"
 url="https://flathub.org/apps/com.indomitusgroup.indipdf"
 license="see Flathub"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

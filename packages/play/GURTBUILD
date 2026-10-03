@@ -1,0 +1,15 @@
+# A Playstation 2 emulator (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=play
+pkgver=flathub
+pkgrel=1
+pkgdesc="A Playstation 2 emulator"
+url="https://flathub.org/apps/org.purei.Play"
+license="BSD-2-Clause"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.purei.Play

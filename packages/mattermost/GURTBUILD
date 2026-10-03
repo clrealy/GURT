@@ -7,7 +7,7 @@ pkgdesc="An open source platform for developer collaboration"
 url="https://flathub.org/apps/com.mattermost.Desktop"
 license="Apache-2.0"
 maintainer="clrealy"
-category="system"
+category="chat"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

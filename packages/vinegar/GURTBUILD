@@ -7,7 +7,7 @@ pkgdesc="Run Roblox Studio on Linux"
 url="https://flathub.org/apps/org.vinegarhq.Vinegar"
 license="GPL-3.0-only"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Classical and Bayesian Statistics"
 url="https://flathub.org/apps/org.jaspstats.JASP"
 license="AGPL-3.0+"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

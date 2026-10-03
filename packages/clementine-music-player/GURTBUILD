@@ -7,7 +7,7 @@ pkgdesc="Plays music files and Internet radio"
 url="https://flathub.org/apps/org.clementine_player.Clementine"
 license="GPL-3.0+"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

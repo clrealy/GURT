@@ -7,7 +7,7 @@ pkgdesc="Open Source PDF Editor"
 url="https://flathub.org/apps/io.github.JakubMelka.Pdf4qt"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

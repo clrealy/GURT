@@ -7,7 +7,7 @@ pkgdesc="Access NoMachine computers over the network"
 url="https://flathub.org/apps/com.nomachine.nxplayer"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="internet"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

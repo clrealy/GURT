@@ -7,7 +7,7 @@ pkgdesc="A modpack for all modern versions of Minecraft!"
 url="https://flathub.org/apps/com.lunarclient.LunarClient"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

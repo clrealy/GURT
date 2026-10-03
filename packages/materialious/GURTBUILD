@@ -7,7 +7,7 @@ pkgdesc="Watch and browse YouTube privately"
 url="https://flathub.org/apps/us.materialio.Materialious"
 license="AGPL-3.0"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

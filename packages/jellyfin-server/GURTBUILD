@@ -7,7 +7,7 @@ pkgdesc="Media Streaming System"
 url="https://flathub.org/apps/org.jellyfin.JellyfinServer"
 license="GPL-2.0-or-later"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

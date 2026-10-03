@@ -7,7 +7,7 @@ pkgdesc="Digital photo organizer"
 url="https://flathub.org/apps/org.gnome.Shotwell"
 license="LGPL-2.1+"
 maintainer="clrealy"
-category="system"
+category="creative"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

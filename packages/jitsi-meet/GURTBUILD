@@ -7,7 +7,7 @@ pkgdesc="Jitsi Meet - Secure, Simple and Scalable Video Conferences"
 url="https://flathub.org/apps/org.jitsi.jitsi-meet"
 license="Apache-2.0"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

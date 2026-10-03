@@ -7,7 +7,7 @@ pkgdesc="PHP IDE for Professional Development"
 url="https://flathub.org/apps/com.jetbrains.PhpStorm"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

@@ -7,7 +7,7 @@ pkgdesc="Fun with Blocks"
 url="https://flathub.org/apps/com.thebrokenrail.MCPIReborn"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

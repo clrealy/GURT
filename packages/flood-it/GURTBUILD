@@ -7,7 +7,7 @@ pkgdesc="Flood the board"
 url="https://flathub.org/apps/io.github.tfuxu.floodit"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

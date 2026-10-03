@@ -7,7 +7,7 @@ pkgdesc="Beautiful music player for Plex"
 url="https://flathub.org/apps/com.plexamp.Plexamp"
 license="see Flathub"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

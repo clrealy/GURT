@@ -7,7 +7,7 @@ pkgdesc="Get tasks out of your head"
 url="https://flathub.org/apps/tech.dongdongbh.mindwtr"
 license="AGPL-3.0-only"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

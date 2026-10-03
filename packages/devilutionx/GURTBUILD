@@ -7,7 +7,7 @@ pkgdesc="Experience Diablo and Hellfire anew"
 url="https://flathub.org/apps/org.diasurgical.DevilutionX"
 license="SUL-1.0"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

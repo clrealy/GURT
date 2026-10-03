@@ -7,7 +7,7 @@ pkgdesc="Filius is a network simulator for educational purpose"
 url="https://flathub.org/apps/de.lernsoftware_filius.Filius"
 license="GPL-2.0"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

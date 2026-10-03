@@ -7,7 +7,7 @@ pkgdesc="An evolution simulation game. Take control of your species in the envir
 url="https://flathub.org/apps/com.revolutionarygamesstudio.ThriveLauncher"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

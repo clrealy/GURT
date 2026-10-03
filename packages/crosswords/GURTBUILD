@@ -7,7 +7,7 @@ pkgdesc="Solve crossword puzzles"
 url="https://flathub.org/apps/org.gnome.Crosswords"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
-category="system"
+category="gaming"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

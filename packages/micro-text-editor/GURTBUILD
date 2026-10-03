@@ -7,7 +7,7 @@ pkgdesc="A modern and intuitive terminal-based text editor"
 url="https://flathub.org/apps/io.github.zyedidia.micro"
 license="MIT"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

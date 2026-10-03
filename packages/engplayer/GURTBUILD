@@ -7,7 +7,7 @@ pkgdesc="Modern IPTV and Media Center"
 url="https://flathub.org/apps/io.github.falldaemon.engplayer"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="media"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

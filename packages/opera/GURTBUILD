@@ -7,7 +7,7 @@ pkgdesc="Your personal browser"
 url="https://flathub.org/apps/com.opera.Opera"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="system"
+category="chat"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

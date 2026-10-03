@@ -7,7 +7,7 @@ pkgdesc="Scientific software package for numerical computations"
 url="https://flathub.org/apps/org.scilab.Scilab"
 license="CECILL-2.1 or GPL-2.0+"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

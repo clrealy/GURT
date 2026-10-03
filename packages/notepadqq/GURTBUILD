@@ -7,7 +7,7 @@ pkgdesc="An advanced text editor"
 url="https://flathub.org/apps/com.notepadqq.Notepadqq"
 license="GPL-3.0"
 maintainer="clrealy"
-category="system"
+category="dev"
 arch=(x86_64 aarch64)
 
 via_repo=flathub

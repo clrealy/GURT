@@ -7,7 +7,7 @@ pkgdesc="Add digital signatures to PDF documents"
 url="https://flathub.org/apps/io.github.intoolswetrust.JSignPdf"
 license="MPL-2.0 AND LGPL-2.1-only"
 maintainer="clrealy"
-category="system"
+category="office"
 arch=(x86_64 aarch64)
 
 via_repo=flathub
