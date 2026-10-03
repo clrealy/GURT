@@ -19,6 +19,7 @@ jobs:
       - run: flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
       - name: generate recipes
         run: |
+          if grep -qs recategorize tools/gen-flathub.request; then python3 tools/gen-flathub.py recategorize | tee /tmp/gen.log; exit 0; fi
           n="${{ github.event.inputs.count }}"; [ -n "$n" ] || n=$(tr -dc 0-9 < tools/gen-flathub.request)
           python3 tools/gen-flathub.py "${n:-100}" | tee /tmp/gen.log
       - name: keep only ids that are really on Flathub
@@ -29,12 +30,15 @@ jobs:
             id=$(sed -n 's/^via_pkg=//p' "packages/$d/GURTBUILD")
             grep -qxF "$id" /tmp/flathub-ids.txt || { echo "dropping $d ($id isn't on Flathub)"; rm -rf "packages/$d"; }
           done
-          for d in $(git ls-files --others --exclude-standard packages | cut -d/ -f2 | sort -u); do ./gurt srcinfo "packages/$d" > "packages/$d/.gurtinfo"; done
+          for d in $( { git ls-files --others --exclude-standard packages; git diff --name-only -- packages; } | cut -d/ -f2 | sort -u); do
+            ./gurt srcinfo "packages/$d" > "packages/$d/.gurtinfo"
+          done
           ./tools/lint.sh > /tmp/lint.log || { tail -20 /tmp/lint.log; exit 1; }
       - name: commit
         run: |
           git rm -q --ignore-unmatch tools/gen-flathub.request
           git add packages
           n=$(git diff --cached --name-only -- packages | grep -c '/GURTBUILD$' || true)
-          git -c user.name="gurt bot" -c user.email="gurt-bot@users.noreply.github.com" commit -qm "bot: add $n Flathub apps 🦆" || exit 0
+          msg="bot: add $n Flathub apps 🦆"; grep -q recategorized /tmp/gen.log && msg="bot: $(grep recategorized /tmp/gen.log) 🗂️"
+          git -c user.name="gurt bot" -c user.email="gurt-bot@users.noreply.github.com" commit -qm "$msg" || exit 0
           git push

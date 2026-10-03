@@ -2,6 +2,7 @@
 """Add Flathub's most popular apps to Main GURT as recipes (skips ones GURT already has).
 
 usage: tools/gen-flathub.py <how-many-new>     (needs internet: it reads flathub.org's API)
+       tools/gen-flathub.py recategorize       (re-sort the categories of recipes this tool made)
 Writes packages/<name>/GURTBUILD; run `gurt srcinfo` after to refresh .gurtinfo (the workflow does).
 """
 import json, os, re, sys, urllib.request
@@ -11,8 +12,23 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 PKGS = os.path.join(ROOT, "packages")
 WANT = int(sys.argv[1]) if len(sys.argv) > 1 else 100
 
-CATS = {"AudioVideo": "media", "Audio": "media", "Video": "media", "Development": "dev", "Education": "office", "Game": "gaming",
-        "Graphics": "creative", "Network": "internet", "Office": "office", "Science": "office", "System": "system", "Utility": "system"}
+# Flathub's search index sends these in lowercase, its appstream data capitalized: compare lowercase
+CATS = {"audiovideo": "media", "audio": "media", "video": "media", "development": "dev", "education": "office", "game": "gaming",
+        "graphics": "creative", "network": "internet", "office": "office", "science": "office", "system": "system", "utility": "system"}
+
+
+def category(hit):
+    cats = hit.get("main_categories") or hit.get("categories") or []
+    if isinstance(cats, str):
+        cats = [cats]
+    cats = [str(c).lower() for c in cats]
+    sub = " ".join(str(c).lower() for c in (hit.get("sub_categories") or []) + cats)
+    cat = next((CATS[c] for c in cats if c in CATS), "system")
+    if cat == "internet" and re.search(r"chat|instantmessaging|ircclient|videoconference", sub):
+        cat = "chat"
+    if cat == "internet" and "webbrowser" in sub:
+        cat = "browsers"
+    return cat
 
 
 def get(path):
@@ -104,15 +120,7 @@ def main():
             pkg = slug(name + "-" + app_id.rsplit(".", 1)[-1])
         if not pkg or pkg in names or len(pkg) > 60:
             continue
-        cats = hit.get("main_categories") or hit.get("categories") or []
-        if isinstance(cats, str):
-            cats = [cats]
-        sub = " ".join(hit.get("sub_categories") or [])
-        cat = next((CATS[c] for c in cats if c in CATS), "system")
-        if cat == "internet" and re.search(r"Chat|InstantMessaging|IRCClient|VideoConference", sub):
-            cat = "chat"
-        if cat == "internet" and "WebBrowser" in sub:
-            cat = "browsers"
+        cat = category(hit)
         lic = clean(hit.get("project_license") or "", 80)
         lic = lic if re.fullmatch(r"[A-Za-z0-9.+\- ()]+", lic or "") else "see Flathub"
         d = os.path.join(PKGS, pkg)
@@ -141,5 +149,36 @@ via_pkg={app_id}
     print(f"added {made} Flathub apps")
 
 
+def recategorize():
+    """fix the category of recipes this tool made (they carry "(official Flathub app)" in their first line)"""
+    todo = {}
+    for n in os.listdir(PKGS):
+        f = os.path.join(PKGS, n, "GURTBUILD")
+        if os.path.isfile(f):
+            s = open(f, encoding="utf-8").read()
+            m = re.search(r"^via_pkg=(\S+)", s, re.M)
+            if m and s.startswith("#") and "(official Flathub app)" in s.split("\n", 1)[0]:
+                todo[m.group(1)] = f
+    fixed = 0
+    for hit in popular():
+        app_id = hit.get("app_id") or hit.get("id")
+        f = todo.pop(app_id, None)
+        if not f:
+            if not todo:
+                break
+            continue
+        if not (hit.get("main_categories") or hit.get("categories")):
+            try:
+                hit = get(f"/appstream/{app_id}")
+            except Exception:
+                continue
+        s = open(f, encoding="utf-8").read()
+        new = re.sub(r'^category="[^"]*"', f'category="{category(hit)}"', s, count=1, flags=re.M)
+        if new != s:
+            open(f, "w", encoding="utf-8").write(new)
+            fixed += 1
+    print(f"recategorized {fixed} recipes ({len(todo)} not found on Flathub's lists)")
+
+
 if __name__ == "__main__":
-    main()
+    recategorize() if sys.argv[1:] == ["recategorize"] else main()
