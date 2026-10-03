@@ -5,31 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GURT Packages</title>
 <meta name="description" content="GURT Universal Repository Thingy — community build recipes for every Linux distro.">
-<link rel="icon" href="favicon.ico?v=2" sizes="any">
-<link rel="icon" type="image/png" href="assets/favicon.png?v=2">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=2">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v=3">
+<link rel="icon" type="image/png" href="assets/favicon.png?v=3">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=3">
 <script>try { const t = localStorage.getItem("gurt-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}</script>
 <style>
 :root{
-  --bg:#f6f5f0; --panel:#ffffff; --ink:#16161a; --muted:#6b6b76; --line:#e3e1d8;
-  --accent:#f5b400; --accent-ink:#1a1400; --tag:#efece2; --code:#f1efe7; --good:#1f8a4c;
+  --bg:#f3efe2; --panel:#fffdf6; --ink:#141414; --muted:#5f5a50; --line:#ddd5c1;
+  --accent:#ffc629; --accent-ink:#141414; --tag:#ece4cf; --code:#fbf8ee; --good:#1d7f44;
+  --edge:#141414; --shadow:#141414; --dots:#14141418; --c-red:#e8302a; --c-green:#1fa64a; --c-blue:#2456e0; --logo-ink:#141414;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0f0f12; --panel:#17171c; --ink:#ecebe6; --muted:#9a99a3; --line:#2a2a31;
-    --accent:#ffc629; --accent-ink:#1a1400; --tag:#23232a; --code:#1d1d23; --good:#46c37b;
+    --bg:#17161b; --panel:#22202a; --ink:#f1ede2; --muted:#aaa395; --line:#3a3644;
+    --accent:#ffc629; --accent-ink:#141414; --tag:#2e2b37; --code:#121116; --good:#4fc27f;
+    --edge:#55505f; --shadow:#000; --dots:#ffffff12; --logo-ink:#f1ede2;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0f0f12; --panel:#17171c; --ink:#ecebe6; --muted:#9a99a3; --line:#2a2a31;
-  --accent:#ffc629; --accent-ink:#1a1400; --tag:#23232a; --code:#1d1d23; --good:#46c37b;
+  --bg:#17161b; --panel:#22202a; --ink:#f1ede2; --muted:#aaa395; --line:#3a3644;
+  --accent:#ffc629; --accent-ink:#141414; --tag:#2e2b37; --code:#121116; --good:#4fc27f;
+  --edge:#55505f; --shadow:#000; --dots:#ffffff12; --logo-ink:#f1ede2;
 }
 *{box-sizing:border-box}
 [hidden]{display:none !important}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Space Grotesk",system-ui,sans-serif}
-code,pre,.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+body{margin:0;background:var(--bg) radial-gradient(var(--dots) 1.2px,transparent 1.4px) 0 0/18px 18px;color:var(--ink);font:15px/1.55 Verdana,"DejaVu Sans","Segoe UI",system-ui,sans-serif}
+code,pre,.mono{font-family:ui-monospace,"JetBrains Mono","DejaVu Sans Mono",monospace}
 .wrap{max-width:980px;margin:0 auto;padding:0 16px}
 header{padding:48px 0 24px;position:relative}
 .tbar{position:absolute;top:16px;right:0;display:flex;gap:6px}
@@ -37,13 +38,12 @@ header{padding:48px 0 24px;position:relative}
 .tbar button:hover{border-color:var(--muted)}
 .tbar button.off{opacity:.5}
 .logo{margin:0;line-height:0}
+.logo .lg-gurt svg{display:block;height:130px;width:auto;max-width:100%;margin:0 0 6px -6px}
 .logo img{height:170px;width:auto;max-width:100%;margin:-20px 0 -14px -18px}
 .logo .lg-dirt{display:none}
+.stripe{height:6px;margin:18px 0 0;border:2px solid var(--edge);border-radius:3px;background:linear-gradient(90deg,var(--c-red) 0 25%,var(--accent) 25% 50%,var(--c-green) 50% 75%,var(--c-blue) 75%)}
 :root.dirt .logo .lg-gurt{display:none}
 :root.dirt .logo .lg-dirt{display:inline;height:100px;margin:10px 0 18px}
-/* the new logo has a black g + shadow, so give it a soft light halo on dark backgrounds */
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .logo .lg-gurt{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.9)) drop-shadow(0 0 1px rgba(255,255,255,.9))}}
-:root[data-theme="dark"] .logo .lg-gurt{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.9)) drop-shadow(0 0 1px rgba(255,255,255,.9))}
 .tag{color:var(--muted);margin:4px 0 0}
 .tag b{color:var(--ink)}
 .install{margin-top:20px;background:var(--code);border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow-x:auto;font-size:14px;white-space:pre}
@@ -53,7 +53,7 @@ header{padding:48px 0 24px;position:relative}
 .src small{font-family:"Space Grotesk",sans-serif;color:var(--muted);margin-left:4px}
 .src:hover{border-color:var(--muted)}
 .src:focus{outline:none}
-.src:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 45%,transparent)}
+.src:focus-visible{outline:2px solid var(--edge);outline-offset:2px}
 .src.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
 .src.on small{color:var(--accent-ink);opacity:.75}
 .sect{font-size:20px;margin:0}
@@ -127,6 +127,31 @@ footer{color:var(--muted);font-size:13px;padding:24px 0 40px;border-top:1px soli
 footer a{color:inherit}
 .empty{color:var(--muted);text-align:center;padding:40px 0}
 @media (max-width:520px){.logo img{height:120px}td:first-child{width:100px}}
+/* ── retro Y2K: ink outlines, hard offset shadows, no blur, no glow ── */
+:root:not(.dirt) .src,:root:not(.dirt) .tab{border:2px solid var(--edge);border-radius:7px}
+:root:not(.dirt) .src.on,:root:not(.dirt) .tab.on{border-color:var(--edge);box-shadow:2px 2px 0 var(--shadow)}
+:root:not(.dirt) .pkg{border:2px solid var(--edge);border-radius:10px;box-shadow:4px 4px 0 var(--shadow);transition:transform .08s,box-shadow .08s}
+:root:not(.dirt) .pkg:hover{background:var(--panel);transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--shadow)}
+:root:not(.dirt) .pkg .name{font-weight:800}
+:root:not(.dirt) .install,:root:not(.dirt) pre,:root:not(.dirt) .cmd code{border:2px solid var(--edge);border-radius:8px}
+:root:not(.dirt) .install{box-shadow:4px 4px 0 var(--shadow)}
+:root:not(.dirt) .btn,:root:not(.dirt) .ghost{border:2px solid var(--edge);box-shadow:3px 3px 0 var(--shadow);transition:transform .06s,box-shadow .06s}
+:root:not(.dirt) .btn:active,:root:not(.dirt) .ghost:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}
+:root:not(.dirt) .search input{border:2px solid var(--edge);border-radius:8px}
+:root:not(.dirt) .search input:focus{border-color:var(--edge);box-shadow:3px 3px 0 var(--accent)}
+:root:not(.dirt) .chip{border:1.5px solid var(--edge);border-radius:5px;padding:0 7px;font-weight:700;background:var(--panel)}
+:root:not(.dirt) dialog{border:2px solid var(--edge);border-radius:12px;box-shadow:6px 6px 0 var(--shadow)}
+:root:not(.dirt) .tbar button{border:2px solid var(--edge);border-radius:8px;box-shadow:2px 2px 0 var(--shadow)}
+:root:not(.dirt) .f input,:root:not(.dirt) .f select,:root:not(.dirt) .f textarea{border:2px solid var(--edge)}
+:root:not(.dirt) .drop{border:2px dashed var(--edge)}
+:root:not(.dirt) .sect,:root:not(.dirt) .dhead h2{font-weight:800;letter-spacing:-.01em}
+:root:not(.dirt) #builder{border:2px solid var(--edge);border-radius:12px;box-shadow:5px 5px 0 var(--shadow)}
+:root:not(.dirt) .bcat{border:2px solid var(--edge);border-radius:7px;background:var(--panel)}
+:root:not(.dirt) .bcat.on{border-color:var(--edge);box-shadow:2px 2px 0 var(--shadow)}
+:root:not(.dirt) .bapp{border:2px solid var(--edge);border-radius:8px;background:var(--panel);box-shadow:3px 3px 0 var(--shadow)}
+:root:not(.dirt) .bapp.on{border-color:var(--edge);background:color-mix(in srgb,var(--accent) 24%,var(--panel))}
+@media (max-width:520px){header{padding-top:68px}.logo .lg-gurt svg{height:88px}}
+:root.dirt .stripe{display:none}
 /* ── DIRT: forced dark + red, behind the 18+ gate ── */
 :root.dirt{
   --bg:#0a0708; --panel:#140d0f; --ink:#f1e9ea; --muted:#a3898d;
@@ -139,7 +164,7 @@ footer a{color:inherit}
 .src.dirtbtn.on{background:#e0314b;border-color:#e0314b;color:#fff}
 .src.dirtbtn.on small{color:#fff}
 #gate{max-width:420px;background:#120b0d;color:#f1e9ea;text-align:center;border:1px solid #3a2226}
-#gate::backdrop{background:rgba(0,0,0,.85);backdrop-filter:blur(4px)}
+#gate::backdrop{background:rgba(0,0,0,.88)}
 #gate .gbody{padding:28px 24px 24px}
 #gate h2{margin:0 0 6px;font-size:28px}
 #gate .g18{display:inline-block;font-weight:700;border:2px solid #e0314b;color:#e0314b;border-radius:999px;padding:2px 12px;margin-bottom:14px;font-size:14px}
@@ -151,7 +176,7 @@ footer a{color:inherit}
 #gate .gbtns button:focus-visible{outline:3px solid #ff9aa8;outline-offset:2px}
 .dirtnote{color:var(--muted);font-size:14px;margin:10px 0 0}
 #heyo{display:block;margin:60px auto 30px;background:none;border:none;color:#ff1a1a;font:700 8px "JetBrains Mono",monospace;opacity:.2;cursor:pointer;transition:opacity .3s}
-#heyo:hover,#heyo:focus-visible{opacity:1;outline:none;text-shadow:0 0 8px #ff1a1a}
+#heyo:hover,#heyo:focus-visible{opacity:1;outline:none;color:#ff1a1a}
 #heyo-found{text-align:center;color:var(--muted);font-size:14px;padding-bottom:40px}
 #heyo-found b{color:#ff1a1a}
 
@@ -178,7 +203,7 @@ footer a{color:inherit}
 #lottowin{margin-top:12px;border:2px dashed var(--accent);border-radius:12px;padding:14px 16px;text-align:center}
 #lottowin .spin{font:700 22px "JetBrains Mono",monospace}
 #lottowin .row2{justify-content:center;margin-top:10px}
-#cart{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--panel);border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(0,0,0,.12);padding:10px 16px}
+#cart{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--panel);border-top:1px solid var(--line);border-top:2px solid var(--edge);padding:10px 16px}
 #cart .in{max-width:980px;margin:0 auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 #cart code{flex:1;min-width:0;background:var(--code);padding:10px 12px;border-radius:8px;border:1px solid var(--line);overflow-x:auto;white-space:nowrap;font-size:13px}
 #cart label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}
@@ -190,7 +215,8 @@ body.carted{padding-bottom:84px}
 <div class="wrap">
   <header>
     <div class="tbar"><button id="musicbtn" type="button" aria-label="background music">🎵</button><button id="sfxbtn" type="button" aria-label="sound effects"></button><button id="themebtn" type="button" aria-label="dark mode"></button></div>
-    <h1 class="logo"><img class="lg-gurt" src="assets/gurt-logo.png?v=2" alt="gurt" width="1023" height="665"><img class="lg-dirt" src="assets/dirt-logo.png?v=2" alt="dirt." width="1024" height="449"></h1>
+    <h1 class="logo"><span class="lg-gurt"><!--logo--><svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -1223 3791 1805" role="img" aria-label="gurt"><path transform="translate(70 70) rotate(-4 529 -300) translate(0 0) scale(1 -1)" d="M257 347Q79 422 79 640Q79 796 188.0 880.5Q297 965 500 965Q543 965 610.5 957.5Q678 950 709 940L934 1051L969 1008L855 846Q917 770 917 640Q917 481 809.5 395.5Q702 310 496 310Q417 310 343 322L319 246Q321 217 356.0 191.5Q391 166 442 166H661Q1004 166 1004 -98Q1004 -207 944.5 -285.5Q885 -364 769.5 -408.0Q654 -452 482 -452Q278 -452 166.0 -393.5Q54 -335 54 -233Q54 -188 90.5 -146.0Q127 -104 232 -43Q173 -20 131.5 37.0Q90 94 90 157ZM785 -166Q785 -71 658 -71H341Q253 -135 253 -216Q253 -280 314.5 -312.0Q376 -344 483 -344Q628 -344 706.5 -297.0Q785 -250 785 -166ZM494 410Q568 410 601.0 467.5Q634 525 634 640Q634 755 601.5 809.5Q569 864 494 864Q425 864 393.5 809.5Q362 755 362 640Q362 525 393.0 467.5Q424 410 494 410Z" fill="#ffc629"/><path transform="translate(70 70) rotate(3 1552 -418) translate(994 40) scale(1 -1)" d="M705 82 637 47Q497 -25 385 -25Q125 -25 125 252V850L31 874V940H414V291Q414 207 449.5 160.0Q485 113 551 113Q627 113 703 147V850L617 874V940H992V90L1084 66V0H719Z" fill="#141414"/><path transform="translate(70 70) rotate(-5 2563 -555) translate(2103 -70) scale(1 -1)" d="M461 745Q569 865 654.5 917.5Q740 970 811 970H865V627H809L750 753Q687 753 607.0 725.5Q527 698 466 661V90L617 66V0H55V66L177 90V850L55 874V940H450Z" fill="#141414"/><path transform="translate(70 70) rotate(4 3335 -556) translate(2982 10) scale(1 -1)" d="M438 -20Q303 -20 229.5 41.0Q156 102 156 217V836H33V901L178 940L295 1153H445V940H643V836H445V235Q445 170 472.0 137.0Q499 104 543 104Q596 104 673 120V35Q643 14 570.5 -3.0Q498 -20 438 -20Z" fill="#141414"/><path class="logo-g" transform="rotate(-4 529 -300) translate(0 0) scale(1 -1)" d="M257 347Q79 422 79 640Q79 796 188.0 880.5Q297 965 500 965Q543 965 610.5 957.5Q678 950 709 940L934 1051L969 1008L855 846Q917 770 917 640Q917 481 809.5 395.5Q702 310 496 310Q417 310 343 322L319 246Q321 217 356.0 191.5Q391 166 442 166H661Q1004 166 1004 -98Q1004 -207 944.5 -285.5Q885 -364 769.5 -408.0Q654 -452 482 -452Q278 -452 166.0 -393.5Q54 -335 54 -233Q54 -188 90.5 -146.0Q127 -104 232 -43Q173 -20 131.5 37.0Q90 94 90 157ZM785 -166Q785 -71 658 -71H341Q253 -135 253 -216Q253 -280 314.5 -312.0Q376 -344 483 -344Q628 -344 706.5 -297.0Q785 -250 785 -166ZM494 410Q568 410 601.0 467.5Q634 525 634 640Q634 755 601.5 809.5Q569 864 494 864Q425 864 393.5 809.5Q362 755 362 640Q362 525 393.0 467.5Q424 410 494 410Z" fill="var(--logo-ink)" stroke="#141414" stroke-width="18"/><path transform="rotate(3 1552 -418) translate(994 40) scale(1 -1)" d="M705 82 637 47Q497 -25 385 -25Q125 -25 125 252V850L31 874V940H414V291Q414 207 449.5 160.0Q485 113 551 113Q627 113 703 147V850L617 874V940H992V90L1084 66V0H719Z" fill="#e8302a" stroke="#141414" stroke-width="18"/><path transform="rotate(-5 2563 -555) translate(2103 -70) scale(1 -1)" d="M461 745Q569 865 654.5 917.5Q740 970 811 970H865V627H809L750 753Q687 753 607.0 725.5Q527 698 466 661V90L617 66V0H55V66L177 90V850L55 874V940H450Z" fill="#1fa64a" stroke="#141414" stroke-width="18"/><path transform="rotate(4 3335 -556) translate(2982 10) scale(1 -1)" d="M438 -20Q303 -20 229.5 41.0Q156 102 156 217V836H33V901L178 940L295 1153H445V940H643V836H445V235Q445 170 472.0 137.0Q499 104 543 104Q596 104 673 120V35Q643 14 570.5 -3.0Q498 -20 438 -20Z" fill="#2456e0" stroke="#141414" stroke-width="18"/></svg><!--/logo--></span><img class="lg-dirt" src="assets/dirt-logo.png?v=2" alt="dirt." width="1024" height="449"></h1>
+    <div class="stripe" aria-hidden="true"></div>
     <p class="tag"><b>G</b>URT <b>U</b>niversal <b>R</b>epository <b>T</b>hingy — <b>every</b> distro's packages on <b>every</b> distro. The AUR on Mint, apt on SUSE, zypper on Red Star OS… plus <b>Main GURT</b>, the community repo below.</p>
     <div class="install mono">curl -fsSL https://raw.githubusercontent.com/clrealy/GURT/main/install.sh | sh
 gurt install btop          <span class="c"># Main GURT</span>
