@@ -79,6 +79,11 @@ jobs:
           # every other format gets a signature that checks out too
           "$g" -y key export /tmp/cv/pub && gpg --dearmor < /tmp/cv/pub/gurt-key.asc > /tmp/cv/k.gpg
           "$g" -y convert gurt-cvtest-1.0.tar.gz zip && gpgv --keyring /tmp/cv/k.gpg ./gurt-cvtest-1.0.zip.asc ./gurt-cvtest-1.0.zip
+          "$g" verify ./gurt-cvtest-1.0.zip
+          # a signed repo from what we converted: publish it, add it, install from it
+          mkdir -p /tmp/cv/repo && cp ./gurt-cvtest*.deb ./gurt-cvtest*.rpm /tmp/cv/repo/ 2>/dev/null || "$g" -y convert gurt-cvtest-1.0.tar.gz deb -o /tmp/cv/repo
+          "$g" repo publish /tmp/cv/repo cvrepo
+          if command -v apt-get >/dev/null; then "$g" -y repo add cvrepo apt file:///tmp/cv/repo stable main --key /tmp/cv/repo/gurt-key.asc && "$g" search cvrepo/gurt-cvtest; fi
           "$g" -y convert gurt-cvtest-1.0.tar.gz gurt && gpgv --keyring /tmp/cv/k.gpg ./gurt-cvtest-*.gurt.asc ./gurt-cvtest-*.gurt
       - name: build changed packages
         shell: bash
@@ -141,7 +146,7 @@ jobs:
       - run: for d in packages/*/ dirt/*/; do if [ -d "$d" ]; then ./gurt srcinfo "$d" > "$d/.gurtinfo"; fi; done
       - run: python3 tools/gen-index.py
       - name: serve the installer + script from the site too
-        run: cp install.sh gurt deps.map site/
+        run: cp install.sh gurt deps.map vibes.map site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: site }

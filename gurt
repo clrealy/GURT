@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.29.0"
+GURT_VERSION="0.30.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -579,6 +579,7 @@ build_pkg() {
 install_file() { # file.gurt [reason]
   local f reason=${2:-explicit} tmp name src key dbd
   f=$(readlink -f "$1")
+  [[ -f $f.asc || -f $f.sig ]] && sig_gate "$f"
   tmp=$(mktemp -d "${TMPDIR:-/tmp}/gurt-inst.XXXXXX")
   tar -xzf "$f" -C "$tmp" .PKGINFO .FILES .DIRS 2>/dev/null || { rm -rf "$tmp"; die "not a gurt package: $1"; }
   name=$(info_get "$tmp/.PKGINFO" pkgname)
@@ -1612,6 +1613,7 @@ pkgfile_install() { # file-or-url reason
   f=$(fetch_arg "$f")
   fam=$(pkgfile_fam "$f")
   if [[ $fam == apk ]] && ! tar -tzf "$f" .PKGINFO >/dev/null 2>&1; then die "${f##*/} is an Android app 🤖, not an Alpine package — try Waydroid for those"; fi
+  command -v python3 >/dev/null && sig_gate "$f"   # signed (inside or next to it)? check it. not signed? nothing to say
   row=$(pkgfile_meta "$f")
   local F; tsv "$row"; name=${F[0]:-}; ver=${F[1]:-}; deps=${F[2]:-}; desc=${F[3]:-}; prov=${F[4]:-}; arch=${F[5]:-}
   [[ -n $name && -n $ver ]] || die "couldn't read the name/version out of ${f##*/} — is it a real package?"
@@ -1869,8 +1871,153 @@ cmd_key() { # [show|export [dir]|trust]
       command -v apt-get >/dev/null && { msg2 "apt doesn't check signatures on .deb files, nothing to trust there"; did=true; }
       rm -rf "$tmp"
       $did || msg2 "no package manager here checks package signatures — nothing to trust" ;;
-    *) die "usage: gurt key [show|export [dir]|trust]" ;;
+    import)   # a friend's / a repo's key: gurt verify and installs of .gurt files will trust what it signed
+      local src=${2:-}; [[ -n $src ]] || die "usage: gurt key import <key.asc | name.rsa.pub | url>"
+      mkdir -p "$TRUST_DIR"; local tmp; tmp=$(mktemp -d)
+      if [[ $src =~ ^https?:// ]]; then fetch_quiet "$src" "$tmp/k" || die "couldn't download $src"; else [[ -f $src ]] || die "no key file at $src"; cp "$src" "$tmp/k"; fi
+      if grep -q 'BEGIN PUBLIC KEY' "$tmp/k"; then
+        local nm=${src##*/}; [[ $nm == *.rsa.pub ]] || nm="imported-$(date +%s).rsa.pub"
+        cp "$tmp/k" "$TRUST_DIR/$nm"; msg "trusting $nm (Alpine/Void signatures) ✅"
+      elif grep -q 'BEGIN PGP PUBLIC KEY' "$tmp/k" || gpg --show-keys "$tmp/k" >/dev/null 2>&1; then
+        local fpr; fpr=$(gpg --show-keys --with-colons "$tmp/k" 2>/dev/null | awk -F: '$1 == "fpr" { print $10; exit }')
+        cp "$tmp/k" "$TRUST_DIR/${fpr:-imported-$(date +%s)}.asc"; msg "trusting this key ✅ make sure it's really theirs:"; show_fpr "$tmp/k"
+      else rm -rf "$tmp"; die "that doesn't look like a public key"; fi
+      rm -rf "$tmp" ;;
+    *) die "usage: gurt key [show|export [dir]|trust|import <key>]" ;;
   esac
+}
+
+# ── gurt verify: is this package signed, and by a key you trust? ──
+# keys you trust: your own gurt key + any you `gurt key import`ed (a friend's, a repo's)
+TRUST_DIR="$SIGN_DIR/trusted"
+# finds the signature in a package (inside it or next to it) and writes out what to check → lines: gpg <sig> <data> | rsa <keyname> <sig> <data> | bad <why> | none
+VERIFY_PY=$(cat <<'PY'
+import os, sys, struct, zlib, hashlib, tarfile, io
+f, w = sys.argv[1], sys.argv[2]
+low = f.lower()
+def out(*a): print(" ".join(a))
+def put(name, data):
+    p = os.path.join(w, name); open(p, "wb").write(data); return p
+for ext, kind in ((".sig", "gpg"), (".asc", "gpg")):
+    if os.path.isfile(f + ext): out(kind, f + ext, f); sys.exit()
+if os.path.isfile(f + ".sig2"):
+    out("rsa", "*", f + ".sig2", f); sys.exit()
+b = open(f, "rb").read()
+if low.endswith(".deb") and b.startswith(b"!<arch>\n"):
+    i, mem = 8, {}
+    while i + 60 <= len(b):
+        name = b[i:i + 16].decode().strip().rstrip("/"); size = int(b[i + 48:i + 58].decode().strip())
+        mem.setdefault("order", []).append(name); mem[name] = b[i + 60:i + 60 + size]; i += 60 + size + (size & 1)
+    if "_gpgorigin" not in mem: out("none"); sys.exit()
+    data = b"".join(mem[n] for n in mem["order"] if not n.startswith("_"))
+    out("gpg", put("sig", mem["_gpgorigin"]), put("data", data)); sys.exit()
+if low.endswith(".rpm") and b[:4] == b"\xed\xab\xee\xdb":
+    def hdr(o):
+        if b[o:o + 3] != b"\x8e\xad\xe8": raise SystemExit(out("bad", "not a real rpm header"))
+        n, sz = struct.unpack(">ii", b[o + 8:o + 16]); ents = {}
+        for k in range(n):
+            tag, typ, off, cnt = struct.unpack(">iiii", b[o + 16 + k * 16:o + 32 + k * 16]); ents[tag] = (typ, off, cnt)
+        return ents, o + 16 + n * 16, o + 16 + n * 16 + sz
+    ents, store, end = hdr(96)
+    sig = None
+    for tag in (268, 267):
+        if tag in ents:
+            typ, off, cnt = ents[tag]; sig = b[store + off:store + off + cnt]; break
+    if not sig: out("none"); sys.exit()
+    main_start = end + (-end % 8)
+    _, _, main_end = hdr(main_start)
+    out("gpg", put("sig", sig), put("data", b[main_start:main_end])); sys.exit()
+if low.endswith(".apk"):
+    segs, i = [], 0
+    while i < len(b):
+        d = zlib.decompressobj(31); raw = d.decompress(b[i:]); used = len(b) - i - len(d.unused_data); segs.append((b[i:i + used], raw)); i += used
+    first = segs[0][1]; name = first[:100].split(b"\0")[0].decode(errors="replace")
+    if not name.startswith(".SIGN.") or len(segs) < 3: out("none"); sys.exit()
+    size = int(first[124:136].split(b"\0")[0].strip() or b"0", 8)
+    algo, keyname = name.split(".", 3)[2], name.split(".", 3)[3]
+    if algo != "RSA256": out("bad", "only RSA256 apk signatures are checked here (this one is %s)" % algo); sys.exit()
+    info = segs[1][1].decode(errors="replace")
+    want = [l.split("=", 1)[1].strip() for l in info.splitlines() if l.startswith("datahash")]
+    if want and hashlib.sha256(segs[2][0]).hexdigest() != want[0]: out("bad", "the files inside don't match the signed .PKGINFO"); sys.exit()
+    out("rsa", keyname, put("sig", first[512:512 + size]), put("data", segs[1][0])); sys.exit()
+if low.endswith(".appimage") and b[:4] == b"\x7fELF":
+    shoff, = struct.unpack("<Q", b[0x28:0x30]); shentsize, shnum, shstrndx = struct.unpack("<HHH", b[0x3a:0x40])
+    secs = [struct.unpack("<IIQQQQIIQQ", b[shoff + k * shentsize:shoff + k * shentsize + 64]) for k in range(shnum)]
+    strtab = secs[shstrndx]; names = b[strtab[4]:strtab[4] + strtab[5]]
+    found = {}
+    for s in secs:
+        nm = names[s[0]:names.index(b"\0", s[0])].decode()
+        if nm in (".sha256_sig", ".sig_key"): found[nm] = (s[4], s[5])
+    if ".sha256_sig" not in found: out("none"); sys.exit()
+    o, n = found[".sha256_sig"]; sig = b[o:o + n].rstrip(b"\0")
+    if not sig: out("none"); sys.exit()
+    z = bytearray(b)
+    for o2, n2 in found.values(): z[o2:o2 + n2] = b"\0" * n2
+    out("gpg", put("sig", sig), put("data", hashlib.sha256(z).hexdigest().encode())); sys.exit()
+out("none")
+PY
+)
+verify_keyring() { # dir → dir/kr.gpg with every gpg key you trust
+  local k
+  : > "$1/kr.gpg"
+  [[ -n $SIGN_FPR ]] && sign_gpg --export "$SIGN_FPR" > "$1/kr.gpg"
+  for k in "$TRUST_DIR"/*.asc; do gpg_keyring "$k" "$1/t.gpg"; cat "$1/t.gpg" >> "$1/kr.gpg"; done
+}
+verify_file() { # file → 0 good+trusted · 1 bad · 2 not signed · 3 signed by a key you don't trust
+  local f=$1 w kind a b c rc=2 k who
+  w=$(mktemp -d "${TMPDIR:-/tmp}/gurt-verify.XXXXXX")
+  need_tool python3 "checking signatures"
+  [[ -d $SIGN_DIR/gnupg ]] && sign_setup rsa   # your own key counts, but checking never makes one
+  read -r kind a b c < <(python3 -c "$VERIFY_PY" "$f" "$w") || kind=bad
+  [[ $kind == gpg ]] && need_tool gpgv "checking signatures"
+  case $kind in
+    none) rc=2 ;;
+    bad)  msg2 "🚩 ${a:-} ${b:-} ${c:-}"; rc=1 ;;
+    gpg)
+      verify_keyring "$w"
+      if who=$(gpgv --keyring "$w/kr.gpg" "$a" "$b" 2>&1); then
+        rc=0; msg2 "$(sed -n 's/.*Good signature from \(.*\)/\1/p' <<<"$who" | head -n1)"
+      elif grep -q 'BAD signature' <<<"$who"; then rc=1
+      else rc=3; msg2 "key: $(sed -n 's/.*using [A-Z]* key \([0-9A-F]*\).*/\1/p' <<<"$who" | head -n1)"; fi ;;
+    rsa)
+      rc=3
+      for k in ${SIGN_RSA:+"$SIGN_RSA.pub"} "$TRUST_DIR"/*.rsa.pub; do
+        [[ -f $k ]] || continue
+        [[ $a == "*" || ${k##*/} == "$a" ]] || continue
+        if openssl dgst -sha256 -verify "$k" -signature "$b" "$c" >/dev/null 2>&1; then rc=0; msg2 "signed with ${k##*/}"; break
+        elif [[ $a != "*" ]]; then rc=1; break; fi
+      done
+      [[ $rc == 3 && $a != "*" ]] && msg2 "key: $a" ;;
+  esac
+  rm -rf "$w"
+  return $rc
+}
+sig_gate() { # file — before installing a file that carries a signature: bad = stop, untrusted = say so
+  local rc=0
+  verify_file "$1" || rc=$?
+  case $rc in
+    0) msg2 "signature ok 🔏 (a key you trust)" ;;
+    1) die "🚩 ${1##*/} has a BAD signature — it was changed after it was signed. not installing it" ;;
+    3) warn "${1##*/} is signed by a key you don't trust yet (gurt key import <their key> if you know whose it is)" ;;
+  esac
+}
+cmd_verify() { # file…
+  (( $# )) || die "verify what tho — gurt verify app.rpm"
+  local f rc worst=0
+  for f; do
+    [[ -f $f ]] || die "no file at $f"
+    rc=0; verify_file "$f" || rc=$?
+    case $rc in
+      0) msg "${f##*/}: signed by a key you trust ✅" ;;
+      1) printf '%s==> 🚩 %s: BAD signature — it was changed after it was signed. do NOT install it%s\n' "$RED" "${f##*/}" "$R0" >&2 ;;
+      2) warn "${f##*/}: not signed (no signature inside it or next to it)" ;;
+      3) warn "${f##*/}: signed, but by a key you don't trust yet — if you know whose it is: gurt key import <their key>" ;;
+    esac
+    (( rc > worst )) && worst=$rc
+    [[ $rc == 1 ]] && worst=9
+  done
+  [[ $worst == 9 ]] && return 1
+  return 0
 }
 
 # arch names per format
@@ -2184,6 +2331,7 @@ cmd_convert() { # file|url format|out-file [-o dir]
   conv_pack "$fmt" "$tree" "$out" "$work"
   $NOSIGN || conv_sign "$fmt" "$out" "$work"
   msg "made ${out} ✅ ($(du -h "$out" | cut -f1))"
+  achieve convert; [[ ${CV_FROM,,} == *.exe && $fmt == deb ]] && achieve whytho
   if ! $NOSIGN; then sign_hint "$fmt" "$out"
   else
     case $fmt in
@@ -2819,6 +2967,106 @@ aur_clone() { # name -> prints dir
   echo "$dir"
 }
 
+# ── sus check: scary stuff in a build script, shown before gurt builds anything from the AUR or a random repo ──
+# prints "high|med<TAB>file:line<TAB>why" lines
+sus_scan() { # dir
+  local dir=$1 f
+  local files=()
+  for f in "$dir"/PKGBUILD "$dir"/GURTBUILD "$dir"/*.install "$dir"/*.sh "$dir"/Makefile "$dir"/makefile "$dir"/CMakeLists.txt "$dir"/meson.build "$dir"/build.rs "$dir"/install*; do
+    [[ -f $f ]] && files+=("$f")
+  done
+  (( ${#files[@]} )) || return 0
+  awk '
+    function hit(sev, why) { printf "%s\t%s:%d\t%s\n", sev, FILENAME, FNR, why; n++ }
+    { l = $0; sub(/^[ \t]*#.*/, "", l) }    # skip comments
+    l ~ /(curl|wget)[^|;]*\|[ \t]*(sudo[ \t]+)?(ba|z|da)?sh([ \t]|$)/        { hit("high", "downloads a script and runs it right away (curl | sh)") }
+    l ~ /(eval|source|\.)[ \t]+["]?\$\((curl|wget)/                              { hit("high", "runs code it downloads while building") }
+    l ~ /base64[ \t]+(-d|--decode)[^|]*\|[ \t]*(ba)?sh/                          { hit("high", "runs hidden (base64-encoded) code") }
+    l ~ /rm[ \t]+-[a-zA-Z]*r[a-zA-Z]*f?[ \t]+(--no-preserve-root|\/([ \t*]|$)|~\/?([ \t]|$)|"?\$HOME"?\/?([ \t]|$))/ { hit("high", "deletes your whole home folder or system") }
+    l ~ /\/dev\/tcp\/|nc[ \t]+(-[a-z]*e|.*-e[ \t])|ncat[ \t].*-e[ \t]/          { hit("high", "opens a remote shell (reverse shell)") }
+    l ~ /\/etc\/sudoers|\.ssh\/authorized_keys|crontab[ \t]+-|\/etc\/cron/       { hit("high", "touches sudo rules, SSH logins or scheduled tasks") }
+    l ~ /(^|[^a-z_])sudo[ \t]/                                                   { hit("med", "uses sudo while building (builds should never need root)") }
+    l ~ /chmod[ \t]+(-R[ \t]+)?[0-7]?777/                                         { hit("med", "makes files writable by everyone (chmod 777)") }
+    l ~ /http:\/\/[^ "]*\.(tar|zip|gz|xz|bz2|zst|deb|rpm|AppImage|sh|bin|run)/   { hit("med", "downloads over plain http (anyone in between could swap the file)") }
+    l ~ /(LD_PRELOAD|\/etc\/ld\.so\.preload)/                                    { hit("med", "messes with how every program loads libraries") }
+  ' "${files[@]}" 2>/dev/null | sed "s|$dir/||"
+  # sources with no checksum (SKIP is normal for git sources, not for downloads). read from .SRCINFO, never by running the script
+  [[ -f $dir/.SRCINFO ]] && awk -F' = ' '
+    { sub(/^[ \t]+/, "") }
+    $1 ~ /^source(_[a-z0-9_]+)?$/ { k = $1; sub(/^source/, "", k); src[k, ++ns[k]] = $2 }
+    $1 ~ /^(sha256|sha512|b2|md5|sha1)sums(_[a-z0-9_]+)?$/ { k = $1; sub(/^[a-z0-9]+sums/, "", k); if (!((k, 1) in sum)) { i = 0 } ; sum[k, ++nsum[k]] = $2 }
+    END { for (k in ns) for (i = 1; i <= ns[k]; i++) { u = src[k, i]; sub(/^[^:]*::/, "", u); c = sum[k, i]
+      if (u ~ /^https?:\/\// && (c == "" || c == "SKIP")) { n = split(u, a, "/"); printf "med\t.SRCINFO\tdownloads %s with no checksum (it could change under you)\n", a[n] } } }' "$dir/.SRCINFO"
+  return 0
+}
+sus_print() { # findings what → prints them, returns the number of red flags
+  local out=$1 what=$2 high med
+  high=$(grep -c '^high' <<<"$out" || true); med=$(grep -c '^med' <<<"$out" || true)
+  printf '%s==> 🚨 sus check on %s: %s red flag(s), %s yellow flag(s)%s\n' "$YLW" "$what" "$high" "$med" "$R0" >&2
+  while IFS=$'\t' read -r sev where why; do
+    if [[ $sev == high ]]; then printf '   %s🔴 %s%s  %s\n' "$RED" "$why" "$R0" "($where)" >&2
+    else printf '   🟡 %s  (%s)\n' "$why" "$where" >&2; fi
+  done <<<"$out"
+  return "$high"
+}
+sus_gate() { # dir what — show findings, then: red flags + -y = stop (unless --force), interactive = an extra ask
+  local dir=$1 what=$2 out
+  out=$(sus_scan "$dir" | sort -u)
+  [[ -n $out ]] || { msg2 "sus check: nothing scary in the build script 👍"; return 0; }
+  sus_print "$out" "$what" && return 0
+  achieve sus
+  if $NOCONFIRM; then
+    $FORCE || die "not building $what with red flags in -y mode — read it yourself, then run again with --force if it's fine"
+    warn "--force: building it anyway"
+  else
+    ask "$what has red flags ^ — still build it?" || die "aborted, good call 🫡"
+  fi
+}
+cmd_sus() { # dir | aur/name | git url — check without building
+  local t=${1:-} dir
+  [[ -n $t ]] || die "usage: gurt sus <folder | aur/name | git url>"
+  if [[ -d $t ]]; then dir=$t
+  elif [[ $t == aur/* ]]; then need_tool git aur; dir=$(aur_clone "${t#aur/}") || die "no AUR package called '${t#aur/}'"
+  elif [[ $t =~ ^(https?://|git@|[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$) ]]; then
+    need_tool git "checking a repo"; dir=$(mktemp -d "${TMPDIR:-/tmp}/gurt-sus.XXXXXX")
+    [[ $t =~ ^https?://|^git@ ]] || t="https://github.com/$t"
+    git clone -q --depth 1 "$t" "$dir/r" 2>/dev/null || die "couldn't clone $t"; dir="$dir/r"
+  else die "gurt sus wants a folder, aur/name or a git url"; fi
+  local out; out=$(sus_scan "$dir" | sort -u)
+  if [[ -z $out ]]; then msg "nothing scary in $t's build scripts 👍 (gurt only checks the build recipe, not the whole program)"; return 0; fi
+  sus_print "$out" "$t" || { msg2 "gurt won't build it without asking you first (or --force with -y)"; return 1; }
+}
+
+# ── snapshots before big upgrades: snapper → timeshift (btrfs) → a plain btrfs snapshot. GURT_SNAPSHOTS=0 turns it off ──
+SNAP_DIR=/.gurt-snapshots
+root_fs() { findmnt -no FSTYPE / 2>/dev/null || stat -f -c %T / 2>/dev/null; }
+snapshot_before() { # why
+  [[ ${GURT_SNAPSHOTS:-1} == 0 || -n $R ]] && return 0
+  local why=$1 fs; fs=$(root_fs)
+  if command -v snapper >/dev/null && asroot snapper list-configs 2>/dev/null | grep -qw root; then
+    asroot snapper -c root create -c number -d "gurt: before $why" && msg2 "📸 snapper snapshot taken (roll back: sudo snapper rollback, or pick it in your boot menu)" && return 0
+  fi
+  [[ $fs == btrfs ]] || { msg2 "no snapshot: / isn't btrfs (install snapper or timeshift for undo-able upgrades)"; return 0; }
+  if command -v timeshift >/dev/null; then
+    asroot timeshift --create --scripted --comments "gurt: before $why" >/dev/null 2>&1 && msg2 "📸 timeshift snapshot taken (roll back: sudo timeshift --restore)" && return 0
+  fi
+  command -v btrfs >/dev/null || return 0
+  local name; name="$(date +%Y-%m-%d_%H%M%S)"
+  asroot mkdir -p "$SNAP_DIR" && asroot btrfs subvolume snapshot -r / "$SNAP_DIR/$name" >/dev/null 2>&1 ||
+    { warn "couldn't take a btrfs snapshot (is / a subvolume?), upgrading without one"; return 0; }
+  echo "$why" | asroot tee "$SNAP_DIR/$name.why" >/dev/null
+  msg2 "📸 btrfs snapshot: $SNAP_DIR/$name (gurt snapshots → list them)"
+  local old; old=$(find "$SNAP_DIR" -mindepth 1 -maxdepth 1 -type d | LC_ALL=C sort | head -n -3)   # keep the newest 3
+  for name in $old; do asroot btrfs subvolume delete "$name" >/dev/null 2>&1 && asroot rm -f "$name.why"; done
+}
+cmd_snapshots() {
+  if command -v snapper >/dev/null && asroot snapper list-configs 2>/dev/null | grep -qw root; then asroot snapper -c root list | grep -i 'gurt\|#' ; return 0; fi
+  local d n=0
+  for d in "$SNAP_DIR"/*/; do [[ -d $d ]] || continue; n=$((n + 1)); printf '  📸 %s  %s\n' "$(basename "$d")" "$(cat "${d%/}.why" 2>/dev/null)"; done
+  if (( n )); then msg2 "these are read-only copies of / from right before each upgrade. to grab a file back: cp $SNAP_DIR/<date>/etc/thing /etc/thing"
+  else msg "no gurt snapshots yet $( [[ $(root_fs) == btrfs ]] && echo '(one gets taken before each system upgrade)' || echo "(your / is $(root_fs), snapshots need btrfs — or snapper/timeshift)")"; fi
+}
+
 aur_install() { # name reason
   local name=$1 reason=${2:-dep} key="aur:$1" dir ver d
   [[ -n ${VISITED[$key]:-} ]] && return 0
@@ -2840,6 +3088,7 @@ aur_install() { # name reason
     foreign_dep aur "$d"
   done
   flush_native
+  sus_gate "$dir" "aur/$name"
   if ! $NOCONFIRM; then
     printf '\n%s──── aur/%s/PKGBUILD ────%s\n' "$B" "$name" "$R0" >&2
     cat "$dir/PKGBUILD" >&2
@@ -3088,6 +3337,243 @@ is_held() { [[ -f $DB/$1/held ]]; }
 
 # ───────────────────────── export / import ─────────────────────────
 # a plain text list of what you installed on purpose → reinstall it all on another machine
+# ── apps like X: vibes.map turns "photoshop" into apps you can actually install ──
+vibes_file() {
+  local f
+  for f in "$GURT_REPO_DIR/vibes.map" "$SELF_DIR/vibes.map" /usr/local/share/gurt/vibes.map /usr/share/gurt/vibes.map; do
+    [[ -r $f ]] && { echo "$f"; return; }
+  done
+}
+vibe_term() { local t=${1,,}; t=${t#something }; t=${t#apps }; t=${t#an app }; t=${t#like }; t=${t#alternative to }; t=${t#alternatives to }; t=${t#instead of }; echo "$t"; }
+vibe_apps() { # term → the apps people use instead (one per line), nothing if it's not a vibe gurt knows
+  local t f; t=$(vibe_term "$1"); f=$(vibes_file) || return 1; [[ -n $f ]] || return 1
+  awk -v t="$t" -F': ' '/^#/ || !NF { next } { n = split($1, k, "|"); for (i = 1; i <= n; i++) if (k[i] == t) { gsub(/ /, "\n", $2); print $2; exit } }' "$f"
+}
+vibe_print() { # term apps…
+  local term=$1 a f; shift
+  msg "apps like $(vibe_term "$term") 👇"
+  for a; do
+    f="$GURT_REPO_DIR/packages/$a/.gurtinfo"; [[ -f $f ]] || continue
+    printf '%sgurt/%s%s%s%s %s\n    %s\n' "$MAG" "$R0" "$B" "$a" "$R0" "$(is_installed "$a" && echo "${GRN}[installed]${R0}")" "$(info_get "$f" pkgdesc)"
+  done
+}
+
+# ── gurt why <pkg>: who wanted this? ──
+find_key() { # spec → the installed key (src:name, or name for Main GURT)
+  local spec=$1 d
+  if [[ $spec == */* ]]; then echo "$(pkey "$(norm_src "${spec%%/*}")" "${spec#*/}")"; return; fi
+  is_installed "$spec" && { echo "$spec"; return; }
+  for d in "$DB"/*:"$spec"/; do [[ -d $d ]] && { basename "$d"; return; }; done
+  echo "$spec"
+}
+cmd_why() {
+  local spec=${1:-} key name who=()
+  [[ -n $spec ]] || die "usage: gurt why <package>"
+  key=$(find_key "$spec"); name=${key#*:}
+  if ! is_installed "$key"; then
+    if pm_has "$name" 2>/dev/null; then
+      msg "$name isn't from gurt — your distro ($PM) installed it"
+      case $PM in
+        apt)    msg2 "what needs it: apt rdepends --installed $name" ;;
+        dnf)    msg2 "what needs it: dnf repoquery --installed --whatrequires $name" ;;
+        pacman) msg2 "what needs it: pacman -Qi $name  (look at \"Required By\")" ;;
+        zypper) msg2 "what needs it: zypper search --requires --installed-only $name" ;;
+      esac
+      return 0
+    fi
+    die "$spec isn't installed"
+  fi
+  if [[ $(cat "$DB/$key/reason" 2>/dev/null) == explicit ]]; then
+    msg "you installed $(pretty "$key") yourself 🫵 ($(inst_ver "$key"), $(date -r "$DB/$key/info" +%F 2>/dev/null || echo 'a while ago'))"
+  fi
+  mapfile -t who < <(rdeps_of "$key")   # the same check autoremove uses
+  if (( ${#who[@]} )); then msg2 "needed by: ${who[*]}"
+  elif [[ $(cat "$DB/$key/reason" 2>/dev/null) != explicit ]]; then
+    msg "$(pretty "$key") came in as a dependency, but nothing needs it anymore 🧹 — gurt autoremove cleans it up"
+  fi
+}
+
+# ── gurt hogs: what's eating your disk ──
+pkg_sizes() { # → "bytes<TAB>key" for everything gurt installed
+  local d k
+  for d in "$DB"/*/; do
+    k=$(basename "$d")
+    [[ -f $d/files ]] && R_ROOT="${R:-}" python3 -c '
+import os, sys
+r, f, k = os.environ["R_ROOT"], sys.argv[1], sys.argv[2]; t = 0
+for line in open(f, errors="replace"):
+    p = r + "/" + line.rstrip("\n")
+    try:
+        st = os.lstat(p)
+        if not os.path.isdir(p): t += st.st_size
+    except OSError: pass
+print("%d\t%s" % (t, k))' "$d/files" "$k"
+  done
+  if command -v flatpak >/dev/null && compgen -G "$DB/flatpak:*" >/dev/null; then
+    flatpak list --app --columns=application,size 2>/dev/null | while IFS=$'\t' read -r id sz; do
+      [[ -d $DB/flatpak:$id ]] || continue
+      awk -v s="$sz" -v k="flatpak:$id" 'BEGIN { n = s + 0; u = s; gsub(/[0-9., ]/, "", u)
+        m = (u ~ /^G/) ? 1073741824 : (u ~ /^M/) ? 1048576 : (u ~ /^k/) ? 1024 : 1; printf "%d\t%s\n", n * m, k }'
+    done
+  fi
+}
+hsize() { awk -v b="$1" 'BEGIN { if (b >= 1073741824) printf "%.1f GB", b/1073741824; else if (b >= 1048576) printf "%.0f MB", b/1048576; else printf "%.0f KB", b/1024 }'; }
+cmd_hogs() { # [--tsv] [n]
+  local tsv=false n=15 total=0 b k i=0
+  [[ ${1:-} == --tsv ]] && { tsv=true; shift; }
+  [[ ${1:-} =~ ^[0-9]+$ ]] && n=$1
+  need_tool python3 "measuring apps"
+  local rows; rows=$(pkg_sizes | sort -t$'\t' -k1,1nr)
+  $tsv && { printf '%s\n' "$rows"; return 0; }
+  [[ -n $rows ]] || { msg "gurt hasn't installed anything yet"; return 0; }
+  msg "biggest apps gurt installed 🐷"
+  while IFS=$'\t' read -r b k; do
+    total=$((total + b)); i=$((i + 1)); (( i > n )) && continue
+    printf '  %9s  %s\n' "$(hsize "$b")" "$(pretty "$k")"
+  done <<<"$rows"
+  msg2 "all together: $(hsize "$total") · free some up: gurt remove <app> · gurt autoremove"
+}
+
+# ── gurt compare a b c: side by side ──
+trust_label() { # src [info-file]
+  case $1 in
+    gurt) if [[ -n ${2:-} ]]; then
+            if [[ $(info_get "$2" via_type) == flatpak ]]; then echo "Flathub 📦"
+            elif [[ $(info_get "$2" via_type) == snap ]]; then echo "Snap Store"
+            elif [[ -n $(info_get "$2" via_repo) ]]; then echo "official repo 🔏"
+            elif info_get "$2" source | grep -q 'git+'; then echo "built from source ✅"
+            elif info_get "$2" source | grep -q '://'; then echo "official download ✅"
+            else echo "Main GURT"; fi
+          else echo "Main GURT"; fi ;;
+    apt|dnf|zypper|pacman) echo "distro repo 🔏" ;;
+    flatpak) echo "Flathub 📦" ;; snap) echo "Snap Store" ;;
+    aur) echo "user upload ⚠️" ;; git) echo "random repo ⚠️" ;; file) echo "your file" ;; *) echo "$1" ;;
+  esac
+}
+cmd_compare() { # spec…
+  (( $# >= 2 )) || die "compare what with what tho — gurt compare gimp krita pinta"
+  (( $# <= 4 )) || die "4 apps max, it's a table not a novel"
+  ensure_repo
+  local spec src name f key rows=() sizes
+  need_tool python3 "comparing"
+  sizes=$(pkg_sizes 2>/dev/null || true)
+  for spec; do
+    if [[ $spec == */* ]]; then src=$(norm_src "${spec%%/*}"); name=${spec#*/}; else src=gurt; name=$spec; fi
+    local real; [[ $src == gurt ]] && ! is_gurt_pkg "$name" && real=$(alias_lookup "$name" 2>/dev/null) && name=$real
+    key=$(pkey "$src" "$name"); f=""; [[ $src == gurt ]] && f=$(repo_info "$name")
+    local ver desc cat lic url inst sz
+    if [[ -n $f && -f $f ]]; then
+      ver=$(repo_ver "$name"); desc=$(info_get "$f" pkgdesc); cat=$(info_get "$f" category); lic=$(info_get "$f" license); url=$(info_get "$f" url)
+      [[ -n $(info_get "$f" via_repo) ]] && ver="latest"
+    elif [[ $src != gurt ]] && [[ $src != aur && $src != flatpak && $src != snap ]] && ensure_idx "$src" 2>/dev/null && row=$(idx_lookup "$src" "$name"); then
+      local F; tsv "$row"; ver=${F[1]:-}; desc=${F[5]:-}; cat=""; lic=""; url=""
+    elif is_installed "$key"; then
+      ver=$(inst_ver "$key"); desc=$(info_get "$DB/$key/info" pkgdesc); cat=""; lic=$(info_get "$DB/$key/info" license); url=$(info_get "$DB/$key/info" url)
+    else die "couldn't find $spec (gurt search $spec)"; fi
+    inst=no; is_installed "$key" && inst="yes ✅"
+    sz=$(awk -F'\t' -v k="$key" '$2 == k { print $1 }' <<<"$sizes"); [[ -n $sz ]] && sz=$(hsize "$sz") || sz="-"
+    rows+=("$(pretty "$key")"$'\t'"$(trust_label "$src" "$f")"$'\t'"${ver:--}"$'\t'"${cat:--}"$'\t'"${lic:--}"$'\t'"$inst"$'\t'"$sz"$'\t'"${url:--}"$'\t'"${desc:--}")
+  done
+  printf '%s\n' "${rows[@]}" | python3 -c '
+import sys, unicodedata
+rows = [l.rstrip("\n").split("\t") for l in sys.stdin]
+labels = ["app", "comes from", "version", "category", "license", "installed", "size on disk", "website", "what it is"]
+def w(s): return sum(2 if unicodedata.east_asian_width(c) in "WF" else 0 if unicodedata.category(c) in ("Mn", "Cf") else 1 for c in s)
+def cut(s, n): return s if len(s) <= n else s[:n - 1] + "…"
+cols = [[cut(r[i], 34) for r in rows] for i in range(len(labels))]
+lw = max(map(w, labels)); cw = [max(w(c) for c in [r[i] for r in cols]) for i in range(len(rows))]
+cw = [max(w(cols[i][j]) for i in range(len(labels))) for j in range(len(rows))]
+for i, lab in enumerate(labels):
+    line = lab + " " * (lw - w(lab)) + "  "
+    line += "  ".join(c + " " * (cw[j] - w(c)) for j, c in enumerate(cols[i]))
+    print(("\033[1m" + line + "\033[0m") if i == 0 and sys.stdout.isatty() else line.rstrip())
+'
+}
+
+# ── profiles: your whole setup (apps + gurt settings + the app's look) under a name ──
+PROFILE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/profiles"
+GUI_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/gui.json"
+cmd_profile() { # save|load|list|show|rm [name|file]
+  local sub=${1:-list} name=${2:-} f
+  case $sub in
+    list|ls)
+      local n=0; for f in "$PROFILE_DIR"/*.profile; do [[ -f $f ]] || continue; n=$((n + 1))
+        printf '  📁 %-16s %s apps · saved %s\n' "$(basename "$f" .profile)" "$(sed -n '/^\[apps\]/,/^\[/p' "$f" | grep -cv '^\[\|^$\|^#')" "$(date -r "$f" +%F)"; done
+      (( n )) || msg "no profiles yet — gurt profile save <name> (e.g. gaming, work, main-pc)" ;;
+    save)
+      [[ $name =~ ^[A-Za-z0-9._-]+$ ]] || die "usage: gurt profile save <name>  (letters, digits, . _ -)"
+      mkdir -p "$PROFILE_DIR"; f="$PROFILE_DIR/$name.profile"
+      { echo "# gurt profile '$name' — $(date +%F) — load it anywhere with: gurt profile load $name (or this file)"
+        echo "[apps]"; cmd_export - | grep -v '^#'
+        echo "[gurt.conf]"; [[ -r $_user_conf ]] && grep -v '^\[' "$_user_conf"
+        echo "[app look]"; [[ -r $GUI_CONF ]] && cat "$GUI_CONF"; echo
+        echo "[dirt]"; dirt_on && echo on || echo off
+      } > "$f"
+      achieve profile
+      msg "saved profile $name 📁 ($(sed -n '/^\[apps\]/,/^\[/p' "$f" | grep -cv '^\[\|^$') apps) → $f"
+      msg2 "on another computer: copy that file over, then gurt profile load $f" ;;
+    show) f=$name; [[ -f $f ]] || f="$PROFILE_DIR/$name.profile"; [[ -f $f ]] || die "no profile '$name'"; cat "$f" ;;
+    rm|remove|delete) f="$PROFILE_DIR/$name.profile"; [[ -f $f ]] || die "no profile '$name'"; rm -f "$f"; msg "deleted profile $name" ;;
+    load|use)
+      f=$name; [[ -f $f ]] || f="$PROFILE_DIR/$name.profile"; [[ -f $f ]] || die "no profile '$name' (gurt profile list)"
+      local tmp; tmp=$(mktemp -d)
+      awk -v d="$tmp" '/^\[apps\]$/ { s = "apps"; next } /^\[gurt\.conf\]$/ { s = "conf"; next } /^\[app look\]$/ { s = "look"; next } /^\[dirt\]$/ { s = "dirt"; next }
+        /^#/ && s == "" { next } s != "" { print > (d "/" s) }' "$f"
+      msg "loading profile $(basename "$f" .profile) 📁"
+      if [[ -s $tmp/conf ]]; then
+        mkdir -p "${_user_conf%/*}"
+        if [[ -r $_user_conf ]] && ! cmp -s "$tmp/conf" "$_user_conf"; then cp "$_user_conf" "$_user_conf.before-profile"; msg2 "your old gurt.conf → gurt.conf.before-profile"; fi
+        cp "$tmp/conf" "$_user_conf"; msg2 "gurt settings restored"
+      fi
+      if [[ -s $tmp/look ]] && python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$tmp/look" 2>/dev/null; then
+        mkdir -p "${GUI_CONF%/*}"; cp "$tmp/look" "$GUI_CONF"; msg2 "the app's skin, music + theme restored"
+      fi
+      [[ $(cat "$tmp/dirt" 2>/dev/null) == on ]] && ! dirt_on && msg2 "this profile had DIRT on 🔞 — turn it on yourself if you want it: gurt dirt on"
+      if grep -q . "$tmp/apps" 2>/dev/null; then cmd_import "$tmp/apps" || true
+      else msg2 "no apps in it"; fi
+      rm -rf "$tmp" ;;
+    *) die "usage: gurt profile [list | save <name> | load <name|file> | show <name> | rm <name>]" ;;
+  esac
+}
+
+# ── gurt notify: a desktop notification when updates are waiting (gurt notify on → checks every 6 hours) ──
+cmd_notify() { # [on|off|now]
+  local unit_dir="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user" self; self=$(readlink -f "$0")
+  case ${1:-now} in
+    on|enable)
+      if command -v systemctl >/dev/null && systemctl --user show-environment >/dev/null 2>&1; then
+        mkdir -p "$unit_dir"
+        printf '[Unit]\nDescription=gurt: tell me when updates are waiting\n\n[Service]\nType=oneshot\nExecStart=%s notify now\n' "$self" > "$unit_dir/gurt-notify.service"
+        printf '[Unit]\nDescription=gurt update check\n\n[Timer]\nOnBootSec=15min\nOnUnitActiveSec=6h\nPersistent=true\n\n[Install]\nWantedBy=timers.target\n' > "$unit_dir/gurt-notify.timer"
+        systemctl --user daemon-reload && systemctl --user enable --now gurt-notify.timer >/dev/null 2>&1 || die "systemd wouldn't start the timer"
+        msg "update alerts on 🔔 gurt checks 15 min after you log in, then every 6 hours"
+      elif command -v crontab >/dev/null; then
+        ( crontab -l 2>/dev/null | grep -v 'gurt notify now'; echo "17 */6 * * * $self notify now >/dev/null 2>&1" ) | crontab -
+        msg "update alerts on 🔔 (cron, every 6 hours)"
+      else die "no systemd user session or cron here to schedule it"; fi ;;
+    off|disable)
+      systemctl --user disable --now gurt-notify.timer >/dev/null 2>&1 || true
+      rm -f "$unit_dir/gurt-notify.timer" "$unit_dir/gurt-notify.service"
+      command -v crontab >/dev/null && crontab -l 2>/dev/null | grep -q 'gurt notify now' && { crontab -l 2>/dev/null | grep -v 'gurt notify now' | crontab -; }
+      msg "update alerts off 🔕" ;;
+    status)
+      if systemctl --user is-active gurt-notify.timer >/dev/null 2>&1 || { command -v crontab >/dev/null && crontab -l 2>/dev/null | grep -q 'gurt notify now'; }; then echo on; else echo off; fi ;;
+    now|check)
+      local n sys t
+      { refresh_all; find_outdated; } >/dev/null 2>&1 || true
+      n=${#TODO[@]}; sys=$(system_updates_count 2>/dev/null || echo 0); [[ $sys =~ ^[0-9]+$ ]] || sys=0
+      t=$((n + sys))
+      if (( t == 0 )); then msg "nothing to update 😎"; return 0; fi
+      local body="$n app update(s)"; (( sys )) && body+=", $sys system update(s)"
+      msg "🦆 $body waiting — gurt upgrade"
+      if command -v notify-send >/dev/null && [[ -n ${DISPLAY:-}${WAYLAND_DISPLAY:-}${DBUS_SESSION_BUS_ADDRESS:-} ]]; then
+        local icon=""; for icon in /usr/local/share/gurt/gurt.png /usr/share/gurt/gurt.png "$SELF_DIR/site/assets/apple-touch-icon.png"; do [[ -f $icon ]] && break; done
+        notify-send -a GURT -i "$icon" "🦆 $t update$( (( t == 1 )) || echo s) ready" "$body. open GURT or run: gurt upgrade" 2>/dev/null || true
+      fi ;;
+    *) die "usage: gurt notify [on | off | status | now]" ;;
+  esac
+}
+
 cmd_export() {
   local d k out=${1:--}
   {
@@ -3131,7 +3617,8 @@ cmd_complete() {
     available) for f in "$GURT_REPO_DIR"/packages/*/.gurtinfo; do [[ -f $f ]] || continue
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
     commands)  printf '%s\n' sync search info install update upgrade self-update remove autoremove list files owns lottery sysup \
-                 build add srcinfo checksum new repo dirt gui de outsource rollback hold unhold export import completions doctor version help yo ;;
+                 build add srcinfo checksum new repo dirt gui de outsource rollback hold unhold export import completions doctor version help yo \
+                 convert key verify sus why hogs compare profile notify snapshots achievements utils ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman flatpak snap dirt ;;
   esac
   return 0
@@ -3366,7 +3853,10 @@ outsource_install() { # url reason [version]
     cat "$rdir/$recipe" >&2
     printf '%s──────────────────%s\n' "$B" "$R0" >&2
     warn "this builds + runs code straight from a random git repo — only do it if you trust $url"
+    sus_gate "$dir" "git/$name"
     ask "build + install git/$name?" || die "aborted, no cap"
+  else
+    sus_gate "$dir" "git/$name"
   fi
   flush_native
   GURT_SRC=git GURT_EXTRA_INFO="outsource_url = $url"$'\n'"outsource_commit = $sha" build_pkg "$rdir" "$GURT_CACHE/pkg"
@@ -3455,7 +3945,11 @@ cmd_search() { # [-a] [src/]term
       ( idx_fresh "$src" || sync_source "$src" ) >/dev/null 2>&1 || { warn "$src unreachable, skipped"; continue; }
       search_foreign "$src" "$term" && found=1
     done
-  elif [[ $src == gurt ]]; then search_main "$term" && found=1
+  elif [[ $src == gurt ]]; then
+    local vibes; mapfile -t vibes < <(vibe_apps "$term" 2>/dev/null)
+    if (( ${#vibes[@]} )); then vibe_print "$term" "${vibes[@]}"; found=1
+      [[ ${term,,} == like\ * || ${term,,} == alternative* ]] || search_main "$term" || true
+    else search_main "$term" && found=1; fi
   elif [[ $src == dirt ]]; then dirt_on || die "DIRT is off 🔒 (gurt dirt on — 18+ only)"; PKG_TREE=dirt TREE_SRC=dirt search_main "$term" && found=1
   else search_foreign "$src" "$term" && found=1; fi
   (( found )) || { echo "nothing matched '$term' 😔 womp womp"; [[ $src == gurt ]] && ! $ALLSRC && echo "try: gurt search -a $term   (searches aur, apt, dnf, zypper, pacman too)"; return 1; }
@@ -3618,6 +4112,7 @@ system_upgrade() {
     msg2 "reboot to boot into the update"; return 0
   fi
   [[ -e /etc/NIXOS ]] && { warn "NixOS updates through its config: sudo nixos-rebuild switch --upgrade"; return 0; }
+  snapshot_before "system upgrade"
   case $PM in
     apt)
       msg "🐧 updating your system (apt full-upgrade)"
@@ -3833,6 +4328,84 @@ cmd_self_update() {
 }
 
 # 🎰 gurt lottery [category] — spin for a random app from Main GURT
+# ── 🏆 achievements: little trophies for doing gurt things (gurt achievements) ──
+ACH_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/achievements"
+ACH_LIST="first|baby steps 🍼|install your first app
+ten|collector 📚|install 10 apps
+fifty|hoarder 🐉|install 50 apps
+hundred|digital dragon 🐲|install 100 apps
+sources|distro hopper (without hopping) 🐇|install from 5 different sources
+night|night owl 🦉|install something between midnight and 4am
+yeet|yeet 🗑️|remove an app
+rollback|time traveler ⏪|roll an update back
+convert|congurted 🔁|convert a package
+whytho|why tho 🍷|turn a Windows .exe into a Linux package
+lottery|gambler 🎰|install a lottery jackpot
+legendary|legendary pull 🌈|land a legendary in the lottery
+streak7|dedicated 📅|spin the lottery 7 days in a row
+sus|sus detector 🚨|get warned about a build script with red flags
+verify|trust issues 🔏|check a package's signature
+publish|publisher 📡|publish your own signed repo
+profile|save state 💾|save a profile
+compare|indecisive ⚖️|compare apps side by side"
+achieved() { [[ -f $ACH_FILE ]] && grep -q "^$1 " "$ACH_FILE"; }
+achieve() { # id — unlock it (once), with a little fanfare
+  [[ ${GURT_ACHIEVEMENTS:-1} == 0 ]] && return 0
+  achieved "$1" && return 0
+  local line; line=$(grep "^$1|" <<<"$ACH_LIST") || return 0
+  mkdir -p "${ACH_FILE%/*}" 2>/dev/null && echo "$1 $(date +%F)" >> "$ACH_FILE" 2>/dev/null || return 0
+  IFS='|' read -r _ title what <<<"$line"
+  printf '%s🏆 achievement unlocked: %s%s — %s\n' "$B" "$title" "$R0" "$what" >&2
+}
+ach_installs() { # check the install-count ones after installing
+  local n=0 d srcs=() s
+  for d in "$DB"/*/; do
+    [[ -d $d ]] || continue
+    [[ $(cat "$d/reason" 2>/dev/null) == explicit ]] && n=$((n + 1))
+    s=$(basename "$d"); [[ $s == *:* ]] && s=${s%%:*} || s=gurt
+    [[ " ${srcs[*]} " == *" $s "* ]] || srcs+=("$s")
+  done
+  (( n >= 1 )) && achieve first; (( n >= 10 )) && achieve ten; (( n >= 50 )) && achieve fifty; (( n >= 100 )) && achieve hundred
+  (( ${#srcs[@]} >= 5 )) && achieve sources
+  local h; h=$(date +%-H); (( n >= 1 && h < 4 )) && achieve night
+  return 0
+}
+cmd_achievements() { # [--tsv]
+  local id title what got n=0 tot=0
+  while IFS='|' read -r id title what; do
+    tot=$((tot + 1)); got=$( [[ -f $ACH_FILE ]] && awk -v i="$id" '$1 == i { print $2 }' "$ACH_FILE")
+    [[ -n $got ]] && n=$((n + 1))
+    if [[ ${1:-} == --tsv ]]; then printf '%s\t%s\t%s\t%s\n' "$id" "$title" "$what" "$got"
+    elif [[ -n $got ]]; then printf '  🏆 %s%s%s — %s  %s(%s)%s\n' "$B" "$title" "$R0" "$what" "$GRN" "$got" "$R0"
+    else printf '  🔒 %s — %s\n' "$title" "$what"; fi
+  done <<<"$ACH_LIST"
+  [[ ${1:-} == --tsv ]] || msg "$n/$tot unlocked $( (( n == tot )) && echo '— you beat gurt 👑' )"
+}
+
+# ── 🎰 lottery streaks + rarity: spin once a day to keep your streak; the longer it is, the better your odds ──
+LOTTO_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/lottery"
+LEGENDARY="hpa2 tsudore opsec oneko zsnes frozen-bubble"
+lotto_streak() { # → bumps today's streak, prints "streak best"
+  local today last="" streak=0 best=0 y
+  today=$(date +%F); y=$(date -d yesterday +%F 2>/dev/null || date -v-1d +%F 2>/dev/null || echo "")
+  [[ -f $LOTTO_FILE ]] && { last=$(sed -n 's/^last=//p' "$LOTTO_FILE"); streak=$(sed -n 's/^streak=//p' "$LOTTO_FILE"); best=$(sed -n 's/^best=//p' "$LOTTO_FILE"); }
+  streak=${streak:-0}; best=${best:-0}
+  if [[ $last == "$today" ]]; then :
+  elif [[ -n $y && $last == "$y" ]]; then streak=$((streak + 1))
+  else streak=1; fi
+  (( streak > best )) && best=$streak
+  mkdir -p "${LOTTO_FILE%/*}" && printf 'last=%s\nstreak=%s\nbest=%s\n' "$today" "$streak" "$best" > "$LOTTO_FILE"
+  echo "$streak $best"
+}
+lotto_rarity() { # streak → common|rare|epic|legendary (legendary odds: 1% + 0.5% per streak day, max 5%)
+  local s=$1 r=$((RANDOM % 1000)) leg
+  leg=$(( 10 + 5 * (s - 1) )); (( leg > 50 )) && leg=50
+  if (( r < leg )); then echo legendary
+  elif (( r < leg + 70 )); then echo epic
+  elif (( r < leg + 70 + 220 )); then echo rare
+  else echo common; fi
+}
+
 cmd_lottery() {
   ensure_repo
   local cat=${1:-} f n i win picks=()
@@ -3842,17 +4415,28 @@ cmd_lottery() {
     n=${f%/.gurtinfo}; picks+=("${n##*/}")
   done
   (( ${#picks[@]} )) || die "nothing to win${cat:+ in '$cat'} 😔 (categories: $(cat "$GURT_REPO_DIR"/packages/*/.gurtinfo | sed -n 's/^category = //p' | sort -u | tr '\n' ' '))"
-  win=${picks[RANDOM % ${#picks[@]}]}
+  local st streak best rarity leg=() p
+  read -r streak best < <(lotto_streak)
+  rarity=$(lotto_rarity "$streak")
+  for p in $LEGENDARY; do [[ " ${picks[*]} " == *" $p "* ]] && leg+=("$p"); done
+  if [[ $rarity == legendary && ${#leg[@]} -gt 0 && -z $cat ]]; then win=${leg[RANDOM % ${#leg[@]}]}
+  else win=${picks[RANDOM % ${#picks[@]}]}; [[ $rarity == legendary ]] && rarity=epic; fi
   if [[ -t 2 ]]; then   # spin it 🎰
     for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
       printf '\r%s🎰 %-30s%s' "$B" "${picks[RANDOM % ${#picks[@]}]}" "$R0" >&2; sleep "0.$(( i < 10 ? 06 : 15 ))"
     done
     printf '\r\033[K' >&2
   fi
-  msg "🎰 JACKPOT: $win"
+  case $rarity in
+    legendary) st="🌈 LEGENDARY" ;; epic) st="💜 epic" ;; rare) st="💙 rare" ;; *) st="⚪ common" ;;
+  esac
+  msg "🎰 JACKPOT: $win  [$st]"
   msg2 "$(info_get "$GURT_REPO_DIR/packages/$win/.gurtinfo" pkgdesc)"
+  msg2 "🔥 streak: $streak day$( (( streak == 1 )) || echo s) (best $best) — spin once a day to keep it, longer streaks = better odds"
+  [[ $rarity == legendary ]] && achieve legendary
+  (( streak >= 7 )) && achieve streak7
   ask "install $win?" || { msg2 "no worries — spin again: gurt lottery"; return 0; }
-  install_any "$win" explicit
+  install_any "$win" explicit && achieve lottery
 }
 
 cmd_files() { local k; k=$(resolve_key "${1:?usage: gurt files <pkg>}") || die "$1 isn't installed"; sed 's|^|/|' "$DB/$k/files"; }
@@ -4015,13 +4599,134 @@ repo_remove() {
   msg "removed repo $name 🗑️"
 }
 
+# ── gurt repo publish <dir>: a folder of .deb/.rpm files → a signed repo anyone can `gurt repo add` (or apt/dnf) ──
+PUBLISH_PY=$(cat <<'PY'
+import os, sys, io, gzip, lzma, hashlib, struct, tarfile, time, zlib
+d, debarch = sys.argv[1], sys.argv[2]
+debs, rpms = [], []
+for root, dirs, files in os.walk(d):
+    dirs[:] = [x for x in dirs if x not in ("dists", "repodata")]
+    for n in sorted(files):
+        p = os.path.join(root, n); rel = os.path.relpath(p, d)
+        if n.endswith(".deb"): debs.append((rel, p))
+        elif n.endswith(".rpm") and not n.endswith(".src.rpm"): rpms.append((rel, p))
+def sums(b): return hashlib.md5(b).hexdigest(), hashlib.sha1(b).hexdigest(), hashlib.sha256(b).hexdigest()
+# ── apt ──
+if debs:
+    per = {}
+    for rel, p in debs:
+        b = open(p, "rb").read(); i, ctl = 8, None
+        while i + 60 <= len(b):
+            name = b[i:i + 16].decode().strip().rstrip("/"); size = int(b[i + 48:i + 58].decode().strip()); body = b[i + 60:i + 60 + size]
+            if name.startswith("control.tar"):
+                if name.endswith(".gz"): body = gzip.decompress(body)
+                elif name.endswith(".xz"): body = lzma.decompress(body)
+                elif name.endswith(".zst"): sys.exit("==> nah: %s uses zstd for its control part, which publish can't read yet" % rel)
+                t = tarfile.open(fileobj=io.BytesIO(body))
+                for m in t.getmembers():
+                    if m.name.lstrip("./") == "control": ctl = t.extractfile(m).read().decode(errors="replace").strip()
+            i += 60 + size + (size & 1)
+        if not ctl: print("skipping %s (no control file)" % rel, file=sys.stderr); continue
+        arch = ([l.split(":", 1)[1].strip() for l in ctl.splitlines() if l.startswith("Architecture:")] or ["all"])[0]
+        md5, sha1, sha256 = sums(b)
+        ent = ctl + "\nFilename: %s\nSize: %d\nMD5sum: %s\nSHA1: %s\nSHA256: %s\n" % (rel, len(b), md5, sha1, sha256)
+        per.setdefault(arch, []).append(ent)
+    arches = sorted((set(per) - {"all"}) | {debarch})
+    files = []
+    for a in arches:
+        body = "\n".join(per.get(a, []) + per.get("all", [])).encode()
+        sub = "main/binary-%s" % a; os.makedirs(os.path.join(d, "dists/stable", sub), exist_ok=True)
+        for nm, data in (("Packages", body), ("Packages.gz", gzip.compress(body, mtime=0)), ("Packages.xz", lzma.compress(body))):
+            open(os.path.join(d, "dists/stable", sub, nm), "wb").write(data); files.append((sub + "/" + nm, data))
+    rel = "Origin: gurt\nLabel: gurt\nSuite: stable\nCodename: stable\nDate: %s\nArchitectures: %s\nComponents: main\nDescription: made with gurt repo publish\n" % (
+        time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime()), " ".join(arches))
+    for algo, idx in (("MD5Sum", 0), ("SHA1", 1), ("SHA256", 2)):
+        rel += algo + ":\n" + "".join(" %s %16d %s\n" % (sums(data)[idx], len(data), nm) for nm, data in files)
+    open(os.path.join(d, "dists/stable/Release"), "w").write(rel)
+    print("apt %d %s" % (len(debs), ",".join(arches)))
+# ── rpm ──
+if rpms:
+    from xml.sax.saxutils import escape as e, quoteattr as q
+    pk = []
+    for rel, p in rpms:
+        b = open(p, "rb").read()
+        def hdr(o):
+            n, sz = struct.unpack(">ii", b[o + 8:o + 16]); ents = {}
+            for k in range(n):
+                tag, typ, off, cnt = struct.unpack(">iiii", b[o + 16 + k * 16:o + 32 + k * 16]); ents[tag] = (typ, off, cnt)
+            return ents, o + 16 + n * 16, o + 16 + n * 16 + sz
+        _, _, end = hdr(96); ms = end + (-end % 8); ents, store, _ = hdr(ms)
+        def get(tag, default=None):
+            if tag not in ents: return default
+            typ, off, cnt = ents[tag]; o = store + off
+            if typ == 4: return list(struct.unpack(">%dI" % cnt, b[o:o + 4 * cnt]))
+            out, i = [], o
+            for _ in range(cnt if typ == 8 else 1):
+                j = b.index(b"\0", i); out.append(b[i:j].decode(errors="replace")); i = j + 1
+            return out if typ == 8 else out[0]
+        name, ver, rl, arch = get(1000), get(1001), get(1002), get(1022, "noarch")
+        ep = (get(1003) or [0])[0]; summ = get(1004, "") or ""
+        reqs = [r for r in (get(1049) or []) if not r.startswith("rpmlib(")]
+        provs = get(1047) or [name]
+        sha = hashlib.sha256(b).hexdigest()
+        pk.append('<package type="rpm"><name>%s</name><arch>%s</arch><version epoch="%d" ver=%s rel=%s/><checksum type="sha256" pkgid="YES">%s</checksum>'
+                  '<summary>%s</summary><description>%s</description><packager>gurt</packager><url></url><time file="%d" build="%d"/><size package="%d" installed="0" archive="0"/>'
+                  '<location href=%s/><format><rpm:license>unknown</rpm:license><rpm:provides>%s</rpm:provides><rpm:requires>%s</rpm:requires></format></package>' % (
+                  e(name), e(arch), ep, q(ver), q(rl), sha, e(summ), e(summ), int(time.time()), int(time.time()), len(b), q(rel),
+                  "".join('<rpm:entry name=%s/>' % q(x) for x in provs), "".join('<rpm:entry name=%s/>' % q(x) for x in reqs)))
+    xml = ('<?xml version="1.0" encoding="UTF-8"?>\n<metadata xmlns="http://linux.duke.edu/metadata/common" xmlns:rpm="http://linux.duke.edu/metadata/rpm" packages="%d">\n%s\n</metadata>\n'
+           % (len(pk), "\n".join(pk))).encode()
+    gz = gzip.compress(xml, mtime=0); os.makedirs(os.path.join(d, "repodata"), exist_ok=True)
+    fn = "repodata/%s-primary.xml.gz" % hashlib.sha256(gz).hexdigest()
+    for old in os.listdir(os.path.join(d, "repodata")):
+        if old.endswith("-primary.xml.gz"): os.remove(os.path.join(d, "repodata", old))
+    open(os.path.join(d, fn), "wb").write(gz)
+    now = int(time.time())
+    repomd = ('<?xml version="1.0" encoding="UTF-8"?>\n<repomd xmlns="http://linux.duke.edu/metadata/repo" xmlns:rpm="http://linux.duke.edu/metadata/rpm">\n<revision>%d</revision>\n'
+              '<data type="primary"><checksum type="sha256">%s</checksum><open-checksum type="sha256">%s</open-checksum><location href="%s"/><timestamp>%d</timestamp><size>%d</size><open-size>%d</open-size></data>\n</repomd>\n'
+              % (now, hashlib.sha256(gz).hexdigest(), hashlib.sha256(xml).hexdigest(), fn, now, len(gz), len(xml)))
+    open(os.path.join(d, "repodata/repomd.xml"), "w").write(repomd)
+    print("rpm %d" % len(rpms))
+PY
+)
+repo_publish() { # dir [name]
+  local dir=${1:-} name=${2:-} out line url
+  [[ -n $dir && -d $dir ]] || die "usage: gurt repo publish <folder with .deb/.rpm files> [name]"
+  dir=$(readlink -f "$dir"); name=${name:-$(basename "$dir" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9.\n_-' '-')}; name=${name#[-.]}
+  need_tool python3 "publishing a repo"
+  sign_setup
+  out=$(python3 -c "$PUBLISH_PY" "$dir" "$(debarch)") || die "couldn't make the repo indexes"
+  [[ -n $out ]] || die "no .deb or .rpm files in $dir — convert some first (gurt convert app.AppImage deb -o $dir)"
+  sign_gpg --armor --export "$SIGN_FPR" > "$dir/gurt-key.asc"
+  url="file://$dir"
+  msg "published $dir 📡 signed with your gurt key 🔏"
+  while read -r line; do
+    set -- $line
+    case $1 in
+      apt)
+        sign_gpg -u "$SIGN_FPR" --digest-algo SHA256 --clearsign --yes -o "$dir/dists/stable/InRelease" "$dir/dists/stable/Release"
+        sign_gpg -u "$SIGN_FPR" --digest-algo SHA256 --armor --detach-sign --yes -o "$dir/dists/stable/Release.gpg" "$dir/dists/stable/Release"
+        msg2 "apt repo: $2 .deb file(s) ($3)"
+        msg2 "  gurt:  gurt repo add $name apt $url stable main --key $dir/gurt-key.asc"
+        msg2 "  apt:   echo 'deb [signed-by=/etc/apt/keyrings/$name.asc] $url stable main' | sudo tee /etc/apt/sources.list.d/$name.list" ;;
+      rpm)
+        sign_gpg -u "$SIGN_FPR" --digest-algo SHA256 --armor --detach-sign --yes -o "$dir/repodata/repomd.xml.asc" "$dir/repodata/repomd.xml"
+        msg2 "rpm repo: $2 .rpm file(s)"
+        msg2 "  gurt:  gurt repo add $name-rpm rpm $url --key $dir/gurt-key.asc" ;;
+    esac
+  done <<<"$out"
+  msg2 "put the folder on any web server (or a GitHub Pages site) and swap $url for its https:// address — share gurt-key.asc with it"
+  achieve publish
+}
+
 cmd_repo() {
   local sub=${1:-list}; shift || true
   case $sub in
     add)            repo_add "$@" ;;
     list|ls)        repo_list ;;
     remove|rm|del)  repo_remove "$@" ;;
-    *) die "usage: gurt repo [list | add … | remove <name>]" ;;
+    publish|pub)    repo_publish "$@" ;;
+    *) die "usage: gurt repo [list | add … | remove <name> | publish <dir> [name]]" ;;
   esac
 }
 
@@ -4137,11 +4842,12 @@ ${B}your own repos${R0}   (PPAs, vendor apt/rpm repos, COPRs, custom pacman repo
   repo add ppa:owner/name        add an Ubuntu PPA (key fetched automatically)
   repo add <name> <apt|rpm|pacman> <url> [suite] [components…] --key <url|file>
   repo remove <name>
+  repo publish <dir> [name]      turn a folder of .deb/.rpm files into a signed repo others can add 📡
   then: gurt install <pkg> --repo <name>
 
 ${B}using packages${R0}
   sync [source|all]    pull the latest recipes / package indexes
-  search [src/]term    find packages   (-a searches every source)
+  search [src/]term    find packages   (-a searches every source · "like photoshop" finds apps like it)
   info [src/]pkg       show package details
   install [src/]pkg…   install (deps come from your distro first, then the source)
   update               refresh package lists + show what's outdated (installs nothing)
@@ -4156,6 +4862,9 @@ ${B}using packages${R0}
   list                 what you've got installed
   files pkg            files a package owns
   owns <path>          which package owns a file
+  why <pkg>            who wanted this? (you, or which app needs it)
+  hogs [n]             the apps eating the most disk 🐷
+  compare a b [c d]    apps side by side: where they come from, version, license, size ⚖️
 
 ${B}making packages${R0}
   new <name>           scaffold a GURTBUILD
@@ -4164,7 +4873,9 @@ ${B}making packages${R0}
   convert <file> <fmt> turn any Linux package into another: deb rpm pacman apk xbps eopkg appimage gurt tar.gz zip
                        (gurt convert app.rpm deb · gurt convert app.deb app.pkg.tar.zst · .exe → package that runs it in Wine)
                        signed with your own key 🔏 (--no-sign to skip)
-  key [export|trust]   the key gurt convert signs with · export the public halves · make this computer trust them
+  key [export|trust|import <key>]  the key gurt convert signs with · share it · trust it here · trust someone else's
+  verify <file>…       is this package signed, and by a key you trust? (installs check this by themselves) 🔏
+  sus <dir|aur/x|url>  check a build script for red flags (curl | sh, rm -rf ~, reverse shells…) 🚨
   add <file.gurt>      install a .gurt file
   srcinfo [dir]        print .gurtinfo for a recipe (commit this!)
   checksum [dir]       print sha256sums for a recipe's sources
@@ -4182,6 +4893,10 @@ ${B}misc${R0}
   export [file]        save the list of stuff you installed
   lottery [category]   🎰 spin for a random app (browsers chat media creative office dev gaming system cli …)
   import <file>        install everything from an export (new PC speedrun)
+  profile save|load|list <name>   your apps + gurt settings + the app's look, under a name (gaming, work…) 📁
+  notify on|off|now    a desktop notification when updates are waiting (checks every 6 hours) 🔔
+  snapshots            the snapshots gurt took before system upgrades (btrfs: snapper/timeshift/plain) 📸
+  achievements         🏆 trophies for doing gurt things
   completions <shell>  print tab completion for bash/zsh/fish (bash+fish set themselves up)
   gui                  open the GURT app 🖥️ (also in your app menu after the first run)
   gui --setup          install what's needed for a real app window (instead of a browser tab)
@@ -4263,39 +4978,50 @@ main() {
     install|i|get)     (( $# )) || die "install what tho"
                        for p; do if is_pkgfile "$p"; then pkgfile_install "$p" explicit
                                  elif [[ ${p,,} == *.gurt && -f $p ]]; then install_file "$p" explicit
-                                 elif $SCAN && [[ $p != */* ]]; then scan_install "$p"; else install_any "$p" explicit; fi; done ;;
+                                 elif $SCAN && [[ $p != */* ]]; then scan_install "$p"; else install_any "$p" explicit; fi; done
+                       ach_installs ;;
     update|refresh)    cmd_update ;;
     upgrade|up)        cmd_upgrade ;;
     sysup|system-upgrade|syu) cmd_sysup ;;
     utils|utilities|essentials) cmd_utils "$@" ;;
     convert|conv)      cmd_convert "$@" ;;
     key|keys)          cmd_key "$@" ;;
+    verify|check)      cmd_verify "$@" && achieve verify ;;
+    achievements|trophies|ach) cmd_achievements "$@" ;;
+    sus|suscheck)      cmd_sus "$@" ;;
+    why)               cmd_why "$@" ;;
+    hogs|sizes|du)     cmd_hogs "$@" ;;
+    compare|vs)        cmd_compare "$@" && achieve compare ;;
+    profile|profiles)  cmd_profile "$@" ;;
+    notify|alerts)     cmd_notify "$@" ;;
+    snapshots|snaps)   cmd_snapshots ;;
     self-update|selfupdate) cmd_self_update ;;
-    remove|rm|yeet)    (( $# )) || die "remove what tho"; for p; do remove_pkg "$p"; done; play_scream ;;
+    remove|rm|yeet)    (( $# )) || die "remove what tho"; for p; do remove_pkg "$p"; done; play_scream; achieve yeet ;;
     autoremove|clean)  cmd_autoremove ;;
     list|ls)           cmd_list ;;
     files)             cmd_files "$@" ;;
     owns)              cmd_owns "$@" ;;
     build)             build_pkg "${1:-.}" "${2:-$PWD}"; echo "$BUILT_PKG" ;;
-    add)               (( $# )) || die "add what tho"; for p; do if is_pkgfile "$p"; then pkgfile_install "$p" explicit; else install_file "$p" explicit; fi; done ;;
+    add)               (( $# )) || die "add what tho"; for p; do if is_pkgfile "$p"; then pkgfile_install "$p" explicit; else install_file "$p" explicit; fi; done; ach_installs ;;
     srcinfo)           cmd_srcinfo "$@" ;;
     checksum)          cmd_checksum "$@" ;;
     new)               cmd_new "$@" ;;
     repo|repos)        cmd_repo "$@" ;;
     dirt)              cmd_dirt "$@" ;;
     de|desktop|desktops) cmd_de "$@" ;;
-    rollback|undo)     cmd_rollback "$@" ;;
+    rollback|undo)     cmd_rollback "$@" && achieve rollback ;;
     hold|pin)          (( $# )) || die "hold what tho"; cmd_hold "$@" ;;
     unhold|unpin)      (( $# )) || die "unhold what tho"; cmd_unhold "$@" ;;
     export)            cmd_export "$@" ;;
     lottery|lotto|gamble) cmd_lottery "$@" ;;
     import)            cmd_import "$@" ;;
     __complete)        cmd_complete "$@" ;;
+    __achieve)         [[ ${1:-} =~ ^[a-z0-9]+$ ]] && achieve "$1" ;;
     __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\nwsl=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" "$(is_wsl && echo yes || echo no)" ;;
     gui)               cmd_gui "$@" ;;
     completions)       completion_script "${1:?usage: gurt completions bash|zsh|fish}" ;;
     outsource|os|clone) (( $# )) || die "outsource what tho — gurt outsource https://github.com/user/repo (or a file: gurt outsource ./app.deb)"
-                       for p; do outsource_install "$p" explicit; done ;;
+                       for p; do outsource_install "$p" explicit; done; ach_installs ;;
     doctor)            cmd_doctor ;;
     yo)                echo "gurt: yo 🦆" ;;
     version)           cmd_version ;;

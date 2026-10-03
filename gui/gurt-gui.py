@@ -198,7 +198,10 @@ def theme():
     return t if t in ("light", "dark") else "auto"
 
 
-SKINS = ("gurt", "win11", "xp", "w95")
+SKINS = ("gurt", "win11", "xp", "w95", "vapor", "hacker")
+TRACKS = ("auto", "shop", "lofi", "chip", "synth")
+LEGENDARY = ("hpa2", "tsudore", "opsec", "oneko", "zsnes", "frozen-bubble")
+ACH_IDS = ("legendary", "streak7", "lottery", "compare")
 
 
 def skin():
@@ -209,6 +212,44 @@ def skin():
 def paths():
     out = subprocess.run([GURT, "__paths"], capture_output=True, text=True, env=dict(os.environ, NO_COLOR="1")).stdout
     return dict(l.split("=", 1) for l in out.splitlines() if "=" in l)
+
+
+def lotto_spin():   # the same streak file `gurt lottery` uses, so CLI + app share one streak
+    import datetime, random
+    cfg = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
+    f = os.path.join(cfg, "gurt", "lottery")
+    st = {}
+    try:
+        st = dict(l.strip().split("=", 1) for l in open(f) if "=" in l)
+    except OSError:
+        pass
+    today = datetime.date.today()
+    streak, best, last = int(st.get("streak") or 0), int(st.get("best") or 0), st.get("last", "")
+    if last != today.isoformat():
+        streak = streak + 1 if last == (today - datetime.timedelta(days=1)).isoformat() else 1
+    best = max(best, streak)
+    os.makedirs(os.path.dirname(f), exist_ok=True)
+    with open(f, "w") as fh:
+        fh.write(f"last={today.isoformat()}\nstreak={streak}\nbest={best}\n")
+    r, leg = random.randrange(1000), min(10 + 5 * (streak - 1), 50)   # legendary: 1% + 0.5%/streak day, max 5%
+    rarity = "legendary" if r < leg else "epic" if r < leg + 70 else "rare" if r < leg + 290 else "common"
+    return {"streak": streak, "best": best, "rarity": rarity, "legendary": LEGENDARY}
+
+
+def recipe_trust(info):   # how a Main GURT app gets onto your computer → the badge on its card
+    if info.get("via_type") == "flatpak":
+        return "flathub"
+    if info.get("via_type") == "snap":
+        return "snap"
+    if info.get("via_repo"):
+        return "official"
+    src = info.get("source", [])
+    src = " ".join(src) if isinstance(src, list) else src
+    if "git+" in src:
+        return "source"
+    if "://" in src:
+        return "prebuilt"
+    return "gurt"
 
 
 def state():
@@ -226,7 +267,8 @@ def state():
             ikey = f"{vt}:{vp}" if vt in ("flatpak", "snap") else f"{vr}:{vp or name}" if vr else name
             main.append({"ikey": ikey, "flatpak": vp if vt == "flatpak" else "", "name": info.get("pkgname", name), "ver": "latest" if info.get("via_repo") else f"{info.get('pkgver','')}-{info.get('pkgrel','')}",
                          "desc": info.get("pkgdesc", ""), "alias": info.get("alias", []), "maintainer": info.get("maintainer", ""),
-                         "official": bool(info.get("via_repo")), "category": info.get("category", "")})
+                         "official": bool(info.get("via_repo")), "category": info.get("category", ""), "trust": recipe_trust(info),
+                         "license": info.get("license", ""), "url": info.get("url", "")})
     dirt = []
     dirtdir = os.path.join(repo, "dirt")
     if os.path.isdir(dirtdir):
@@ -263,7 +305,31 @@ def state():
         except Exception:
             pass
     return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks, "wsl": p.get("wsl") == "yes", "audio": audio_ok(),
-            "main": main, "dirtpkgs": dirt, "installed": installed}
+            "main": main, "dirtpkgs": dirt, "installed": installed, "vibes": vibes(repo), "notify": notify_on()}
+
+
+def vibes(repo):   # vibes.map: "photoshop|photo editor: gimp krita …" → {"photoshop": [...], "photo editor": [...]}
+    out = {}
+    for f in (os.path.join(repo, "vibes.map"), os.path.join(os.path.dirname(os.path.abspath(GURT)), "vibes.map")):
+        if os.path.isfile(f):
+            for line in open(f, encoding="utf-8", errors="replace"):
+                if line.startswith("#") or ":" not in line:
+                    continue
+                keys, apps = line.split(":", 1)
+                for k in keys.split("|"):
+                    out[k.strip().lower()] = apps.split()
+            break
+    return out
+
+
+def notify_on():   # are gurt's update alerts scheduled?
+    cfg = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
+    if os.path.exists(os.path.join(cfg, "systemd", "user", "gurt-notify.timer")):
+        return True
+    try:
+        return "gurt notify now" in subprocess.run(["crontab", "-l"], capture_output=True, text=True, timeout=5).stdout
+    except Exception:
+        return False
 
 
 # ───────────────────────── http ─────────────────────────
@@ -304,7 +370,7 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/":
             if not self._host_ok() or not secrets.compare_digest((q.get("t") or [""])[0], TOKEN):
                 return self._send(403, "nope 🔒 open GURT with: gurt gui", "text/plain")
-            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()).replace("__SFX__", "off" if conf().get("sfx") is False else "on").replace("__MUSIC__", "off" if conf().get("music") is False else "on").replace("__OPEN__", html_attr(OPEN_FILE[0])), "text/html")
+            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()).replace("__SFX__", "off" if conf().get("sfx") is False else "on").replace("__MUSIC__", "off" if conf().get("music") is False else "on").replace("__TRACK__", conf().get("track") if conf().get("track") in TRACKS else "auto").replace("__OPEN__", html_attr(OPEN_FILE[0])), "text/html")
         if u.path in ("/icon.png", "/logo.png", "/dirt-logo.png"):
             repo = paths().get("repo", "")
             want = {"/logo.png": "gurt-logo.png", "/dirt-logo.png": "dirt-logo.png"}.get(u.path, "apple-touch-icon.png")
@@ -317,6 +383,18 @@ class H(BaseHTTPRequestHandler):
             return self._send(403, {"error": "bad token"})
         if u.path == "/api/state":
             return self._send(200, state())
+        if u.path == "/api/achievements":
+            out = subprocess.run([GURT, "achievements", "--tsv"], capture_output=True, text=True, timeout=30, env=dict(os.environ, NO_COLOR="1")).stdout
+            items = [dict(zip(("id", "title", "what", "got"), l.split("\t"))) for l in out.splitlines() if l.count("\t") == 3]
+            return self._send(200, {"items": items})
+        if u.path == "/api/sizes":   # how much disk each installed app uses (gurt hogs)
+            out = subprocess.run([GURT, "hogs", "--tsv"], capture_output=True, text=True, timeout=300, env=dict(os.environ, NO_COLOR="1")).stdout
+            sizes = {}
+            for line in out.splitlines():
+                b, _, k = line.partition("\t")
+                if b.isdigit() and k:
+                    sizes[k] = int(b)
+            return self._send(200, {"sizes": sizes})
         if u.path == "/api/lastdrop":   # what the app window saw dropped (the page only sees "a link")
             when, dropped = LAST_DROP
             LAST_DROP[:] = [0.0, []]
@@ -449,6 +527,11 @@ class H(BaseHTTPRequestHandler):
             if cmd == "gui-setup":
                 job = start_job([GURT, "-y", "gui", "--setup"])
                 return self._send(200, {"job": job.id})
+            if cmd == "notify":
+                if arg not in ("on", "off"):
+                    return self._send(400, {"error": "not allowed"})
+                job = start_job([GURT, "notify", arg])
+                return self._send(200, {"job": job.id})
             if cmd == "dirt":
                 if arg not in ("on", "off"):
                     return self._send(400, {"error": "not allowed"})
@@ -467,6 +550,19 @@ class H(BaseHTTPRequestHandler):
                 argv.append(arg)
             job = start_job(argv)
             return self._send(200, {"job": job.id})
+        if u.path == "/api/lotto":
+            return self._send(200, lotto_spin())
+        if u.path == "/api/achieve":
+            a = body.get("id")
+            if a not in ACH_IDS:
+                return self._send(400, {"error": "nope"})
+            r = subprocess.run([GURT, "__achieve", a], capture_output=True, text=True, timeout=20, env=dict(os.environ, NO_COLOR="1"))
+            return self._send(200, {"line": ANSI.sub("", r.stderr).strip()})
+        if u.path == "/api/track":
+            if body.get("track") not in TRACKS:
+                return self._send(400, {"error": "unknown track"})
+            save_conf(track=body["track"])
+            return self._send(200, {"ok": True})
         if u.path == "/api/sfx":
             save_conf(sfx=bool(body.get("on")))
             return self._send(200, {"ok": True})
@@ -737,7 +833,7 @@ def audio_ok():
         return False
 
 PAGE = r"""<!doctype html>
-<html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__" data-music="__MUSIC__" data-open="__OPEN__"><head>
+<html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__" data-music="__MUSIC__" data-track="__TRACK__" data-open="__OPEN__"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GURT</title><link rel="icon" href="/icon.png">
 <style>
@@ -806,6 +902,12 @@ main{flex:1;overflow:auto;padding:18px 20px 30px}
 .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .chip{background:var(--tag);border-radius:999px;padding:1px 9px;font-size:12px}
 .chip.ok{background:color-mix(in srgb,var(--good) 20%,transparent);color:var(--good)}
+#cmptray{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:40;display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 12px;box-shadow:0 8px 30px #0003;max-width:calc(100vw - 32px)}
+#cmplist{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#cmpdlg{max-width:min(920px,calc(100vw - 32px));width:100%}#cmptable{overflow-x:auto}#cmptable table{border-collapse:collapse;width:100%;font-size:14px}
+#cmptable th,#cmptable td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}#cmptable th{color:var(--muted);font-weight:600;white-space:nowrap}
+.cmpbtn{margin-left:auto}.cmpbtn.on{background:var(--accent);color:var(--accent-ink)}.vibehead{grid-column:1/-1;font-weight:700;margin:2px 0 -4px}
+.chip.trust{cursor:help}.chip.t-hi{background:color-mix(in srgb,var(--good) 16%,transparent)}.chip.t-mid{background:color-mix(in srgb,#e0a800 18%,transparent)}.chip.t-lo{background:color-mix(in srgb,#e8590c 18%,transparent)}
 .empty{color:var(--muted);text-align:center;padding:40px 0}
 h2{font-size:18px;margin:4px 0 12px}
 #console{border-top:1px solid var(--line);background:var(--code);height:0;transition:height .2s;display:flex;flex-direction:column}
@@ -903,6 +1005,41 @@ dialog .row{justify-content:flex-end}
 .cicada{text-align:center;font:600 14px ui-monospace,monospace;margin:30px 0 10px}
 
 /* ── 🪟 skins ── */
+#tracksel{font:inherit;font-size:13px;background:var(--tag);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:5px 4px;cursor:pointer;width:46px}
+#toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:60;background:var(--panel);border:2px solid var(--accent);border-radius:14px;padding:10px 16px;font-weight:700;box-shadow:0 10px 30px #0004;animation:toast-in .4s cubic-bezier(.2,1.6,.4,1);max-width:calc(100vw - 32px)}
+@keyframes toast-in{from{transform:translate(-50%,-30px) scale(.8);opacity:0}}
+#achlist{display:grid;gap:8px;max-height:60vh;overflow:auto;margin:6px 0 12px}
+.ach{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.ach.locked{opacity:.5;filter:grayscale(1)}.ach b{display:block}.ach small{color:var(--muted)}.ach .when{margin-left:auto;font-size:12px;color:var(--muted)}
+.rarity{display:inline-block;font:800 12px/1 ui-monospace,monospace;padding:4px 9px;border-radius:999px;margin:0 6px 6px;letter-spacing:.06em}
+.r-common{background:var(--tag)}.r-rare{background:#2f6fde;color:#fff}.r-epic{background:#8e3ae0;color:#fff}
+.r-legendary{background:linear-gradient(90deg,#ff3b3b,#ffc629,#33e06b,#4f7bff,#c34fff);color:#111;animation:rainbow-shift 1.2s linear infinite;background-size:200% 100%}
+@keyframes rainbow-shift{to{background-position:200% 0}}
+.legendary .card{border:3px solid transparent;background:linear-gradient(var(--panel),var(--panel)) padding-box,linear-gradient(90deg,#ff3b3b,#ffc629,#33e06b,#4f7bff,#c34fff) border-box}
+.streak{font-size:13px;color:var(--muted)}
+/* 💀 cursed Congurter: shake, smoke, glitchy screen */
+.cg-machine.cursed{animation:cg-shake .09s linear infinite}
+@keyframes cg-shake{0%{transform:translate(0,0) rotate(0)}25%{transform:translate(-3px,1px) rotate(-.6deg)}50%{transform:translate(2px,-2px) rotate(.5deg)}75%{transform:translate(-1px,2px) rotate(-.3deg)}}
+.cg-machine.cursed .cg-screen{animation:cg-glitch .18s steps(2) infinite}
+@keyframes cg-glitch{0%{transform:skewX(0);filter:none}50%{transform:skewX(-8deg);filter:hue-rotate(160deg)}}
+.cg-smoke{position:absolute;pointer-events:none;font-size:34px;animation:cg-puff 1.6s ease-out forwards;z-index:3}
+@keyframes cg-puff{from{transform:translate(0,0) scale(.4);opacity:.95}to{transform:translate(var(--dx),-120px) scale(2.2);opacity:0}}
+/* 🌴 Vaporwave: sunset purples, neon pink + cyan, always dark */
+:root[data-skin=vapor]{--bg:#1a0b2e;--panel:#2a1250;--ink:#fde7ff;--muted:#c79bd8;--line:#5b2a86;--accent:#ff71ce;--accent-ink:#1a0b2e;--tag:#3a1a66;--code:#140726;--good:#05ffa1;--bad:#ff4f81;color-scheme:dark}
+:root[data-skin=vapor] body{background:linear-gradient(180deg,#1a0b2e,#3d1263 55%,#6b1f6e) fixed;letter-spacing:.02em}
+:root[data-skin=vapor] header{background:linear-gradient(90deg,#ff71ce,#b967ff 50%,#01cdfe);color:#1a0b2e;border-bottom:2px solid #fffb96}
+:root[data-skin=vapor] header .ver,:root[data-skin=vapor] nav button{color:#1a0b2e}
+:root[data-skin=vapor] .card,:root[data-skin=vapor] .bapp{border:1px solid #b967ff;box-shadow:0 0 14px #ff71ce33}
+:root[data-skin=vapor] .btn:not(.ghost):not(.danger){background:linear-gradient(90deg,#ff71ce,#01cdfe);color:#1a0b2e;border:0}
+:root[data-skin=vapor] h2,:root[data-skin=vapor] .cg-title{text-shadow:2px 2px #01cdfe,-2px -2px #ff71ce}
+/* 💻 Hacker: green-on-black terminal, glowing text */
+:root[data-skin=hacker]{--bg:#000;--panel:#020a03;--ink:#33ff66;--muted:#1fa83f;--line:#0f3d17;--accent:#33ff66;--accent-ink:#000;--tag:#062a0e;--code:#000;--good:#33ff66;--bad:#ff3355;color-scheme:dark}
+:root[data-skin=hacker] body{font-family:"JetBrains Mono","DejaVu Sans Mono",ui-monospace,monospace;text-shadow:0 0 4px #33ff6655}
+:root[data-skin=hacker] *{border-radius:2px!important}
+:root[data-skin=hacker] header{background:#000;border-bottom:1px solid #33ff66}
+:root[data-skin=hacker] .card,:root[data-skin=hacker] .bapp{border:1px solid #1fa83f;background:#010801}
+:root[data-skin=hacker] .btn:not(.ghost):not(.danger){background:#33ff66;color:#000;border:0;text-shadow:none}
+:root[data-skin=hacker] .logoimg{filter:drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 2px #33ff66)}
+:root[data-skin=vapor] .logoimg{filter:drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 2px #ff71ce)}
 #skinsel{font:inherit;font-size:13px;background:var(--tag);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:5px 10px;cursor:pointer}
 /* Windows 11: Segoe, soft Mica greys, blue accent, follows light/dark */
 :root[data-skin=win11]{--bg:#f3f3f3;--panel:#fbfbfb;--ink:#1b1b1b;--muted:#5d5d5d;--line:#e5e5e5;--accent:#005fb8;--accent-ink:#fff;--tag:#f0f0f0;--code:#f9f9f9}
@@ -955,8 +1092,9 @@ dialog .row{justify-content:flex-end}
   </nav>
   <div class="spacer"></div>
   <select id="skinsel" title="skin">
-    <option value="gurt">🦆 GURT</option><option value="win11">🪟 Windows 11</option><option value="xp">🟩 Windows XP</option><option value="w95">💾 Windows 95</option>
+    <option value="gurt">🦆 GURT</option><option value="win11">🪟 Windows 11</option><option value="xp">🟩 Windows XP</option><option value="w95">💾 Windows 95</option><option value="vapor">🌴 Vaporwave</option><option value="hacker">💻 Hacker</option>
   </select>
+  <select id="tracksel" title="music track"><option value="auto">🎵 auto</option><option value="shop">🛍️ shop</option><option value="lofi">🌧️ lofi</option><option value="chip">👾 chiptune</option><option value="synth">🌆 synthwave</option></select>
   <button class="btn ghost small" id="musicbtn" title="background music"></button>
   <button class="btn ghost small" id="sfxbtn" title="sound effects"></button>
   <button class="btn ghost small" id="themebtn" title="light / dark"></button>
@@ -1029,11 +1167,11 @@ dialog .row{justify-content:flex-end}
     <p class="cicada">Could prime Wifies solve Cicada 3301?</p>
   </section>
   <section id="t-installed" hidden>
-    <div class="search"><input id="iq" placeholder="filter installed…" autocomplete="off"><button class="btn ghost" id="lexport" title="save a list of everything you installed with gurt">📤 export my list</button><button class="btn ghost" id="limport" title="install everything from a list you exported">📥 import a list</button><input type="file" id="limportin" accept=".txt,text/plain" hidden></div>
+    <div class="search"><input id="iq" placeholder="filter installed…" autocomplete="off"><button class="btn ghost" id="lexport" title="save a list of everything you installed with gurt">📤 export my list</button><button class="btn ghost" id="limport" title="install everything from a list you exported">📥 import a list</button><button class="btn ghost" id="achbtn" title="your gurt achievements">🏆</button><button class="btn ghost" id="hogbtn" title="sort by how much disk each app takes">🐷 biggest first</button><input type="file" id="limportin" accept=".txt,text/plain" hidden></div>
     <div class="grid" id="igrid"></div>
   </section>
   <section id="t-updates" hidden>
-    <div class="row" style="margin-bottom:14px"><button class="btn ghost" id="checkbtn">check for updates</button><button class="btn" id="upbtn">⬆️ update everything</button><button class="btn ghost" id="selfbtn">update gurt itself</button></div>
+    <div class="row" style="margin-bottom:14px"><button class="btn ghost" id="checkbtn">check for updates</button><button class="btn" id="upbtn">⬆️ update everything</button><button class="btn ghost" id="selfbtn">update gurt itself</button><span class="spacer"></span><button class="btn ghost" id="notifybtn" title="a desktop notification when updates are waiting (checks every 6 hours)">🔔 alert me</button></div>
     <div class="grid" id="ugrid"><div class="empty">hit "check for updates" 👆</div></div>
   </section>
   <section id="t-setup" hidden>
@@ -1052,6 +1190,10 @@ dialog .row{justify-content:flex-end}
 <div id="console"><div class="bar"><span class="dot" id="cdot"></span><b id="ctitle">activity</b><span class="spacer"></span><button class="btn ghost small" id="cstop" hidden>stop</button><button class="btn ghost small" id="chide">hide</button></div><pre id="cout"></pre></div>
 
 <div id="dropzone" hidden><div>📥 drop it to install<small>.deb · .rpm · .pkg.tar.zst · AppImage · .tar.gz · .zip · .flatpak · .exe · .dmg — any distro, no box</small></div></div>
+<div id="toast" hidden></div>
+<dialog id="achdlg"><h3>🏆 achievements</h3><div id="achlist"></div><div class="row"><span class="spacer"></span><button class="btn" id="achclose">nice</button></div></dialog>
+<div id="cmptray" hidden><span>⚖️</span><span id="cmplist"></span><span class="spacer"></span><button class="btn ghost small" id="cmpclear">clear</button><button class="btn small" id="cmpgo">compare</button></div>
+<dialog id="cmpdlg"><h3>⚖️ side by side</h3><div id="cmptable"></div><div class="row"><span class="spacer"></span><button class="btn" id="cmpclose">done</button></div></dialog>
 <dialog id="confirm"><h3 id="ctitle2"></h3><p id="cbody"></p><div class="row"><button class="btn ghost" id="cno">Nah</button><button class="btn" id="cyes">Yeah</button></div></dialog>
 <dialog id="gate" style="padding:0;background:transparent"><div class="box" style="padding:26px 22px"><div class="g18">18+</div><h3>Are you sure?</h3>
   <p>This section of the GURT Repository is 18+ ONLY. Explore at your own risk.</p>
@@ -1070,16 +1212,33 @@ let S = {main:[], installed:[]}, busy = false, cur = null;
 async function load(){ S = await api("/api/state"); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · 🪟 Windows" : ""}`;
   document.querySelector('nav button[data-tab="desktops"]').hidden = S.wsl;
   fitNav();
-  if (S.audio === false && !soundDismissed) $("#soundbar").hidden = false;   /* no Linux desktops on Windows */ renderMain(); renderInstalled(); if (!$("#t-setup").hidden) renderBuilder(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt(); }
+  if (S.audio === false && !soundDismissed) $("#soundbar").hidden = false;   /* no Linux desktops on Windows */ renderMain(); renderInstalled(); renderNotify(); renderCmp(); if (!$("#t-setup").hidden) renderBuilder(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt();
+  if (BYSIZE) api("/api/sizes").then(r => { SIZES = r.sizes || {}; renderInstalled(); }).catch(() => {}); else SIZES = null; }
 const inst = spec => {
   const m = S.main.find(p => p.name === spec);
   return S.installed.find(i => i.spec === spec || i.key === spec || (m && i.key === m.ikey) || (i.src === "gurt" && i.name === spec))
     || (m && m.flatpak && (S.flatpaks || []).includes(m.flatpak) ? {external: true} : null);
 };
 
-function card({name, src="gurt", ver, desc, extra="", actions=""}){
+// where an app comes from, and how much that's worth: 🟢 signed/checked by someone accountable · 🟡 checksum-pinned · 🟠 anyone can upload
+const TRUST = {
+  official: ["hi", "official repo 🔏", "comes from the app maker's own signed repo"],
+  apt: ["hi", "distro repo 🔏", "from Debian's signed repos, checked by gurt"], dnf: ["hi", "distro repo 🔏", "from Fedora's signed repos, checked by gurt"],
+  zypper: ["hi", "distro repo 🔏", "from openSUSE's signed repos, checked by gurt"], pacman: ["hi", "distro repo 🔏", "from Arch's repos (packages checked against the repo's sha256)"],
+  flathub: ["hi", "Flathub 📦", "a Flathub app: sandboxed, and Flathub reviews what gets published"], flatpak: ["hi", "Flathub 📦", "a Flathub app: sandboxed, and Flathub reviews what gets published"],
+  snap: ["mid", "Snap Store", "from the Snap Store (Canonical's app store)"],
+  prebuilt: ["mid", "official download ✅", "the app maker's own release download, checked against a checksum pinned in Main GURT"],
+  source: ["mid", "built from source ✅", "built on your computer from the project's own code, at a pinned version"],
+  gurt: ["mid", "Main GURT", "a Main GURT recipe (every change is reviewed and CI-tested)"],
+  aur: ["lo", "user upload ⚠️", "the AUR: anyone can upload, nobody reviews it. gurt shows you the build script and checks it for red flags first"],
+  git: ["lo", "random repo ⚠️", "built straight from a git repo you picked. gurt checks the build script for red flags first"],
+  file: ["lo", "your file", "a file you installed yourself"], dirt: ["lo", "DIRT 🔞", "from the DIRT repo"],
+};
+const trustChip = k => { const t = TRUST[k]; return t ? `<span class="chip trust t-${t[0]}" title="${esc(t[2])}">${t[1]}</span>` : ""; };
+function card({name, src="gurt", ver, desc, extra="", actions="", trust}){
+  const tc = trustChip(trust || src);
   return `<div class="card"><div class="top"><span class="name">${esc(name)}</span><span class="src">${esc(src)}/</span><span class="v">${esc(ver||"")}</span></div>
-    <div class="desc">${esc(desc||"")}</div>${extra}<div class="row">${actions}</div></div>`;
+    <div class="desc">${esc(desc||"")}</div>${tc ? `<div class="row">${tc}</div>` : ""}${extra}<div class="row">${actions}</div></div>`;
 }
 const actBtn = (label, cmd, arg, cls="") => `<button class="btn small ${cls}" data-cmd="${cmd}" data-arg="${esc(arg)}">${label}</button>`;
 function installBtns(spec){
@@ -1087,20 +1246,27 @@ function installBtns(spec){
   if (i && i.external) return `<span class="chip ok" title="installed with flatpak, outside gurt">installed ✓ (flatpak)</span>`;
   return i ? `<span class="chip ok">installed ✓</span>${actBtn("remove","remove",spec,"ghost")}` : actBtn("install","install",spec);
 }
+let CMP = [];
+const cmpBtn = n => `<button class="btn ghost small cmpbtn${CMP.includes(n) ? " on" : ""}" data-cmp="${esc(n)}" title="compare side by side">⚖️</button>`;
+const vibeKey = q => q.replace(/^(something |apps |an app )?(like |alternatives? to |instead of )?/, "").trim();
 function renderMain(){
   const q = $("#q").value.trim().toLowerCase();
-  const hits = S.main.filter(p => !q || (p.name+" "+p.desc+" "+p.alias.join(" ")).toLowerCase().includes(q));
-  $("#maingrid").innerHTML = hits.length ? hits.map(p => card({name:p.name, ver:p.ver, desc:p.desc,
-      extra: p.official ? `<div class="row"><span class="chip">official repo 🔏</span></div>` : p.flatpak ? `<div class="row"><span class="chip">Flathub 📦</span></div>` : "", actions: installBtns(p.name)})).join("")
-    : `<div class="empty">nothing in Main GURT matched 😔 — try "search everywhere"</div>`;
+  const vk = vibeKey(q), vapps = (S.vibes || {})[vk] || [];
+  const vhits = vapps.map(n => S.main.find(p => p.name === n)).filter(Boolean);
+  const hits = S.main.filter(p => !vapps.includes(p.name) && (!q || (p.name+" "+p.desc+" "+p.alias.join(" ")).toLowerCase().includes(q)));
+  const mk = p => card({name:p.name, ver:p.ver, desc:p.desc, trust:p.trust, actions: installBtns(p.name) + cmpBtn(p.name)});
+  $("#maingrid").innerHTML = (vhits.length ? `<div class="vibehead">apps like ${esc(vk)} 👇</div>` + vhits.map(mk).join("") + (hits.length ? `<div class="vibehead">everything else that matched</div>` : "") : "")
+    + (hits.length ? hits.map(mk).join("") : vhits.length ? "" : `<div class="empty">nothing in Main GURT matched 😔 — try "search everywhere" (or "like photoshop")</div>`);
   const direct = /^[a-z0-9-]+\/[A-Za-z0-9._+-]+$/.test($("#q").value.trim()) && !/^(https?:)/.test($("#q").value);
   $("#direct").hidden = !direct; if (direct) $("#directbtn").textContent = `install ${$("#q").value.trim()}`;
 }
+let SIZES = null, BYSIZE = false;
 function renderInstalled(){
   const q = $("#iq").value.trim().toLowerCase();
-  const list = S.installed.filter(i => !q || (i.spec+" "+i.desc).toLowerCase().includes(q));
+  let list = S.installed.filter(i => !q || (i.spec+" "+i.desc).toLowerCase().includes(q));
+  if (BYSIZE && SIZES) list = [...list].sort((a, b) => (SIZES[b.key] || 0) - (SIZES[a.key] || 0));
   $("#igrid").innerHTML = list.length ? list.map(i => card({name:i.name, src:i.src, ver:i.ver, desc:i.desc,
-      extra:`<div class="row">${i.via?`<span class="chip" title="${esc(i.via)}">from GURT 🦆 · via ${esc(i.via.split("/")[0])}</span>`:""}${i.reason==="dep"?'<span class="chip">dependency</span>':""}${i.held?'<span class="chip">held 📌</span>':""}</div>`,
+      extra:`<div class="row">${i.via?`<span class="chip" title="${esc(i.via)}">from GURT 🦆 · via ${esc(i.via.split("/")[0])}</span>`:""}${i.reason==="dep"?'<span class="chip">dependency</span>':""}${i.held?'<span class="chip">held 📌</span>':""}${SIZES && SIZES[i.key] != null ? `<span class="chip" title="space it takes on your disk">🐷 ${fmtSize(SIZES[i.key])}</span>` : ""}</div>`,
       actions: actBtn("remove","remove",i.spec,"danger") + actBtn("rollback","rollback",i.spec,"ghost") +
         (i.held ? actBtn("unhold","unhold",i.spec,"ghost") : actBtn("hold","hold",i.spec,"ghost"))})).join("")
     : `<div class="empty">${S.installed.length ? "nothing matched" : "nothing installed with gurt yet 👀"}</div>`;
@@ -1128,14 +1294,28 @@ async function run(cmd, arg="", {all=false, quiet=false, confirm=true, fmt=""} =
   let pwShown = false;
   while (true) {
     const j = await api(`/api/job/${cur}?from=${from}`);
-    from = j.next; lines.push(...j.lines);
+    from = j.next; lines.push(...j.lines); achLines(j.lines);
     if (!quiet && j.lines.length) { const o = $("#cout"); o.textContent += j.lines.join("\n") + "\n"; o.scrollTop = o.scrollHeight; }
     if (j.ask && !pwShown) { pwShown = true; askPassword(j.ask); }
     if (!j.ask) pwShown = false;
-    if (j.done) { $("#cdot").className = "dot " + (j.rc === 0 ? "ok" : "bad"); if (!quiet) SFX.play(j.rc === 0 ? "ok" : "err"); busy = false; setBusyUI(false); cur = null; await load(); return {rc:j.rc, lines}; }
+    if (j.done) { $("#cdot").className = "dot " + (j.rc === 0 ? "ok" : "bad"); if (!quiet) SFX.play(j.rc === 0 ? "ok" : "err"); busy = false; setBusyUI(false); cur = null;
+      if (j.rc === 0 && cmd === "install" && arg && arg === LOTTO_WIN) { LOTTO_WIN = ""; achieve("lottery"); }
+      await load(); return {rc:j.rc, lines}; }
     await new Promise(r => setTimeout(r, 300));
   }
 }
+// 🏆 achievements: gurt prints "🏆 achievement unlocked: …" → a toast pops up
+let toastT = null;
+function toast(html){ const t = $("#toast"); t.innerHTML = html; t.hidden = false; t.style.animation = "none"; void t.offsetWidth; t.style.animation = ""; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 4200); }
+function achLines(lines){ lines.forEach(l => { const m = l.match(/🏆 achievement unlocked: (.+)/); if (m) { toast("🏆 " + esc(m[1])); SFX.play("achieve"); } }); }
+async function achieve(id){ const r = await api("/api/achieve", {id}).catch(() => ({})); if (r.line) achLines([r.line]); }
+$("#achbtn").addEventListener("click", async () => {
+  const r = await api("/api/achievements").catch(() => ({items:[]})), items = r.items || [], n = items.filter(i => i.got).length;
+  $("#achlist").innerHTML = `<div class="streak">${n}/${items.length} unlocked${n === items.length && n ? " — you beat gurt 👑" : ""}</div>` + items.map(i =>
+    `<div class="ach${i.got ? "" : " locked"}"><span>${i.got ? "🏆" : "🔒"}</span><span><b>${esc(i.title)}</b><small>${esc(i.what)}</small></span>${i.got ? `<span class="when">${esc(i.got)}</span>` : ""}</div>`).join("");
+  $("#achdlg").showModal();
+});
+$("#achclose").addEventListener("click", () => $("#achdlg").close());
 function setBusyUI(on){ $("#cstop").hidden = !on; document.querySelectorAll("[data-cmd], #upbtn, #checkbtn, #selfbtn, #syncbtn, #qall").forEach(b => b.disabled = on); }
 function askPassword(prompt){ $("#pwprompt").textContent = "gurt needs your password (sudo) to put files in system folders. " + (prompt.includes("password") ? "" : prompt);
   $("#pwin").value = ""; $("#pw").showModal(); $("#pwin").focus(); }
@@ -1145,6 +1325,39 @@ $("#cstop").addEventListener("click", async () => { if (cur) await api(`/api/job
 $("#chide").addEventListener("click", () => $("#console").classList.toggle("open"));
 
 document.addEventListener("click", e => { const b = e.target.closest("[data-cmd]"); if (b && !b.disabled) run(b.dataset.cmd, b.dataset.arg); });
+// ⚖️ compare: pick up to 4 Main GURT apps, see them side by side
+function renderCmp(){
+  $("#cmptray").hidden = !CMP.length; $("#cmplist").textContent = CMP.join(" · ") + (CMP.length < 2 ? "  (pick one more)" : "");
+  $("#cmpgo").disabled = CMP.length < 2;
+  document.querySelectorAll("[data-cmp]").forEach(b => b.classList.toggle("on", CMP.includes(b.dataset.cmp)));
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-cmp]"); if (!b) return;
+  const n = b.dataset.cmp;
+  if (CMP.includes(n)) CMP = CMP.filter(x => x !== n); else if (CMP.length < 4) CMP.push(n); else { SFX.play("err"); return; }
+  SFX.play(CMP.includes(n) ? "pick" : "unpick"); renderCmp();
+});
+$("#cmpclear").addEventListener("click", () => { CMP = []; renderCmp(); });
+$("#cmpclose").addEventListener("click", () => $("#cmpdlg").close());
+$("#cmpgo").addEventListener("click", async () => {
+  achieve("compare");
+  if (!SIZES) SIZES = (await api("/api/sizes").catch(() => ({}))).sizes || {};
+  const ps = CMP.map(n => S.main.find(p => p.name === n)).filter(Boolean);
+  const row = (label, f) => `<tr><th>${label}</th>${ps.map(p => `<td>${f(p)}</td>`).join("")}</tr>`;
+  const sizeOf = p => { const k = Object.keys(SIZES).find(k => k === p.ikey || k === p.name); return k ? fmtSize(SIZES[k]) : "–"; };
+  $("#cmptable").innerHTML = `<table>${row("app", p => `<b>${esc(p.name)}</b>`)}${row("what it is", p => esc(p.desc))}${row("comes from", p => trustChip(p.trust) || "Main GURT")}
+    ${row("version", p => esc(p.ver))}${row("category", p => esc(p.category || "–"))}${row("license", p => esc(p.license || "–"))}
+    ${row("installed", p => inst(p.name) ? "yes ✅" : "no")}${row("size on disk", sizeOf)}${row("website", p => p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.url.replace(/^https?:\/\//, "").slice(0, 40))}</a>` : "–")}
+    ${row("", p => installBtns(p.name))}</table>`;
+  $("#cmpdlg").showModal();
+});
+$("#hogbtn").addEventListener("click", async () => {
+  BYSIZE = !BYSIZE; $("#hogbtn").classList.toggle("on", BYSIZE);
+  if (BYSIZE && !SIZES) { $("#hogbtn").textContent = "🐷 measuring…"; SIZES = (await api("/api/sizes").catch(() => ({}))).sizes || {}; $("#hogbtn").textContent = "🐷 biggest first"; }
+  renderInstalled();
+});
+function renderNotify(){ $("#notifybtn").textContent = S.notify ? "🔔 alerts on" : "🔕 alert me"; $("#notifybtn").classList.toggle("on", !!S.notify); }
+$("#notifybtn").addEventListener("click", async () => { const r = await run("notify", S.notify ? "off" : "on", {confirm:false, quiet:true}); if (r && r.rc === 0) S.notify = !S.notify; renderNotify(); });
 
 // ── search everywhere (parses `gurt search -a`) ──
 // ── source tabs: search one distro's repos ──
@@ -1266,6 +1479,28 @@ const SFX = (() => {
       theme: t => tone(400, t, 0.35, "triangle", 0.04, 800, 0.05), pop: t => bell(880, t, 0.25, 0.05),
       startup: t => { pad([156, 233, 311, 392, 466], t, 3.0, "sine", 0.022, 0.8); arp([622, 932, 1245, 1568, 1865], t + 0.6, 0.25, 1.4, (f, s, d) => bell(f, s, d, 0.04)); },
     },
+    vapor: {   // slowed-down, detuned, everything glides down a little 🌴
+      click: t => tone(880, t, 0.08, "sine", 0.03, 760),
+      tick: t => tone(500 + Math.random() * 300, t, 0.07, "sine", 0.03, 420),
+      jackpot: t => { pad([220, 277, 330, 415], t, 2.4, "sawtooth", 0.012, 0.6); arp([659, 554, 494, 440], t + 0.2, 0.3, 1.0, (f, s, d) => tone(f, s, d, "sine", 0.04, f * 0.94, 0.05)); },
+      copy: t => tone(1047, t, 0.4, "sine", 0.05, 880, 0.02),
+      pick: t => tone(660, t, 0.18, "sine", 0.04, 620), unpick: t => tone(440, t, 0.18, "sine", 0.04, 400),
+      ok: t => pad([262, 330, 392, 494], t, 1.2, "sine", 0.025, 0.2),
+      err: t => tone(330, t, 0.6, "sawtooth", 0.035, 110),
+      theme: t => tone(600, t, 0.5, "sine", 0.04, 300), pop: t => tone(990, t, 0.2, "sine", 0.05, 800),
+      startup: t => { pad([131, 165, 196, 247], t, 3.0, "sawtooth", 0.012, 0.9); arp([494, 440, 392, 330], t + 0.8, 0.4, 1.2, (f, s, d) => tone(f, s, d, "sine", 0.035, f * 0.97, 0.1)); },
+    },
+    hacker: {  // terminal blips + modem garbage 💻
+      click: t => tone(2400, t, 0.012, "square", 0.02),
+      tick: t => tone(1200 + Math.random() * 2400, t, 0.015, "square", 0.02),
+      jackpot: t => { for (let i = 0; i < 12; i++) tone(800 + Math.random() * 2600, t + i * 0.035, 0.03, "square", 0.025); arp([523, 784, 1047], t + 0.45, 0.06, 0.12, (f, s, d) => tone(f, s, d, "square", 0.03)); },
+      copy: t => { tone(1800, t, 0.02, "square", 0.03); tone(2400, t + 0.04, 0.02, "square", 0.03); },
+      pick: t => tone(1600, t, 0.03, "square", 0.025), unpick: t => tone(800, t, 0.03, "square", 0.025),
+      ok: t => arp([1047, 1319, 1568, 2093], t, 0.04, 0.05, (f, s, d) => tone(f, s, d, "square", 0.03)),
+      err: t => { tone(110, t, 0.3, "square", 0.04); tone(117, t, 0.3, "square", 0.04); },
+      theme: t => tone(200, t, 0.15, "square", 0.03, 2000), pop: t => tone(1400, t, 0.03, "square", 0.03),
+      startup: t => { for (let i = 0; i < 20; i++) tone(600 + Math.random() * 1800, t + i * 0.04, 0.035, "square", 0.02); tone(1000, t + 0.9, 0.25, "sine", 0.04); },
+    },
     w95: {     // chunky square waves + a brassy ta-da
       click: t => tone(1000, t, 0.03, "square", 0.035),
       tick: t => tone(500 + Math.random() * 400, t, 0.04, "square", 0.03),
@@ -1278,6 +1513,10 @@ const SFX = (() => {
       startup: t => { arp([262, 330, 392, 523, 659], t, 0.11, 0.25, (f, s, d) => tone(f, s, d, "square", 0.03)); pad([523, 659, 784], t + 0.6, 1.2, "sawtooth", 0.015, 0.1); },
     },
   };
+  // shared by every skin
+  SETS.gurt.cursed = t => { for (let i = 0; i < 8; i++) tone(90 + Math.random() * 900, t + i * 0.07, 0.09, "sawtooth", 0.04, 40 + Math.random() * 200); };
+  SETS.gurt.legendary = t => { arp([523, 659, 784, 1047, 1319, 1568, 2093], t, 0.07, 0.35, (f, s, d) => tone(f, s, d, "triangle", 0.05)); pad([523, 659, 784, 1047], t + 0.5, 1.6, "sine", 0.03, 0.1); };
+  SETS.gurt.achieve = t => { arp([784, 988, 1175, 1568], t, 0.09, 0.3, (f, s, d) => tone(f, s, d, "triangle", 0.05)); };
   const play = name => {
     if (!on) return;
     const set = SETS[document.documentElement.dataset.skin] || SETS.gurt, fn = set[name] || SETS.gurt[name];
@@ -1290,7 +1529,7 @@ const SFX = (() => {
   };
   return { play, get on() { return on; }, set(v) { on = v; } };
 })();
-const SFX_ROLES = {copy:"copy", scopy:"copy", cartcopy:"copy", lotto:"", lotto2:"", themebtn:"theme", sfxbtn:"", musicbtn:"", skinsel:""};
+const SFX_ROLES = {copy:"copy", scopy:"copy", cartcopy:"copy", lotto:"", lotto2:"", themebtn:"theme", sfxbtn:"", musicbtn:"", skinsel:"", tracksel:""};
 document.addEventListener("click", e => {
   const b = e.target.closest("button, .src, .bcat, .pkg, nav button, summary");
   if (!b) return;
@@ -1304,16 +1543,25 @@ $("#bgroups").addEventListener("change", e => { if (e.target.dataset.n) SFX.play
 // ── 🎵 background music: an original chill shop-style bossa loop, synthesized live (no audio files) ──
 const MUSIC = (() => {
   let ctx = null, master = null, timer = null, nextT = 0, step = 0, noise = null, on = document.documentElement.dataset.music !== "off";
-  const BPM = 116, E = 60 / BPM / 2;                 // one eighth note
   const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
-  // 8 bars × 8 eighths. chords (midi), bass (midi per eighth or 0), melody (midi per eighth or 0)
-  const CH = [[53,57,60,64],[50,53,57,60],[55,58,62,65],[48,52,55,58],[57,60,64,67],[50,54,57,60],[55,58,62,65],[48,52,55,58]];
-  const ROOT = [41,38,43,36,45,38,43,36];
-  const MEL = [
-    72,0,76,0,79,77,76,0,   74,0,0,72,69,0,72,0,   70,0,74,0,77,0,76,74,   72,0,0,0,67,0,70,72,
-    76,0,79,0,81,79,76,0,   78,0,76,74,72,0,0,74,  70,0,72,74,77,76,74,0,   72,0,0,0,0,0,0,0,
-  ];
-  const COMP = [0, 3, 6];                            // bossa-ish chord hits inside each bar
+  // tracks: 8 bars × 8 eighths each. chords (midi), bass roots, a 64-step melody (0 = rest), what plays them, and the drums
+  const TRACKS = {
+    shop: {bpm: 116, swing: 0.1, comp: [0, 3, 6], chord: ["sine", 2, 0.018, 0.55], bass: "triangle", lead: ["sine", 4, 0.045, 0.45], drums: "shaker",
+      chords: [[53,57,60,64],[50,53,57,60],[55,58,62,65],[48,52,55,58],[57,60,64,67],[50,54,57,60],[55,58,62,65],[48,52,55,58]], roots: [41,38,43,36,45,38,43,36],
+      mel: [72,0,76,0,79,77,76,0, 74,0,0,72,69,0,72,0, 70,0,74,0,77,0,76,74, 72,0,0,0,67,0,70,72, 76,0,79,0,81,79,76,0, 78,0,76,74,72,0,0,74, 70,0,72,74,77,76,74,0, 72,0,0,0,0,0,0,0]},
+    lofi: {bpm: 78, swing: 0.16, comp: [0, 4], chord: ["triangle", 2, 0.02, 1.3], bass: "sine", lead: ["sine", 3, 0.035, 0.7], drums: "lofi",
+      chords: [[60,64,67,71],[57,60,64,67],[62,65,69,72],[55,59,62,65],[60,64,67,71],[52,55,59,62],[53,57,60,64],[55,59,62,65]], roots: [36,33,38,31,36,40,41,43],
+      mel: [76,0,0,74,72,0,0,0, 72,0,69,0,67,0,0,0, 74,0,0,72,69,0,72,0, 71,0,0,0,0,0,67,0, 76,0,79,0,76,74,72,0, 72,0,0,74,76,0,0,0, 77,0,76,0,74,0,72,0, 72,0,0,0,0,0,0,0]},
+    chip: {bpm: 140, swing: 0, arp: true, chord: ["square", 0, 0.014, 0.11], bass: "square", lead: ["square", 0, 0.028, 0.18], drums: "chip",
+      chords: [[64,67,71],[60,64,67],[67,71,74],[62,66,69],[64,67,71],[60,64,67],[62,66,69],[59,63,66]], roots: [40,36,43,38,40,36,38,35],
+      mel: [76,0,79,0,83,0,81,79, 76,0,0,0,72,0,74,76, 79,0,0,79,81,0,83,0, 81,0,79,0,78,0,74,0, 76,0,79,0,83,0,86,0, 84,0,83,0,79,0,76,0, 78,0,79,0,81,0,83,0, 83,0,0,0,0,0,0,0]},
+    synth: {bpm: 100, swing: 0, comp: [0], chord: ["sawtooth", 0, 0.008, 1.9], bass: "sawtooth", octbass: true, lead: ["sawtooth", 2, 0.02, 0.5], drums: "synth",
+      chords: [[57,60,64],[53,57,60],[55,60,64],[55,59,62],[57,60,64],[53,57,60],[55,60,64],[56,59,64]], roots: [45,41,48,43,45,41,48,40],
+      mel: [69,0,0,72,0,0,76,0, 74,0,72,0,69,0,0,0, 72,0,0,76,0,0,79,0, 79,0,76,0,74,0,72,0, 69,0,0,72,0,0,76,0, 77,0,76,0,72,0,0,0, 76,0,74,0,72,0,71,0, 68,0,0,0,71,0,0,0]},
+  };
+  const SKIN_TRACK = {vapor: "synth", hacker: "chip"};
+  let pick = document.documentElement.dataset.track || "auto";
+  const track = () => TRACKS[pick !== "auto" && TRACKS[pick] ? pick : SKIN_TRACK[document.documentElement.dataset.skin] || "shop"];
   const voice = (t, f, dur, vol, type, harm) => {
     const g = ctx.createGain(); g.connect(master);
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
@@ -1329,17 +1577,40 @@ const MUSIC = (() => {
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
     s.connect(hp).connect(g).connect(master); s.start(t); s.stop(t + 0.06);
   };
+  const hit = (t, vol, freq, type, dur) => {   // noise drums: hats (highpass), snares (bandpass)
+    const s = ctx.createBufferSource(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+    s.buffer = noise; f.type = type; f.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f).connect(g).connect(master); s.start(t); s.stop(t + dur + 0.01);
+  };
+  const kick = (t, vol) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.12);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+    o.connect(g).connect(master); o.start(t); o.stop(t + 0.3);
+  };
+  const DRUMS = {
+    shaker: (t, e) => shaker(t, e % 2 ? 0.02 : 0.012),
+    lofi: (t, e) => { if (e === 0 || e === 5) kick(t, 0.09); if (e === 2 || e === 6) hit(t, 0.03, 1500, "bandpass", 0.14); hit(t, e % 2 ? 0.006 : 0.01, 8000, "highpass", 0.04); },
+    chip: (t, e) => { if (e === 0 || e === 4) kick(t, 0.07); if (e === 2 || e === 6) hit(t, 0.04, 3000, "bandpass", 0.07); if (e % 2) hit(t, 0.012, 9000, "highpass", 0.02); },
+    synth: (t, e) => { if (e % 2 === 0) kick(t, 0.09); if (e === 2 || e === 6) hit(t, 0.05, 1800, "bandpass", 0.2); if (e % 2) hit(t, 0.012, 9000, "highpass", 0.05); },
+  };
   const schedule = () => {
     if (nextT < ctx.currentTime - 0.3) nextT = ctx.currentTime + 0.05;   // timers got throttled: pick the beat back up instead of blasting every missed note
     while (nextT < ctx.currentTime + 0.2) {
-      const bar = Math.floor(step / 8) % 8, e = step % 8, t = nextT;
-      if (COMP.includes(e)) CH[bar].forEach(m => voice(t, mtof(m), 0.55, 0.018, "sine", 2));       // soft e-piano chords
-      if (e === 0) voice(t, mtof(ROOT[bar]), 0.5, 0.07, "triangle", 0);                             // bass: root…
-      if (e === 3) voice(t, mtof(ROOT[bar] + 7), 0.35, 0.05, "triangle", 0);                        // …fifth…
-      if (e === 6) voice(t, mtof(ROOT[bar] + 12), 0.3, 0.045, "triangle", 0);                       // …octave
-      const m = MEL[step % 64]; if (m) voice(t, mtof(m), 0.45, 0.045, "sine", 4);                   // vibraphone-ish melody
-      shaker(t, e % 2 ? 0.02 : 0.012);
-      nextT += E * (e % 2 ? 0.9 : 1.1);                                                             // a little swing
+      const T = track(), E = 60 / T.bpm / 2;
+      const bar = Math.floor(step / 8) % 8, e = step % 8, t = nextT, [ct, ch, cv, cd] = T.chord;
+      if (T.arp) voice(t, mtof(T.chords[bar][step % T.chords[bar].length] + 12), cd, cv, ct, ch);        // chiptune arpeggio
+      else if (T.comp.includes(e)) T.chords[bar].forEach(m => voice(t, mtof(m), cd, cv, ct, ch));      // chords
+      if (T.octbass) voice(t, mtof(T.roots[bar] + (e % 2 ? 12 : 0)), E * 0.9, 0.05, T.bass, 0);          // synthwave octave bass
+      else {
+        if (e === 0) voice(t, mtof(T.roots[bar]), 0.5, 0.07, T.bass, 0);                                  // bass: root…
+        if (e === 3) voice(t, mtof(T.roots[bar] + 7), 0.35, 0.05, T.bass, 0);                             // …fifth…
+        if (e === 6) voice(t, mtof(T.roots[bar] + 12), 0.3, 0.045, T.bass, 0);                           // …octave
+      }
+      const m = T.mel[step % 64]; if (m) voice(t, mtof(m), T.lead[3], T.lead[2], T.lead[0], T.lead[1]); // melody
+      DRUMS[T.drums](t, e);
+      nextT += E * (e % 2 ? 1 - T.swing : 1 + T.swing);
       step++;
     }
   };
@@ -1363,8 +1634,10 @@ const MUSIC = (() => {
   setInterval(() => { if (on && timer && ctx && ctx.state !== "running") ctx.resume().catch(() => {}); }, 1000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden && on && ctx) ctx.resume().catch(() => {}); });
   if (on) start();
-  return { get on() { return on; }, set(v) { on = v; v ? start() : stop(); } };
+  return { get on() { return on; }, set(v) { on = v; v ? start() : stop(); }, get track() { return pick; }, setTrack(v) { pick = v; step = 0; } };
 })();
+$("#tracksel").value = MUSIC.track;
+$("#tracksel").addEventListener("change", e => { MUSIC.setTrack(e.target.value); api("/api/track", {track:e.target.value}).catch(() => {}); if (!MUSIC.on) { MUSIC.set(true); paintMusic(); api("/api/music", {on:true}).catch(() => {}); } });
 const paintMusic = () => { $("#musicbtn").textContent = "🎵"; $("#musicbtn").classList.toggle("off", !MUSIC.on); $("#musicbtn").title = MUSIC.on ? "pause the music" : "play background music"; };
 $("#musicbtn").addEventListener("click", () => { MUSIC.set(!MUSIC.on); paintMusic(); api("/api/music", {on:MUSIC.on}).catch(() => {}); });
 paintMusic();
@@ -1406,6 +1679,20 @@ $("#dropbtn").addEventListener("click", () => $("#dropin").click());
 // ── 🔘 The Congurter™: file in the hopper → press the button → it drops into the Download Zone™ ──
 let cgLoaded = null;
 const cgM = () => $("#cgmachine"), cgScreen = t => { $("#cgscreen").textContent = t; };
+// 💀 feed it something cursed: it shakes, smokes, and the screen glitches out
+const CURSED_LINES = ["WHY ARE YOU LIKE THIS 💀", "THE MACHINE HAS SEEN THINGS 😵", "ERROR: TOO CURSED 🫠", "THE CONGURTER REFUSES 🙅", "THAT'S NOT FOOD 🤢"];
+function cgCurse(msg){
+  const m = cgM(); m.classList.add("jam", "cursed"); SFX.play("cursed");
+  cgScreen(CURSED_LINES[Math.floor(Math.random() * CURSED_LINES.length)] + "\n" + msg);
+  for (let i = 0; i < 6; i++) setTimeout(() => {
+    const p = document.createElement("span"); p.className = "cg-smoke"; p.textContent = i % 3 ? "💨" : "☁️";
+    p.style.left = (40 + Math.random() * 55) + "%"; p.style.top = (20 + Math.random() * 40) + "%"; p.style.setProperty("--dx", (Math.random() * 80 - 40) + "px");
+    m.appendChild(p); setTimeout(() => p.remove(), 1700);
+  }, i * 140);
+  setTimeout(() => m.classList.remove("cursed"), 1500);
+}
+const cgExt = n => (n.match(/\.(pkg\.tar\.[a-z0-9]+|tar\.[a-z0-9]+|[a-z0-9]+)$/i) || ["", ""])[1].toLowerCase();
+const CG_SAME = {deb: "deb", rpm: "rpm", "pkg.tar.zst": "pacman", apk: "apk", xbps: "xbps", eopkg: "eopkg", appimage: "appimage", gurt: "gurt", "tar.gz": "tar.gz", zip: "zip"};
 async function cgLoad(f){
   if (!f) return;
   cgM().classList.remove("done", "jam");
@@ -1415,14 +1702,14 @@ async function cgLoad(f){
     $("#hoptxt").style.visibility = "hidden"; SFX.play("pop");
     const r = await linkPath(f.path);
     setTimeout(() => { chip.hidden = true; $("#hoptxt").style.visibility = ""; }, 900);
-    if (r.error || /\.(dmg|snap|flatpak|flatpakref|7z)$/i.test(r.name || "")) { cgM().classList.add("jam"); cgScreen(r.error ? "CAN'T EAT THAT 🤢 " + r.error : "THAT ONE DOESN'T CONVERT 🤢 try a .deb .rpm .pkg.tar.zst AppImage .exe…"); SFX.play("err"); return; }
+    if (r.error || /\.(dmg|snap|flatpak|flatpakref|7z)$/i.test(r.name || "")) { cgCurse(r.error ? r.error : "a ." + cgExt(r.name) + " doesn't convert. try a .deb .rpm .pkg.tar.zst AppImage .exe…"); return; }
     cgLoaded = {name:r.name, orig:r.orig};
     cgM().classList.add("loaded"); $("#cgbtn").disabled = false;
     cgScreen(`LOADED: ${r.orig}\npick a format, smash the 🔘`);
     return;
   }
-  if (!DROPPABLE.test(f.name) && !/\.gurt$/i.test(f.name)) { cgM().classList.add("jam"); cgScreen(`CAN'T EAT THAT 🤢 (${f.name})`); SFX.play("err"); return; }
-  if (/\.(dmg|snap|flatpak|flatpakref|7z)$/i.test(f.name)) { cgM().classList.add("jam"); cgScreen("THAT ONE DOESN'T CONVERT 🤢 try a .deb .rpm .pkg.tar.zst AppImage .exe…"); SFX.play("err"); return; }
+  if (!DROPPABLE.test(f.name) && !/\.gurt$/i.test(f.name)) { cgCurse(`gurt can't even open ${f.name}`); return; }
+  if (/\.(dmg|snap|flatpak|flatpakref|7z)$/i.test(f.name)) { cgCurse("a ." + cgExt(f.name) + " doesn't convert. try a .deb .rpm .pkg.tar.zst AppImage .exe…"); return; }
   if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return; }
   const chip = $("#cgfile"); chip.textContent = "📄 " + f.name; chip.hidden = false; chip.classList.remove("in"); void chip.offsetWidth; chip.classList.add("in");
   $("#hoptxt").style.visibility = "hidden"; cgScreen(`LOADING ${f.name}…`); SFX.play("pop");
@@ -1460,12 +1747,14 @@ $("#cgbtn").addEventListener("click", async () => {
   if (!cgLoaded || busy) return;
   const b = $("#cgbtn"); b.classList.add("pressed"); setTimeout(() => b.classList.remove("pressed"), 150);
   const fmt = $("#convfmt"), what = fmt.options[fmt.selectedIndex].text.split(" ")[0];
+  if (CG_SAME[cgExt(cgLoaded.orig)] === fmt.value) { cgCurse(`it's ALREADY a ${what}. you can't congurt it into itself`); return; }
+  const cursedIn = /\.(exe|msi)$/i.test(cgLoaded.orig);
   cgM().classList.remove("loaded", "done", "jam"); cgM().classList.add("running"); b.disabled = true;
   cgScreen(`CONGURTING ${cgLoaded.orig} → ${what}…`);
   const r = await run("convert", cgLoaded.name, {confirm:false, fmt:fmt.value, quiet:true});
   cgM().classList.remove("running");
   if (r && r.rc === 0) {
-    cgM().classList.add("done"); cgScreen("DONE ✅ it's in the Download Zone™ 👇"); cgLoaded = null;
+    cgM().classList.add("done"); cgScreen(cursedIn ? "CURSED… BUT IT WORKED 😳 it's in the Download Zone™ 👇" : "DONE ✅ it's in the Download Zone™ 👇"); cgLoaded = null;
     await loadZone(true);
   } else {
     cgM().classList.add("jam"); b.disabled = false; cgM().classList.add("loaded");
@@ -1516,14 +1805,27 @@ addEventListener("drop", async e => { if (!hasFiles(e)) return; e.preventDefault
 // opened with a file (double-clicking a .gurt in your file manager)
 if (document.documentElement.dataset.open) { const p = document.documentElement.dataset.open; setTimeout(() => installFile({path:p, name:p.split("/").pop()}), 600); }
 // 🎰 lottery: spin through Main GURT, land on one, install it if you dare
-let spinning = false;
-function spinLottery(box, show, after){
+let spinning = false, LOTTO_WIN = "";
+const RARITY = {common: "⚪ COMMON", rare: "💙 RARE", epic: "💜 EPIC", legendary: "🌈 LEGENDARY"};
+async function spinLottery(box, show, after){
   if (spinning || !S.main.length) return;
-  const pool = S.main, win = pool[Math.floor(Math.random() * pool.length)];
-  box.hidden = false; spinning = true; let i = 0;
+  spinning = true;
+  const L = await api("/api/lotto", {}).catch(() => ({streak: 1, best: 1, rarity: "common", legendary: []}));
+  const pool = S.main, leg = pool.filter(p => (L.legendary || []).includes(p.name));
+  let rarity = L.rarity, win;
+  if (rarity === "legendary" && leg.length) win = leg[Math.floor(Math.random() * leg.length)];
+  else { win = pool[Math.floor(Math.random() * pool.length)]; if (rarity === "legendary") rarity = "epic"; }
+  LOTTO_WIN = win.name;
+  box.hidden = false; box.classList.toggle("legendary", rarity === "legendary"); let i = 0;
+  const steps = rarity === "legendary" ? 30 : 18;
   const tick = () => {
-    if (i++ < 18) { SFX.play("tick"); box.innerHTML = `<div class="spin">🎰 ${esc(pool[Math.floor(Math.random() * pool.length)].name)}</div>`; return setTimeout(tick, 40 + i * 6); }
-    spinning = false; SFX.play("jackpot"); box.innerHTML = show(win); after && after(win);
+    if (i++ < steps) { SFX.play("tick"); box.innerHTML = `<div class="spin">🎰 ${esc(pool[Math.floor(Math.random() * pool.length)].name)}</div>`; return setTimeout(tick, 40 + i * 6); }
+    spinning = false; SFX.play(rarity === "legendary" ? "legendary" : "jackpot");
+    box.innerHTML = `<span class="rarity r-${rarity}">${RARITY[rarity]}</span>` + show(win)
+      + `<div class="streak">🔥 ${L.streak} day streak (best ${L.best}) · spin once a day, longer streaks = better odds of a legendary</div>`;
+    after && after(win);
+    if (rarity === "legendary") achieve("legendary");
+    if (L.streak >= 7) achieve("streak7");
   };
   tick();
 }
@@ -1598,7 +1900,7 @@ $("#themebtn").addEventListener("click", () => {
 });
 darkMQ.addEventListener("change", themeIcon); themeIcon();
 // ── 🪟 skins ── (XP + 95 are always light, like the real thing)
-const applySkin = s => { document.documentElement.dataset.skin = s; $("#skinsel").value = s; $("#themebtn").hidden = s === "xp" || s === "w95"; if (typeof fitNav === "function") fitNav(); };
+const applySkin = s => { document.documentElement.dataset.skin = s; $("#skinsel").value = s; $("#themebtn").hidden = ["xp", "w95", "vapor", "hacker"].includes(s); if (typeof fitNav === "function") fitNav(); };
 $("#skinsel").addEventListener("change", e => { applySkin(e.target.value); api("/api/skin", {skin:e.target.value}).catch(() => {}); if (typeof SFX !== "undefined") SFX.play("startup"); });
 applySkin(document.documentElement.dataset.skin || "gurt");
 

@@ -364,6 +364,51 @@ gurt convert app.deb rpm --no-sign   # skip signing
 
 The key has no passphrase, so anyone who can read your files can sign with it. Back up that folder: losing it means new conversions get signed with a new key, which computers that trusted the old one won't know. In the app, the Download Zone™ shows 🔏 on signed files, and ⬇️ retrieve brings the `.sig`/`.asc` along.
 
+## Trust + safety 🔏🚨
+
+```sh
+gurt verify app.rpm          # signed? by a key you trust? (works on .rpm .deb .apk AppImage, and .sig/.sig2/.asc files)
+gurt key import friend.asc   # trust someone else's key (or a repo's)
+gurt sus aur/some-pkg        # check a build script for red flags without building it
+gurt snapshots               # the snapshots gurt took before system upgrades
+```
+
+- **Installs check signatures by themselves.** A package with a bad signature (changed after it was signed) won't install. One signed by a key you don't trust gets a heads up. Unsigned ones install like before.
+- **Sus check:** before gurt builds anything from the AUR or a git repo, it scans the build scripts for scary stuff. 🔴 red flags: `curl | sh`, `rm -rf ~`, hidden base64 code, reverse shells, touching sudo/SSH/cron. 🟡 yellow flags: `sudo` in a build, `chmod 777`, plain-http downloads, downloads with no checksum. With red flags, gurt asks again, and with `-y` it stops unless you add `--force`. It only reads the scripts, it never runs them to check.
+- **Snapshots before system upgrades** when `/` is btrfs: snapper if it's set up, else timeshift, else a read-only btrfs snapshot in `/.gurt-snapshots` (gurt keeps the newest 3). `GURT_SNAPSHOTS=0` turns it off.
+- **Trust badges** on every app card in the app: 🟢 signed or reviewed sources (official repos, distro repos, Flathub), 🟡 checksum-pinned downloads and source builds, 🟠 anyone-can-upload (AUR, random git repos). Hover one for why.
+
+### Your own signed repo 📡
+
+```sh
+gurt convert Cool.AppImage deb -o ~/myrepo
+gurt repo publish ~/myrepo                 # writes signed apt + rpm indexes and gurt-key.asc
+gurt repo add myrepo apt file://$HOME/myrepo stable main --key ~/myrepo/gurt-key.asc
+```
+
+Put the folder on any web server (GitHub Pages works) and give people the `https://` address plus `gurt-key.asc`. It works with plain `apt` and `dnf` too.
+
+## Handy stuff 🧰
+
+```sh
+gurt search "like photoshop"   # apps like it: gimp krita pinta darktable…  (vibes.map)
+gurt compare gimp krita pinta  # side by side: where it comes from, version, license, size
+gurt why libfoo                # who wanted this? you, or which app needs it
+gurt hogs                      # the apps eating the most disk
+gurt profile save gaming       # your apps + gurt settings + the app's look, under a name
+gurt profile load gaming       # …on any computer (copy the file over)
+gurt notify on                 # a desktop notification when updates are waiting (every 6 hours)
+```
+
+In the app: type "like discord" in the search, hit ⚖️ on up to 4 cards to compare them, 🐷 on the Installed tab sorts by size, and 🔔 on the Updates tab turns alerts on.
+
+## Fun 🎮
+
+- **Achievements 🏆:** 18 of them, like baby steps, night owl, time traveler, why tho (turning a Windows .exe into a .deb) and legendary pull. `gurt achievements`, or 🏆 on the Installed tab. They pop up as you unlock them.
+- **Lottery streaks:** spin once a day to keep your 🔥 streak. Every spin rolls a rarity (⚪ common, 💙 rare, 💜 epic, 🌈 legendary), and legendary pulls come from a pool of extra weird apps. Legendary odds start at 1% and go up 0.5% per streak day, up to 5%. The app and `gurt lottery` share one streak.
+- **Skins + music:** 🌴 Vaporwave and 💻 Hacker skins join GURT, Windows 11, XP and 95, each with its own sound effects. The 🎵 picker next to them has 4 tracks (🛍️ shop, 🌧️ lofi, 👾 chiptune, 🌆 synthwave), or auto, which matches the skin. Every track is synthesized live, no audio files.
+- **Cursed Congurter™:** feed it a `.dmg`, or ask it to turn a `.deb` into a `.deb`, and it shakes, smokes and glitches out 💀 An `.exe` still converts, but it'll let you know it's cursed.
+
 ## Oops buttons: rollback, hold, export/import ⏪
 
 In the app, the **Installed** tab has 📤 export my list (saves `gurt-list-<date>.txt` to your Downloads) and 📥 import a list.
