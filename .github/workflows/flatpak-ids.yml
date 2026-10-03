@@ -16,10 +16,11 @@ jobs:
       - name: check every via_type=flatpak recipe
         run: |
           bad=0 n=0
+          flatpak remote-ls --user --app flathub --columns=application > /tmp/flathub-ids.txt   # one listing, then just look ids up
           for f in packages/*/GURTBUILD; do
             grep -q '^via_type=flatpak' "$f" || continue
             p=$(basename "$(dirname "$f")"); id=$(sed -n 's/^via_pkg=//p' "$f"); n=$((n + 1))
-            if flatpak remote-info --user flathub "$id" >/dev/null 2>&1; then echo "✅ $p → $id"
+            if grep -qxF "$id" /tmp/flathub-ids.txt; then echo "✅ $p → $id"
             else echo "::error file=$f::$p: $id isn't on Flathub (renamed or removed?)"; bad=$((bad + 1)); fi
           done
           echo "checked $n Flathub apps, $bad missing"
