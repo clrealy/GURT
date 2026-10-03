@@ -1,0 +1,12 @@
+pkgname = ollama
+pkgver = 0.35.1
+pkgrel = 1
+pkgdesc = Run AI models like Llama, Gemma and Qwen locally on your own PC (big download: it brings GPU support)
+url = https://ollama.com
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+makedepends = zstd
+source = https://github.com/ollama/ollama/releases/download/v0.35.1/ollama-linux-amd64.tar.zst

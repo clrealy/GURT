@@ -1,0 +1,24 @@
+# Ask AI models from your terminal and pipe stuff into them
+pkgname=mods
+pkgver=1.8.1
+pkgrel=1
+pkgdesc="Ask AI models from your terminal and pipe stuff into them"
+url="https://github.com/charmbracelet/mods"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("mods::git+https://github.com/charmbracelet/mods.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd mods
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X main.Version=$pkgver" -o out/mods .
+}
+
+package() {
+  install -Dm755 mods/out/mods "$pkgdir$prefix/bin/mods"
+}

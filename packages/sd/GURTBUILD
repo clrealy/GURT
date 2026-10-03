@@ -1,0 +1,20 @@
+# Find and replace text, simpler than sed
+pkgname=sd
+pkgver=1.1.0
+pkgrel=1
+pkgdesc="Find and replace text, simpler than sed"
+url="https://github.com/chmln/sd"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binaries
+source_x86_64=("https://github.com/chmln/sd/releases/download/$_tag/sd-$_tag-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/chmln/sd/releases/download/$_tag/sd-$_tag-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(02f00f4777d43e8e95b7b8d49e1a0d6e502fed4b8e79c1c8b8063857a30caa2e)
+sha256sums_aarch64=(ec8c93c0533ff21f4851d11566808d4082544baf063d9b96ea77c27e98b7cd99)
+
+package() {
+  install -Dm755 "$(find . -type f -name sd -perm -u+x | head -n1)" "$pkgdir$prefix/bin/sd"
+}

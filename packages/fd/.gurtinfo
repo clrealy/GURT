@@ -1,0 +1,12 @@
+pkgname = fd
+pkgver = 10.5.0
+pkgrel = 1
+pkgdesc = Find files fast, with way friendlier syntax than find
+url = https://github.com/sharkdp/fd
+license = MIT OR Apache-2.0
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = https://github.com/sharkdp/fd/releases/download/v10.5.0/fd-v10.5.0-x86_64-unknown-linux-musl.tar.gz
+alias = fd-find

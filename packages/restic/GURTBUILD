@@ -1,0 +1,24 @@
+# Fast, encrypted backups to your disk, a server or the cloud
+pkgname=restic
+pkgver=0.19.1
+pkgrel=1
+pkgdesc="Fast, encrypted backups to your disk, a server or the cloud"
+url="https://github.com/restic/restic"
+license="BSD-2-Clause"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("restic::git+https://github.com/restic/restic.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd restic
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w" -o out/restic ./cmd/restic
+}
+
+package() {
+  install -Dm755 restic/out/restic "$pkgdir$prefix/bin/restic"
+}

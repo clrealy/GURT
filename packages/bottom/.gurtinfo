@@ -1,0 +1,12 @@
+pkgname = bottom
+pkgver = 0.14.9
+pkgrel = 1
+pkgdesc = Graphical system monitor for the terminal (run it with btm)
+url = https://github.com/ClementTsang/bottom
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = https://github.com/ClementTsang/bottom/releases/download/0.14.9/bottom_x86_64-unknown-linux-musl.tar.gz
+alias = btm

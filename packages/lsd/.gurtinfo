@@ -1,0 +1,11 @@
+pkgname = lsd
+pkgver = 1.2.0
+pkgrel = 1
+pkgdesc = ls with colors and icons
+url = https://github.com/lsd-rs/lsd
+license = Apache-2.0
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = https://github.com/lsd-rs/lsd/releases/download/v1.2.0/lsd-v1.2.0-x86_64-unknown-linux-musl.tar.gz

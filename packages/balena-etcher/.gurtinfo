@@ -1,0 +1,12 @@
+pkgname = balena-etcher
+pkgver = 2.1.7
+pkgrel = 1
+pkgdesc = Flash OS images to USB drives and SD cards without wiping the wrong disk
+url = https://etcher.balena.io
+license = Apache-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+source = https://github.com/balena-io/etcher/releases/download/v2.1.7/balenaEtcher-linux-x64-2.1.7.zip
+alias = etcher
+alias = balenaetcher

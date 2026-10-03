@@ -1,0 +1,13 @@
+pkgname = fx
+pkgver = 39.2.0
+pkgrel = 1
+pkgdesc = Explore JSON in the terminal by clicking around and folding it
+url = https://github.com/antonmedv/fx
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = fx::git+https://github.com/antonmedv/fx.git#tag=39.2.0

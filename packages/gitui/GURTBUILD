@@ -1,0 +1,20 @@
+# Fast terminal UI for git
+pkgname=gitui
+pkgver=0.28.1
+pkgrel=1
+pkgdesc="Fast terminal UI for git"
+url="https://github.com/gitui-org/gitui"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binaries
+source_x86_64=("https://github.com/gitui-org/gitui/releases/download/$_tag/gitui-linux-x86_64.tar.gz")
+source_aarch64=("https://github.com/gitui-org/gitui/releases/download/$_tag/gitui-linux-aarch64.tar.gz")
+sha256sums_x86_64=(f6149b9ae203397158b0c89c13cfde718e7121d3d3cd2ebc597f93d6628d9b5b)
+sha256sums_aarch64=(2a640da05b73e9152a7bf92bfd7c23acd9d60438f4f2cabb62357014a5fd7c28)
+
+package() {
+  install -Dm755 "$(find . -type f -name gitui -perm -u+x | head -n1)" "$pkgdir$prefix/bin/gitui"
+}

@@ -1,0 +1,21 @@
+# A modern ls with colors, icons and git status
+pkgname=eza
+pkgver=0.23.5
+pkgrel=1
+pkgdesc="A modern ls with colors, icons and git status"
+url="https://github.com/eza-community/eza"
+license="EUPL-1.2"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+aliases=(exa)
+_tag=v$pkgver
+# official prebuilt release binaries
+source_x86_64=("https://github.com/eza-community/eza/releases/download/$_tag/eza_x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/eza-community/eza/releases/download/$_tag/eza_aarch64-unknown-linux-gnu.tar.gz")
+sha256sums_x86_64=(e06eebab74b73d6b7d51a796a353824b001bea82df077706382e100815d28904)
+sha256sums_aarch64=(40b87ae8628aa2ff0f0d2dc24ab52f689631366385c3da630bae745671fd71ec)
+
+package() {
+  install -Dm755 "$(find . -type f -name eza -perm -u+x | head -n1)" "$pkgdir$prefix/bin/eza"
+}

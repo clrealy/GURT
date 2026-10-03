@@ -1,0 +1,11 @@
+pkgname = xh
+pkgver = 0.26.2
+pkgrel = 1
+pkgdesc = Send HTTP requests from the terminal, friendly like HTTPie but fast
+url = https://github.com/ducaale/xh
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/ducaale/xh/releases/download/v0.26.2/xh-v0.26.2-x86_64-unknown-linux-musl.tar.gz

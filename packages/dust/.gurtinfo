@@ -1,0 +1,12 @@
+pkgname = dust
+pkgver = 1.2.6
+pkgrel = 1
+pkgdesc = See what's eating your disk as a tree, right in the terminal
+url = https://github.com/bootandy/dust
+license = Apache-2.0
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = https://github.com/bootandy/dust/releases/download/v1.2.6/dust-v1.2.6-x86_64-unknown-linux-musl.tar.gz
+alias = du-dust

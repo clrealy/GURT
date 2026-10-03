@@ -1,0 +1,21 @@
+# Blazing fast terminal file manager with image previews
+pkgname=yazi
+pkgver=26.9.1
+pkgrel=1
+pkgdesc="Blazing fast terminal file manager with image previews"
+url="https://github.com/sxyazi/yazi"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binaries
+source_x86_64=("https://github.com/sxyazi/yazi/releases/download/$_tag/yazi-x86_64-unknown-linux-musl.zip")
+source_aarch64=("https://github.com/sxyazi/yazi/releases/download/$_tag/yazi-aarch64-unknown-linux-musl.zip")
+sha256sums_x86_64=(9b9c39decccf8cb0ff53a7d637d38f8a79d93bbd0099f4ea9c619ef6bb392f5d)
+sha256sums_aarch64=(dd569daecaae914185f295634109295ccd25c1b42b02eb89a74f651970024f2e)
+
+package() {
+  install -Dm755 "$(find . -type f -name yazi -perm -u+x | head -n1)" "$pkgdir$prefix/bin/yazi"
+  install -Dm755 "$(find . -type f -name ya -perm -u+x | head -n1)" "$pkgdir$prefix/bin/ya"
+}

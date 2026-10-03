@@ -1,0 +1,13 @@
+pkgname = lf
+pkgver = 42
+pkgrel = 1
+pkgdesc = Fast terminal file manager inspired by ranger
+url = https://github.com/gokcehan/lf
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = lf::git+https://github.com/gokcehan/lf.git#tag=r42

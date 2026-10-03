@@ -1,0 +1,24 @@
+# Manage your dotfiles across all your machines
+pkgname=chezmoi
+pkgver=2.73.0
+pkgrel=1
+pkgdesc="Manage your dotfiles across all your machines"
+url="https://github.com/twpayne/chezmoi"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("chezmoi::git+https://github.com/twpayne/chezmoi.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd chezmoi
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X main.version=$pkgver" -o out/chezmoi .
+}
+
+package() {
+  install -Dm755 chezmoi/out/chezmoi "$pkgdir$prefix/bin/chezmoi"
+}

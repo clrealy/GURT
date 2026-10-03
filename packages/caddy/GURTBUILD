@@ -1,0 +1,24 @@
+# Web server with automatic HTTPS that just works
+pkgname=caddy
+pkgver=2.11.6
+pkgrel=1
+pkgdesc="Web server with automatic HTTPS that just works"
+url="https://github.com/caddyserver/caddy"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("caddy::git+https://github.com/caddyserver/caddy.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd caddy
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X github.com/caddyserver/caddy/v2.CustomVersion=v$pkgver" -o out/caddy ./cmd/caddy
+}
+
+package() {
+  install -Dm755 caddy/out/caddy "$pkgdir$prefix/bin/caddy"
+}

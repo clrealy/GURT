@@ -1,0 +1,24 @@
+# Modal text editor with language smarts built in, no plugins needed (run hx)
+pkgname=helix
+pkgver=25.07.1
+pkgrel=1
+pkgdesc="Modal text editor with language smarts built in, no plugins needed (run hx)"
+url="https://github.com/helix-editor/helix"
+license="MPL-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+aliases=(hx)
+# official prebuilt release binaries
+source_x86_64=("https://github.com/helix-editor/helix/releases/download/$pkgver/helix-$pkgver-x86_64-linux.tar.xz")
+source_aarch64=("https://github.com/helix-editor/helix/releases/download/$pkgver/helix-$pkgver-aarch64-linux.tar.xz")
+sha256sums_x86_64=(3f08e63ecd388fff657ad39722f88bb03dcf326f1f2da2700d99e1dc40ab2e8b)
+sha256sums_aarch64=(ce23fa8d395e633e3e54c052012f11965d91d8d5c2bfa659685f50430b4f8175)
+
+package() {
+  local d; d=$(find . -maxdepth 1 -type d -name "helix-*" | head -n1)
+  mkdir -p "$pkgdir$prefix/lib/helix"
+  cp -a "$d/hx" "$d/runtime" "$pkgdir$prefix/lib/helix/"
+  # hx finds its runtime (themes, grammars) next to itself
+  mkdir -p "$pkgdir$prefix/bin"; ln -s ../lib/helix/hx "$pkgdir$prefix/bin/hx"
+}

@@ -1,0 +1,21 @@
+# See what's eating your disk as a tree, right in the terminal
+pkgname=dust
+pkgver=1.2.6
+pkgrel=1
+pkgdesc="See what's eating your disk as a tree, right in the terminal"
+url="https://github.com/bootandy/dust"
+license="Apache-2.0"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+aliases=(du-dust)
+_tag=v$pkgver
+# official prebuilt release binaries
+source_x86_64=("https://github.com/bootandy/dust/releases/download/$_tag/dust-$_tag-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/bootandy/dust/releases/download/$_tag/dust-$_tag-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(cbf2cb5c9d6227e46fc4b29c03dc43b8632020dfc5cf269d263d6e29c399e044)
+sha256sums_aarch64=(a51cf42a4654864837cc116eaca914271d7a09a9c2a60de90ecc2187b8d855a7)
+
+package() {
+  install -Dm755 "$(find . -type f -name dust -perm -u+x | head -n1)" "$pkgdir$prefix/bin/dust"
+}

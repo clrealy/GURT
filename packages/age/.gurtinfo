@@ -1,0 +1,13 @@
+pkgname = age
+pkgver = 1.3.2
+pkgrel = 1
+pkgdesc = Simple, modern file encryption (age and age-keygen)
+url = https://github.com/FiloSottile/age
+license = BSD-3-Clause
+maintainer = clrealy
+category = security
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = age::git+https://github.com/FiloSottile/age.git#tag=v1.3.2

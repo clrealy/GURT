@@ -1,0 +1,11 @@
+pkgname = zellij
+pkgver = 0.45.1
+pkgrel = 1
+pkgdesc = Terminal workspace with tabs, panes and a friendly UI
+url = https://github.com/zellij-org/zellij
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = https://github.com/zellij-org/zellij/releases/download/v0.45.1/zellij-x86_64-unknown-linux-musl.tar.gz

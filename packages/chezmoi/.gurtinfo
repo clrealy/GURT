@@ -1,0 +1,13 @@
+pkgname = chezmoi
+pkgver = 2.73.0
+pkgrel = 1
+pkgdesc = Manage your dotfiles across all your machines
+url = https://github.com/twpayne/chezmoi
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = chezmoi::git+https://github.com/twpayne/chezmoi.git#tag=v2.73.0

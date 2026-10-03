@@ -1,0 +1,19 @@
+# Extremely fast Python linter and formatter
+pkgname=ruff
+pkgver=0.16.10
+pkgrel=1
+pkgdesc="Extremely fast Python linter and formatter"
+url="https://github.com/astral-sh/ruff"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+# official prebuilt release binaries
+source_x86_64=("https://github.com/astral-sh/ruff/releases/download/$pkgver/ruff-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/astral-sh/ruff/releases/download/$pkgver/ruff-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(ad1b2138407a0c53b936524df99d87211333f7bc40478d6860f42994597f7ff0)
+sha256sums_aarch64=(38ebc0ec3e0de538d1c399729ca04e124749211d66aa134c24ad0c1f09a935b9)
+
+package() {
+  install -Dm755 "$(find . -type f -name ruff -perm -u+x | head -n1)" "$pkgdir$prefix/bin/ruff"
+}

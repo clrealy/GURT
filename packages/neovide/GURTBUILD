@@ -1,0 +1,32 @@
+# Neovim in a smooth, good-looking GUI window (official AppImage)
+pkgname=neovide
+pkgver=0.16.2
+pkgrel=1
+pkgdesc="Neovim in a smooth, good-looking GUI window with buttery animations"
+url="https://neovide.dev"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64)
+depends=(nvim)   # the real neovim from your distro (gurt's neovim is the Flatpak)
+# the official AppImage, kept as an AppImage
+source=("neovide.AppImage::https://github.com/neovide/neovide/releases/download/$pkgver/neovide.AppImage")
+sha256sums=(ef617c743d7425267ac3ae2f1761ac8fc801683bd3e013758eb68247a53c6812)
+
+package() {
+  local dir="$prefix/lib/neovide"
+  install -Dm755 neovide.AppImage "$pkgdir$dir/neovide.AppImage"
+  # no FUSE 2 on your system? it still runs (extract-and-run mode)
+  printf '#!/bin/sh\nldconfig -p 2>/dev/null | grep -q "libfuse\\.so\\.2" || export APPIMAGE_EXTRACT_AND_RUN=1\nexec "%s/neovide.AppImage" "$@"\n' "$dir" > neovide
+  install -Dm755 neovide "$pkgdir$prefix/bin/neovide"
+  # borrow its icon from inside the AppImage
+  mkdir -p x; install -m755 neovide.AppImage x/n.AppImage   # the download isn't executable yet
+  ( cd x && ./n.AppImage --appimage-extract 'usr/share/icons/hicolor/scalable/apps/neovide.svg' >/dev/null 2>&1 || true )
+  local icon="" f=x/squashfs-root/usr/share/icons/hicolor/scalable/apps/neovide.svg
+  [ -f "$f" ] && icon=$f
+  [ -n "$icon" ] && install -Dm644 "$icon" "$pkgdir$prefix/share/pixmaps/neovide.svg"
+  printf '[Desktop Entry]\nType=Application\nName=Neovide\nGenericName=Text Editor\nComment=%s\nExec=%s/bin/neovide %%F\nIcon=%s\nTerminal=false\nCategories=Development;TextEditor;\nMimeType=text/plain;\n' \
+    "$pkgdesc" "$prefix" "${icon:+$prefix/share/pixmaps/neovide.svg}" > neovide.desktop
+  sed -i 's/^Icon=$/Icon=neovide/' neovide.desktop
+  install -Dm644 neovide.desktop "$pkgdir$prefix/share/applications/neovide.desktop"
+}

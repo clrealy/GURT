@@ -1,0 +1,12 @@
+pkgname = tealdeer
+pkgver = 1.9.0
+pkgrel = 1
+pkgdesc = Quick examples for any command instead of reading the man page (run tldr)
+url = https://github.com/tealdeer-rs/tealdeer
+license = MIT OR Apache-2.0
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = tldr::https://github.com/tealdeer-rs/tealdeer/releases/download/v1.9.0/tealdeer-linux-x86_64-musl
+alias = tldr

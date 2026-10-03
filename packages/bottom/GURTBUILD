@@ -1,0 +1,20 @@
+# Graphical system monitor for the terminal (run it with btm)
+pkgname=bottom
+pkgver=0.14.9
+pkgrel=1
+pkgdesc="Graphical system monitor for the terminal (run it with btm)"
+url="https://github.com/ClementTsang/bottom"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+aliases=(btm)
+# official prebuilt release binaries
+source_x86_64=("https://github.com/ClementTsang/bottom/releases/download/$pkgver/bottom_x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/ClementTsang/bottom/releases/download/$pkgver/bottom_aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(b4bee5b193e7d3f6e090ac14f0ca15acec2e7fe4ef64988e0bfc492e16c28c9a)
+sha256sums_aarch64=(7b6d532f6a6af356970f4e8d7d3a792590485aa4a53ebf038e10d20366125533)
+
+package() {
+  install -Dm755 "$(find . -type f -name btm -perm -u+x | head -n1)" "$pkgdir$prefix/bin/btm"
+}

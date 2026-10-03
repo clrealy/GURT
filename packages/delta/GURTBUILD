@@ -1,0 +1,20 @@
+# Good-looking diffs for git, with syntax highlighting
+pkgname=delta
+pkgver=0.19.2
+pkgrel=1
+pkgdesc="Good-looking diffs for git, with syntax highlighting"
+url="https://github.com/dandavison/delta"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+aliases=(git-delta)
+# official prebuilt release binaries
+source_x86_64=("https://github.com/dandavison/delta/releases/download/$pkgver/delta-$pkgver-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/dandavison/delta/releases/download/$pkgver/delta-$pkgver-aarch64-unknown-linux-gnu.tar.gz")
+sha256sums_x86_64=(f1ea01ca7728ce3462debc359f39dfc7cbbc1a63224b71fefabf92042864aa1b)
+sha256sums_aarch64=(0bfce159a5cddd5feb3d6db4a616d883ff51253ce08ac7ec11cb1d208cfaab9e)
+
+package() {
+  install -Dm755 "$(find . -type f -name delta -perm -u+x | head -n1)" "$pkgdir$prefix/bin/delta"
+}

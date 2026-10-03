@@ -1,0 +1,11 @@
+pkgname = gitui
+pkgver = 0.28.1
+pkgrel = 1
+pkgdesc = Fast terminal UI for git
+url = https://github.com/gitui-org/gitui
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/gitui-org/gitui/releases/download/v0.28.1/gitui-linux-x86_64.tar.gz

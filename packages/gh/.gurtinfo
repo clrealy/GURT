@@ -1,0 +1,14 @@
+pkgname = gh
+pkgver = 2.102.0
+pkgrel = 1
+pkgdesc = GitHub's official command line tool: PRs, issues, repos and more
+url = https://github.com/cli/cli
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+makedepends = go
+makedepends = git
+source = cli::git+https://github.com/cli/cli.git#tag=v2.102.0
+alias = github-cli

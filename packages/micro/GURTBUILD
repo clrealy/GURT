@@ -1,0 +1,24 @@
+# Terminal text editor that works like a normal one (Ctrl+S saves, Ctrl+Q quits)
+pkgname=micro
+pkgver=2.0.15
+pkgrel=1
+pkgdesc="Terminal text editor that works like a normal one (Ctrl+S saves, Ctrl+Q quits)"
+url="https://github.com/zyedidia/micro"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+makedepends=(go git)
+source=("micro::git+https://github.com/zyedidia/micro.git#tag=v$pkgver")
+sha256sums=(SKIP)
+
+build() {
+  cd micro
+  # your distro's Go too old for this release? Go fetches the right toolchain itself
+  export GOTOOLCHAIN=auto CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly -buildvcs=false"
+  go build -ldflags "-s -w -X github.com/zyedidia/micro/v2/internal/util.Version=$pkgver" -o out/micro ./cmd/micro
+}
+
+package() {
+  install -Dm755 micro/out/micro "$pkgdir$prefix/bin/micro"
+}
