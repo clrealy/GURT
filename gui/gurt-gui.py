@@ -1372,6 +1372,10 @@ function installBtns(spec){
   if (i && i.external) return `<span class="chip ok" title="installed with flatpak, outside gurt">installed ✓ (flatpak)</span>`;
   return i ? `<span class="chip ok">installed ✓</span>${actBtn("remove","remove",spec,"ghost")}` : actBtn("install","install",spec);
 }
+// 🧪 dev builds: ✏️ edit / 🗑️ delete any recipe, straight on GitHub (GitHub still checks you can push to the repo)
+const isDev = () => !!(S && /\+dev/.test(S.version || ""));
+const devBtns = (name, tree="packages") => isDev() ? `<a class="btn ghost small" href="https://github.com/clrealy/GURT/edit/main/${tree}/${encodeURIComponent(name)}/GURTBUILD" target="_blank" rel="noopener" title="dev: edit this recipe on GitHub">✏️</a>`
+  + `<a class="btn ghost small" href="https://github.com/clrealy/GURT/tree/main/${tree}/${encodeURIComponent(name)}" target="_blank" rel="noopener" title="dev: delete this package on GitHub (⋯ → Delete directory)">🗑️</a>` : "";
 let CMP = [];
 const cmpBtn = n => `<button class="btn ghost small cmpbtn${CMP.includes(n) ? " on" : ""}" data-cmp="${esc(n)}" title="compare side by side">⚖️</button>`;
 const vibeKey = q => q.replace(/^(something |apps |an app )?(like |alternatives? to |instead of )?/, "").trim();
@@ -1380,7 +1384,7 @@ function renderMain(){
   const vk = vibeKey(q), vapps = (S.vibes || {})[vk] || [];
   const vhits = vapps.map(n => S.main.find(p => p.name === n)).filter(Boolean);
   const hits = S.main.filter(p => !vapps.includes(p.name) && (!q || (p.name+" "+p.desc+" "+p.alias.join(" ")).toLowerCase().includes(q)));
-  const mk = p => card({name:p.name, ver:p.ver, desc:p.desc, trust:p.trust, actions: installBtns(p.name) + cmpBtn(p.name)});
+  const mk = p => card({name:p.name, ver:p.ver, desc:p.desc, trust:p.trust, actions: installBtns(p.name) + cmpBtn(p.name) + devBtns(p.name)});
   $("#maingrid").innerHTML = (vhits.length ? `<div class="vibehead">apps like ${esc(vk)} 👇</div>` + vhits.map(mk).join("") + (hits.length ? `<div class="vibehead">everything else that matched</div>` : "") : "")
     + (hits.length ? hits.map(mk).join("") : vhits.length ? "" : `<div class="empty">nothing in Main GURT matched 😔 — try "search everywhere" (or "like photoshop")</div>`);
   const direct = /^[a-z0-9-]+\/[A-Za-z0-9._+-]+$/.test($("#q").value.trim()) && !/^(https?:)/.test($("#q").value);
@@ -1513,7 +1517,7 @@ let SRC = "gurt";
 function renderDirt(){
   const q = $("#q").value.trim().toLowerCase().replace(/^dirt\//, "");
   const list = (S.dirtpkgs || []).filter(p => !q || (p.name + " " + p.desc + " " + (p.alias||[]).join(" ")).toLowerCase().includes(q));
-  $("#srcgrid").innerHTML = list.length ? list.map(p => card({name:p.name, src:"dirt", ver:p.ver, desc:p.desc, actions: installBtns(`dirt/${p.name}`)})).join("")
+  $("#srcgrid").innerHTML = list.length ? list.map(p => card({name:p.name, src:"dirt", ver:p.ver, desc:p.desc, actions: installBtns(`dirt/${p.name}`) + devBtns(p.name, "dirt")})).join("")
     : `<div class="empty">${(S.dirtpkgs || []).length ? "nothing in DIRT matched" : "DIRT is empty rn 🫥"}</div>`;
 }
 async function openDirt(){
