@@ -1,0 +1,15 @@
+# GNOME/Wayland screenshot and annotation tool (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=wayshot
+pkgver=flathub
+pkgrel=1
+pkgdesc="GNOME/Wayland screenshot and annotation tool"
+url="https://flathub.org/apps/io.github.gutopardini.wayshot"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.gutopardini.wayshot

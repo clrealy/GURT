@@ -1,0 +1,13 @@
+pkgname = the-gnumeric-spreadsheet
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A High-Precision Spreadsheet Program
+url = https://flathub.org/apps/org.gnumeric.Gnumeric
+license = GPL-2.0 or GPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.gnumeric.Gnumeric

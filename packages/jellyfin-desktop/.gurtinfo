@@ -1,0 +1,13 @@
+pkgname = jellyfin-desktop
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Jellyfin desktop client
+url = https://flathub.org/apps/org.jellyfin.JellyfinDesktop
+license = GPL-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.jellyfin.JellyfinDesktop

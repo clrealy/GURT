@@ -1,0 +1,15 @@
+# Stream games from another computer with Steam (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=steam-link
+pkgver=flathub
+pkgrel=1
+pkgdesc="Stream games from another computer with Steam"
+url="https://flathub.org/apps/com.valvesoftware.SteamLink"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.valvesoftware.SteamLink

@@ -1,0 +1,13 @@
+pkgname = hedge-mod-manager
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Manage mods for Sonic games
+url = https://flathub.org/apps/io.github.hedge_dev.hedgemodmanager
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.hedge_dev.hedgemodmanager

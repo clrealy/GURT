@@ -1,0 +1,15 @@
+# A free first person shooter for Mac, PC and Linux (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=quetoo
+pkgver=flathub
+pkgrel=1
+pkgdesc="A free first person shooter for Mac, PC and Linux"
+url="https://flathub.org/apps/org.quetoo.Quetoo"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.quetoo.Quetoo

@@ -1,0 +1,13 @@
+pkgname = geforce-infinity
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Next-gen GeForce NOW application
+url = https://flathub.org/apps/io.github.astralvixen.geforce-infinity
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.astralvixen.geforce-infinity

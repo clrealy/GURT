@@ -1,0 +1,15 @@
+# Native GTK markdown notes with preview and automation (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=swifty-notes
+pkgver=flathub
+pkgrel=1
+pkgdesc="Native GTK markdown notes with preview and automation"
+url="https://flathub.org/apps/me.spaceinbox.swiftynotes"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=me.spaceinbox.swiftynotes

@@ -1,0 +1,15 @@
+# Create stories, games, and animations, share with others around the world (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=scratch
+pkgver=flathub
+pkgrel=1
+pkgdesc="Create stories, games, and animations, share with others around the world"
+url="https://flathub.org/apps/edu.mit.Scratch"
+license="BSD-3-Clause"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=edu.mit.Scratch

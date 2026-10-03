@@ -1,0 +1,13 @@
+pkgname = minecraft-launcher
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Create your own world in one of the most popular video games
+url = https://flathub.org/apps/com.mojang.Minecraft
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.mojang.Minecraft

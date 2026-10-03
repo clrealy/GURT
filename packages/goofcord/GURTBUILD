@@ -1,0 +1,15 @@
+# A privacy minded and highly configurable Discord client (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=goofcord
+pkgver=flathub
+pkgrel=1
+pkgdesc="A privacy minded and highly configurable Discord client"
+url="https://flathub.org/apps/io.github.milkshiift.GoofCord"
+license="OSL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.milkshiift.GoofCord

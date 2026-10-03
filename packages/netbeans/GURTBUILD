@@ -1,0 +1,15 @@
+# NetBeans - Apache Java IDE. Fits the Pieces Together (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=netbeans
+pkgver=flathub
+pkgrel=1
+pkgdesc="NetBeans - Apache Java IDE. Fits the Pieces Together"
+url="https://flathub.org/apps/org.apache.netbeans"
+license="Apache-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.apache.netbeans

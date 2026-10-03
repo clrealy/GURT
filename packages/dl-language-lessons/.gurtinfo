@@ -1,0 +1,13 @@
+pkgname = dl-language-lessons
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Unofficial desktop client for the language-learning app Duolingo
+url = https://flathub.org/apps/ro.go.hmlendea.DL-Desktop
+license = GPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = ro.go.hmlendea.DL-Desktop

@@ -1,0 +1,15 @@
+# Discover, install, and manage mods and modpacks (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=curseforge
+pkgver=flathub
+pkgrel=1
+pkgdesc="Discover, install, and manage mods and modpacks"
+url="https://flathub.org/apps/com.overwolf.curseforge"
+license="see Flathub"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.overwolf.curseforge

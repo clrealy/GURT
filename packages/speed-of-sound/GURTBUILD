@@ -1,0 +1,15 @@
+# Voice typing for the Linux desktop (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=speed-of-sound
+pkgver=flathub
+pkgrel=1
+pkgdesc="Voice typing for the Linux desktop"
+url="https://flathub.org/apps/io.speedofsound.SpeedOfSound"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.speedofsound.SpeedOfSound

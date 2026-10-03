@@ -1,0 +1,15 @@
+# TuxGuitar is a free and open-source tablature editor (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tuxguitar
+pkgver=flathub
+pkgrel=1
+pkgdesc="TuxGuitar is a free and open-source tablature editor"
+url="https://flathub.org/apps/ar.com.tuxguitar.TuxGuitar"
+license="LGPL-2.1-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=ar.com.tuxguitar.TuxGuitar

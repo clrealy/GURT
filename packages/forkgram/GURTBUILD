@@ -1,0 +1,15 @@
+# Enhanced twist on Telegram (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=forkgram
+pkgver=flathub
+pkgrel=1
+pkgdesc="Enhanced twist on Telegram"
+url="https://flathub.org/apps/io.github.forkgram.tdesktop"
+license="GPL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.forkgram.tdesktop

@@ -1,0 +1,15 @@
+# Cross-platform Celeste Mod Manager (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=olympus
+pkgver=flathub
+pkgrel=1
+pkgdesc="Cross-platform Celeste Mod Manager"
+url="https://flathub.org/apps/io.github.everestapi.Olympus"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.everestapi.Olympus

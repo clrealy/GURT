@@ -1,0 +1,15 @@
+# Rename media files perfectly (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=filebot
+pkgver=flathub
+pkgrel=1
+pkgdesc="Rename media files perfectly"
+url="https://flathub.org/apps/net.filebot.FileBot"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.filebot.FileBot

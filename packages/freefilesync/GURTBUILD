@@ -1,0 +1,15 @@
+# Visual folder comparison and synchronization (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=freefilesync
+pkgver=flathub
+pkgrel=1
+pkgdesc="Visual folder comparison and synchronization"
+url="https://flathub.org/apps/org.freefilesync.FreeFileSync"
+license="GPL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.freefilesync.FreeFileSync

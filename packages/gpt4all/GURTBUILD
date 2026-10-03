@@ -1,0 +1,15 @@
+# Open-source assistant (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=gpt4all
+pkgver=flathub
+pkgrel=1
+pkgdesc="Open-source assistant"
+url="https://flathub.org/apps/io.gpt4all.gpt4all"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.gpt4all.gpt4all

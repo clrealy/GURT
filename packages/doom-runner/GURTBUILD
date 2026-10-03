@@ -1,0 +1,15 @@
+# Preset-oriented graphical launcher of various ported Doom engines (an alternative to ZDL) (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=doom-runner
+pkgver=flathub
+pkgrel=1
+pkgdesc="Preset-oriented graphical launcher of various ported Doom engines (an alternative to ZDL)"
+url="https://flathub.org/apps/io.github.Youda008.DoomRunner"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.Youda008.DoomRunner

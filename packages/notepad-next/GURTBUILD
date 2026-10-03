@@ -1,0 +1,15 @@
+# A cross-platform, reimplementation of Notepad++ (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=notepad-next
+pkgver=flathub
+pkgrel=1
+pkgdesc="A cross-platform, reimplementation of Notepad++"
+url="https://flathub.org/apps/com.github.dail8859.NotepadNext"
+license="GPL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.dail8859.NotepadNext

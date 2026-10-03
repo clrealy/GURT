@@ -1,0 +1,15 @@
+# YouTube client with TV mode, no ads (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=red
+pkgver=flathub
+pkgrel=1
+pkgdesc="YouTube client with TV mode, no ads"
+url="https://flathub.org/apps/com.ktechpit.red"
+license="see Flathub"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.ktechpit.red

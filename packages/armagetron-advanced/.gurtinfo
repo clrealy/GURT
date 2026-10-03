@@ -1,0 +1,13 @@
+pkgname = armagetron-advanced
+pkgver = flathub
+pkgrel = 1
+pkgdesc = 3D Lightcycle Game
+url = https://flathub.org/apps/org.armagetronad.ArmagetronAdvanced
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.armagetronad.ArmagetronAdvanced

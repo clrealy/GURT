@@ -1,0 +1,13 @@
+pkgname = vpn-unlimited
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Fast and private VPN with no traffic or speed limits
+url = https://flathub.org/apps/com.keepsolid.VpnUnlimited
+license = see Flathub
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.keepsolid.VpnUnlimited

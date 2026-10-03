@@ -1,0 +1,15 @@
+# Scientific software package for numerical computations (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=scilab
+pkgver=flathub
+pkgrel=1
+pkgdesc="Scientific software package for numerical computations"
+url="https://flathub.org/apps/org.scilab.Scilab"
+license="CECILL-2.1 or GPL-2.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.scilab.Scilab

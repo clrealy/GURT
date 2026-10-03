@@ -1,0 +1,15 @@
+# View SQLite databases (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=bobby
+pkgver=flathub
+pkgrel=1
+pkgdesc="View SQLite databases"
+url="https://flathub.org/apps/studio.planetpeanut.Bobby"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=studio.planetpeanut.Bobby

@@ -1,0 +1,15 @@
+# An AddOn manager for The Elder Scrolls Online and World of Warcraft (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=minion
+pkgver=flathub
+pkgrel=1
+pkgdesc="An AddOn manager for The Elder Scrolls Online and World of Warcraft"
+url="https://flathub.org/apps/gg.minion.Minion"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=gg.minion.Minion

@@ -1,0 +1,13 @@
+pkgname = gittyup
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Graphical Git client designed to help you understand and manage your source code history
+url = https://flathub.org/apps/com.github.Murmele.Gittyup
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.Murmele.Gittyup

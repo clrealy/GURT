@@ -1,0 +1,15 @@
+# Thunderbird is a free and open source email, newsfeed, chat, and calendaring client (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=thunderbird-thunderbird
+pkgver=flathub
+pkgrel=1
+pkgdesc="Thunderbird is a free and open source email, newsfeed, chat, and calendaring client"
+url="https://flathub.org/apps/org.mozilla.thunderbird"
+license="MPL-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.mozilla.thunderbird

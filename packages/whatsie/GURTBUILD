@@ -1,0 +1,15 @@
+# Feature-rich WhatsApp Web client for the Linux desktop (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=whatsie
+pkgver=flathub
+pkgrel=1
+pkgdesc="Feature-rich WhatsApp Web client for the Linux desktop"
+url="https://flathub.org/apps/com.ktechpit.whatsie"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.ktechpit.whatsie

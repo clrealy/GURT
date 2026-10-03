@@ -1,0 +1,13 @@
+pkgname = yubico-authenticator
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Graphical interface for displaying OATH codes with a YubiKey
+url = https://flathub.org/apps/com.yubico.yubioath
+license = BSD-2-Clause
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.yubico.yubioath

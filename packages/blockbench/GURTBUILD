@@ -1,0 +1,15 @@
+# Blockbench - A boxy 3D model editor (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=blockbench
+pkgver=flathub
+pkgrel=1
+pkgdesc="Blockbench - A boxy 3D model editor"
+url="https://flathub.org/apps/net.blockbench.Blockbench"
+license="GPL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.blockbench.Blockbench

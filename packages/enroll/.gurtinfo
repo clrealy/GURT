@@ -1,0 +1,13 @@
+pkgname = enroll
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Fingerprint record management
+url = https://flathub.org/apps/org.cosmic_utils.enroll
+license = MPL-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.cosmic_utils.enroll

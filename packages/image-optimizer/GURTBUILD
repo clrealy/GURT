@@ -1,0 +1,15 @@
+# Shrink images losslessly (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=image-optimizer
+pkgver=flathub
+pkgrel=1
+pkgdesc="Shrink images losslessly"
+url="https://flathub.org/apps/com.github.gijsgoudzwaard.image-optimizer"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.gijsgoudzwaard.image-optimizer

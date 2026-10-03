@@ -1,0 +1,13 @@
+pkgname = nymvpn
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Decentralized, mixnet, and zero-knowledge VPN
+url = https://flathub.org/apps/net.nymtech.NymVPN
+license = GPL-3.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.nymtech.NymVPN

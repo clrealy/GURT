@@ -1,0 +1,15 @@
+# Translate text and generate speech audio on Linux desktop (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=glate
+pkgver=flathub
+pkgrel=1
+pkgdesc="Translate text and generate speech audio on Linux desktop"
+url="https://flathub.org/apps/com.ktechpit.glate"
+license="see Flathub"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.ktechpit.glate

@@ -1,0 +1,15 @@
+# Multi-system console emulation suite (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=ares
+pkgver=flathub
+pkgrel=1
+pkgdesc="Multi-system console emulation suite"
+url="https://flathub.org/apps/dev.ares.ares"
+license="ISC"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.ares.ares

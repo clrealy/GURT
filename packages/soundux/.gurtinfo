@@ -1,0 +1,13 @@
+pkgname = soundux
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A cross-platform soundboard
+url = https://flathub.org/apps/io.github.Soundux
+license = GPL-3.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.Soundux

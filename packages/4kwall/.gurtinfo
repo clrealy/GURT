@@ -1,0 +1,13 @@
+pkgname = 4kwall
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Set 4K, HD and live wallpapers for your desktop background
+url = https://flathub.org/apps/com.warlordsoftwares.wallpaper-app-4kwall
+license = see Flathub
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.warlordsoftwares.wallpaper-app-4kwall

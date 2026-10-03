@@ -1,0 +1,15 @@
+# A simple virtual keyboard with word suggestions for x11 based systems (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=corekeyboard
+pkgver=flathub
+pkgrel=1
+pkgdesc="A simple virtual keyboard with word suggestions for x11 based systems"
+url="https://flathub.org/apps/org.cubocore.CoreKeyboard"
+license="GPL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.cubocore.CoreKeyboard

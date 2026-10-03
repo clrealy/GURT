@@ -1,0 +1,15 @@
+# Light GUI editor for SQLite databases (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=db-browser-for-sqlite
+pkgver=flathub
+pkgrel=1
+pkgdesc="Light GUI editor for SQLite databases"
+url="https://flathub.org/apps/org.sqlitebrowser.sqlitebrowser"
+license="MPL-2.0 and GPL-3.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.sqlitebrowser.sqlitebrowser

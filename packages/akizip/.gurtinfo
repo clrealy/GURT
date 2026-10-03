@@ -1,0 +1,13 @@
+pkgname = akizip
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A modern front-end for 7-Zip on GNOME
+url = https://flathub.org/apps/top.akizip.akizip
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = top.akizip.akizip

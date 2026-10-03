@@ -1,0 +1,13 @@
+pkgname = freelens
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Free IDE for Kubernetes
+url = https://flathub.org/apps/app.freelens.Freelens
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = app.freelens.Freelens

@@ -1,0 +1,15 @@
+# Modern music production and performance (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=bitwig-studio
+pkgver=flathub
+pkgrel=1
+pkgdesc="Modern music production and performance"
+url="https://flathub.org/apps/com.bitwig.BitwigStudio"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.bitwig.BitwigStudio

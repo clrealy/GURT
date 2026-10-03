@@ -1,0 +1,15 @@
+# Client for accessing 3D virtual worlds (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=firestorm-viewer
+pkgver=flathub
+pkgrel=1
+pkgdesc="Client for accessing 3D virtual worlds"
+url="https://flathub.org/apps/org.firestormviewer.FirestormViewer"
+license="LGPL-2.1"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.firestormviewer.FirestormViewer

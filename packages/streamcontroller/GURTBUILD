@@ -1,0 +1,15 @@
+# Control your Elgato Stream Decks with plugin support (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=streamcontroller
+pkgver=flathub
+pkgrel=1
+pkgdesc="Control your Elgato Stream Decks with plugin support"
+url="https://flathub.org/apps/com.core447.StreamController"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.core447.StreamController

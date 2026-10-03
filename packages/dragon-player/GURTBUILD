@@ -1,0 +1,15 @@
+# Play video files and streams (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=dragon-player
+pkgver=flathub
+pkgrel=1
+pkgdesc="Play video files and streams"
+url="https://flathub.org/apps/org.kde.dragonplayer"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.dragonplayer

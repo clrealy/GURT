@@ -1,0 +1,15 @@
+# PDF viewer designed for reading research papers and technical books (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=sioyek
+pkgver=flathub
+pkgrel=1
+pkgdesc="PDF viewer designed for reading research papers and technical books"
+url="https://flathub.org/apps/com.github.ahrm.sioyek"
+license="GPL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.ahrm.sioyek

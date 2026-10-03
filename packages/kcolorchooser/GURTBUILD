@@ -1,0 +1,15 @@
+# Color selector and palette editor (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=kcolorchooser
+pkgver=flathub
+pkgrel=1
+pkgdesc="Color selector and palette editor"
+url="https://flathub.org/apps/org.kde.kcolorchooser"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.kcolorchooser

@@ -1,0 +1,13 @@
+pkgname = deezer
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Online music streaming service
+url = https://flathub.org/apps/dev.aunetx.deezer
+license = see Flathub
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = dev.aunetx.deezer

@@ -1,0 +1,13 @@
+pkgname = trilium-notes
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Build your personal knowledge base
+url = https://flathub.org/apps/org.triliumnotes.Trilium
+license = AGPL-3.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.triliumnotes.Trilium

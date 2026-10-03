@@ -1,0 +1,15 @@
+# Contour is a modern and actually fast, modal, virtual terminal emulator, for everyday use (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=contour-terminal-emulator
+pkgver=flathub
+pkgrel=1
+pkgdesc="Contour is a modern and actually fast, modal, virtual terminal emulator, for everyday use"
+url="https://flathub.org/apps/org.contourterminal.Contour"
+license="Apache-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.contourterminal.Contour

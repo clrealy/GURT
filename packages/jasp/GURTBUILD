@@ -1,0 +1,15 @@
+# Classical and Bayesian Statistics (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=jasp
+pkgver=flathub
+pkgrel=1
+pkgdesc="Classical and Bayesian Statistics"
+url="https://flathub.org/apps/org.jaspstats.JASP"
+license="AGPL-3.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.jaspstats.JASP

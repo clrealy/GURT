@@ -1,0 +1,13 @@
+pkgname = ristretto
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Fast and lightweight image viewer
+url = https://flathub.org/apps/org.xfce.ristretto
+license = GPL-2.0+
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.xfce.ristretto

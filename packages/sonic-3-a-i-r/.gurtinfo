@@ -1,0 +1,13 @@
+pkgname = sonic-3-a-i-r
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Fan-made remaster of Sonic 3&K
+url = https://flathub.org/apps/org.sonic3air.Sonic3AIR
+license = GPL-3.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.sonic3air.Sonic3AIR

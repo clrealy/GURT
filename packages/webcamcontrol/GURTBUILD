@@ -1,0 +1,15 @@
+# Control webcam pan/tilt/zoom settings and more (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=webcamcontrol
+pkgver=flathub
+pkgrel=1
+pkgdesc="Control webcam pan/tilt/zoom settings and more"
+url="https://flathub.org/apps/com.daniel15.wcc"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.daniel15.wcc

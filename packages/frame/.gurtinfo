@@ -1,0 +1,13 @@
+pkgname = frame
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Convert video, audio, images, subtitles, and metadata with FFmpeg
+url = https://flathub.org/apps/io.github._66HEX.Frame
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github._66HEX.Frame

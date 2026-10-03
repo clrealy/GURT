@@ -1,0 +1,15 @@
+# Professional Image Editor (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=fog-panther
+pkgver=flathub
+pkgrel=1
+pkgdesc="Professional Image Editor"
+url="https://flathub.org/apps/com.fogpanther.FogPanther"
+license="see Flathub"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.fogpanther.FogPanther

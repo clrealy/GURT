@@ -1,0 +1,15 @@
+# Third-party Jagex launcher (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=bolt-launcher
+pkgver=flathub
+pkgrel=1
+pkgdesc="Third-party Jagex launcher"
+url="https://flathub.org/apps/com.adamcake.Bolt"
+license="AGPL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.adamcake.Bolt

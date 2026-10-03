@@ -1,0 +1,15 @@
+# An unofficial app to manage any Galaxy Buds device manufactured by Samsung (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=earbud-manager-for-galaxy-buds
+pkgver=flathub
+pkgrel=1
+pkgdesc="An unofficial app to manage any Galaxy Buds device manufactured by Samsung"
+url="https://flathub.org/apps/me.timschneeberger.GalaxyBudsClient"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=me.timschneeberger.GalaxyBudsClient

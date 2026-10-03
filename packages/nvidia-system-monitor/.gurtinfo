@@ -1,0 +1,13 @@
+pkgname = nvidia-system-monitor
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Nvidia System Monitor Qt
+url = https://flathub.org/apps/io.github.congard.qnvsm
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.congard.qnvsm

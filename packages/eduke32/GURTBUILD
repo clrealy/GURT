@@ -1,0 +1,15 @@
+# EDuke32 is an awesome, free homebrew game engine (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=eduke32
+pkgver=flathub
+pkgrel=1
+pkgdesc="EDuke32 is an awesome, free homebrew game engine"
+url="https://flathub.org/apps/com.eduke32.EDuke32"
+license="see Flathub"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.eduke32.EDuke32

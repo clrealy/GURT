@@ -1,0 +1,15 @@
+# Music visualizer which uses 3D accelerated iterative image based rendering (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=projectm
+pkgver=flathub
+pkgrel=1
+pkgdesc="Music visualizer which uses 3D accelerated iterative image based rendering"
+url="https://flathub.org/apps/net.sourceforge.projectM"
+license="GPL-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.sourceforge.projectM

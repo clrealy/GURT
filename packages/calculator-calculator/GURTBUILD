@@ -1,0 +1,15 @@
+# Beyond the equation (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=calculator-calculator
+pkgver=flathub
+pkgrel=1
+pkgdesc="Beyond the equation"
+url="https://flathub.org/apps/dev.edfloreshz.Calculator"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.edfloreshz.Calculator

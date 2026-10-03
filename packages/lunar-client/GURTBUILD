@@ -1,0 +1,15 @@
+# A modpack for all modern versions of Minecraft! (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=lunar-client
+pkgver=flathub
+pkgrel=1
+pkgdesc="A modpack for all modern versions of Minecraft!"
+url="https://flathub.org/apps/com.lunarclient.LunarClient"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.lunarclient.LunarClient

@@ -1,0 +1,13 @@
+pkgname = reaper
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Digital Audio Workstation
+url = https://flathub.org/apps/fm.reaper.Reaper
+license = see Flathub
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = fm.reaper.Reaper

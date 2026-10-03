@@ -1,0 +1,15 @@
+# Simple countdown timer (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=timer
+pkgver=flathub
+pkgrel=1
+pkgdesc="Simple countdown timer"
+url="https://flathub.org/apps/com.github.vikdevelop.timer"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.vikdevelop.timer

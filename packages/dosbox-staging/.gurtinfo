@@ -1,0 +1,13 @@
+pkgname = dosbox-staging
+pkgver = flathub
+pkgrel = 1
+pkgdesc = DOS/x86 emulator with advanced features
+url = https://flathub.org/apps/io.github.dosbox-staging
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.dosbox-staging

@@ -1,0 +1,13 @@
+pkgname = musicbrainz-picard
+pkgver = flathub
+pkgrel = 1
+pkgdesc = MusicBrainz's music tagger
+url = https://flathub.org/apps/org.musicbrainz.Picard
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.musicbrainz.Picard

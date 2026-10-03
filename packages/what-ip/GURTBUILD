@@ -1,0 +1,15 @@
+# Info on your IP (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=what-ip
+pkgver=flathub
+pkgrel=1
+pkgdesc="Info on your IP"
+url="https://flathub.org/apps/org.gabmus.whatip"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gabmus.whatip

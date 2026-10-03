@@ -1,0 +1,15 @@
+# Scalable Vector Graphics editor (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=boxy-svg
+pkgver=flathub
+pkgrel=1
+pkgdesc="Scalable Vector Graphics editor"
+url="https://flathub.org/apps/com.boxy_svg.BoxySVG"
+license="see Flathub"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.boxy_svg.BoxySVG

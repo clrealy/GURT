@@ -1,0 +1,15 @@
+# Privacy-focused Telegram fork (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=mercurygram
+pkgver=flathub
+pkgrel=1
+pkgdesc="Privacy-focused Telegram fork"
+url="https://flathub.org/apps/it.belloworld.mercurygram"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=it.belloworld.mercurygram

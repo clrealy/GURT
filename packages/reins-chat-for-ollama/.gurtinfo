@@ -1,0 +1,13 @@
+pkgname = reins-chat-for-ollama
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Private AI Chat
+url = https://flathub.org/apps/dev.ibrahimcetin.reins
+license = GPL-3.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = dev.ibrahimcetin.reins

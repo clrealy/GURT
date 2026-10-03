@@ -1,0 +1,13 @@
+pkgname = 1password-onepassword
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Password manager and secure wallet
+url = https://flathub.org/apps/com.onepassword.OnePassword
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.onepassword.OnePassword

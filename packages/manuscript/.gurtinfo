@@ -1,0 +1,13 @@
+pkgname = manuscript
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Read and edit Markdown files
+url = https://flathub.org/apps/io.gitlab.ilshat_apps.manuscript
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.gitlab.ilshat_apps.manuscript

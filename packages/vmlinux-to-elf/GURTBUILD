@@ -1,0 +1,15 @@
+# Convert raw Linux kernel blobs to ELF files (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=vmlinux-to-elf
+pkgver=flathub
+pkgrel=1
+pkgdesc="Convert raw Linux kernel blobs to ELF files"
+url="https://flathub.org/apps/re.fossplant.vmlinux-to-elf"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=re.fossplant.vmlinux-to-elf

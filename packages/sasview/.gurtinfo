@@ -1,0 +1,13 @@
+pkgname = sasview
+pkgver = flathub
+pkgrel = 1
+pkgdesc = SasView is a Small Angle Scattering Analysis Software Package
+url = https://flathub.org/apps/org.sasview.sasview
+license = BSD-3-Clause
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.sasview.sasview

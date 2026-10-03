@@ -1,0 +1,15 @@
+# A High-Precision Spreadsheet Program (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=the-gnumeric-spreadsheet
+pkgver=flathub
+pkgrel=1
+pkgdesc="A High-Precision Spreadsheet Program"
+url="https://flathub.org/apps/org.gnumeric.Gnumeric"
+license="GPL-2.0 or GPL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnumeric.Gnumeric

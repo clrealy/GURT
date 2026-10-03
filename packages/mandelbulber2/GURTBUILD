@@ -1,0 +1,15 @@
+# Free and open source 3D fractals generator (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=mandelbulber2
+pkgver=flathub
+pkgrel=1
+pkgdesc="Free and open source 3D fractals generator"
+url="https://flathub.org/apps/com.github.buddhi1980.mandelbulber2"
+license="GPL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.buddhi1980.mandelbulber2

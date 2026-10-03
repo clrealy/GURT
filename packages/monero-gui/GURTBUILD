@@ -1,0 +1,15 @@
+# Monero: the secure, private, untraceable cryptocurrency (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=monero-gui
+pkgver=flathub
+pkgrel=1
+pkgdesc="Monero: the secure, private, untraceable cryptocurrency"
+url="https://flathub.org/apps/org.getmonero.Monero"
+license="BSD-3-Clause"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.getmonero.Monero

@@ -1,0 +1,13 @@
+pkgname = barrier
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Barrier - Share mouse and keyboard over the local network
+url = https://flathub.org/apps/com.github.debauchee.barrier
+license = GPL-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.debauchee.barrier

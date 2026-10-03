@@ -1,0 +1,15 @@
+# Read GNOME documentation offline (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=biblioteca
+pkgver=flathub
+pkgrel=1
+pkgdesc="Read GNOME documentation offline"
+url="https://flathub.org/apps/app.drey.Biblioteca"
+license="GPL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=app.drey.Biblioteca

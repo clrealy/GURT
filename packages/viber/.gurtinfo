@@ -1,0 +1,13 @@
+pkgname = viber
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Send free messages and make free calls
+url = https://flathub.org/apps/com.viber.Viber
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.viber.Viber

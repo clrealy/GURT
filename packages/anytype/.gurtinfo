@@ -1,0 +1,13 @@
+pkgname = anytype
+pkgver = flathub
+pkgrel = 1
+pkgdesc = The everything app for those who celebrate trust and autonomy
+url = https://flathub.org/apps/io.anytype.anytype
+license = see Flathub
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.anytype.anytype

@@ -1,0 +1,13 @@
+pkgname = jitsi-meet
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Jitsi Meet - Secure, Simple and Scalable Video Conferences
+url = https://flathub.org/apps/org.jitsi.jitsi-meet
+license = Apache-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.jitsi.jitsi-meet

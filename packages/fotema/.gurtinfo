@@ -1,0 +1,13 @@
+pkgname = fotema
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Admire your photos
+url = https://flathub.org/apps/app.fotema.Fotema
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = app.fotema.Fotema

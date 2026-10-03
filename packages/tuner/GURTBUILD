@@ -1,0 +1,15 @@
+# Internet Radio (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tuner
+pkgver=flathub
+pkgrel=1
+pkgdesc="Internet Radio"
+url="https://flathub.org/apps/io.github.tuner_labs.tuner"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.tuner_labs.tuner

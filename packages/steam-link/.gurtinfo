@@ -1,0 +1,13 @@
+pkgname = steam-link
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Stream games from another computer with Steam
+url = https://flathub.org/apps/com.valvesoftware.SteamLink
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.valvesoftware.SteamLink

@@ -1,0 +1,13 @@
+pkgname = nbtexplorer
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A graphical NBT editor for all Minecraft NBT data sources
+url = https://flathub.org/apps/com.jaquadro.NBTExplorer
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.jaquadro.NBTExplorer

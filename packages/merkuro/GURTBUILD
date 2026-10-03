@@ -1,0 +1,15 @@
+# Manage your tasks, events and contacts with speed and ease (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=merkuro
+pkgver=flathub
+pkgrel=1
+pkgdesc="Manage your tasks, events and contacts with speed and ease"
+url="https://flathub.org/apps/org.kde.merkuro"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.merkuro

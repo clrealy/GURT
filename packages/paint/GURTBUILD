@@ -1,0 +1,15 @@
+# A sweet painting tool (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=paint
+pkgver=flathub
+pkgrel=1
+pkgdesc="A sweet painting tool"
+url="https://flathub.org/apps/org.sugarlabs.Paint"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.sugarlabs.Paint

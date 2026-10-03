@@ -1,0 +1,15 @@
+# 3D sound for headphones (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=virtual-surround
+pkgver=flathub
+pkgrel=1
+pkgdesc="3D sound for headphones"
+url="https://flathub.org/apps/de.berny23.virtual_surround_manager"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=de.berny23.virtual_surround_manager

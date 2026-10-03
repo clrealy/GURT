@@ -1,0 +1,13 @@
+pkgname = lychee-slicer
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A powerful and versatile Slicer for Resin and Filament 3D Printers
+url = https://flathub.org/apps/io.mango3d.LycheeSlicer
+license = see Flathub
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.mango3d.LycheeSlicer

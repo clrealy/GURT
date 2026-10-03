@@ -1,0 +1,15 @@
+# Obtain the 2048 tile (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=2048-twentyfortyeight
+pkgver=flathub
+pkgrel=1
+pkgdesc="Obtain the 2048 tile"
+url="https://flathub.org/apps/org.gnome.TwentyFortyEight"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.TwentyFortyEight

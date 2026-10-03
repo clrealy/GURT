@@ -1,0 +1,13 @@
+pkgname = free-download-manager
+pkgver = flathub
+pkgrel = 1
+pkgdesc = FDM is a powerful modern download accelerator and organizer
+url = https://flathub.org/apps/org.freedownloadmanager.Manager
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.freedownloadmanager.Manager

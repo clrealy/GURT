@@ -1,0 +1,13 @@
+pkgname = gitte
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Manage your code history
+url = https://flathub.org/apps/de.wwwtech.gitte
+license = AGPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = de.wwwtech.gitte

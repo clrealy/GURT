@@ -1,0 +1,13 @@
+pkgname = nomachine-enterprise-client
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Access NoMachine computers over the network
+url = https://flathub.org/apps/com.nomachine.nxplayer
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.nomachine.nxplayer

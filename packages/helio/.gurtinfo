@@ -1,0 +1,13 @@
+pkgname = helio
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Helio, free and cross-platform lightweight music sequencer
+url = https://flathub.org/apps/fm.helio.Workstation
+license = GPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = fm.helio.Workstation

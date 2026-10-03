@@ -1,0 +1,13 @@
+pkgname = loomfy
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Transcribe meetings locally
+url = https://flathub.org/apps/ai.loomfy.Loomfy
+license = see Flathub
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = ai.loomfy.Loomfy

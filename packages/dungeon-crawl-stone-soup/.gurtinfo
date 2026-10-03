@@ -1,0 +1,13 @@
+pkgname = dungeon-crawl-stone-soup
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Roguelike dungeon exploration game
+url = https://flathub.org/apps/org.develz.Crawl
+license = GPL-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.develz.Crawl

@@ -1,0 +1,15 @@
+# OpenGL and Vulkan GPU stress test (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=furmark
+pkgver=flathub
+pkgrel=1
+pkgdesc="OpenGL and Vulkan GPU stress test"
+url="https://flathub.org/apps/com.geeks3d.furmark"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.geeks3d.furmark

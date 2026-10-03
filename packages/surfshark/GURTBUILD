@@ -1,0 +1,15 @@
+# Connect to secure, private web! (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=surfshark
+pkgver=flathub
+pkgrel=1
+pkgdesc="Connect to secure, private web!"
+url="https://flathub.org/apps/com.surfshark.Surfshark"
+license="see Flathub"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.surfshark.Surfshark

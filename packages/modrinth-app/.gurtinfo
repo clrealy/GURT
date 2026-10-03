@@ -1,0 +1,13 @@
+pkgname = modrinth-app
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Play modded Minecraft with ease
+url = https://flathub.org/apps/com.modrinth.ModrinthApp
+license = GPL-3.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.modrinth.ModrinthApp

@@ -1,0 +1,13 @@
+pkgname = live-captions
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Live Captioning for the desktop
+url = https://flathub.org/apps/net.sapples.LiveCaptions
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.sapples.LiveCaptions

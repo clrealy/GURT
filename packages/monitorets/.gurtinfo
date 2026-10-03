@@ -1,0 +1,13 @@
+pkgname = monitorets
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Have always at a glance the usage of system resources
+url = https://flathub.org/apps/io.github.jorchube.monitorets
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.jorchube.monitorets

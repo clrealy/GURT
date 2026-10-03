@@ -1,0 +1,13 @@
+pkgname = wallpaper-downloader
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Download, manage and change your wallpapers automatically from the Internet
+url = https://flathub.org/apps/es.estoes.wallpaperDownloader
+license = GPL-3.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = es.estoes.wallpaperDownloader

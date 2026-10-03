@@ -1,0 +1,15 @@
+# VisualBoyAdvance-M, a high compatibility Gameboy Advance Emulator (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=visualboyadvance-m
+pkgver=flathub
+pkgrel=1
+pkgdesc="VisualBoyAdvance-M, a high compatibility Gameboy Advance Emulator"
+url="https://flathub.org/apps/com.vba_m.visualboyadvance-m"
+license="GPL-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.vba_m.visualboyadvance-m

@@ -1,0 +1,15 @@
+# Telemetry-less code editing (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=vscodium-insiders
+pkgver=flathub
+pkgrel=1
+pkgdesc="Telemetry-less code editing"
+url="https://flathub.org/apps/com.vscodium.codium-insiders"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.vscodium.codium-insiders

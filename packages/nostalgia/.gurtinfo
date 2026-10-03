@@ -1,0 +1,13 @@
+pkgname = nostalgia
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Set historic GNOME wallpapers
+url = https://flathub.org/apps/im.bernard.Nostalgia
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = im.bernard.Nostalgia

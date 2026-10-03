@@ -1,0 +1,15 @@
+# Create Linux app launchers (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=launcher-studio
+pkgver=flathub
+pkgrel=1
+pkgdesc="Create Linux app launchers"
+url="https://flathub.org/apps/fr.arnaudmichel.launcherstudio"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=fr.arnaudmichel.launcherstudio

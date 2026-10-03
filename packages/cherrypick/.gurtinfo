@@ -1,0 +1,13 @@
+pkgname = cherrypick
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Pick colors on your screen
+url = https://flathub.org/apps/page.codeberg.elly_code.cherrypick
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = page.codeberg.elly_code.cherrypick

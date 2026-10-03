@@ -1,0 +1,15 @@
+# Private offline AI assistant (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=jan
+pkgver=flathub
+pkgrel=1
+pkgdesc="Private offline AI assistant"
+url="https://flathub.org/apps/ai.jan.Jan"
+license="Apache-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=ai.jan.Jan

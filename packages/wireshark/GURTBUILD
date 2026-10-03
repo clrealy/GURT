@@ -1,0 +1,15 @@
+# Network protocol analyzer (without capture support) (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=wireshark
+pkgver=flathub
+pkgrel=1
+pkgdesc="Network protocol analyzer (without capture support)"
+url="https://flathub.org/apps/org.wireshark.Wireshark"
+license="GPL-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.wireshark.Wireshark

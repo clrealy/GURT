@@ -1,0 +1,13 @@
+pkgname = koreader
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Ebook reader
+url = https://flathub.org/apps/rocks.koreader.KOReader
+license = AGPL-3.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = rocks.koreader.KOReader

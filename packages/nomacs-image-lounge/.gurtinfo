@@ -1,0 +1,13 @@
+pkgname = nomacs-image-lounge
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Nomacs is a free, open source image viewer
+url = https://flathub.org/apps/org.nomacs.ImageLounge
+license = GPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.nomacs.ImageLounge

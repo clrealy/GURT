@@ -1,0 +1,13 @@
+pkgname = pencil2d
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Create 2D animations with ease
+url = https://flathub.org/apps/org.pencil2d.Pencil2D
+license = GPL-2.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.pencil2d.Pencil2D

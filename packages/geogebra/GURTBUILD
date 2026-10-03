@@ -1,0 +1,15 @@
+# Dynamic mathematics software (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=geogebra
+pkgver=flathub
+pkgrel=1
+pkgdesc="Dynamic mathematics software"
+url="https://flathub.org/apps/org.geogebra.GeoGebra"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.geogebra.GeoGebra

@@ -1,0 +1,13 @@
+pkgname = raspberry-pi-imager
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Raspberry Pi Imaging utility
+url = https://flathub.org/apps/org.raspberrypi.rpi-imager
+license = Apache-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.raspberrypi.rpi-imager

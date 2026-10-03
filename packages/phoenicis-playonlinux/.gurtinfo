@@ -1,0 +1,13 @@
+pkgname = phoenicis-playonlinux
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Install and run Windows software on Linux
+url = https://flathub.org/apps/org.phoenicis.playonlinux
+license = LGPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.phoenicis.playonlinux

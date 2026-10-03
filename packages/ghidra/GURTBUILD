@@ -1,0 +1,15 @@
+# Ghidra Reverse Engineering Suite (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=ghidra
+pkgver=flathub
+pkgrel=1
+pkgdesc="Ghidra Reverse Engineering Suite"
+url="https://flathub.org/apps/org.ghidra_sre.Ghidra"
+license="Apache-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.ghidra_sre.Ghidra

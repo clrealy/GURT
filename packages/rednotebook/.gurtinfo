@@ -1,0 +1,13 @@
+pkgname = rednotebook
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Graphical diary and journal
+url = https://flathub.org/apps/app.rednotebook.RedNotebook
+license = GPL-2.0+
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = app.rednotebook.RedNotebook

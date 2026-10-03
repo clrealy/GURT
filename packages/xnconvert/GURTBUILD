@@ -1,0 +1,15 @@
+# Easily process images in batches (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=xnconvert
+pkgver=flathub
+pkgrel=1
+pkgdesc="Easily process images in batches"
+url="https://flathub.org/apps/com.xnview.XnConvert"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.xnview.XnConvert

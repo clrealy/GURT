@@ -1,0 +1,15 @@
+# Watch without distraction (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=video-player
+pkgver=flathub
+pkgrel=1
+pkgdesc="Watch without distraction"
+url="https://flathub.org/apps/org.gnome.Showtime"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.Showtime

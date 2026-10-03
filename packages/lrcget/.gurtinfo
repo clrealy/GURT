@@ -1,0 +1,13 @@
+pkgname = lrcget
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Download synced LRC lyrics
+url = https://flathub.org/apps/net.lrclib.lrcget
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.lrclib.lrcget

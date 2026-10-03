@@ -1,0 +1,13 @@
+pkgname = google-earth-pro
+pkgver = flathub
+pkgrel = 1
+pkgdesc = 3D planet viewer
+url = https://flathub.org/apps/com.google.EarthPro
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.google.EarthPro

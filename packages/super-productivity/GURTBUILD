@@ -1,0 +1,15 @@
+# To-do list and time tracker (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=super-productivity
+pkgver=flathub
+pkgrel=1
+pkgdesc="To-do list and time tracker"
+url="https://flathub.org/apps/com.super_productivity.SuperProductivity"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.super_productivity.SuperProductivity

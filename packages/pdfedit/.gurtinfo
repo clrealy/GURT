@@ -1,0 +1,13 @@
+pkgname = pdfedit
+pkgver = flathub
+pkgrel = 1
+pkgdesc = PDF editor with ability to browse/edit the tree of raw pdf objects
+url = https://flathub.org/apps/net.sourceforge.Pdfedit
+license = GPL-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.sourceforge.Pdfedit

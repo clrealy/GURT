@@ -1,0 +1,13 @@
+pkgname = legcord
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Legcord is a custom client designed to enhance your Discord experience while keeping everything lightweight
+url = https://flathub.org/apps/app.legcord.Legcord
+license = OSL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = app.legcord.Legcord

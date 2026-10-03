@@ -1,0 +1,13 @@
+pkgname = rio
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Hardware-accelerated GPU terminal emulator powered by WebGPU
+url = https://flathub.org/apps/com.rioterm.Rio
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.rioterm.Rio

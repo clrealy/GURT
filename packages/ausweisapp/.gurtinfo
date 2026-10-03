@@ -1,0 +1,13 @@
+pkgname = ausweisapp
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Official authentication app for German ID card and residence permit
+url = https://flathub.org/apps/de.bund.ausweisapp.ausweisapp2
+license = EUPL-1.2
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = de.bund.ausweisapp.ausweisapp2

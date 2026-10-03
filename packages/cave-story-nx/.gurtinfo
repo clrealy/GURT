@@ -1,0 +1,13 @@
+pkgname = cave-story-nx
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A nostalgic side-action adventure game
+url = https://flathub.org/apps/com.gitlab.coringao.cavestory-nx
+license = BSD-2-Clause GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.gitlab.coringao.cavestory-nx

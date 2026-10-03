@@ -1,0 +1,15 @@
+# Manage Minecraft chunks (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=mca-selector
+pkgver=flathub
+pkgrel=1
+pkgdesc="Manage Minecraft chunks"
+url="https://flathub.org/apps/io.github.Querz.mcaselector"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.Querz.mcaselector

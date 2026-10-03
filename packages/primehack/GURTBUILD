@@ -1,0 +1,15 @@
+# Dolphin Emu fork for various Metroid Prime mods (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=primehack
+pkgver=flathub
+pkgrel=1
+pkgdesc="Dolphin Emu fork for various Metroid Prime mods"
+url="https://flathub.org/apps/io.github.shiiion.primehack"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.shiiion.primehack

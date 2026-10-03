@@ -1,0 +1,13 @@
+pkgname = ares
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Multi-system console emulation suite
+url = https://flathub.org/apps/dev.ares.ares
+license = ISC
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = dev.ares.ares

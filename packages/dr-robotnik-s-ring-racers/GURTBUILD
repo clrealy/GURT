@@ -1,0 +1,15 @@
+# Racing at the Next Level (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=dr-robotnik-s-ring-racers
+pkgver=flathub
+pkgrel=1
+pkgdesc="Racing at the Next Level"
+url="https://flathub.org/apps/org.kartkrew.RingRacers"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kartkrew.RingRacers

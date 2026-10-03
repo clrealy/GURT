@@ -1,0 +1,13 @@
+pkgname = desktop-plus
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Git client for power users
+url = https://flathub.org/apps/org.desktop_plus.desktop-plus
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.desktop_plus.desktop-plus

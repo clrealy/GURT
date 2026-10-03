@@ -1,0 +1,15 @@
+# A front-end (GUI) for mednafen emulator (included) (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=mednaffe
+pkgver=flathub
+pkgrel=1
+pkgdesc="A front-end (GUI) for mednafen emulator (included)"
+url="https://flathub.org/apps/com.github.AmatCoder.mednaffe"
+license="GPL-3.0+ and GPL-2.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.AmatCoder.mednaffe

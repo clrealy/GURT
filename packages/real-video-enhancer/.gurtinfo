@@ -1,0 +1,13 @@
+pkgname = real-video-enhancer
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Free and Open Source Video Enhancement Tool
+url = https://flathub.org/apps/io.github.tntwise.REAL-Video-Enhancer
+license = AGPL-3.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.tntwise.REAL-Video-Enhancer

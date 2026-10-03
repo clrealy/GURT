@@ -1,0 +1,13 @@
+pkgname = displaycal
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Display calibration and profiling with a focus on accuracy and versatility
+url = https://flathub.org/apps/net.displaycal.DisplayCAL
+license = GPL-3.0+
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.displaycal.DisplayCAL

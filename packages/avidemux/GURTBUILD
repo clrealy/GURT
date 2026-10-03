@@ -1,0 +1,15 @@
+# Multi-purpose video editing and processing software (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=avidemux
+pkgver=flathub
+pkgrel=1
+pkgdesc="Multi-purpose video editing and processing software"
+url="https://flathub.org/apps/org.avidemux.Avidemux"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.avidemux.Avidemux

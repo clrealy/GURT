@@ -1,0 +1,15 @@
+# Trim videos quickly (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=video-trimmer
+pkgver=flathub
+pkgrel=1
+pkgdesc="Trim videos quickly"
+url="https://flathub.org/apps/org.gnome.gitlab.YaLTeR.VideoTrimmer"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.gitlab.YaLTeR.VideoTrimmer

@@ -1,0 +1,13 @@
+pkgname = dosbox-x
+pkgver = flathub
+pkgrel = 1
+pkgdesc = X86/DOS emulator with sound and graphics
+url = https://flathub.org/apps/com.dosbox_x.DOSBox-X
+license = GPL-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.dosbox_x.DOSBox-X

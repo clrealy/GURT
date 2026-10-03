@@ -1,0 +1,15 @@
+# Universal node-based 2D editor (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=pixieditor
+pkgver=flathub
+pkgrel=1
+pkgdesc="Universal node-based 2D editor"
+url="https://flathub.org/apps/net.pixieditor.PixiEditor"
+license="LGPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.pixieditor.PixiEditor

@@ -1,0 +1,13 @@
+pkgname = wayshot
+pkgver = flathub
+pkgrel = 1
+pkgdesc = GNOME/Wayland screenshot and annotation tool
+url = https://flathub.org/apps/io.github.gutopardini.wayshot
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.gutopardini.wayshot

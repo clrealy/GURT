@@ -1,0 +1,13 @@
+pkgname = contour-terminal-emulator
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Contour is a modern and actually fast, modal, virtual terminal emulator, for everyday use
+url = https://flathub.org/apps/org.contourterminal.Contour
+license = Apache-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.contourterminal.Contour

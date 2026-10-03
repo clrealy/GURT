@@ -1,0 +1,15 @@
+# Scan files for threats (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=lenspect
+pkgver=flathub
+pkgrel=1
+pkgdesc="Scan files for threats"
+url="https://flathub.org/apps/io.github.vmkspv.lenspect"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.vmkspv.lenspect

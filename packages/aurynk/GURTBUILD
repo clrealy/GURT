@@ -1,0 +1,15 @@
+# Android Mirroring Tool for Linux (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=aurynk
+pkgver=flathub
+pkgrel=1
+pkgdesc="Android Mirroring Tool for Linux"
+url="https://flathub.org/apps/io.github.IshuSinghSE.aurynk"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.IshuSinghSE.aurynk

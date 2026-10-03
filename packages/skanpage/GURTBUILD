@@ -1,0 +1,15 @@
+# Scan multi-page documents and images (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=skanpage
+pkgver=flathub
+pkgrel=1
+pkgdesc="Scan multi-page documents and images"
+url="https://flathub.org/apps/org.kde.skanpage"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.skanpage

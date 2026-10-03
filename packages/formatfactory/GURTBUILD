@@ -1,0 +1,15 @@
+# Fast batch video, audio and image converter (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=formatfactory
+pkgver=flathub
+pkgrel=1
+pkgdesc="Fast batch video, audio and image converter"
+url="https://flathub.org/apps/com.ktechpit.formatfactory"
+license="see Flathub"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.ktechpit.formatfactory

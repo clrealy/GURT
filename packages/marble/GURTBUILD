@@ -1,0 +1,15 @@
+# Virtual Globe (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=marble
+pkgver=flathub
+pkgrel=1
+pkgdesc="Virtual Globe"
+url="https://flathub.org/apps/org.kde.marble"
+license="LGPL-2.1-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.marble

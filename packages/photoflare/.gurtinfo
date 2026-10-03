@@ -1,0 +1,13 @@
+pkgname = photoflare
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Simple but powerful Cross Platform Image Editor
+url = https://flathub.org/apps/io.photoflare.photoflare
+license = GPL-3.0+
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.photoflare.photoflare

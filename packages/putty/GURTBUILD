@@ -1,0 +1,15 @@
+# SSH, Telnet and Rlogin client (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=putty
+pkgver=flathub
+pkgrel=1
+pkgdesc="SSH, Telnet and Rlogin client"
+url="https://flathub.org/apps/uk.org.greenend.chiark.sgtatham.putty"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=uk.org.greenend.chiark.sgtatham.putty

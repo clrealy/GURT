@@ -1,0 +1,13 @@
+pkgname = bambu-studio
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Get perfect 3D prints!
+url = https://flathub.org/apps/com.bambulab.BambuStudio
+license = AGPL-3.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.bambulab.BambuStudio

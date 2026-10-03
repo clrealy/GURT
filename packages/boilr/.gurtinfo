@@ -1,0 +1,13 @@
+pkgname = boilr
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Add non-steam games to your steam library
+url = https://flathub.org/apps/io.github.philipk.boilr
+license = MIT-0 OR Apache-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.philipk.boilr

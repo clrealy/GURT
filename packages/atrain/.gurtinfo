@@ -1,0 +1,13 @@
+pkgname = atrain
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Offline transcription of speech recordings
+url = https://flathub.org/apps/io.github.juergenfleiss.aTrain
+license = AGPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.juergenfleiss.aTrain

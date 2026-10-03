@@ -1,0 +1,15 @@
+# Get fonts from online sources (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=sitra
+pkgver=flathub
+pkgrel=1
+pkgdesc="Get fonts from online sources"
+url="https://flathub.org/apps/io.github.sitraorg.sitra"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.sitraorg.sitra

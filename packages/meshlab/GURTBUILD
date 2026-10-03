@@ -1,0 +1,15 @@
+# Free and open source processing and editing 3D triangular meshes (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=meshlab
+pkgver=flathub
+pkgrel=1
+pkgdesc="Free and open source processing and editing 3D triangular meshes"
+url="https://flathub.org/apps/net.meshlab.MeshLab"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.meshlab.MeshLab

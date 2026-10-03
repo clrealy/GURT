@@ -1,0 +1,15 @@
+# The everything app for those who celebrate trust and autonomy (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=anytype
+pkgver=flathub
+pkgrel=1
+pkgdesc="The everything app for those who celebrate trust and autonomy"
+url="https://flathub.org/apps/io.anytype.anytype"
+license="see Flathub"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.anytype.anytype

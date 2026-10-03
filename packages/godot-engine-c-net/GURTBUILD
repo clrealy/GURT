@@ -1,0 +1,15 @@
+# Easily create 2D and 3D games (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=godot-engine-c-net
+pkgver=flathub
+pkgrel=1
+pkgdesc="Easily create 2D and 3D games"
+url="https://flathub.org/apps/org.godotengine.GodotSharp"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.godotengine.GodotSharp

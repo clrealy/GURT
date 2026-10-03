@@ -1,0 +1,15 @@
+# Cast media files to Smart TVs and Chromecast devices (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=go2tv
+pkgver=flathub
+pkgrel=1
+pkgdesc="Cast media files to Smart TVs and Chromecast devices"
+url="https://flathub.org/apps/app.go2tv.go2tv"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=app.go2tv.go2tv

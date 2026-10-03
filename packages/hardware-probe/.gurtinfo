@@ -1,0 +1,13 @@
+pkgname = hardware-probe
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Check operability of computer hardware and find drivers
+url = https://flathub.org/apps/org.linux_hardware.hw-probe
+license = BSD-2-Clause
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.linux_hardware.hw-probe

@@ -1,0 +1,15 @@
+# DVD and Blu-ray to MKV converter and network streamer (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=makemkv
+pkgver=flathub
+pkgrel=1
+pkgdesc="DVD and Blu-ray to MKV converter and network streamer"
+url="https://flathub.org/apps/com.makemkv.MakeMKV"
+license="LicenseRef-proprietary AND GPL-2.0 AND LGPL-2.1-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.makemkv.MakeMKV

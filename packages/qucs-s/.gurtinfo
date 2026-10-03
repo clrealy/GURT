@@ -1,0 +1,13 @@
+pkgname = qucs-s
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Quite universal circuit simulator with SPICE
+url = https://flathub.org/apps/io.github.ra3xdh.qucs_s
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.ra3xdh.qucs_s

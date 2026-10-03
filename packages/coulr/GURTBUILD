@@ -1,0 +1,15 @@
+# Enjoy colors and feel happy (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=coulr
+pkgver=flathub
+pkgrel=1
+pkgdesc="Enjoy colors and feel happy"
+url="https://flathub.org/apps/com.github.huluti.Coulr"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.huluti.Coulr

@@ -1,0 +1,13 @@
+pkgname = opendeck
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Use stream controllers
+url = https://flathub.org/apps/me.amankhanna.opendeck
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = me.amankhanna.opendeck

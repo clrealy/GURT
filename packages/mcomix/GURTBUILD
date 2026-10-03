@@ -1,0 +1,15 @@
+# Comic and general purpose image viewer (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=mcomix
+pkgver=flathub
+pkgrel=1
+pkgdesc="Comic and general purpose image viewer"
+url="https://flathub.org/apps/net.sourceforge.mcomix"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.sourceforge.mcomix

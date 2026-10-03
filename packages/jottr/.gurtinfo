@@ -1,0 +1,13 @@
+pkgname = jottr
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Simple text and markdown editor mainly intended for writers, journalists and researchers
+url = https://flathub.org/apps/io.github.mfat.jottr
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.mfat.jottr

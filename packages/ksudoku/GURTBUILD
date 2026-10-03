@@ -1,0 +1,15 @@
+# Complete a numeric puzzle with the numbers from one to nine (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=ksudoku
+pkgver=flathub
+pkgrel=1
+pkgdesc="Complete a numeric puzzle with the numbers from one to nine"
+url="https://flathub.org/apps/org.kde.ksudoku"
+license="GPL-2.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.ksudoku

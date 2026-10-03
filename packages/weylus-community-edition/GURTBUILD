@@ -1,0 +1,15 @@
+# Use your tablet as graphic tablet/touch screen on your computer (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=weylus-community-edition
+pkgver=flathub
+pkgrel=1
+pkgdesc="Use your tablet as graphic tablet/touch screen on your computer"
+url="https://flathub.org/apps/io.github.electronstudio.WeylusCommunityEdition"
+license="AGPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.electronstudio.WeylusCommunityEdition

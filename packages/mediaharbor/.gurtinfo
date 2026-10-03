@@ -1,0 +1,13 @@
+pkgname = mediaharbor
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Stream music and manage your local media library
+url = https://flathub.org/apps/org.mediaharbor.MediaHarbor
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.mediaharbor.MediaHarbor

@@ -1,0 +1,13 @@
+pkgname = dynamic-wallpaper
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Create light/dark wallpapers for GNOME 42 and beyond
+url = https://flathub.org/apps/me.dusansimic.DynamicWallpaper
+license = GPL-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = me.dusansimic.DynamicWallpaper

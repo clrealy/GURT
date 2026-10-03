@@ -1,0 +1,13 @@
+pkgname = minecraft-pi-edition-reborn
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Fun with Blocks
+url = https://flathub.org/apps/com.thebrokenrail.MCPIReborn
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.thebrokenrail.MCPIReborn

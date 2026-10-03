@@ -1,0 +1,13 @@
+pkgname = meteo
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Know the forecast of the next hours and days with data and maps
+url = https://flathub.org/apps/com.gitlab.bitseater.meteo
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.gitlab.bitseater.meteo

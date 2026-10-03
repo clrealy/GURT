@@ -1,0 +1,15 @@
+# Open-source electronics prototyping platform (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=arduino-ide-arduinoide
+pkgver=flathub
+pkgrel=1
+pkgdesc="Open-source electronics prototyping platform"
+url="https://flathub.org/apps/cc.arduino.arduinoide"
+license="LGPL-2.1"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=cc.arduino.arduinoide

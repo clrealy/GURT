@@ -1,0 +1,15 @@
+# A simple screen recorder for Linux desktop. Supports Wayland & Xorg (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=blue-recorder
+pkgver=flathub
+pkgrel=1
+pkgdesc="A simple screen recorder for Linux desktop. Supports Wayland & Xorg"
+url="https://flathub.org/apps/sa.sy.bluerecorder"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=sa.sy.bluerecorder

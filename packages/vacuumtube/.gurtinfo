@@ -1,0 +1,13 @@
+pkgname = vacuumtube
+pkgver = flathub
+pkgrel = 1
+pkgdesc = YouTube for TV, on your PC
+url = https://flathub.org/apps/rocks.shy.VacuumTube
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = rocks.shy.VacuumTube

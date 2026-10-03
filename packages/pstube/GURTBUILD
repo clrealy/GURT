@@ -1,0 +1,15 @@
+# Watch and download videos without ads (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=pstube
+pkgver=flathub
+pkgrel=1
+pkgdesc="Watch and download videos without ads"
+url="https://flathub.org/apps/io.github.prateekmedia.pstube"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.prateekmedia.pstube

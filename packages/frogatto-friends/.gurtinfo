@@ -1,0 +1,13 @@
+pkgname = frogatto-friends
+pkgver = flathub
+pkgrel = 1
+pkgdesc = An old-school 2D platform game
+url = https://flathub.org/apps/com.frogatto.Frogatto
+license = Zlib AND CC-BY-3.0 AND LicenseRef-proprietary
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.frogatto.Frogatto

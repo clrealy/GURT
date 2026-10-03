@@ -1,0 +1,13 @@
+pkgname = paint
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A sweet painting tool
+url = https://flathub.org/apps/org.sugarlabs.Paint
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.sugarlabs.Paint

@@ -1,0 +1,15 @@
+# A cross-platform downloader for manga and anime from various websites (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=hakuneko
+pkgver=flathub
+pkgrel=1
+pkgdesc="A cross-platform downloader for manga and anime from various websites"
+url="https://flathub.org/apps/io.github.hakuneko.HakuNeko"
+license="Unlicense"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.hakuneko.HakuNeko

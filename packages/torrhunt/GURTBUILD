@@ -1,0 +1,15 @@
+# Browse and search torrents from one desktop app (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=torrhunt
+pkgver=flathub
+pkgrel=1
+pkgdesc="Browse and search torrents from one desktop app"
+url="https://flathub.org/apps/com.ktechpit.torrhunt"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.ktechpit.torrhunt

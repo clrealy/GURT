@@ -1,0 +1,13 @@
+pkgname = pulseeffects
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Audio Effects for PulseAudio Applications
+url = https://flathub.org/apps/com.github.wwmm.pulseeffects
+license = GPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.wwmm.pulseeffects

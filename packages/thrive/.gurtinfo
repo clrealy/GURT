@@ -1,0 +1,13 @@
+pkgname = thrive
+pkgver = flathub
+pkgrel = 1
+pkgdesc = An evolution simulation game. Take control of your species in the environment and edit your species as a whole. Compete with other evolving species
+url = https://flathub.org/apps/com.revolutionarygamesstudio.ThriveLauncher
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.revolutionarygamesstudio.ThriveLauncher

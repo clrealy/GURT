@@ -1,0 +1,15 @@
+# Baidu Netdisk desktop client (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=baidu-netdisk
+pkgver=flathub
+pkgrel=1
+pkgdesc="Baidu Netdisk desktop client"
+url="https://flathub.org/apps/com.baidu.NetDisk"
+license="see Flathub"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.baidu.NetDisk

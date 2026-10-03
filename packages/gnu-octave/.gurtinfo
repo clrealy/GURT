@@ -1,0 +1,13 @@
+pkgname = gnu-octave
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Scientific Programming Language
+url = https://flathub.org/apps/org.octave.Octave
+license = GPL-3.0+
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.octave.Octave

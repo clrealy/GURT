@@ -1,0 +1,13 @@
+pkgname = supertux
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A jump-and-run game starring Tux the Penguin
+url = https://flathub.org/apps/org.supertuxproject.SuperTux
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.supertuxproject.SuperTux

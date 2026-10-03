@@ -1,0 +1,13 @@
+pkgname = 4ktube
+pkgver = flathub
+pkgrel = 1
+pkgdesc = 4K YouTube Downloader, Download HD YouTube Videos, Playlists, and Music Instantly
+url = https://flathub.org/apps/com.warlordsoftwares.youtube-downloader-4ktube
+license = see Flathub
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.warlordsoftwares.youtube-downloader-4ktube

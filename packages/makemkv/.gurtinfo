@@ -1,0 +1,13 @@
+pkgname = makemkv
+pkgver = flathub
+pkgrel = 1
+pkgdesc = DVD and Blu-ray to MKV converter and network streamer
+url = https://flathub.org/apps/com.makemkv.MakeMKV
+license = LicenseRef-proprietary AND GPL-2.0 AND LGPL-2.1-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.makemkv.MakeMKV

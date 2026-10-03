@@ -1,0 +1,15 @@
+# Ultra fast paced arena FPS (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=alien-arena
+pkgver=flathub
+pkgrel=1
+pkgdesc="Ultra fast paced arena FPS"
+url="https://flathub.org/apps/org.alienarena.alienarena"
+license="LGPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.alienarena.alienarena

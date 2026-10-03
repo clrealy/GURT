@@ -1,0 +1,15 @@
+# Powerful terminal and multiplexer (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=wezterm
+pkgver=flathub
+pkgrel=1
+pkgdesc="Powerful terminal and multiplexer"
+url="https://flathub.org/apps/org.wezfurlong.wezterm"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.wezfurlong.wezterm

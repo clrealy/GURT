@@ -1,0 +1,15 @@
+# Markdown Text Editor (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=cedilla
+pkgver=flathub
+pkgrel=1
+pkgdesc="Markdown Text Editor"
+url="https://flathub.org/apps/dev.mariinkys.Cedilla"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.mariinkys.Cedilla

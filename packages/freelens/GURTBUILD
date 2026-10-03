@@ -1,0 +1,15 @@
+# Free IDE for Kubernetes (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=freelens
+pkgver=flathub
+pkgrel=1
+pkgdesc="Free IDE for Kubernetes"
+url="https://flathub.org/apps/app.freelens.Freelens"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=app.freelens.Freelens

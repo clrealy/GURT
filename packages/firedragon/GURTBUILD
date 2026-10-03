@@ -1,0 +1,15 @@
+# FireDragon is a cross-platform, feature-rich and privacy-focused web browser (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=firedragon
+pkgver=flathub
+pkgrel=1
+pkgdesc="FireDragon is a cross-platform, feature-rich and privacy-focused web browser"
+url="https://flathub.org/apps/org.garudalinux.firedragon"
+license="MPL-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.garudalinux.firedragon

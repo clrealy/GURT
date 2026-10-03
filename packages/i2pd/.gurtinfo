@@ -1,0 +1,13 @@
+pkgname = i2pd
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Invisible Internet
+url = https://flathub.org/apps/website.i2pd.i2pd
+license = BSD-3-Clause
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = website.i2pd.i2pd

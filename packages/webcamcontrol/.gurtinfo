@@ -1,0 +1,13 @@
+pkgname = webcamcontrol
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Control webcam pan/tilt/zoom settings and more
+url = https://flathub.org/apps/com.daniel15.wcc
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.daniel15.wcc

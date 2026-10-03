@@ -1,0 +1,15 @@
+# A front-end to glxinfo, vulkaninfo, clinfo and es2_info (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=gpu-viewer
+pkgver=flathub
+pkgrel=1
+pkgdesc="A front-end to glxinfo, vulkaninfo, clinfo and es2_info"
+url="https://flathub.org/apps/io.github.arunsivaramanneo.GPUViewer"
+license="GPL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.arunsivaramanneo.GPUViewer

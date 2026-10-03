@@ -1,0 +1,15 @@
+# Chat over the Matrix network (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=sable
+pkgver=flathub
+pkgrel=1
+pkgdesc="Chat over the Matrix network"
+url="https://flathub.org/apps/moe.sable.client"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=moe.sable.client

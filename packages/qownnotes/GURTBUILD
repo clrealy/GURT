@@ -1,0 +1,15 @@
+# Markdown note-taking (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=qownnotes
+pkgver=flathub
+pkgrel=1
+pkgdesc="Markdown note-taking"
+url="https://flathub.org/apps/org.qownnotes.QOwnNotes"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.qownnotes.QOwnNotes

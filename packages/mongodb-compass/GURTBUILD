@@ -1,0 +1,15 @@
+# The MongoDB GUI (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=mongodb-compass
+pkgver=flathub
+pkgrel=1
+pkgdesc="The MongoDB GUI"
+url="https://flathub.org/apps/com.mongodb.Compass"
+license="SSPL-1.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.mongodb.Compass

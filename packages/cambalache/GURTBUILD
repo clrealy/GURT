@@ -1,0 +1,15 @@
+# Create GTK 4 user interfaces (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=cambalache
+pkgver=flathub
+pkgrel=1
+pkgdesc="Create GTK 4 user interfaces"
+url="https://flathub.org/apps/ar.xjuan.Cambalache"
+license="LGPL-2.1"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=ar.xjuan.Cambalache

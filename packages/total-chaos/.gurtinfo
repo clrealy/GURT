@@ -1,0 +1,13 @@
+pkgname = total-chaos
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Survival horror set on a remote island known as Fort Oasis
+url = https://flathub.org/apps/com.moddb.TotalChaos
+license = CC-BY-NC-SA-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.moddb.TotalChaos

@@ -1,0 +1,15 @@
+# Character map application (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=characters
+pkgver=flathub
+pkgrel=1
+pkgdesc="Character map application"
+url="https://flathub.org/apps/org.gnome.Characters"
+license="BSD-3-Clause AND GPL-2.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.Characters

@@ -1,0 +1,15 @@
+# Highly compatible N64 emulator, built-in netplay (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=gopher64
+pkgver=flathub
+pkgrel=1
+pkgdesc="Highly compatible N64 emulator, built-in netplay"
+url="https://flathub.org/apps/io.github.gopher64.gopher64"
+license="GPL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.gopher64.gopher64

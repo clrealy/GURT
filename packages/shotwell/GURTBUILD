@@ -1,0 +1,15 @@
+# Digital photo organizer (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=shotwell
+pkgver=flathub
+pkgrel=1
+pkgdesc="Digital photo organizer"
+url="https://flathub.org/apps/org.gnome.Shotwell"
+license="LGPL-2.1+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.Shotwell

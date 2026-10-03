@@ -1,0 +1,13 @@
+pkgname = steam-rom-manager
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Steam bulk importer & art manager!
+url = https://flathub.org/apps/com.steamgriddb.steam-rom-manager
+license = GPL-3
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.steamgriddb.steam-rom-manager

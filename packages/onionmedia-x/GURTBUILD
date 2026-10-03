@@ -1,0 +1,15 @@
+# Free Media Downloader & Converter (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=onionmedia-x
+pkgver=flathub
+pkgrel=1
+pkgdesc="Free Media Downloader & Converter"
+url="https://flathub.org/apps/io.github.onionware_github.onionmedia"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.onionware_github.onionmedia

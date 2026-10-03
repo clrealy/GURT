@@ -1,0 +1,15 @@
+# Fast-paced single-player rally racing game (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=trigger-rally
+pkgver=flathub
+pkgrel=1
+pkgdesc="Fast-paced single-player rally racing game"
+url="https://flathub.org/apps/io.sourceforge.trigger_rally.TriggerRally"
+license="GPL-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.sourceforge.trigger_rally.TriggerRally

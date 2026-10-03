@@ -1,0 +1,13 @@
+pkgname = firmware
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Install firmware on devices
+url = https://flathub.org/apps/org.gnome.Firmware
+license = GPL-2.0+
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.gnome.Firmware

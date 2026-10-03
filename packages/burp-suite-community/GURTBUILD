@@ -1,0 +1,15 @@
+# The most widely used web application security testing software (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=burp-suite-community
+pkgver=flathub
+pkgrel=1
+pkgdesc="The most widely used web application security testing software"
+url="https://flathub.org/apps/net.portswigger.BurpSuite-Community"
+license="see Flathub"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.portswigger.BurpSuite-Community

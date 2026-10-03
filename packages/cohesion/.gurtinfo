@@ -1,0 +1,13 @@
+pkgname = cohesion
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Unofficial Notion Desktop client
+url = https://flathub.org/apps/io.github.brunofin.Cohesion
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.brunofin.Cohesion

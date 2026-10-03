@@ -1,0 +1,15 @@
+# The Ultimate Desktop Wallpaper Application (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=colorwall
+pkgver=flathub
+pkgrel=1
+pkgdesc="The Ultimate Desktop Wallpaper Application"
+url="https://flathub.org/apps/com.ktechpit.colorwall"
+license="see Flathub"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.ktechpit.colorwall

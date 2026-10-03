@@ -1,0 +1,13 @@
+pkgname = speed-dreams
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Speed Dreams is a 3d cross-platform, open source motorsport simulation and racing game
+url = https://flathub.org/apps/org.speed_dreams.SpeedDreams
+license = GPL-2.0+ and GPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.speed_dreams.SpeedDreams
