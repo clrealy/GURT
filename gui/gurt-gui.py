@@ -837,21 +837,27 @@ PAGE = r"""<!doctype html>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GURT</title><link rel="icon" href="/icon.png">
 <style>
-:root{--bg:#f6f5f0;--panel:#fff;--ink:#16161a;--muted:#6b6b76;--line:#e3e1d8;--accent:#f5b400;--accent-ink:#1a1400;--tag:#efece2;--code:#f1efe7;--good:#1f8a4c;--bad:#d12f3f;
-  --g:#16161a;--u:#e00000;--r:#00b300;--t:#0038ff}
+:root{--bg:#f3efe2;--panel:#fffdf6;--ink:#141414;--muted:#5f5a50;--line:#ddd5c1;--accent:#ffc629;--accent-ink:#141414;--tag:#ece4cf;--code:#fbf8ee;--good:#1d7f44;--bad:#d4302a;
+  --edge:#141414;--shadow:#141414;--dots:#14141418;--c-red:#e8302a;--c-green:#1fa64a;--c-blue:#2456e0;--logo-ink:#141414}
 :root{color-scheme:light dark}:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
-@media (prefers-color-scheme: dark){:root:not([data-theme=light]){--bg:#0f0f12;--panel:#17171c;--ink:#ecebe6;--muted:#9a99a3;--line:#2a2a31;--accent:#ffc629;--tag:#23232a;--code:#101014;--good:#46c37b;--bad:#ff5a6a;
-  --g:#ecebe6;--u:#ff3b3b;--r:#33e06b;--t:#4f7bff}}
-:root[data-theme=dark]{--bg:#0f0f12;--panel:#17171c;--ink:#ecebe6;--muted:#9a99a3;--line:#2a2a31;--accent:#ffc629;--tag:#23232a;--code:#101014;--good:#46c37b;--bad:#ff5a6a;
-  --g:#ecebe6;--u:#ff3b3b;--r:#33e06b;--t:#4f7bff}
+@media (prefers-color-scheme: dark){:root:not([data-theme=light]){--bg:#17161b;--panel:#22202a;--ink:#f1ede2;--muted:#aaa395;--line:#3a3644;--accent:#ffc629;--tag:#2e2b37;--code:#121116;--good:#4fc27f;--bad:#ff5b52;
+  --edge:#55505f;--shadow:#000;--dots:#ffffff12;--logo-ink:#f1ede2}}
+:root[data-theme=dark]{--bg:#17161b;--panel:#22202a;--ink:#f1ede2;--muted:#aaa395;--line:#3a3644;--accent:#ffc629;--tag:#2e2b37;--code:#121116;--good:#4fc27f;--bad:#ff5b52;
+  --edge:#55505f;--shadow:#000;--dots:#ffffff12;--logo-ink:#f1ede2}
 *{box-sizing:border-box}[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,"Segoe UI",sans-serif;height:100vh;display:flex;flex-direction:column}
 code,.mono{font-family:ui-monospace,"JetBrains Mono","DejaVu Sans Mono",monospace}
-header{display:flex;align-items:center;gap:18px;padding:14px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
-.logo{font:700 30px/1 Georgia,"Times New Roman",serif;letter-spacing:-.5px}
-.logoimg{display:block;height:64px;width:auto;margin:-10px -8px -8px -10px}
-@media (prefers-color-scheme: dark){:root:not([data-theme=light]) .logoimg{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.9)) drop-shadow(0 0 1px rgba(255,255,255,.9))}}
-:root[data-theme=dark] .logoimg{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.9)) drop-shadow(0 0 1px rgba(255,255,255,.9))}
+header{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px 16px;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+.brand{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}
+.logosvg svg{display:block;height:46px;width:auto}
+.ver{white-space:nowrap}
+nav{min-width:0;overflow-x:auto;scrollbar-width:none;padding:4px 4px 6px}nav::-webkit-scrollbar{display:none}
+.hdr-actions{display:flex;gap:8px;align-items:center}
+.prefs{position:relative}
+#prefpop{position:absolute;right:0;top:calc(100% + 10px);z-index:70;display:grid;gap:10px;min-width:240px;padding:12px;background:var(--panel);color:var(--ink);border:2px solid var(--edge,var(--line));border-radius:10px;box-shadow:5px 5px 0 var(--shadow,#0004)}
+#prefpop label{display:grid;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}#prefpop select{width:100%}
+.prefrow{display:flex;flex-wrap:wrap;gap:6px}
+@media (max-width:760px){header{grid-template-columns:minmax(0,1fr) auto}nav{grid-column:1/-1;grid-row:2;margin:0 -6px}.logosvg svg{height:38px}}
 .srcs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .srcs button{font:13px ui-monospace,monospace;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer}
 .srcs button small{font-family:system-ui,sans-serif;color:var(--muted);margin-left:4px}
@@ -866,13 +872,12 @@ header{display:flex;align-items:center;gap:18px;padding:14px 20px;border-bottom:
 .srcs button.dirtbtn.on small{color:#fff}
 :root.dirt{--bg:#0a0708;--panel:#140d0f;--ink:#f1e9ea;--muted:#a3898d;--line:#332226;--tag:#24161a;--code:#1a1013;--accent:#e0314b;--accent-ink:#fff;--good:#ff7a8c;color-scheme:dark}
 .dirtlogo{display:none;height:40px;width:auto;margin:4px 0 6px}
-:root.dirt .logoimg{display:none}:root.dirt .dirtlogo{display:block}
+:root.dirt .logosvg{display:none}:root.dirt .dirtlogo{display:block}
 #gate .box{background:#120b0d;color:#f1e9ea;text-align:center;border:1px solid #3a2226}
 #gate .g18{display:inline-block;font-weight:700;border:2px solid #e0314b;color:#e0314b;border-radius:999px;padding:2px 12px;margin-bottom:12px;font-size:14px}
 #gate p{color:#c9b3b7}
 #gate .row{justify-content:center}
 #gate .yeah{background:#e0314b;color:#fff}#gate .nah{background:#1d1417;color:#f1e9ea}
-.logo .g{color:var(--g)}.logo .u{color:var(--u)}.logo .r{color:var(--r)}.logo .t{color:var(--t)}
 .ver{color:var(--muted);font-size:12px}
 nav{display:flex;gap:6px;margin-left:8px}
 nav button{font:inherit;background:none;border:1px solid transparent;color:var(--muted);padding:6px 14px;border-radius:999px;cursor:pointer;white-space:nowrap}
@@ -889,8 +894,8 @@ nav .badge{background:var(--bad);color:#fff;border-radius:999px;font-size:11px;p
 .btn.danger{background:var(--bad);color:#fff}
 .btn.small{padding:4px 10px;font-size:13px}
 main{flex:1;overflow:auto;padding:18px 20px 30px}
-.search{display:flex;gap:8px;margin-bottom:14px}
-.search input{flex:1;font:inherit;font-size:16px;padding:11px 14px;border-radius:12px;border:2px solid var(--line);background:var(--panel);color:var(--ink);outline:none}
+.search{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.search input{flex:1 1 260px;min-width:0;font:inherit;font-size:16px;padding:11px 14px;border-radius:12px;border:2px solid var(--line);background:var(--panel);color:var(--ink);outline:none}
 .search input:focus{border-color:var(--accent)}
 .hint{color:var(--muted);font-size:13px;margin:-6px 2px 12px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px}
@@ -902,7 +907,7 @@ main{flex:1;overflow:auto;padding:18px 20px 30px}
 .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .chip{background:var(--tag);border-radius:999px;padding:1px 9px;font-size:12px}
 .chip.ok{background:color-mix(in srgb,var(--good) 20%,transparent);color:var(--good)}
-#cmptray{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:40;display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 12px;box-shadow:0 8px 30px #0003;max-width:calc(100vw - 32px)}
+#cmptray{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:40;display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 12px;box-shadow:4px 4px 0 var(--shadow,#0004);max-width:calc(100vw - 32px)}
 #cmplist{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #cmpdlg{max-width:min(920px,calc(100vw - 32px));width:100%}#cmptable{overflow-x:auto}#cmptable table{border-collapse:collapse;width:100%;font-size:14px}
 #cmptable th,#cmptable td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}#cmptable th{color:var(--muted);font-weight:600;white-space:nowrap}
@@ -940,7 +945,7 @@ dialog .row{justify-content:flex-end}
 .bapp.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--panel))}
 .bapp.done{opacity:.6;cursor:default}
 #cartcount{flex:1;min-width:0;font-size:14px;line-height:1.35}
-#cartbar{position:sticky;bottom:0;display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-top:14px;box-shadow:0 -4px 18px rgba(0,0,0,.1)}
+#cartbar{position:sticky;bottom:0;display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-top:14px;box-shadow:4px 4px 0 var(--shadow,#0003)}
 #lottowin2{border:2px dashed var(--accent);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center}
 #lottowin2 .spin{font:700 20px ui-monospace,monospace;margin-bottom:6px}
 #lottowin2 .card{text-align:left;max-width:520px;margin:8px auto 0}
@@ -953,7 +958,7 @@ dialog .row{justify-content:flex-end}
 .cg-title{font-weight:800;font-size:20px;text-align:center;margin-bottom:10px;letter-spacing:.02em}
 .cg-title small{display:block;font-weight:400;font-size:13px;color:var(--muted)}
 .cg-machine{position:relative;display:grid;grid-template-columns:200px 1fr;gap:0;border-radius:22px;padding:16px;border:2px solid var(--line);
-  background:linear-gradient(160deg,color-mix(in srgb,var(--panel) 80%,#9aa4b2),color-mix(in srgb,var(--panel) 92%,#000));box-shadow:inset 0 2px 0 color-mix(in srgb,#fff 25%,transparent),0 8px 24px color-mix(in srgb,#000 18%,transparent)}
+  background:var(--tag);box-shadow:6px 6px 0 var(--shadow,#0003)}
 .cg-hopper{position:relative;height:190px;border-radius:14px 14px 40px 40px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:22px;
   background:linear-gradient(180deg,color-mix(in srgb,var(--bg) 70%,#000),var(--bg));border:3px dashed var(--line);clip-path:polygon(0 0,100% 0,82% 100%,18% 100%);transition:border-color .15s}
 .cg-hopper.hot,.cg-hopper:hover,.cg-hopper:focus{border-color:var(--accent);outline:none}
@@ -965,19 +970,19 @@ dialog .row{justify-content:flex-end}
 .cg-body{display:flex;flex-direction:column;gap:12px;padding-left:16px}
 .cg-lights{display:flex;align-items:center;gap:8px}.cg-lights i{width:12px;height:12px;border-radius:50%;background:#3a3a3a;box-shadow:inset 0 1px 2px #000}
 .cg-machine.running .cg-lights i{animation:cg-blink .5s infinite alternate}.cg-machine.running .cg-lights i:nth-child(2){animation-delay:.17s}.cg-machine.running .cg-lights i:nth-child(3){animation-delay:.34s}
-@keyframes cg-blink{from{background:#3a3a3a}to{background:#ffd23f;box-shadow:0 0 10px #ffd23f}}
-.cg-machine.done .cg-lights i{background:#3ddc84;box-shadow:0 0 8px #3ddc84}.cg-machine.jam .cg-lights i{background:#ff4d4d;box-shadow:0 0 8px #ff4d4d}
+@keyframes cg-blink{from{background:#3a3a3a}to{background:#ffd23f}}
+.cg-machine.done .cg-lights i{background:#3ddc84}.cg-machine.jam .cg-lights i{background:#ff4d4d}
 .cg-gears{margin-left:auto;font-size:26px}.cg-gears .gear{display:inline-block}.cg-gears .g2{font-size:18px;margin-left:-4px}
 .cg-machine.running .gear{animation:cg-spin 1.2s linear infinite}.cg-machine.running .g2{animation-direction:reverse}
 @keyframes cg-spin{to{transform:rotate(360deg)}}
-.cg-screen{white-space:pre-line;font:700 15px/1.3 "JetBrains Mono",monospace;color:#3ddc84;background:#0b1410;border-radius:10px;padding:12px 14px;min-height:44px;box-shadow:inset 0 2px 8px #000;text-shadow:0 0 6px #3ddc8488;word-break:break-word}
-.cg-machine.jam .cg-screen{color:#ff6b6b;text-shadow:0 0 6px #ff6b6b88}
+.cg-screen{white-space:pre-line;font:700 15px/1.3 "JetBrains Mono",monospace;color:#3ddc84;background:#0b1410;border-radius:10px;padding:12px 14px;min-height:44px;box-shadow:inset 0 2px 0 #000;word-break:break-word}
+.cg-machine.jam .cg-screen{color:#ff6b6b}
 .cg-controls{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .cg-dial{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted);flex:1;min-width:180px}
 .cg-press{display:flex;flex-direction:column;align-items:center;gap:4px;font:800 11px/1 sans-serif;letter-spacing:.1em;color:var(--muted)}
-.cg-button{width:74px;height:74px;border-radius:50%;border:4px solid #7a1010;background:radial-gradient(circle at 35% 30%,#ff8080,#e01b1b 55%,#9b0d0d);font-size:30px;cursor:pointer;
-  box-shadow:0 6px 0 #6b0909,0 8px 16px #0006;transition:transform .08s,box-shadow .08s}
-.cg-button:active:not(:disabled),.cg-button.pressed{transform:translateY(5px);box-shadow:0 1px 0 #6b0909,0 3px 8px #0006}
+.cg-button{width:74px;height:74px;border-radius:50%;border:4px solid #7a1010;background:#e01b1b;font-size:30px;cursor:pointer;
+  box-shadow:0 6px 0 #6b0909;transition:transform .08s,box-shadow .08s}
+.cg-button:active:not(:disabled),.cg-button.pressed{transform:translateY(5px);box-shadow:0 1px 0 #6b0909}
 .cg-button:disabled{filter:grayscale(.85) brightness(.8);cursor:not-allowed}
 .cg-machine.loaded .cg-button:not(:disabled){animation:cg-pulse 1.2s ease-in-out infinite}
 @keyframes cg-pulse{50%{box-shadow:0 6px 0 #6b0909,0 0 0 8px #ff4d4d55}}
@@ -996,7 +1001,7 @@ dialog .row{justify-content:flex-end}
 /* the Install a file tab only shows when the header has room for it; otherwise the button in Discover does the job */
 :root.tight nav button[data-tab=dropfile]{display:none}
 :root:not(.tight) #dropbtn,:root:not(.tight) #convopen{display:none}
-#dropzone{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(3px);pointer-events:none}
+#dropzone{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bg) 88%,transparent);pointer-events:none}
 #dropzone div{border:4px dashed var(--accent);border-radius:24px;padding:48px 64px;text-align:center;background:var(--panel);font-size:22px;font-weight:700}
 #dropzone small{display:block;font-size:14px;font-weight:400;color:var(--muted);margin-top:8px}
 #lottowin{border:2px dashed var(--accent);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center}
@@ -1004,9 +1009,49 @@ dialog .row{justify-content:flex-end}
 #lottowin .card{text-align:left;max-width:520px;margin:8px auto 0}
 .cicada{text-align:center;font:600 14px ui-monospace,monospace;margin:30px 0 10px}
 
+/* ── 🦆 GURT skin: retro Y2K. paper + dot grid, ink outlines, hard offset shadows (no blur, no glow, no gloss) ── */
+:root[data-skin=gurt] body{font:14.5px/1.45 Verdana,"DejaVu Sans","Segoe UI",system-ui,sans-serif;background:var(--bg) radial-gradient(var(--dots) 1.2px,transparent 1.4px) 0 0/18px 18px}
+:root[data-skin=gurt] header{border-bottom:2px solid var(--edge);padding-bottom:16px}
+:root[data-skin=gurt] header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,var(--c-red) 0 25%,var(--accent) 25% 50%,var(--c-green) 50% 75%,var(--c-blue) 75%)}
+:root[data-skin=gurt] .ver{font:11px ui-monospace,"DejaVu Sans Mono",monospace;color:var(--muted)}
+:root[data-skin=gurt] nav{gap:8px}
+:root[data-skin=gurt] nav button{border:2px solid transparent;border-radius:8px;color:var(--ink);font-weight:700;padding:6px 12px}
+:root[data-skin=gurt] nav button:hover{background:var(--tag);border-color:var(--edge)}
+:root[data-skin=gurt] nav button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--edge);box-shadow:3px 3px 0 var(--shadow)}
+:root[data-skin=gurt] nav .badge{border:1.5px solid var(--edge)}
+:root[data-skin=gurt] .btn{border:2px solid var(--edge);border-radius:8px;box-shadow:3px 3px 0 var(--shadow);transition:transform .06s,box-shadow .06s;font-weight:700}
+:root[data-skin=gurt] .btn:hover:not(:disabled){filter:none;transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--shadow)}
+:root[data-skin=gurt] .btn:active:not(:disabled),:root[data-skin=gurt] .btn.on{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}
+:root[data-skin=gurt] .btn.ghost{background:var(--panel)}
+:root[data-skin=gurt] .btn.small{box-shadow:2px 2px 0 var(--shadow)}
+:root[data-skin=gurt] .lottobtn,:root[data-skin=gurt] #t-setup .btn.big{background:var(--panel) linear-gradient(90deg,var(--c-red) 0 25%,var(--accent) 25% 50%,var(--c-green) 50% 75%,var(--c-blue) 75%) bottom/100% 6px no-repeat;color:var(--ink)}
+:root[data-skin=gurt] .search input,:root[data-skin=gurt] dialog input{border:2px solid var(--edge);border-radius:8px;background:var(--panel)}
+:root[data-skin=gurt] .search input:focus,:root[data-skin=gurt] dialog input:focus{border-color:var(--edge);box-shadow:3px 3px 0 var(--accent)}
+:root[data-skin=gurt] .srcs button,:root[data-skin=gurt] .bcat{border:2px solid var(--edge);border-radius:7px;background:var(--panel)}
+:root[data-skin=gurt] .srcs button.on,:root[data-skin=gurt] .bcat.on{background:var(--accent);color:var(--accent-ink);box-shadow:2px 2px 0 var(--shadow)}
+:root[data-skin=gurt] .srcs button.dirtbtn{background:#141012;border-color:#141012}
+:root[data-skin=gurt] .card,:root[data-skin=gurt] .bapp,:root[data-skin=gurt] .cg-item,:root[data-skin=gurt] .ach{border:2px solid var(--edge);border-radius:10px;box-shadow:4px 4px 0 var(--shadow)}
+:root[data-skin=gurt] .card{transition:transform .08s,box-shadow .08s}
+:root[data-skin=gurt] .card:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--shadow)}
+:root[data-skin=gurt] .card .name{font-weight:800;letter-spacing:-.01em}
+:root[data-skin=gurt] .bapp.on{background:color-mix(in srgb,var(--accent) 22%,var(--panel))}
+:root[data-skin=gurt] .chip{border:1.5px solid var(--edge);border-radius:5px;padding:0 7px;font-size:11.5px;font-weight:700;background:var(--panel)}
+:root[data-skin=gurt] .chip.t-hi{background:#cfeedd;color:#123d24}:root[data-skin=gurt] .chip.t-mid{background:#ffe9a6;color:#3d2f00}:root[data-skin=gurt] .chip.t-lo{background:#ffd2bf;color:#4a1a06}
+:root[data-skin=gurt] .chip.ok{background:#cfeedd;color:#123d24}
+:root[data-skin=gurt] #lottowin,:root[data-skin=gurt] #lottowin2{border:2px dashed var(--edge);background:var(--panel)}
+:root[data-skin=gurt] dialog{border:2px solid var(--edge);border-radius:12px;box-shadow:6px 6px 0 var(--shadow)}
+:root[data-skin=gurt] #console{border-top:2px solid var(--edge)}
+:root[data-skin=gurt] #cartbar,:root[data-skin=gurt] #cmptray,:root[data-skin=gurt] #toast{border:2px solid var(--edge)}
+:root[data-skin=gurt] #appbar,:root[data-skin=gurt] #soundbar{border-bottom:2px solid var(--edge)}
+:root[data-skin=gurt] .cg-machine{border:2px solid var(--edge)}
+:root[data-skin=gurt] .cg-zone{border:2px solid var(--edge)}
+:root[data-skin=gurt] h2,:root[data-skin=gurt] .cg-title{font-weight:800;letter-spacing:-.01em}
+:root[data-skin=gurt] .dropbig{border:3px dashed var(--edge);border-radius:14px}
+:root[data-skin=gurt] .r-legendary,:root[data-skin=gurt] .rarity{border:1.5px solid var(--edge)}
+
 /* ── 🪟 skins ── */
-#tracksel{font:inherit;font-size:13px;background:var(--tag);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:5px 4px;cursor:pointer;width:46px}
-#toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:60;background:var(--panel);border:2px solid var(--accent);border-radius:14px;padding:10px 16px;font-weight:700;box-shadow:0 10px 30px #0004;animation:toast-in .4s cubic-bezier(.2,1.6,.4,1);max-width:calc(100vw - 32px)}
+#skinsel,#tracksel,#convfmt{font:inherit;font-size:14px;background:var(--panel);color:var(--ink);border:2px solid var(--edge,var(--line));border-radius:8px;padding:6px 8px;cursor:pointer}
+#toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:60;background:var(--panel);border:2px solid var(--accent);border-radius:14px;padding:10px 16px;font-weight:700;box-shadow:5px 5px 0 var(--shadow,#0004);animation:toast-in .4s cubic-bezier(.2,1.6,.4,1);max-width:calc(100vw - 32px)}
 @keyframes toast-in{from{transform:translate(-50%,-30px) scale(.8);opacity:0}}
 #achlist{display:grid;gap:8px;max-height:60vh;overflow:auto;margin:6px 0 12px}
 .ach{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.ach.locked{opacity:.5;filter:grayscale(1)}.ach b{display:block}.ach small{color:var(--muted)}.ach .when{margin-left:auto;font-size:12px;color:var(--muted)}
@@ -1028,25 +1073,24 @@ dialog .row{justify-content:flex-end}
 :root[data-skin=vapor] body{background:linear-gradient(180deg,#1a0b2e,#3d1263 55%,#6b1f6e) fixed;letter-spacing:.02em}
 :root[data-skin=vapor] header{background:linear-gradient(90deg,#ff71ce,#b967ff 50%,#01cdfe);color:#1a0b2e;border-bottom:2px solid #fffb96}
 :root[data-skin=vapor] header .ver,:root[data-skin=vapor] nav button{color:#1a0b2e}
-:root[data-skin=vapor] .card,:root[data-skin=vapor] .bapp{border:1px solid #b967ff;box-shadow:0 0 14px #ff71ce33}
+:root[data-skin=vapor] .card,:root[data-skin=vapor] .bapp{border:1px solid #b967ff;box-shadow:4px 4px 0 #01cdfe}
 :root[data-skin=vapor] .btn:not(.ghost):not(.danger){background:linear-gradient(90deg,#ff71ce,#01cdfe);color:#1a0b2e;border:0}
 :root[data-skin=vapor] h2,:root[data-skin=vapor] .cg-title{text-shadow:2px 2px #01cdfe,-2px -2px #ff71ce}
 /* 💻 Hacker: green-on-black terminal, glowing text */
 :root[data-skin=hacker]{--bg:#000;--panel:#020a03;--ink:#33ff66;--muted:#1fa83f;--line:#0f3d17;--accent:#33ff66;--accent-ink:#000;--tag:#062a0e;--code:#000;--good:#33ff66;--bad:#ff3355;color-scheme:dark}
-:root[data-skin=hacker] body{font-family:"JetBrains Mono","DejaVu Sans Mono",ui-monospace,monospace;text-shadow:0 0 4px #33ff6655}
+:root[data-skin=hacker] body{font-family:"JetBrains Mono","DejaVu Sans Mono",ui-monospace,monospace}
 :root[data-skin=hacker] *{border-radius:2px!important}
 :root[data-skin=hacker] header{background:#000;border-bottom:1px solid #33ff66}
 :root[data-skin=hacker] .card,:root[data-skin=hacker] .bapp{border:1px solid #1fa83f;background:#010801}
-:root[data-skin=hacker] .btn:not(.ghost):not(.danger){background:#33ff66;color:#000;border:0;text-shadow:none}
-:root[data-skin=hacker] .logoimg{filter:drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 2px #33ff66)}
-:root[data-skin=vapor] .logoimg{filter:drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 2px #ff71ce)}
-#skinsel{font:inherit;font-size:13px;background:var(--tag);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:5px 10px;cursor:pointer}
+:root[data-skin=hacker] .btn:not(.ghost):not(.danger){background:#33ff66;color:#000;border:0}
+:root[data-skin=hacker],:root[data-skin=vapor]{--logo-ink:#f1ede2}
+@media (max-width:560px){.search .btn{flex:1 1 auto}}
 /* Windows 11: Segoe, soft Mica greys, blue accent, follows light/dark */
 :root[data-skin=win11]{--bg:#f3f3f3;--panel:#fbfbfb;--ink:#1b1b1b;--muted:#5d5d5d;--line:#e5e5e5;--accent:#005fb8;--accent-ink:#fff;--tag:#f0f0f0;--code:#f9f9f9}
 @media (prefers-color-scheme: dark){:root[data-skin=win11]:not([data-theme=light]){--bg:#202020;--panel:#2b2b2b;--ink:#fff;--muted:#c5c5c5;--line:#3a3a3a;--accent:#60cdff;--accent-ink:#000;--tag:#373737;--code:#1c1c1c}}
 :root[data-skin=win11][data-theme=dark]{--bg:#202020;--panel:#2b2b2b;--ink:#fff;--muted:#c5c5c5;--line:#3a3a3a;--accent:#60cdff;--accent-ink:#000;--tag:#373737;--code:#1c1c1c}
 :root[data-skin=win11] body{font-family:"Segoe UI Variable","Segoe UI",system-ui,sans-serif}
-:root[data-skin=win11] header{background:color-mix(in srgb,var(--panel) 85%,transparent);backdrop-filter:blur(30px)}
+:root[data-skin=win11] header{background:var(--panel)}
 :root[data-skin=win11] .btn,:root[data-skin=win11] nav button,:root[data-skin=win11] .srcs button,:root[data-skin=win11] .bcat,:root[data-skin=win11] #skinsel{border-radius:4px}
 :root[data-skin=win11] .card,:root[data-skin=win11] .bapp,:root[data-skin=win11] .search input{border-radius:8px}
 :root[data-skin=win11] .card{box-shadow:0 2px 4px rgba(0,0,0,.04)}
@@ -1076,12 +1120,12 @@ dialog .row{justify-content:flex-end}
 :root[data-skin=w95] .card .top .src,:root[data-skin=w95] .card .top .v{color:#dfdfdf}
 :root[data-skin=w95] .search input{background:#fff;border:2px solid;border-color:#808080 #fff #fff #808080}
 :root[data-skin=w95] h2,:root[data-skin=w95] .hint,:root[data-skin=w95] .blurb,:root[data-skin=w95] .cicada,:root[data-skin=w95] .bgroup h3,:root[data-skin=w95] .setuphead p{color:#fff}
-:root[data-skin=xp] .logoimg,:root[data-skin=w95] .logoimg{filter:drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1px #fff)}
+:root[data-skin=w95]{--logo-ink:#141414}
 .out-line-err{color:var(--bad)}.out-line-ok{color:var(--good)}
-@media (max-width:640px){header{flex-wrap:wrap}nav{margin-left:0;flex-wrap:wrap}}
+@media (max-width:640px){nav{margin-left:0}nav button{padding:6px 10px}}
 </style></head><body>
 <header>
-  <div><img class="logoimg" src="/logo.png" alt="gurt" onerror="this.hidden=true;this.nextElementSibling.nextElementSibling.hidden=false"><img class="dirtlogo" src="/dirt-logo.png" alt="dirt."><div class="logo" hidden><span class="g">g</span><span class="u">u</span><span class="r">r</span><span class="t">t</span></div><div class="ver" id="ver"></div></div>
+  <div class="brand"><span class="logosvg"><!--logo--><svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -1223 3791 1805" role="img" aria-label="gurt"><path transform="translate(70 70) rotate(-4 529 -300) translate(0 0) scale(1 -1)" d="M257 347Q79 422 79 640Q79 796 188.0 880.5Q297 965 500 965Q543 965 610.5 957.5Q678 950 709 940L934 1051L969 1008L855 846Q917 770 917 640Q917 481 809.5 395.5Q702 310 496 310Q417 310 343 322L319 246Q321 217 356.0 191.5Q391 166 442 166H661Q1004 166 1004 -98Q1004 -207 944.5 -285.5Q885 -364 769.5 -408.0Q654 -452 482 -452Q278 -452 166.0 -393.5Q54 -335 54 -233Q54 -188 90.5 -146.0Q127 -104 232 -43Q173 -20 131.5 37.0Q90 94 90 157ZM785 -166Q785 -71 658 -71H341Q253 -135 253 -216Q253 -280 314.5 -312.0Q376 -344 483 -344Q628 -344 706.5 -297.0Q785 -250 785 -166ZM494 410Q568 410 601.0 467.5Q634 525 634 640Q634 755 601.5 809.5Q569 864 494 864Q425 864 393.5 809.5Q362 755 362 640Q362 525 393.0 467.5Q424 410 494 410Z" fill="#ffc629"/><path transform="translate(70 70) rotate(3 1552 -418) translate(994 40) scale(1 -1)" d="M705 82 637 47Q497 -25 385 -25Q125 -25 125 252V850L31 874V940H414V291Q414 207 449.5 160.0Q485 113 551 113Q627 113 703 147V850L617 874V940H992V90L1084 66V0H719Z" fill="#141414"/><path transform="translate(70 70) rotate(-5 2563 -555) translate(2103 -70) scale(1 -1)" d="M461 745Q569 865 654.5 917.5Q740 970 811 970H865V627H809L750 753Q687 753 607.0 725.5Q527 698 466 661V90L617 66V0H55V66L177 90V850L55 874V940H450Z" fill="#141414"/><path transform="translate(70 70) rotate(4 3335 -556) translate(2982 10) scale(1 -1)" d="M438 -20Q303 -20 229.5 41.0Q156 102 156 217V836H33V901L178 940L295 1153H445V940H643V836H445V235Q445 170 472.0 137.0Q499 104 543 104Q596 104 673 120V35Q643 14 570.5 -3.0Q498 -20 438 -20Z" fill="#141414"/><path class="logo-g" transform="rotate(-4 529 -300) translate(0 0) scale(1 -1)" d="M257 347Q79 422 79 640Q79 796 188.0 880.5Q297 965 500 965Q543 965 610.5 957.5Q678 950 709 940L934 1051L969 1008L855 846Q917 770 917 640Q917 481 809.5 395.5Q702 310 496 310Q417 310 343 322L319 246Q321 217 356.0 191.5Q391 166 442 166H661Q1004 166 1004 -98Q1004 -207 944.5 -285.5Q885 -364 769.5 -408.0Q654 -452 482 -452Q278 -452 166.0 -393.5Q54 -335 54 -233Q54 -188 90.5 -146.0Q127 -104 232 -43Q173 -20 131.5 37.0Q90 94 90 157ZM785 -166Q785 -71 658 -71H341Q253 -135 253 -216Q253 -280 314.5 -312.0Q376 -344 483 -344Q628 -344 706.5 -297.0Q785 -250 785 -166ZM494 410Q568 410 601.0 467.5Q634 525 634 640Q634 755 601.5 809.5Q569 864 494 864Q425 864 393.5 809.5Q362 755 362 640Q362 525 393.0 467.5Q424 410 494 410Z" fill="var(--logo-ink)" stroke="#141414" stroke-width="18"/><path transform="rotate(3 1552 -418) translate(994 40) scale(1 -1)" d="M705 82 637 47Q497 -25 385 -25Q125 -25 125 252V850L31 874V940H414V291Q414 207 449.5 160.0Q485 113 551 113Q627 113 703 147V850L617 874V940H992V90L1084 66V0H719Z" fill="#e8302a" stroke="#141414" stroke-width="18"/><path transform="rotate(-5 2563 -555) translate(2103 -70) scale(1 -1)" d="M461 745Q569 865 654.5 917.5Q740 970 811 970H865V627H809L750 753Q687 753 607.0 725.5Q527 698 466 661V90L617 66V0H55V66L177 90V850L55 874V940H450Z" fill="#1fa64a" stroke="#141414" stroke-width="18"/><path transform="rotate(4 3335 -556) translate(2982 10) scale(1 -1)" d="M438 -20Q303 -20 229.5 41.0Q156 102 156 217V836H33V901L178 940L295 1153H445V940H643V836H445V235Q445 170 472.0 137.0Q499 104 543 104Q596 104 673 120V35Q643 14 570.5 -3.0Q498 -20 438 -20Z" fill="#2456e0" stroke="#141414" stroke-width="18"/></svg><!--/logo--></span><img class="dirtlogo" src="/dirt-logo.png" alt="dirt."><div class="ver" id="ver"></div></div>
   <nav>
     <button data-tab="discover" class="on">🔍 Discover</button>
     <button data-tab="installed">📦 Installed</button>
@@ -1090,15 +1134,18 @@ dialog .row{justify-content:flex-end}
     <button data-tab="desktops">🖥️ Desktops</button>
     <button data-tab="dropfile">📥 Install a file</button>
   </nav>
-  <div class="spacer"></div>
-  <select id="skinsel" title="skin">
-    <option value="gurt">🦆 GURT</option><option value="win11">🪟 Windows 11</option><option value="xp">🟩 Windows XP</option><option value="w95">💾 Windows 95</option><option value="vapor">🌴 Vaporwave</option><option value="hacker">💻 Hacker</option>
-  </select>
-  <select id="tracksel" title="music track"><option value="auto">🎵 auto</option><option value="shop">🛍️ shop</option><option value="lofi">🌧️ lofi</option><option value="chip">👾 chiptune</option><option value="synth">🌆 synthwave</option></select>
-  <button class="btn ghost small" id="musicbtn" title="background music"></button>
-  <button class="btn ghost small" id="sfxbtn" title="sound effects"></button>
-  <button class="btn ghost small" id="themebtn" title="light / dark"></button>
-  <button class="btn ghost small" id="syncbtn" title="gurt sync">↻ sync</button>
+  <div class="hdr-actions">
+    <button class="btn ghost small" id="syncbtn" title="gurt sync">↻ sync</button>
+    <div class="prefs"><button class="btn ghost small" id="prefbtn" aria-expanded="false" aria-controls="prefpop" title="look + sound">🎨</button>
+      <div id="prefpop" hidden>
+        <label>skin <select id="skinsel">
+          <option value="gurt">🦆 GURT</option><option value="win11">🪟 Windows 11</option><option value="xp">🟩 Windows XP</option><option value="w95">💾 Windows 95</option><option value="vapor">🌴 Vaporwave</option><option value="hacker">💻 Hacker</option>
+        </select></label>
+        <label>music <select id="tracksel"><option value="auto" title="matches the skin">🎵 auto</option><option value="shop">🛍️ shop</option><option value="lofi">🌧️ lofi</option><option value="chip">👾 chiptune</option><option value="synth">🌆 synthwave</option></select></label>
+        <div class="prefrow"><button class="btn ghost small" id="musicbtn" title="background music"></button><button class="btn ghost small" id="sfxbtn" title="sound effects"></button><button class="btn ghost small" id="themebtn" title="light / dark"></button></div>
+      </div>
+    </div>
+  </div>
 </header>
 <div id="soundbar" hidden>🔇 no sound: the app window needs GStreamer's audio plugins <button class="btn small" id="soundfix">fix sound</button><button class="btn ghost small" id="soundx">×</button></div>
 <div id="appbar" hidden><span id="appbartxt">GURT is running in your browser 🌐 want it as a real app window?</span><button class="btn small" id="appbarinst">install app window</button><button class="btn ghost small" id="appbarx">×</button></div>
@@ -1537,8 +1584,14 @@ document.addEventListener("click", e => {
   if (role) SFX.play(role);
 }, true);
 
-$("#sfxbtn").addEventListener("click", () => { SFX.set(!SFX.on); $("#sfxbtn").textContent = SFX.on ? "🔊" : "🔇"; api("/api/sfx", {on:SFX.on}).catch(() => {}); SFX.play("pop"); });
-$("#sfxbtn").textContent = SFX.on ? "🔊" : "🔇";
+const paintSfx = () => { $("#sfxbtn").textContent = SFX.on ? "🔊 sounds on" : "🔇 sounds off"; };
+$("#sfxbtn").addEventListener("click", () => { SFX.set(!SFX.on); paintSfx(); api("/api/sfx", {on:SFX.on}).catch(() => {}); SFX.play("pop"); });
+paintSfx();
+// 🎛️ one menu for the look + sound stuff, so the header has room
+const prefOpen = v => { $("#prefpop").hidden = !v; $("#prefbtn").setAttribute("aria-expanded", v); $("#prefbtn").classList.toggle("on", v); };
+$("#prefbtn").addEventListener("click", e => { e.stopPropagation(); prefOpen($("#prefpop").hidden); });
+document.addEventListener("click", e => { if (!$("#prefpop").hidden && !e.target.closest(".prefs")) prefOpen(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#prefpop").hidden) { prefOpen(false); $("#prefbtn").focus(); } });
 $("#bgroups").addEventListener("change", e => { if (e.target.dataset.n) SFX.play(e.target.checked ? "pick" : "unpick"); });
 // ── 🎵 background music: an original chill shop-style bossa loop, synthesized live (no audio files) ──
 const MUSIC = (() => {
@@ -1638,7 +1691,7 @@ const MUSIC = (() => {
 })();
 $("#tracksel").value = MUSIC.track;
 $("#tracksel").addEventListener("change", e => { MUSIC.setTrack(e.target.value); api("/api/track", {track:e.target.value}).catch(() => {}); if (!MUSIC.on) { MUSIC.set(true); paintMusic(); api("/api/music", {on:true}).catch(() => {}); } });
-const paintMusic = () => { $("#musicbtn").textContent = "🎵"; $("#musicbtn").classList.toggle("off", !MUSIC.on); $("#musicbtn").title = MUSIC.on ? "pause the music" : "play background music"; };
+const paintMusic = () => { $("#musicbtn").textContent = MUSIC.on ? "🎵 music on" : "🎵 music off"; $("#musicbtn").classList.toggle("off", !MUSIC.on); $("#musicbtn").title = MUSIC.on ? "pause the music" : "play background music"; };
 $("#musicbtn").addEventListener("click", () => { MUSIC.set(!MUSIC.on); paintMusic(); api("/api/music", {on:MUSIC.on}).catch(() => {}); });
 paintMusic();
 $("#qall").addEventListener("click", searchAll);
@@ -1780,9 +1833,9 @@ $("#dropbig").addEventListener("click", e => { e.preventDefault(); $("#dropin").
 $("#dropbig").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("#dropin").click(); } });
 // no room in the header for the Install a file tab? hide it (and bounce back to Discover if you were on it)
 function fitNav(){
-  const root = document.documentElement, h = document.querySelector("header");
+  const root = document.documentElement, n = document.querySelector("nav");
   root.classList.remove("tight");
-  if (innerWidth <= 900 || h.scrollWidth > h.clientWidth + 1) root.classList.add("tight");
+  if (innerWidth <= 900 || n.scrollWidth > n.clientWidth + 1) root.classList.add("tight");
   const tight = root.classList.contains("tight");
   if (tight && !wasTight && !$("#t-dropfile").hidden) document.querySelector('nav button[data-tab="discover"]').click();
   wasTight = tight;
@@ -1908,6 +1961,7 @@ applySkin(document.documentElement.dataset.skin || "gurt");
 document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x === b));
   for (const t of ["discover","installed","updates","setup","desktops","dropfile"]) $("#t-"+t).hidden = b.dataset.tab !== t;
+  b.scrollIntoView({block: "nearest", inline: "nearest"});   // phones: the tab row scrolls, keep the picked tab in view
   if (b.dataset.tab === "setup") renderBuilder();
   if (b.dataset.tab === "dropfile") loadZone(false);
   if (b.dataset.tab === "desktops" && !deLoaded) loadDesktops();
