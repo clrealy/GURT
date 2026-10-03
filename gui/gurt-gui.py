@@ -956,8 +956,8 @@ h2{font-size:18px;margin:4px 0 12px}
 dialog{border:none;border-radius:16px;padding:22px;max-width:420px;width:calc(100% - 32px);background:var(--panel);color:var(--ink)}
 dialog::backdrop{background:rgba(0,0,0,.55)}
 dialog h3{margin:0 0 6px;font-size:20px}dialog p{color:var(--muted);margin:0 0 16px}
-dialog input{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--ink);margin-bottom:14px;outline:none}
-dialog input:focus{border-color:var(--accent)}
+dialog input:is([type=text],[type=password],[type=search],:not([type])){width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--ink);margin-bottom:14px;outline:none}
+dialog input:is([type=text],[type=password],[type=search],:not([type])):focus{border-color:var(--accent)}
 dialog .row{justify-content:flex-end}
 .lottobtn{background:linear-gradient(90deg,#ff3b3b,#ffc629,#33e06b,#4f7bff);color:#111;font-weight:800}
 .btn.big{font-size:16px;padding:12px 20px}
@@ -1057,8 +1057,8 @@ dialog .row{justify-content:flex-end}
 :root[data-skin=gurt] .btn.ghost{background:var(--panel)}
 :root[data-skin=gurt] .btn.small{box-shadow:2px 2px 0 var(--shadow)}
 :root[data-skin=gurt] .lottobtn,:root[data-skin=gurt] #t-setup .btn.big{background:var(--panel) linear-gradient(90deg,var(--c-red) 0 25%,var(--accent) 25% 50%,var(--c-green) 50% 75%,var(--c-blue) 75%) bottom/100% 6px no-repeat;color:var(--ink)}
-:root[data-skin=gurt] .search input,:root[data-skin=gurt] dialog input{border:2px solid var(--edge);border-radius:8px;background:var(--panel)}
-:root[data-skin=gurt] .search input:focus,:root[data-skin=gurt] dialog input:focus{border-color:var(--edge);box-shadow:3px 3px 0 var(--accent)}
+:root[data-skin=gurt] .search input,:root[data-skin=gurt] dialog input:is([type=text],[type=password],[type=search],:not([type])){border:2px solid var(--edge);border-radius:8px;background:var(--panel)}
+:root[data-skin=gurt] .search input:focus,:root[data-skin=gurt] dialog input:is([type=text],[type=password],[type=search],:not([type])):focus{border-color:var(--edge);box-shadow:3px 3px 0 var(--accent)}
 :root[data-skin=gurt] .srcs button,:root[data-skin=gurt] .bcat{border:2px solid var(--edge);border-radius:7px;background:var(--panel)}
 :root[data-skin=gurt] .srcs button.on,:root[data-skin=gurt] .bcat.on{background:var(--accent);color:var(--accent-ink);box-shadow:2px 2px 0 var(--shadow)}
 :root[data-skin=gurt] .srcs button.dirtbtn{background:#141012;border-color:#141012}
