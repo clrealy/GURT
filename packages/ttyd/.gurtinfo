@@ -1,0 +1,11 @@
+pkgname = ttyd
+pkgver = 1.7.7
+pkgrel = 1
+pkgdesc = Share your terminal over the web
+url = https://github.com/tsl0922/ttyd
+license = MIT
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = ttyd::https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_64

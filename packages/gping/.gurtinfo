@@ -1,0 +1,11 @@
+pkgname = gping
+pkgver = 1.2.1
+pkgrel = 1
+pkgdesc = Ping with a live graph
+url = https://github.com/orf/gping
+license = MIT
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = https://github.com/orf/gping/releases/download/v1.2.1/gping-x86_64-unknown-linux-musl.tar.gz

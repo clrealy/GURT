@@ -1,0 +1,12 @@
+pkgname = opentofu
+pkgver = 1.13.1
+pkgrel = 1
+pkgdesc = Open source Terraform: describe your infrastructure as code (run tofu)
+url = https://github.com/opentofu/opentofu
+license = MPL-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/opentofu/opentofu/releases/download/v1.13.1/tofu_1.13.1_linux_amd64.tar.gz
+alias = tofu

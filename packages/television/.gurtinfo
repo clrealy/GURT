@@ -1,0 +1,11 @@
+pkgname = television
+pkgver = 0.15.9
+pkgrel = 1
+pkgdesc = Fuzzy finder for files, text, git and more (run tv)
+url = https://github.com/alexpasmantier/television
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+source = https://github.com/alexpasmantier/television/releases/download/0.15.9/tv-0.15.9-x86_64-unknown-linux-musl.tar.gz
+alias = tv

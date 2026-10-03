@@ -1,0 +1,21 @@
+# Pluggable, super fast code formatter
+pkgname=dprint
+pkgver=0.59.0
+pkgrel=1
+pkgdesc="Pluggable, super fast code formatter"
+url="https://github.com/dprint/dprint"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+# official prebuilt release binary
+source_x86_64=("https://github.com/dprint/dprint/releases/download/${pkgver}/dprint-x86_64-unknown-linux-musl.zip")
+source_aarch64=("https://github.com/dprint/dprint/releases/download/${pkgver}/dprint-aarch64-unknown-linux-musl.zip")
+sha256sums_x86_64=(c1e709d629caf8c1f8ef8328f2b5136c68dd5e878b36b04403bf9dfd133c559f)
+sha256sums_aarch64=(b90a0e7ede5fbae3e9f4e0e50455902a7e436f575c8db3b9b7fea9b7a0303210)
+
+package() {
+  local f
+  f=$(find . -type f -name dprint -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name dprint | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/dprint"
+}

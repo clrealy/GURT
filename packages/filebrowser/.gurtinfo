@@ -1,0 +1,11 @@
+pkgname = filebrowser
+pkgver = 2.63.23
+pkgrel = 1
+pkgdesc = Web file manager for your server or NAS
+url = https://github.com/filebrowser/filebrowser
+license = Apache-2.0
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = https://github.com/filebrowser/filebrowser/releases/download/v2.63.23/linux-amd64-filebrowser.tar.gz

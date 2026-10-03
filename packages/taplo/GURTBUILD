@@ -1,0 +1,19 @@
+# TOML formatter and checker
+pkgname=taplo
+pkgver=0.10.0
+pkgrel=1
+pkgdesc="TOML formatter and checker"
+url="https://github.com/tamasfe/taplo"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+# official prebuilt release binary
+source_x86_64=("taplo.gz::https://github.com/tamasfe/taplo/releases/download/${pkgver}/taplo-linux-x86_64.gz")
+source_aarch64=("taplo.gz::https://github.com/tamasfe/taplo/releases/download/${pkgver}/taplo-linux-aarch64.gz")
+sha256sums_x86_64=(8fe196b894ccf9072f98d4e1013a180306e17d244830b03986ee5e8eabeb6156)
+sha256sums_aarch64=(033681d01eec8376c3fd38fa3703c79316f5e14bb013d859943b60a07bccdcc3)
+
+package() {
+  install -Dm755 taplo "$pkgdir$prefix/bin/taplo"
+}

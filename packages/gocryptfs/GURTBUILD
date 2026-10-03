@@ -1,0 +1,22 @@
+# Encrypted folder you can mount like a normal one
+pkgname=gocryptfs
+pkgver=2.6.1
+pkgrel=1
+pkgdesc="Encrypted folder you can mount like a normal one"
+url="https://github.com/rfjakob/gocryptfs"
+license="MIT"
+maintainer="clrealy"
+category="security"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/rfjakob/gocryptfs/releases/download/${_tag}/gocryptfs_${_tag}_linux-static_amd64.tar.gz")
+source_aarch64=("https://github.com/rfjakob/gocryptfs/releases/download/${_tag}/gocryptfs_${_tag}_linux-static_arm64.tar.gz")
+sha256sums_x86_64=(49b8c0eb0f6373b6ac99c394a52909d8478e74c08d0961527c1162967cc28c44)
+sha256sums_aarch64=(64576d550ab8af3f1dc729e93779540c5ecc00967d0185aae51a29a3755d86d0)
+
+package() {
+  local f
+  f=$(find . -type f -name gocryptfs -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name gocryptfs | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/gocryptfs"
+}

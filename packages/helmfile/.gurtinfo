@@ -1,0 +1,11 @@
+pkgname = helmfile
+pkgver = 1.8.1
+pkgrel = 1
+pkgdesc = Deploy lots of Helm charts in one go
+url = https://github.com/helmfile/helmfile
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/helmfile/helmfile/releases/download/v1.8.1/helmfile_1.8.1_linux_amd64.tar.gz

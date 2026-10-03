@@ -1,0 +1,11 @@
+pkgname = gocryptfs
+pkgver = 2.6.1
+pkgrel = 1
+pkgdesc = Encrypted folder you can mount like a normal one
+url = https://github.com/rfjakob/gocryptfs
+license = MIT
+maintainer = clrealy
+category = security
+arch = x86_64
+arch = aarch64
+source = https://github.com/rfjakob/gocryptfs/releases/download/v2.6.1/gocryptfs_v2.6.1_linux-static_amd64.tar.gz

@@ -1,0 +1,20 @@
+# Query and edit JSON, YAML, TOML and XML with one tool
+pkgname=dasel
+pkgver=3.11.2
+pkgrel=1
+pkgdesc="Query and edit JSON, YAML, TOML and XML with one tool"
+url="https://github.com/TomWright/dasel"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("dasel::https://github.com/TomWright/dasel/releases/download/${_tag}/dasel_linux_amd64")
+source_aarch64=("dasel::https://github.com/TomWright/dasel/releases/download/${_tag}/dasel_linux_arm64")
+sha256sums_x86_64=(5006ee3a4239ab6a3edb1bf5c932874d814f7c276117ca677352697a4f547799)
+sha256sums_aarch64=(df33920a792cd8ee5573cec3632a710cd2178d7bc4fc3892c6be78f35e7cbcc6)
+
+package() {
+  install -Dm755 dasel "$pkgdir$prefix/bin/dasel"
+}

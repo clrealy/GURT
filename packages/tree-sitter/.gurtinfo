@@ -1,0 +1,11 @@
+pkgname = tree-sitter
+pkgver = 0.27.0
+pkgrel = 1
+pkgdesc = Parser generator and syntax tools behind lots of editors
+url = https://github.com/tree-sitter/tree-sitter
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = tree-sitter.gz::https://github.com/tree-sitter/tree-sitter/releases/download/v0.27.0/tree-sitter-linux-x64.gz

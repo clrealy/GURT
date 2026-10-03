@@ -1,0 +1,10 @@
+pkgname = heynote
+pkgver = 2.9.1
+pkgrel = 1
+pkgdesc = Scratchpad for developers with blocks and math
+url = https://github.com/heyman/heynote
+license = see upstream
+maintainer = clrealy
+category = dev
+arch = x86_64
+source = heynote.AppImage::https://github.com/heyman/heynote/releases/download/v2.9.1/Heynote_2.9.1_x86_64.AppImage

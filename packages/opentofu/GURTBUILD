@@ -1,0 +1,23 @@
+# Open source Terraform: describe your infrastructure as code (run tofu)
+pkgname=opentofu
+pkgver=1.13.1
+pkgrel=1
+pkgdesc="Open source Terraform: describe your infrastructure as code (run tofu)"
+url="https://github.com/opentofu/opentofu"
+license="MPL-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+aliases=(tofu)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/opentofu/opentofu/releases/download/${_tag}/tofu_${pkgver}_linux_amd64.tar.gz")
+source_aarch64=("https://github.com/opentofu/opentofu/releases/download/${_tag}/tofu_${pkgver}_linux_arm64.tar.gz")
+sha256sums_x86_64=(378ada19d4bc70c43732004e8159be771b23b9a5afdf059e5f8a2b3fa2c70a69)
+sha256sums_aarch64=(9c1ef375aa1852db0b2888aa921b640c71f8140d4682aa4fec99378a64fa7dc3)
+
+package() {
+  local f
+  f=$(find . -type f -name tofu -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name tofu | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/tofu"
+}

@@ -1,0 +1,22 @@
+# Ping with a live graph
+pkgname=gping
+pkgver=1.2.1
+pkgrel=1
+pkgdesc="Ping with a live graph"
+url="https://github.com/orf/gping"
+license="MIT"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/orf/gping/releases/download/${_tag}/gping-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/orf/gping/releases/download/${_tag}/gping-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(c5978fd03bc0a9c1ef16a5b7d18f0ff0743f84ae8fa9f3b0c733b74c21efbb26)
+sha256sums_aarch64=(77792d30b4cedb3c08977a96fbeaf8b95f89f435b08341331cd08ba8acb82d7b)
+
+package() {
+  local f
+  f=$(find . -type f -name gping -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name gping | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/gping"
+}

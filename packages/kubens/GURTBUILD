@@ -1,0 +1,22 @@
+# Switch Kubernetes namespaces quickly
+pkgname=kubens
+pkgver=0.11.0
+pkgrel=1
+pkgdesc="Switch Kubernetes namespaces quickly"
+url="https://github.com/ahmetb/kubectx"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/ahmetb/kubectx/releases/download/${_tag}/kubens_${_tag}_linux_x86_64.tar.gz")
+source_aarch64=("https://github.com/ahmetb/kubectx/releases/download/${_tag}/kubens_${_tag}_linux_arm64.tar.gz")
+sha256sums_x86_64=(326c021c7b35468ed9a187b361198d0f22ae32828139c65eb6670c0d8301cc09)
+sha256sums_aarch64=(37058abe82ef20c93b44f3dc8ca2382dbb95d416cec958fbf7b8f79f011be86c)
+
+package() {
+  local f
+  f=$(find . -type f -name kubens -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name kubens | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/kubens"
+}

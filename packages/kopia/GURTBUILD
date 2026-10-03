@@ -1,0 +1,22 @@
+# Fast, encrypted, deduplicated backups
+pkgname=kopia
+pkgver=0.23.1
+pkgrel=1
+pkgdesc="Fast, encrypted, deduplicated backups"
+url="https://github.com/kopia/kopia"
+license="Apache-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/kopia/kopia/releases/download/${_tag}/kopia-${pkgver}-linux-x64.tar.gz")
+source_aarch64=("https://github.com/kopia/kopia/releases/download/${_tag}/kopia-${pkgver}-linux-arm64.tar.gz")
+sha256sums_x86_64=(416d0f84a3dbb321a8b2d8f0997b1a0a6e915babe79ee76fa6e4d2bd1e1c5178)
+sha256sums_aarch64=(a4ffbc019e0b0f932e2632054e73ec521dc1e80172a00095369c53ecf4e5a6cb)
+
+package() {
+  local f
+  f=$(find . -type f -name kopia -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name kopia | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/kopia"
+}

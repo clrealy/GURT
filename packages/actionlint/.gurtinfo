@@ -1,0 +1,11 @@
+pkgname = actionlint
+pkgver = 1.7.12
+pkgrel = 1
+pkgdesc = Checks your GitHub Actions workflows for mistakes
+url = https://github.com/rhysd/actionlint
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz

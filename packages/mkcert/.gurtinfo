@@ -1,0 +1,11 @@
+pkgname = mkcert
+pkgver = 1.4.4
+pkgrel = 1
+pkgdesc = Make locally trusted HTTPS certificates for development
+url = https://github.com/FiloSottile/mkcert
+license = BSD-3-Clause
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = mkcert::https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64

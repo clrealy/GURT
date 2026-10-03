@@ -1,0 +1,11 @@
+pkgname = oha
+pkgver = 1.16.0
+pkgrel = 1
+pkgdesc = Load test a website and watch the results live
+url = https://github.com/hatoo/oha
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = oha::https://github.com/hatoo/oha/releases/download/v1.16.0/oha-linux-amd64

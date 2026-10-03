@@ -1,0 +1,22 @@
+# Finds bugs in your shell scripts
+pkgname=shellcheck
+pkgver=0.11.0
+pkgrel=1
+pkgdesc="Finds bugs in your shell scripts"
+url="https://github.com/koalaman/shellcheck"
+license="GPL-3.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/koalaman/shellcheck/releases/download/${_tag}/shellcheck-${_tag}.linux.x86_64.tar.xz")
+source_aarch64=("https://github.com/koalaman/shellcheck/releases/download/${_tag}/shellcheck-${_tag}.linux.aarch64.tar.xz")
+sha256sums_x86_64=(8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198)
+sha256sums_aarch64=(12b331c1d2db6b9eb13cfca64306b1b157a86eb69db83023e261eaa7e7c14588)
+
+package() {
+  local f
+  f=$(find . -type f -name shellcheck -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name shellcheck | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/shellcheck"
+}

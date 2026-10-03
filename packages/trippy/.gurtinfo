@@ -1,0 +1,12 @@
+pkgname = trippy
+pkgver = 0.13.0
+pkgrel = 1
+pkgdesc = Traceroute and ping combined in a nice terminal UI (run trip)
+url = https://github.com/fujiapple852/trippy
+license = Apache-2.0
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = https://github.com/fujiapple852/trippy/releases/download/0.13.0/trippy-0.13.0-x86_64-unknown-linux-musl.tar.gz
+alias = trip

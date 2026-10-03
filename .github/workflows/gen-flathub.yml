@@ -19,9 +19,11 @@ jobs:
       - run: flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
       - name: generate recipes
         run: |
-          if grep -qs recategorize tools/gen-flathub.request; then python3 tools/gen-flathub.py recategorize | tee /tmp/gen.log; exit 0; fi
-          n="${{ github.event.inputs.count }}"; [ -n "$n" ] || n=$(tr -dc 0-9 < tools/gen-flathub.request)
-          python3 tools/gen-flathub.py "${n:-100}" | tee /tmp/gen.log
+          set -o pipefail; : > /tmp/gen.log
+          # the request file holds a number (how many new apps) and/or the word "recategorize"
+          if grep -qs recategorize tools/gen-flathub.request; then python3 tools/gen-flathub.py recategorize | tee -a /tmp/gen.log; fi
+          n="${{ github.event.inputs.count }}"; [ -n "$n" ] || n=$(tr -dc 0-9 < tools/gen-flathub.request || true)
+          if [ -n "$n" ]; then python3 tools/gen-flathub.py "$n" | tee -a /tmp/gen.log; fi
       - name: keep only ids that are really on Flathub
         run: |
           flatpak remote-ls --user --app flathub --columns=application > /tmp/flathub-ids.txt
@@ -39,6 +41,6 @@ jobs:
           git rm -q --ignore-unmatch tools/gen-flathub.request
           git add packages
           n=$(git diff --cached --name-only -- packages | grep -c '/GURTBUILD$' || true)
-          msg="bot: add $n Flathub apps 🦆"; grep -q recategorized /tmp/gen.log && msg="bot: $(grep recategorized /tmp/gen.log) 🗂️"
+          msg="bot: $(grep -h 'added .* Flathub apps\|recategorized' /tmp/gen.log | paste -sd ', ' -) 🦆"
           git -c user.name="gurt bot" -c user.email="gurt-bot@users.noreply.github.com" commit -qm "$msg" || exit 0
           git push

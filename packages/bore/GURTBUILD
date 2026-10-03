@@ -1,0 +1,22 @@
+# Expose a local port to the internet through a tunnel
+pkgname=bore
+pkgver=0.6.0
+pkgrel=1
+pkgdesc="Expose a local port to the internet through a tunnel"
+url="https://github.com/ekzhang/bore"
+license="MIT"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/ekzhang/bore/releases/download/${_tag}/bore-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/ekzhang/bore/releases/download/${_tag}/bore-${_tag}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(e484d1e3acba77169b773f31a5bfb34192d4b660f44a094a658a2522cd2270f7)
+sha256sums_aarch64=(ffc4515f3617420b243758cf36ed6a63208d7dba76b2ec3e90d1f476a9742951)
+
+package() {
+  local f
+  f=$(find . -type f -name bore -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name bore | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/bore"
+}

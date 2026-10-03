@@ -1,0 +1,22 @@
+# Web file manager for your server or NAS
+pkgname=filebrowser
+pkgver=2.63.23
+pkgrel=1
+pkgdesc="Web file manager for your server or NAS"
+url="https://github.com/filebrowser/filebrowser"
+license="Apache-2.0"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/filebrowser/filebrowser/releases/download/${_tag}/linux-amd64-filebrowser.tar.gz")
+source_aarch64=("https://github.com/filebrowser/filebrowser/releases/download/${_tag}/linux-arm64-filebrowser.tar.gz")
+sha256sums_x86_64=(b14db2bb8033caa3f80205eb6578b2ed0744ebd9e716b790bc4a9703ce909e88)
+sha256sums_aarch64=(c55b3450b6ac07ef73b5b49f0b2955a8e755100b71af1df73f9e5d25b12fd27a)
+
+package() {
+  local f
+  f=$(find . -type f -name filebrowser -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name filebrowser | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/filebrowser"
+}

@@ -1,0 +1,22 @@
+# Send push notifications to your phone with a simple HTTP call
+pkgname=ntfy
+pkgver=2.28.0
+pkgrel=1
+pkgdesc="Send push notifications to your phone with a simple HTTP call"
+url="https://github.com/binwiederhier/ntfy"
+license="Apache-2.0"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/binwiederhier/ntfy/releases/download/${_tag}/ntfy_${pkgver}_linux_amd64.tar.gz")
+source_aarch64=("https://github.com/binwiederhier/ntfy/releases/download/${_tag}/ntfy_${pkgver}_linux_arm64.tar.gz")
+sha256sums_x86_64=(881a1530e30e01f1dec202c7f41e1664e57edfb7844e73e21e345159ac3ea9b7)
+sha256sums_aarch64=(18a13411e315ba44781df222c432d27527fc089c2229a994c593beb9c1e247a0)
+
+package() {
+  local f
+  f=$(find . -type f -name ntfy -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name ntfy | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/ntfy"
+}

@@ -1,0 +1,24 @@
+# Search and rewrite code by its structure
+pkgname=ast-grep
+pkgver=0.45.3
+pkgrel=1
+pkgdesc="Search and rewrite code by its structure"
+url="https://github.com/ast-grep/ast-grep"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+aliases=(sg)
+# official prebuilt release binaries
+source_x86_64=("https://github.com/ast-grep/ast-grep/releases/download/${pkgver}/app-x86_64-unknown-linux-gnu.zip")
+source_aarch64=("https://github.com/ast-grep/ast-grep/releases/download/${pkgver}/app-aarch64-unknown-linux-gnu.zip")
+sha256sums_x86_64=(f8ac830881339d1edee6b2652f54798c0f4da5a827f2db38a08ee31117783ce8)
+sha256sums_aarch64=(b39cfbc58da4b869a88b8a4bc57bd5deb0d24541e704cf7c257da7b53ec81c8f)
+
+package() {
+  local f
+  f=$(find . -type f -name ast-grep -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name ast-grep | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/ast-grep"
+  f=$(find . -type f -name sg -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name sg | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/sg"
+}

@@ -1,0 +1,11 @@
+pkgname = aichat
+pkgver = 0.30.0
+pkgrel = 1
+pkgdesc = Chat with AI models from your terminal
+url = https://github.com/sigoden/aichat
+license = MIT OR Apache-2.0
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = https://github.com/sigoden/aichat/releases/download/v0.30.0/aichat-v0.30.0-x86_64-unknown-linux-musl.tar.gz

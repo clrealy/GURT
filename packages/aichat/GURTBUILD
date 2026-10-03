@@ -1,0 +1,22 @@
+# Chat with AI models from your terminal
+pkgname=aichat
+pkgver=0.30.0
+pkgrel=1
+pkgdesc="Chat with AI models from your terminal"
+url="https://github.com/sigoden/aichat"
+license="MIT OR Apache-2.0"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/sigoden/aichat/releases/download/${_tag}/aichat-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/sigoden/aichat/releases/download/${_tag}/aichat-${_tag}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(6b0cc08c5ceb551dc52bfac2221752f82215be5908c70605d655e9b91ab1557c)
+sha256sums_aarch64=(eb1cd0948569404c5d9d01c10b32b902e11f8231073315456454dec246bdf26e)
+
+package() {
+  local f
+  f=$(find . -type f -name aichat -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name aichat | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/aichat"
+}

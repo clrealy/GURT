@@ -1,0 +1,22 @@
+# Sync files with Google Drive, Dropbox, S3 and 70+ other clouds
+pkgname=rclone
+pkgver=1.75.1
+pkgrel=1
+pkgdesc="Sync files with Google Drive, Dropbox, S3 and 70+ other clouds"
+url="https://github.com/rclone/rclone"
+license="MIT"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/rclone/rclone/releases/download/${_tag}/rclone-${_tag}-linux-amd64.zip")
+source_aarch64=("https://github.com/rclone/rclone/releases/download/${_tag}/rclone-${_tag}-linux-arm64.zip")
+sha256sums_x86_64=(982b5aa772841168f8e380f139e9e787b2a105403e32b94da8676a0e1c0a13ab)
+sha256sums_aarch64=(03f2504174034b6d004152ed7369251c9a9ec1f7e0836eda420f5c7a5ec0dff9)
+
+package() {
+  local f
+  f=$(find . -type f -name rclone -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name rclone | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/rclone"
+}

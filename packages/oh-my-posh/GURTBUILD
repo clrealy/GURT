@@ -1,0 +1,20 @@
+# Prompt theme engine for any shell
+pkgname=oh-my-posh
+pkgver=31.4.0
+pkgrel=1
+pkgdesc="Prompt theme engine for any shell"
+url="https://github.com/JanDeDobbeleer/oh-my-posh"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("oh-my-posh::https://github.com/JanDeDobbeleer/oh-my-posh/releases/download/${_tag}/posh-linux-amd64")
+source_aarch64=("oh-my-posh::https://github.com/JanDeDobbeleer/oh-my-posh/releases/download/${_tag}/posh-linux-arm64")
+sha256sums_x86_64=(28ba5d5ec77fbcd6d2681674f6dd92760e07c5f4eb58927b6f9b03d1dd039fd4)
+sha256sums_aarch64=(dcc5ea2c9c79eda9c89f4790404a84df3f4d0401eefdd949ff91ff91723e5367)
+
+package() {
+  install -Dm755 oh-my-posh "$pkgdir$prefix/bin/oh-my-posh"
+}

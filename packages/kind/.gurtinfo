@@ -1,0 +1,11 @@
+pkgname = kind
+pkgver = 0.33.0
+pkgrel = 1
+pkgdesc = Run local Kubernetes clusters inside Docker
+url = https://github.com/kubernetes-sigs/kind
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = kind::https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64

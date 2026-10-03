@@ -1,0 +1,11 @@
+pkgname = pandoc
+pkgver = 3.12
+pkgrel = 1
+pkgdesc = Convert documents between basically every format
+url = https://github.com/jgm/pandoc
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+source = https://github.com/jgm/pandoc/releases/download/3.12/pandoc-3.12-linux-amd64.tar.gz

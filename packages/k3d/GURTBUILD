@@ -1,0 +1,20 @@
+# Run k3s Kubernetes clusters in Docker
+pkgname=k3d
+pkgver=5.9.0
+pkgrel=1
+pkgdesc="Run k3s Kubernetes clusters in Docker"
+url="https://github.com/k3d-io/k3d"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("k3d::https://github.com/k3d-io/k3d/releases/download/${_tag}/k3d-linux-amd64")
+source_aarch64=("k3d::https://github.com/k3d-io/k3d/releases/download/${_tag}/k3d-linux-arm64")
+sha256sums_x86_64=(06d8f25bc3a971c4eb29e0ff08429b180402db0f4dec838c9eac427e296800a0)
+sha256sums_aarch64=(03cde5cf23e6e8e67de5a039ecf26e5b85aca82fba3e5d13dadf904cd218a250)
+
+package() {
+  install -Dm755 k3d "$pkgdir$prefix/bin/k3d"
+}

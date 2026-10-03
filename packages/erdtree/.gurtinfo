@@ -1,0 +1,12 @@
+pkgname = erdtree
+pkgver = 3.1.2
+pkgrel = 1
+pkgdesc = File tree view with disk usage, like tree and du in one (run erd)
+url = https://github.com/solidiquis/erdtree
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = https://github.com/solidiquis/erdtree/releases/download/v3.1.2/erd-v3.1.2-x86_64-unknown-linux-musl.tar.gz
+alias = erd

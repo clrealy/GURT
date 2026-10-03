@@ -1,0 +1,22 @@
+# One of the fastest static site generators around
+pkgname=hugo
+pkgver=0.167.0
+pkgrel=1
+pkgdesc="One of the fastest static site generators around"
+url="https://github.com/gohugoio/hugo"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/gohugoio/hugo/releases/download/${_tag}/hugo_${pkgver}_Linux-64bit.tar.gz")
+source_aarch64=("https://github.com/gohugoio/hugo/releases/download/${_tag}/hugo_${pkgver}_Linux-ARM64.tar.gz")
+sha256sums_x86_64=(4d84519b9f619e6d4c3fb45a50157abeabeb724f859c60605f44c23def6e1169)
+sha256sums_aarch64=(d0dd0d1ed249842525a93413e10ca1ef6f3b63311ee1695b16a0ce488142cec1)
+
+package() {
+  local f
+  f=$(find . -type f -name hugo -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name hugo | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/hugo"
+}

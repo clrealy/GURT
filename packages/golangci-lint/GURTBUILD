@@ -1,0 +1,22 @@
+# Runs a whole bunch of Go linters at once, fast
+pkgname=golangci-lint
+pkgver=2.14.0
+pkgrel=1
+pkgdesc="Runs a whole bunch of Go linters at once, fast"
+url="https://github.com/golangci/golangci-lint"
+license="GPL-3.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/golangci/golangci-lint/releases/download/${_tag}/golangci-lint-${pkgver}-linux-amd64.tar.gz")
+source_aarch64=("https://github.com/golangci/golangci-lint/releases/download/${_tag}/golangci-lint-${pkgver}-linux-arm64.tar.gz")
+sha256sums_x86_64=(ab90aeb7b066f92a33415b638a50fe5344bbb75a0d32ad30cc248d88f81032ab)
+sha256sums_aarch64=(ee7ec5f3453d15ddf106fae5a4d6c71737712348a979d1fe9cd52ec7ea299bae)
+
+package() {
+  local f
+  f=$(find . -type f -name golangci-lint -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name golangci-lint | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/golangci-lint"
+}

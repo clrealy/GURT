@@ -1,0 +1,11 @@
+pkgname = grex
+pkgver = 1.4.6
+pkgrel = 1
+pkgdesc = Turns example text into a regex for you
+url = https://github.com/pemistahl/grex
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/pemistahl/grex/releases/download/v1.4.6/grex-v1.4.6-x86_64-unknown-linux-musl.tar.gz

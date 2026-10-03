@@ -1,0 +1,22 @@
+# See which programs are using your network bandwidth, live
+pkgname=bandwhich
+pkgver=0.23.1
+pkgrel=1
+pkgdesc="See which programs are using your network bandwidth, live"
+url="https://github.com/imsnif/bandwhich"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/imsnif/bandwhich/releases/download/${_tag}/bandwhich-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/imsnif/bandwhich/releases/download/${_tag}/bandwhich-${_tag}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(fec93e01c393cd3ef8aa168a675dffb8fa4841d5fd93390b5d14f238ae29e59c)
+sha256sums_aarch64=(6bbf084e5280a1a10833b8f466728ff428a7d637282c0487d6fcda0c4781357a)
+
+package() {
+  local f
+  f=$(find . -type f -name bandwhich -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name bandwhich | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/bandwhich"
+}

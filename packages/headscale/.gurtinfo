@@ -1,0 +1,11 @@
+pkgname = headscale
+pkgver = 0.29.4
+pkgrel = 1
+pkgdesc = Self-hosted Tailscale control server
+url = https://github.com/juanfont/headscale
+license = BSD-3-Clause
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = headscale::https://github.com/juanfont/headscale/releases/download/v0.29.4/headscale_0.29.4_linux_amd64

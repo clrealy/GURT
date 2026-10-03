@@ -1,0 +1,11 @@
+pkgname = syncthing
+pkgver = 2.1.5
+pkgrel = 1
+pkgdesc = Sync folders between your devices, no cloud needed
+url = https://github.com/syncthing/syncthing
+license = MPL-2.0
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = https://github.com/syncthing/syncthing/releases/download/v2.1.5/syncthing-linux-amd64-v2.1.5.tar.gz

@@ -1,0 +1,12 @@
+pkgname = jujutsu
+pkgver = 0.45.1
+pkgrel = 1
+pkgdesc = Git-compatible version control that's easier to use (run jj)
+url = https://github.com/jj-vcs/jj
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/jj-vcs/jj/releases/download/v0.45.1/jj-v0.45.1-x86_64-unknown-linux-musl.tar.gz
+alias = jj

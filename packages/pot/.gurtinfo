@@ -1,0 +1,10 @@
+pkgname = pot
+pkgver = 3.0.7
+pkgrel = 1
+pkgdesc = Translate and OCR text anywhere on your screen
+url = https://github.com/pot-app/pot-desktop
+license = GPL-3.0
+maintainer = clrealy
+category = office
+arch = x86_64
+source = pot.AppImage::https://github.com/pot-app/pot-desktop/releases/download/3.0.7/pot_3.0.7_amd64.AppImage

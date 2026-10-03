@@ -1,0 +1,22 @@
+# Update everything on your system with one command
+pkgname=topgrade
+pkgver=17.12.3
+pkgrel=1
+pkgdesc="Update everything on your system with one command"
+url="https://github.com/topgrade-rs/topgrade"
+license="GPL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/topgrade-rs/topgrade/releases/download/${_tag}/topgrade-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/topgrade-rs/topgrade/releases/download/${_tag}/topgrade-${_tag}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(b7133fad0c2f69ff33eb8f3b91705024208b9742f45eb4beb9bccd4b581a7608)
+sha256sums_aarch64=(786a96afd3f3a12438b3a5d5eddfa9985b88b8931d14e945dabd0d557f201dfe)
+
+package() {
+  local f
+  f=$(find . -type f -name topgrade -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name topgrade | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/topgrade"
+}

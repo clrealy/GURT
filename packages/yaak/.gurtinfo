@@ -1,0 +1,10 @@
+pkgname = yaak
+pkgver = 2026.8.1
+pkgrel = 1
+pkgdesc = Fast, offline API client for REST, GraphQL and gRPC
+url = https://github.com/mountain-loop/yaak
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+source = yaak.AppImage::https://github.com/mountain-loop/yaak/releases/download/v2026.8.1/yaak_2026.8.1_amd64.AppImage

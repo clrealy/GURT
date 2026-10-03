@@ -1,0 +1,11 @@
+pkgname = grype
+pkgver = 0.120.0
+pkgrel = 1
+pkgdesc = Scan container images and folders for known vulnerabilities
+url = https://github.com/anchore/grype
+license = Apache-2.0
+maintainer = clrealy
+category = security
+arch = x86_64
+arch = aarch64
+source = https://github.com/anchore/grype/releases/download/v0.120.0/grype_0.120.0_linux_amd64.tar.gz

@@ -1,0 +1,11 @@
+pkgname = trivy
+pkgver = 0.75.0
+pkgrel = 1
+pkgdesc = Security scanner for containers, code and configs
+url = https://github.com/aquasecurity/trivy
+license = Apache-2.0
+maintainer = clrealy
+category = security
+arch = x86_64
+arch = aarch64
+source = https://github.com/aquasecurity/trivy/releases/download/v0.75.0/trivy_0.75.0_Linux-64bit.tar.gz

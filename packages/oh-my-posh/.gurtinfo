@@ -1,0 +1,11 @@
+pkgname = oh-my-posh
+pkgver = 31.4.0
+pkgrel = 1
+pkgdesc = Prompt theme engine for any shell
+url = https://github.com/JanDeDobbeleer/oh-my-posh
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = oh-my-posh::https://github.com/JanDeDobbeleer/oh-my-posh/releases/download/v31.4.0/posh-linux-amd64

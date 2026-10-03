@@ -1,0 +1,12 @@
+pkgname = miller
+pkgver = 6.22.0
+pkgrel = 1
+pkgdesc = Like awk and sed, but for CSV, TSV and JSON (run mlr)
+url = https://github.com/johnkerl/miller
+license = BSD-2-Clause
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = https://github.com/johnkerl/miller/releases/download/v6.22.0/miller-6.22.0-linux-amd64.tar.gz
+alias = mlr

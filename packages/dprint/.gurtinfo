@@ -1,0 +1,11 @@
+pkgname = dprint
+pkgver = 0.59.0
+pkgrel = 1
+pkgdesc = Pluggable, super fast code formatter
+url = https://github.com/dprint/dprint
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/dprint/dprint/releases/download/0.59.0/dprint-x86_64-unknown-linux-musl.zip

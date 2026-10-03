@@ -1,0 +1,11 @@
+pkgname = stylua
+pkgver = 2.5.2
+pkgrel = 1
+pkgdesc = Formats Lua code
+url = https://github.com/JohnnyMorganz/StyLua
+license = MPL-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/JohnnyMorganz/StyLua/releases/download/v2.5.2/stylua-linux-x86_64-musl.zip

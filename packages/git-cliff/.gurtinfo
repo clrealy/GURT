@@ -1,0 +1,11 @@
+pkgname = git-cliff
+pkgver = 2.14.2
+pkgrel = 1
+pkgdesc = Make changelogs from your git history
+url = https://github.com/orhun/git-cliff
+license = MIT OR Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/orhun/git-cliff/releases/download/v2.14.2/git-cliff-2.14.2-x86_64-unknown-linux-musl.tar.gz

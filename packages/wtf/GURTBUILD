@@ -1,0 +1,23 @@
+# Personal terminal dashboard
+pkgname=wtf
+pkgver=0.51.0
+pkgrel=1
+pkgdesc="Personal terminal dashboard"
+url="https://github.com/wtfutil/wtf"
+license="MPL-2.0"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+aliases=(wtfutil)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/wtfutil/wtf/releases/download/${_tag}/wtf_${pkgver}_linux_amd64.tar.gz")
+source_aarch64=("https://github.com/wtfutil/wtf/releases/download/${_tag}/wtf_${pkgver}_linux_arm64.tar.gz")
+sha256sums_x86_64=(5b1670e8a6a2bfcddf699bccbaae6b53263d75b87ef099d8e2a837c1d5ffc81b)
+sha256sums_aarch64=(125ffb623e610dfc8076034b57cf0c13e8422b52924177ce752c541c6e356203)
+
+package() {
+  local f
+  f=$(find . -type f -name wtfutil -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name wtfutil | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/wtfutil"
+}

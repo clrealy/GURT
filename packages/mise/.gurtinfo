@@ -1,0 +1,11 @@
+pkgname = mise
+pkgver = 2026.10.0
+pkgrel = 1
+pkgdesc = Install and switch between versions of Node, Python, Go and more
+url = https://github.com/jdx/mise
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/jdx/mise/releases/download/v2026.10.0/mise-v2026.10.0-linux-x64-musl.tar.gz

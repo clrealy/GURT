@@ -1,0 +1,10 @@
+pkgname = kondo
+pkgver = 0.9
+pkgrel = 1
+pkgdesc = Clean build junk (node_modules, target and friends) out of old projects
+url = https://github.com/tbillington/kondo
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+source = https://github.com/tbillington/kondo/releases/download/v0.9/kondo-x86_64-unknown-linux-musl.tar.gz

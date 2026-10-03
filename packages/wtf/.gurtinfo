@@ -1,0 +1,12 @@
+pkgname = wtf
+pkgver = 0.51.0
+pkgrel = 1
+pkgdesc = Personal terminal dashboard
+url = https://github.com/wtfutil/wtf
+license = MPL-2.0
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = https://github.com/wtfutil/wtf/releases/download/v0.51.0/wtf_0.51.0_linux_amd64.tar.gz
+alias = wtfutil

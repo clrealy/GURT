@@ -1,0 +1,22 @@
+# Scan container images and folders for known vulnerabilities
+pkgname=grype
+pkgver=0.120.0
+pkgrel=1
+pkgdesc="Scan container images and folders for known vulnerabilities"
+url="https://github.com/anchore/grype"
+license="Apache-2.0"
+maintainer="clrealy"
+category="security"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/anchore/grype/releases/download/${_tag}/grype_${pkgver}_linux_amd64.tar.gz")
+source_aarch64=("https://github.com/anchore/grype/releases/download/${_tag}/grype_${pkgver}_linux_arm64.tar.gz")
+sha256sums_x86_64=(a5a1218dce63acdac152a6b3b5bb366e7267e36f4069848cf455543b3fa5700e)
+sha256sums_aarch64=(bc0e52b1a0de37e2ff021c4924d689dce7dcff2e7d74b39aea16c0453e69be18)
+
+package() {
+  local f
+  f=$(find . -type f -name grype -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name grype | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/grype"
+}

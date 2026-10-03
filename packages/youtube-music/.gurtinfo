@@ -1,0 +1,10 @@
+pkgname = youtube-music
+pkgver = 3.12.0
+pkgrel = 1
+pkgdesc = YouTube Music desktop app with ad blocking and plugins
+url = https://github.com/th-ch/youtube-music
+license = MIT
+maintainer = clrealy
+category = media
+arch = x86_64
+source = youtube-music.AppImage::https://github.com/th-ch/youtube-music/releases/download/v3.12.0/YouTube-Music-3.12.0.AppImage

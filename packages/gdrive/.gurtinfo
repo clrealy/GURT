@@ -1,0 +1,10 @@
+pkgname = gdrive
+pkgver = 3.9.1
+pkgrel = 1
+pkgdesc = Google Drive from the command line
+url = https://github.com/glotlabs/gdrive
+license = MIT
+maintainer = clrealy
+category = internet
+arch = x86_64
+source = https://github.com/glotlabs/gdrive/releases/download/3.9.1/gdrive_linux-x64.tar.gz

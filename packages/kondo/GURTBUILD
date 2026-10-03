@@ -1,0 +1,20 @@
+# Clean build junk (node_modules, target and friends) out of old projects
+pkgname=kondo
+pkgver=0.9
+pkgrel=1
+pkgdesc="Clean build junk (node_modules, target and friends) out of old projects"
+url="https://github.com/tbillington/kondo"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/tbillington/kondo/releases/download/${_tag}/kondo-x86_64-unknown-linux-musl.tar.gz")
+sha256sums=(b8855f3ba710661d9d2fb37a32919531697e020b2c0973dc46b1ac52a38048bc)
+
+package() {
+  local f
+  f=$(find . -type f -name kondo -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name kondo | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/kondo"
+}

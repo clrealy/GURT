@@ -10,7 +10,6 @@ import json, os, re, sys, urllib.request
 API = "https://flathub.org/api/v2"
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 PKGS = os.path.join(ROOT, "packages")
-WANT = int(sys.argv[1]) if len(sys.argv) > 1 else 100
 
 # Flathub's search index sends these in lowercase, its appstream data capitalized: compare lowercase
 CATS = {"audiovideo": "media", "audio": "media", "video": "media", "development": "dev", "education": "office", "game": "gaming",
@@ -95,11 +94,12 @@ def slug(s):
 
 
 def main():
+    want = int(sys.argv[1]) if len(sys.argv) > 1 else 100
     names, ids = existing()
     made = 0
     seen = set()
     for hit in popular():
-        if made >= WANT:
+        if made >= want:
             break
         app_id = hit.get("app_id") or hit.get("id")
         if not app_id or app_id in ids or app_id in seen or re.search(r"\.(BaseApp|Platform|Sdk|Extension|Locale|Debug)\b", app_id):

@@ -1,0 +1,20 @@
+# Top for containers
+pkgname=ctop
+pkgver=0.7.7
+pkgrel=1
+pkgdesc="Top for containers"
+url="https://github.com/bcicen/ctop"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("ctop::https://github.com/bcicen/ctop/releases/download/${_tag}/ctop-${pkgver}-linux-amd64")
+source_aarch64=("ctop::https://github.com/bcicen/ctop/releases/download/${_tag}/ctop-${pkgver}-linux-arm64")
+sha256sums_x86_64=(b78374734ebe3d14b6edee3d5512c911c250d7fa7f3f964cb00acd3bc5a02a09)
+sha256sums_aarch64=(d8d91e0fea53a8c78fa81192f078272e5a92f0ea6c4f0e38ec7c944d76e6f02f)
+
+package() {
+  install -Dm755 ctop "$pkgdir$prefix/bin/ctop"
+}

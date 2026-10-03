@@ -1,0 +1,22 @@
+# Switch Kubernetes contexts quickly
+pkgname=kubectx
+pkgver=0.11.0
+pkgrel=1
+pkgdesc="Switch Kubernetes contexts quickly"
+url="https://github.com/ahmetb/kubectx"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/ahmetb/kubectx/releases/download/${_tag}/kubectx_${_tag}_linux_x86_64.tar.gz")
+source_aarch64=("https://github.com/ahmetb/kubectx/releases/download/${_tag}/kubectx_${_tag}_linux_arm64.tar.gz")
+sha256sums_x86_64=(08e031c54fbffb3f100e904e4eae94bba2730fedf4869921fda79e4d7a8f5d4c)
+sha256sums_aarch64=(1dac2072216689e773325cb7587b858ea7415706ebcf04e23bf80e7e70555340)
+
+package() {
+  local f
+  f=$(find . -type f -name kubectx -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name kubectx | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/kubectx"
+}

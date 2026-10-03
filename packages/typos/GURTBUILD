@@ -1,0 +1,22 @@
+# Spell checker for source code
+pkgname=typos
+pkgver=1.50.3
+pkgrel=1
+pkgdesc="Spell checker for source code"
+url="https://github.com/crate-ci/typos"
+license="MIT OR Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/crate-ci/typos/releases/download/${_tag}/typos-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/crate-ci/typos/releases/download/${_tag}/typos-${_tag}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(aca6b5d546307092b8d0a8e0a89dd80f9da51f2f7617c5e45c5607c1684ffbf2)
+sha256sums_aarch64=(456f9fe7aa6e7c1597879f5e951d7de2fab261a9ca05f16f324f896c806c55db)
+
+package() {
+  local f
+  f=$(find . -type f -name typos -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name typos | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/typos"
+}

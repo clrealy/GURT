@@ -1,0 +1,11 @@
+pkgname = taplo
+pkgver = 0.10.0
+pkgrel = 1
+pkgdesc = TOML formatter and checker
+url = https://github.com/tamasfe/taplo
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = taplo.gz::https://github.com/tamasfe/taplo/releases/download/0.10.0/taplo-linux-x86_64.gz

@@ -1,0 +1,11 @@
+pkgname = crush
+pkgver = 0.97.1
+pkgrel = 1
+pkgdesc = AI coding agent for your terminal
+url = https://github.com/charmbracelet/crush
+license = see upstream
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/charmbracelet/crush/releases/download/v0.97.1/crush_0.97.1_Linux_x86_64.tar.gz

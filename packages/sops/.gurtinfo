@@ -1,0 +1,11 @@
+pkgname = sops
+pkgver = 3.13.3
+pkgrel = 1
+pkgdesc = Edit encrypted secrets files (YAML, JSON, env)
+url = https://github.com/getsops/sops
+license = MPL-2.0
+maintainer = clrealy
+category = security
+arch = x86_64
+arch = aarch64
+source = sops::https://github.com/getsops/sops/releases/download/v3.13.3/sops-v3.13.3.linux.amd64

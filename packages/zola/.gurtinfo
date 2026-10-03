@@ -1,0 +1,10 @@
+pkgname = zola
+pkgver = 0.23.6
+pkgrel = 1
+pkgdesc = Fast static site generator in a single binary
+url = https://github.com/getzola/zola
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+source = https://github.com/getzola/zola/releases/download/v0.23.6/zola-v0.23.6-x86_64-unknown-linux-musl.tar.gz

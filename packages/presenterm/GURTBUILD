@@ -1,0 +1,22 @@
+# Give slideshows from Markdown right in your terminal
+pkgname=presenterm
+pkgver=0.16.1
+pkgrel=1
+pkgdesc="Give slideshows from Markdown right in your terminal"
+url="https://github.com/mfontanini/presenterm"
+license="BSD-2-Clause"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/mfontanini/presenterm/releases/download/${_tag}/presenterm-${pkgver}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/mfontanini/presenterm/releases/download/${_tag}/presenterm-${pkgver}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(87512d7c88c3d961c7687aca3519f83c2b7611a550cf769c67c6f7948e8b8f54)
+sha256sums_aarch64=(c03c3744609d61587aac9dda4f431912748bd70d88d4fa6c0440b079001c64c3)
+
+package() {
+  local f
+  f=$(find . -type f -name presenterm -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name presenterm | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/presenterm"
+}

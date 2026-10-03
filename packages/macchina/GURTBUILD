@@ -1,0 +1,22 @@
+# Fast system info fetch for your terminal
+pkgname=macchina
+pkgver=6.4.0
+pkgrel=1
+pkgdesc="Fast system info fetch for your terminal"
+url="https://github.com/Macchina-CLI/macchina"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/Macchina-CLI/macchina/releases/download/${_tag}/macchina-${_tag}-linux-gnu-x86_64.tar.gz")
+source_aarch64=("https://github.com/Macchina-CLI/macchina/releases/download/${_tag}/macchina-${_tag}-linux-gnu-aarch64.tar.gz")
+sha256sums_x86_64=(8bd0b11b0d66dcdf3f31e02e898530210b7adab89234545bcbbe1b2942be2681)
+sha256sums_aarch64=(068c8d19df9aa5b52bab95000141801739f1b41689544e6e723b2e1bcb4094db)
+
+package() {
+  local f
+  f=$(find . -type f -name macchina -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name macchina | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/macchina"
+}

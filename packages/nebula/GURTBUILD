@@ -1,0 +1,24 @@
+# Build your own private overlay network between machines
+pkgname=nebula
+pkgver=1.11.2
+pkgrel=1
+pkgdesc="Build your own private overlay network between machines"
+url="https://github.com/slackhq/nebula"
+license="MIT"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binaries
+source_x86_64=("https://github.com/slackhq/nebula/releases/download/${_tag}/nebula-linux-amd64.tar.gz")
+source_aarch64=("https://github.com/slackhq/nebula/releases/download/${_tag}/nebula-linux-arm64.tar.gz")
+sha256sums_x86_64=(6140d33f2ec21ce7f6b655b5bc820e93a684d97e51d0ddcf907324b5b28aac1e)
+sha256sums_aarch64=(85d10e7bc2d121193c1392a1a919172ded7c413f46e602138281cfa9fa1b0231)
+
+package() {
+  local f
+  f=$(find . -type f -name nebula -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name nebula | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/nebula"
+  f=$(find . -type f -name nebula-cert -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name nebula-cert | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/nebula-cert"
+}

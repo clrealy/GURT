@@ -1,0 +1,11 @@
+pkgname = rclone
+pkgver = 1.75.1
+pkgrel = 1
+pkgdesc = Sync files with Google Drive, Dropbox, S3 and 70+ other clouds
+url = https://github.com/rclone/rclone
+license = MIT
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = https://github.com/rclone/rclone/releases/download/v1.75.1/rclone-v1.75.1-linux-amd64.zip

@@ -1,0 +1,19 @@
+# Google Drive from the command line
+pkgname=gdrive
+pkgver=3.9.1
+pkgrel=1
+pkgdesc="Google Drive from the command line"
+url="https://github.com/glotlabs/gdrive"
+license="MIT"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64)
+# official prebuilt release binary
+source=("https://github.com/glotlabs/gdrive/releases/download/${pkgver}/gdrive_linux-x64.tar.gz")
+sha256sums=(0646efa1ed15a6151ef5e1a4f723825c81935591ad7a01e86685afa8138bc7c9)
+
+package() {
+  local f
+  f=$(find . -type f -name gdrive -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name gdrive | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/gdrive"
+}

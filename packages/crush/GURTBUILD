@@ -1,0 +1,22 @@
+# AI coding agent for your terminal
+pkgname=crush
+pkgver=0.97.1
+pkgrel=1
+pkgdesc="AI coding agent for your terminal"
+url="https://github.com/charmbracelet/crush"
+license="see upstream"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/charmbracelet/crush/releases/download/${_tag}/crush_${pkgver}_Linux_x86_64.tar.gz")
+source_aarch64=("https://github.com/charmbracelet/crush/releases/download/${_tag}/crush_${pkgver}_Linux_arm64.tar.gz")
+sha256sums_x86_64=(1b7cbe0600a3797538a74dc00dd8c4bac54ac4b8f4455ba5ff2312b29c7bd598)
+sha256sums_aarch64=(16c9477a178d69e02a51bf4babe6174e62051314b2cd7f36b1ec5fea47e25a88)
+
+package() {
+  local f
+  f=$(find . -type f -name crush -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name crush | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/crush"
+}

@@ -1,0 +1,10 @@
+pkgname = kmon
+pkgver = 1.7.1
+pkgrel = 1
+pkgdesc = Manage Linux kernel modules from a terminal UI
+url = https://github.com/orhun/kmon
+license = GPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+source = https://github.com/orhun/kmon/releases/download/v1.7.1/kmon-1.7.1-x86_64-unknown-linux-musl.tar.gz

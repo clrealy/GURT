@@ -1,0 +1,20 @@
+# Run local Kubernetes clusters inside Docker
+pkgname=kind
+pkgver=0.33.0
+pkgrel=1
+pkgdesc="Run local Kubernetes clusters inside Docker"
+url="https://github.com/kubernetes-sigs/kind"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("kind::https://github.com/kubernetes-sigs/kind/releases/download/${_tag}/kind-linux-amd64")
+source_aarch64=("kind::https://github.com/kubernetes-sigs/kind/releases/download/${_tag}/kind-linux-arm64")
+sha256sums_x86_64=(aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d)
+sha256sums_aarch64=(20022bee6cfcd5086cb7234d218e3454e6090022f2a8f55d1fa7fcf42c3867a2)
+
+package() {
+  install -Dm755 kind "$pkgdir$prefix/bin/kind"
+}

@@ -1,0 +1,10 @@
+pkgname = yt-dlp
+pkgver = 2026.08.19
+pkgrel = 1
+pkgdesc = Download videos and audio from YouTube and tons of other sites
+url = https://github.com/yt-dlp/yt-dlp
+license = Unlicense
+maintainer = clrealy
+category = media
+arch = x86_64
+source = yt-dlp::https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp_linux

@@ -1,0 +1,22 @@
+# Terminal UI for your SQL databases
+pkgname=lazysql
+pkgver=0.5.9
+pkgrel=1
+pkgdesc="Terminal UI for your SQL databases"
+url="https://github.com/jorgerojas26/lazysql"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/jorgerojas26/lazysql/releases/download/${_tag}/lazysql_Linux_x86_64.tar.gz")
+source_aarch64=("https://github.com/jorgerojas26/lazysql/releases/download/${_tag}/lazysql_Linux_arm64.tar.gz")
+sha256sums_x86_64=(d392ee8fe4225e5d3d746f2610c1416709615cb37e6b0f44f35ff7c9bd56abaa)
+sha256sums_aarch64=(24950c7bb1dc304df73415a3fd6fcf71b88d0ed88907a3403f67a40f5c2f6059)
+
+package() {
+  local f
+  f=$(find . -type f -name lazysql -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name lazysql | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/lazysql"
+}

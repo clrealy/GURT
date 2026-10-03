@@ -1,0 +1,23 @@
+# Fuzzy finder for the terminal, a Rust take on fzf
+pkgname=skim
+pkgver=5.7.3
+pkgrel=1
+pkgdesc="Fuzzy finder for the terminal, a Rust take on fzf"
+url="https://github.com/skim-rs/skim"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+aliases=(sk)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/skim-rs/skim/releases/download/${_tag}/skim-x86_64-unknown-linux-musl.tar.xz")
+source_aarch64=("https://github.com/skim-rs/skim/releases/download/${_tag}/skim-aarch64-unknown-linux-musl.tar.xz")
+sha256sums_x86_64=(abf3895ee3f235949eafefbf8d4678304ff3fcf23462dfe3185b3faa379b2626)
+sha256sums_aarch64=(4090a7ffe8b3f6f151be83fa11ff52b5fa5368a7f3217df63f4b445cc86d86a3)
+
+package() {
+  local f
+  f=$(find . -type f -name sk -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name sk | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/sk"
+}

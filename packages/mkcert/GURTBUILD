@@ -1,0 +1,20 @@
+# Make locally trusted HTTPS certificates for development
+pkgname=mkcert
+pkgver=1.4.4
+pkgrel=1
+pkgdesc="Make locally trusted HTTPS certificates for development"
+url="https://github.com/FiloSottile/mkcert"
+license="BSD-3-Clause"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("mkcert::https://github.com/FiloSottile/mkcert/releases/download/${_tag}/mkcert-${_tag}-linux-amd64")
+source_aarch64=("mkcert::https://github.com/FiloSottile/mkcert/releases/download/${_tag}/mkcert-${_tag}-linux-arm64")
+sha256sums_x86_64=(6d31c65b03972c6dc4a14ab429f2928300518b26503f58723e532d1b0a3bbb52)
+sha256sums_aarch64=(b98f2cc69fd9147fe4d405d859c57504571adec0d3611c3eefd04107c7ac00d0)
+
+package() {
+  install -Dm755 mkcert "$pkgdir$prefix/bin/mkcert"
+}

@@ -1,0 +1,11 @@
+pkgname = dasel
+pkgver = 3.11.2
+pkgrel = 1
+pkgdesc = Query and edit JSON, YAML, TOML and XML with one tool
+url = https://github.com/TomWright/dasel
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = dasel::https://github.com/TomWright/dasel/releases/download/v3.11.2/dasel_linux_amd64

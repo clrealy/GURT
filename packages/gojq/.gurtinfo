@@ -1,0 +1,11 @@
+pkgname = gojq
+pkgver = 0.12.19
+pkgrel = 1
+pkgdesc = jq written in Go, with nicer error messages
+url = https://github.com/itchyny/gojq
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = https://github.com/itchyny/gojq/releases/download/v0.12.19/gojq_v0.12.19_linux_amd64.tar.gz

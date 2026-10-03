@@ -1,0 +1,20 @@
+# Generate, convert and play with colors in the terminal
+pkgname=pastel
+pkgver=0.12.0
+pkgrel=1
+pkgdesc="Generate, convert and play with colors in the terminal"
+url="https://github.com/sharkdp/pastel"
+license="MIT OR Apache-2.0"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/sharkdp/pastel/releases/download/${_tag}/pastel-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+sha256sums=(96ddd6593d08fd3868f2423f18ed5c6117a5f1aab335c1fc9e8347db7f219f2a)
+
+package() {
+  local f
+  f=$(find . -type f -name pastel -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name pastel | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/pastel"
+}

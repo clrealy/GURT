@@ -1,0 +1,20 @@
+# Edit encrypted secrets files (YAML, JSON, env)
+pkgname=sops
+pkgver=3.13.3
+pkgrel=1
+pkgdesc="Edit encrypted secrets files (YAML, JSON, env)"
+url="https://github.com/getsops/sops"
+license="MPL-2.0"
+maintainer="clrealy"
+category="security"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("sops::https://github.com/getsops/sops/releases/download/${_tag}/sops-${_tag}.linux.amd64")
+source_aarch64=("sops::https://github.com/getsops/sops/releases/download/${_tag}/sops-${_tag}.linux.arm64")
+sha256sums_x86_64=(e5bec3346a873ae91d871550f3e698c1aad962aff462a080e40f25fde17fef6b)
+sha256sums_aarch64=(53b0abacd38ef1b12a66d6c100956691b9cefce018d91f81e73ddf7438b94d77)
+
+package() {
+  install -Dm755 sops "$pkgdir$prefix/bin/sops"
+}

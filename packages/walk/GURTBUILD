@@ -1,0 +1,20 @@
+# Browse folders in the terminal and cd where you land
+pkgname=walk
+pkgver=1.13.0
+pkgrel=1
+pkgdesc="Browse folders in the terminal and cd where you land"
+url="https://github.com/antonmedv/walk"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("walk::https://github.com/antonmedv/walk/releases/download/${_tag}/walk_linux_amd64")
+source_aarch64=("walk::https://github.com/antonmedv/walk/releases/download/${_tag}/walk_linux_arm64")
+sha256sums_x86_64=(7c3b6e28fd0eee20170a07be5ceae001e466d8948b32feb005c447f4cf7c3c21)
+sha256sums_aarch64=(42664c11d54d1e7f7ca5131c34197de120f03d535238d6cadbe03bba8303ebc8)
+
+package() {
+  install -Dm755 walk "$pkgdir$prefix/bin/walk"
+}

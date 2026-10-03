@@ -1,0 +1,22 @@
+# Formats Lua code
+pkgname=stylua
+pkgver=2.5.2
+pkgrel=1
+pkgdesc="Formats Lua code"
+url="https://github.com/JohnnyMorganz/StyLua"
+license="MPL-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/JohnnyMorganz/StyLua/releases/download/${_tag}/stylua-linux-x86_64-musl.zip")
+source_aarch64=("https://github.com/JohnnyMorganz/StyLua/releases/download/${_tag}/stylua-linux-aarch64-musl.zip")
+sha256sums_x86_64=(ca6f1cf52eaf69e6632b81acef9c197aa24b85eb30d2455a35e7dbe28ae77c72)
+sha256sums_aarch64=(b948df6b4bae41af9a70948174372f96a3c14d44e3e017288701539f3db8fb75)
+
+package() {
+  local f
+  f=$(find . -type f -name stylua -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name stylua | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/stylua"
+}
