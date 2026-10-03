@@ -420,7 +420,7 @@ gurt cache                     # how much space gurt's downloads use · gurt cac
 gurt install fierfox           # typo? gurt asks "did you mean: firefox?"
 ```
 
-In the app: type "like discord" in the search, hit ⚖️ on up to 4 cards to compare them, 🐷 on the Installed tab sorts by size, 📜 shows your history, 🔔 on the Updates tab turns alerts on, and `/` jumps to the search box.
+In the app: type "like discord" in the search, hit ⚖️ on up to 4 cards to compare them, 🐷 on the Installed tab sorts by size, 🔔 on the Updates tab turns alerts on, and `/` jumps to the search box. The everyday stuff stays up front; the rest lives under **⋯ more** (install a file, convert, the app lottery on Discover; export/import, history, achievements on Installed). The Updates tab checks by itself when the app opens and shows how many are waiting.
 
 ## Fun 🎮
 

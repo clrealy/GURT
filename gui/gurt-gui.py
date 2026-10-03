@@ -934,6 +934,9 @@ nav .badge{background:var(--bad);color:#fff;border-radius:999px;font-size:11px;p
 .btn.small{padding:4px 10px;font-size:13px}
 main{flex:1;overflow:auto;padding:18px 20px 30px}
 .search{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.more{position:relative;display:inline-flex}
+.morepop{position:absolute;right:0;top:calc(100% + 8px);z-index:60;display:grid;gap:6px;min-width:220px;padding:10px;background:var(--panel);border:2px solid var(--edge,var(--line));border-radius:10px;box-shadow:5px 5px 0 var(--shadow,#0004)}
+.morepop[hidden]{display:none}.morepop .btn{width:100%;justify-content:flex-start;text-align:left}
 .search input{flex:1 1 260px;min-width:0;font:inherit;font-size:16px;padding:11px 14px;border-radius:12px;border:2px solid var(--line);background:var(--panel);color:var(--ink);outline:none}
 .search input:focus{border-color:var(--accent)}
 .hint{color:var(--muted);font-size:13px;margin:-6px 2px 12px}
@@ -1039,7 +1042,7 @@ dialog .row{justify-content:flex-end}
 #musicbtn.off{opacity:.5}
 /* the Install a file tab only shows when the header has room for it; otherwise the button in Discover does the job */
 :root.tight nav button[data-tab=dropfile]{display:none}
-:root:not(.tight) #dropbtn,:root:not(.tight) #convopen{display:none}
+
 #dropzone{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bg) 88%,transparent);pointer-events:none}
 #dropzone div{border:4px dashed var(--accent);border-radius:24px;padding:48px 64px;text-align:center;background:var(--panel);font-size:22px;font-weight:700}
 #dropzone small{display:block;font-size:14px;font-weight:400;color:var(--muted);margin-top:8px}
@@ -1277,7 +1280,7 @@ dialog .row{justify-content:flex-end}
       <button data-src="dirt" class="dirtbtn">dirt/ <small>18+</small></button>
     </div>
     <p class="blurb" id="blurb" hidden></p>
-    <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button><button class="btn lottobtn" id="lotto" title="win a random app">🎰 lottery</button><button class="btn ghost" id="dropbtn" title="install a .deb, .rpm, AppImage, .exe… you downloaded">📥 install a file</button><button class="btn ghost" id="convopen" title="turn a package into another format">🔁 convert</button><input type="file" id="dropin" hidden></div>
+    <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button><span class="more"><button class="btn ghost" data-more aria-haspopup="true" aria-expanded="false" title="more">⋯ more</button><span class="morepop" hidden><button class="btn ghost" id="dropbtn" title="install a .deb, .rpm, AppImage, .exe… you downloaded">📥 install a file</button><button class="btn ghost" id="convopen" title="turn a package into another format">🔁 convert a package</button><button class="btn lottobtn" id="lotto" title="win a random app">🎰 app lottery</button></span></span><input type="file" id="dropin" hidden></div>
     <p class="hint">tip: <code>aur/yay</code>, <code>apt/cowsay</code>, <code>flatpak/gimp</code>… type a full name with a source and hit install</p>
     <div id="direct" hidden class="row" style="margin-bottom:12px"><button class="btn" id="directbtn"></button></div>
     <div id="allres" hidden><h2>everywhere</h2><div class="grid" id="allgrid"></div><h2 style="margin-top:18px">Main GURT</h2></div>
@@ -1287,7 +1290,7 @@ dialog .row{justify-content:flex-end}
     <p class="cicada">Could prime Wifies solve Cicada 3301?</p>
   </section>
   <section id="t-installed" hidden>
-    <div class="search"><input id="iq" placeholder="filter installed…" autocomplete="off"><button class="btn ghost" id="lexport" title="save a list of everything you installed with gurt">📤 export my list</button><button class="btn ghost" id="limport" title="install everything from a list you exported">📥 import a list</button><button class="btn ghost" id="achbtn" title="your gurt achievements">🏆</button><button class="btn ghost" id="histbtn" title="what you installed + removed, and when">📜</button><button class="btn ghost" id="hogbtn" title="sort by how much disk each app takes">🐷 biggest first</button><input type="file" id="limportin" accept=".txt,text/plain" hidden></div>
+    <div class="search"><input id="iq" placeholder="filter installed…" autocomplete="off"><button class="btn ghost" id="hogbtn" title="sort by how much disk each app takes">🐷 biggest first</button><span class="more"><button class="btn ghost" data-more aria-haspopup="true" aria-expanded="false" title="more">⋯ more</button><span class="morepop" hidden><button class="btn ghost" id="lexport" title="save a list of everything you installed with gurt">📤 export my list</button><button class="btn ghost" id="limport" title="install everything from a list you exported">📥 import a list</button><button class="btn ghost" id="histbtn" title="what you installed + removed, and when">📜 history</button><button class="btn ghost" id="achbtn" title="your gurt achievements">🏆 achievements</button></span></span><input type="file" id="limportin" accept=".txt,text/plain" hidden></div>
     <div class="grid" id="igrid"></div>
   </section>
   <section id="t-updates" hidden>
@@ -1416,7 +1419,9 @@ function ask(title, body){ return new Promise(res => { $("#ctitle2").textContent
   const done = v => { d.close(); $("#cyes").onclick = $("#cno").onclick = null; res(v); };
   $("#cyes").onclick = () => done(true); $("#cno").onclick = () => done(false); d.onclose = () => res(false); d.showModal(); }); }
 
+let bgCheck = null;   // the quiet update check that runs right after the app opens
 async function run(cmd, arg="", {all=false, quiet=false, confirm=true, fmt=""} = {}){
+  if (busy && bgCheck) await bgCheck;   // the quiet update check on startup: just wait for it
   if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return null; }
   if (confirm && VERB[cmd]) {
     const warn = cmd === "outsource" ? " This builds + runs code from that repo — only do it if you trust it." :
@@ -1962,6 +1967,7 @@ let wasTight = false;
 $("#convopen").addEventListener("click", () => {
   document.querySelectorAll("nav button").forEach(x => x.classList.remove("on"));
   for (const t of ["discover","installed","updates","setup","desktops","dropfile"]) $("#t-"+t).hidden = t !== "dropfile";
+  document.querySelector('nav button[data-tab="dropfile"]').classList.add("on");
   loadZone(false);
 });
 addEventListener("resize", fitNav); fitNav();
@@ -2040,10 +2046,19 @@ $("#lotto2").addEventListener("click", () => spinLottery($("#lottowin2"), win =>
 $("#directbtn").addEventListener("click", () => run("install", $("#q").value.trim()));
 $("#iq").addEventListener("input", renderInstalled);
 
+// ⋯ more menus: the stuff you don't need every day
+function moreClose(except){ document.querySelectorAll(".more").forEach(m => { if (m === except) return; m.querySelector(".morepop").hidden = true; m.querySelector("[data-more]").setAttribute("aria-expanded", "false"); }); }
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-more]");
+  if (b) { const m = b.closest(".more"), pop = m.querySelector(".morepop"); moreClose(m); pop.hidden = !pop.hidden; b.setAttribute("aria-expanded", String(!pop.hidden)); return; }
+  moreClose();   // clicked anywhere else, or an item in a menu
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") moreClose(); });
+
 // ── updates ──
-async function check(){
+async function check(quiet = false){
   $("#ugrid").innerHTML = `<div class="empty">checking… ⏳</div>`;
-  const r = await run("update", "", {confirm:false}); if (!r) return;
+  const r = await run("update", "", {confirm:false, quiet}); if (!r) return;
   const ups = r.lines.map(l => l.match(/^\s*->\s*(\S+)\s+(\S+) -> (\S+)$/)).filter(Boolean);
   // gurt itself counts as an update too (and goes first — the new gurt might be needed for the rest)
   const selfUp = r.lines.find(l => /is out \(you have|gurt self-update/.test(l));
@@ -2056,7 +2071,9 @@ async function check(){
       + (sysM ? card({name:"your system", src:sysM[2], ver:`${sysM[1]} update${sysM[1] === "1" ? "" : "s"}`, desc:`${sysM[1]} package${sysM[1] === "1" ? "" : "s"} from your distro (${sysM[2]}) — "update everything" installs them too`, actions: actBtn("🐧 update system","sysup","")}) : "")
       + ups.map(m => card({name:m[1].split("/").pop(), src:m[1].includes("/") ? m[1].split("/")[0] : "gurt", ver:`${m[2]} → ${m[3]}`, desc:"update available", actions: actBtn("update","install",m[1])})).join("");
 }
-$("#checkbtn").addEventListener("click", check);
+$("#checkbtn").addEventListener("click", () => check());
+// 🔔 check for updates quietly right after opening, so the Updates tab shows its count without a click
+setTimeout(() => { if (!busy && typeof S !== "undefined" && S) bgCheck = check(true).catch(() => {}).finally(() => { bgCheck = null; }); }, 2500);
 $("#upbtn").addEventListener("click", async () => { if (await run("upgrade")) check(); });
 $("#selfbtn").addEventListener("click", () => run("self-update"));
 $("#syncbtn").addEventListener("click", () => run("sync", "", {confirm:false}));
