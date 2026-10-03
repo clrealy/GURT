@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.30.0"
+GURT_VERSION="1.0.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -4347,7 +4347,8 @@ sus|sus detector 🚨|get warned about a build script with red flags
 verify|trust issues 🔏|check a package's signature
 publish|publisher 📡|publish your own signed repo
 profile|save state 💾|save a profile
-compare|indecisive ⚖️|compare apps side by side"
+compare|indecisive ⚖️|compare apps side by side
+v1|day one 🎂|be there for GURT 1.0"
 achieved() { [[ -f $ACH_FILE ]] && grep -q "^$1 " "$ACH_FILE"; }
 achieve() { # id — unlock it (once), with a little fanfare
   [[ ${GURT_ACHIEVEMENTS:-1} == 0 ]] && return 0
@@ -4373,7 +4374,7 @@ ach_installs() { # check the install-count ones after installing
 cmd_achievements() { # [--tsv]
   local id title what got n=0 tot=0
   while IFS='|' read -r id title what; do
-    tot=$((tot + 1)); got=$( [[ -f $ACH_FILE ]] && awk -v i="$id" '$1 == i { print $2 }' "$ACH_FILE")
+    tot=$((tot + 1)); got=""; [[ -f $ACH_FILE ]] && got=$(awk -v i="$id" '$1 == i { print $2 }' "$ACH_FILE")
     [[ -n $got ]] && n=$((n + 1))
     if [[ ${1:-} == --tsv ]]; then printf '%s\t%s\t%s\t%s\n' "$id" "$title" "$what" "$got"
     elif [[ -n $got ]]; then printf '  🏆 %s%s%s — %s  %s(%s)%s\n' "$B" "$title" "$R0" "$what" "$GRN" "$got" "$R0"

@@ -2,6 +2,8 @@
 
 # gurt 🦆
 
+**GURT 1.0 is out 🎉** ([what's new](CHANGELOG.md))
+
 **G**URT **U**niversal **R**epository **T**hingy. With it, you can install **any distro's packages on any distro**, and use **Main GURT**, a community repo of its own.
 
 ```sh

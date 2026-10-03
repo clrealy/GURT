@@ -201,7 +201,7 @@ def theme():
 SKINS = ("gurt", "win11", "xp", "w95", "vapor", "hacker")
 TRACKS = ("auto", "shop", "lofi", "chip", "synth")
 LEGENDARY = ("hpa2", "tsudore", "opsec", "oneko", "zsnes", "frozen-bubble")
-ACH_IDS = ("legendary", "streak7", "lottery", "compare")
+ACH_IDS = ("legendary", "streak7", "lottery", "compare", "v1")
 
 
 def skin():
@@ -370,7 +370,7 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/":
             if not self._host_ok() or not secrets.compare_digest((q.get("t") or [""])[0], TOKEN):
                 return self._send(403, "nope 🔒 open GURT with: gurt gui", "text/plain")
-            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()).replace("__SFX__", "off" if conf().get("sfx") is False else "on").replace("__MUSIC__", "off" if conf().get("music") is False else "on").replace("__TRACK__", conf().get("track") if conf().get("track") in TRACKS else "auto").replace("__OPEN__", html_attr(OPEN_FILE[0])), "text/html")
+            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()).replace("__SFX__", "off" if conf().get("sfx") is False else "on").replace("__MUSIC__", "off" if conf().get("music") is False else "on").replace("__TRACK__", conf().get("track") if conf().get("track") in TRACKS else "auto").replace("__SEEN__", html_attr(str(conf().get("seen", "")))).replace("__OPEN__", html_attr(OPEN_FILE[0])), "text/html")
         if u.path in ("/icon.png", "/logo.png", "/dirt-logo.png"):
             repo = paths().get("repo", "")
             want = {"/logo.png": "gurt-logo.png", "/dirt-logo.png": "dirt-logo.png"}.get(u.path, "apple-touch-icon.png")
@@ -558,6 +558,9 @@ class H(BaseHTTPRequestHandler):
                 return self._send(400, {"error": "nope"})
             r = subprocess.run([GURT, "__achieve", a], capture_output=True, text=True, timeout=20, env=dict(os.environ, NO_COLOR="1"))
             return self._send(200, {"line": ANSI.sub("", r.stderr).strip()})
+        if u.path == "/api/seen":   # the "welcome to a new version" card shows once per version
+            save_conf(seen=str(body.get("v", ""))[:20])
+            return self._send(200, {"ok": True})
         if u.path == "/api/track":
             if body.get("track") not in TRACKS:
                 return self._send(400, {"error": "unknown track"})
@@ -833,7 +836,7 @@ def audio_ok():
         return False
 
 PAGE = r"""<!doctype html>
-<html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__" data-music="__MUSIC__" data-track="__TRACK__" data-open="__OPEN__"><head>
+<html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__" data-music="__MUSIC__" data-track="__TRACK__" data-seen="__SEEN__" data-open="__OPEN__"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GURT</title><link rel="icon" href="/icon.png">
 <style>
@@ -1053,6 +1056,8 @@ dialog .row{justify-content:flex-end}
 #skinsel,#tracksel,#convfmt{font:inherit;font-size:14px;background:var(--panel);color:var(--ink);border:2px solid var(--edge,var(--line));border-radius:8px;padding:6px 8px;cursor:pointer}
 #toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:60;background:var(--panel);border:2px solid var(--accent);border-radius:14px;padding:10px 16px;font-weight:700;box-shadow:5px 5px 0 var(--shadow,#0004);animation:toast-in .4s cubic-bezier(.2,1.6,.4,1);max-width:calc(100vw - 32px)}
 @keyframes toast-in{from{transform:translate(-50%,-30px) scale(.8);opacity:0}}
+.v1hero{font:900 64px/1 Verdana,"DejaVu Sans",sans-serif;letter-spacing:-.04em;display:inline-block;padding:2px 14px;margin-bottom:10px;background:var(--accent);color:#141414;border:3px solid var(--edge,#141414);border-radius:10px;box-shadow:5px 5px 0 var(--shadow,#141414)}
+.v1list{margin:0 0 16px;padding-left:20px;display:grid;gap:6px}#v1dlg{max-width:520px}
 #achlist{display:grid;gap:8px;max-height:60vh;overflow:auto;margin:6px 0 12px}
 .ach{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.ach.locked{opacity:.5;filter:grayscale(1)}.ach b{display:block}.ach small{color:var(--muted)}.ach .when{margin-left:auto;font-size:12px;color:var(--muted)}
 .rarity{display:inline-block;font:800 12px/1 ui-monospace,monospace;padding:4px 9px;border-radius:999px;margin:0 6px 6px;letter-spacing:.06em}
@@ -1238,6 +1243,14 @@ dialog .row{justify-content:flex-end}
 
 <div id="dropzone" hidden><div>📥 drop it to install<small>.deb · .rpm · .pkg.tar.zst · AppImage · .tar.gz · .zip · .flatpak · .exe · .dmg — any distro, no box</small></div></div>
 <div id="toast" hidden></div>
+<dialog id="v1dlg"><div class="v1hero">1.0</div><h3>GURT 1.0 is here 🦆🎉</h3>
+  <p>no more 0.something. what's new since you last looked:</p>
+  <ul class="v1list"><li>🔏 everything The Congurter™ makes is signed, and installs check signatures by themselves</li>
+  <li>🚨 the sus check reads AUR + git build scripts for red flags before building</li>
+  <li>⚖️ compare apps, 🐷 see what eats your disk, search "like photoshop"</li>
+  <li>🏆 achievements, 🔥 lottery streaks, 🌈 legendary pulls</li>
+  <li>🎨 a fresh look, + Vaporwave and Hacker skins and 4 music tracks (in the 🎨 menu)</li></ul>
+  <div class="row"><span class="spacer"></span><button class="btn" id="v1ok">let's gooo</button></div></dialog>
 <dialog id="achdlg"><h3>🏆 achievements</h3><div id="achlist"></div><div class="row"><span class="spacer"></span><button class="btn" id="achclose">nice</button></div></dialog>
 <div id="cmptray" hidden><span>⚖️</span><span id="cmplist"></span><span class="spacer"></span><button class="btn ghost small" id="cmpclear">clear</button><button class="btn small" id="cmpgo">compare</button></div>
 <dialog id="cmpdlg"><h3>⚖️ side by side</h3><div id="cmptable"></div><div class="row"><span class="spacer"></span><button class="btn" id="cmpclose">done</button></div></dialog>
@@ -1363,6 +1376,17 @@ $("#achbtn").addEventListener("click", async () => {
   $("#achdlg").showModal();
 });
 $("#achclose").addEventListener("click", () => $("#achdlg").close());
+// 🎂 first time on 1.0: a little welcome (once), and the day-one trophy
+(() => {
+  const seen = document.documentElement.dataset.seen || "", ver = () => (S && S.version) || "";
+  const show = () => {
+    if (!/^1\./.test(ver()) || /^1\./.test(seen)) return;
+    $("#v1dlg").showModal(); SFX.play("legendary");
+    $("#v1ok").onclick = () => $("#v1dlg").close();
+    $("#v1dlg").addEventListener("close", () => { api("/api/seen", {v: ver()}).catch(() => {}); achieve("v1"); }, {once: true});
+  };
+  const wait = setInterval(() => { if (typeof S !== "undefined" && S && S.version) { clearInterval(wait); show(); } }, 300);
+})();
 function setBusyUI(on){ $("#cstop").hidden = !on; document.querySelectorAll("[data-cmd], #upbtn, #checkbtn, #selfbtn, #syncbtn, #qall").forEach(b => b.disabled = on); }
 function askPassword(prompt){ $("#pwprompt").textContent = "gurt needs your password (sudo) to put files in system folders. " + (prompt.includes("password") ? "" : prompt);
   $("#pwin").value = ""; $("#pw").showModal(); $("#pwin").focus(); }
