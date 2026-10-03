@@ -21,8 +21,8 @@ package() {
   # borrow its app menu entry + icon (the download isn't executable yet, so copy it first)
   mkdir -p x; install -m755 "$pkgname.AppImage" x/app.AppImage
   ( cd x && ./app.AppImage --appimage-extract >/dev/null 2>&1 || true )
-  d=$(find x/squashfs-root -maxdepth 1 -name '*.desktop' | head -n1)
-  ic=$( [ -n "$d" ] && sed -n 's/^Icon=//p' "$d" | head -n1 )
+  d=$(find x/squashfs-root -maxdepth 1 -name '*.desktop' 2>/dev/null | head -n1)   # empty where the AppImage can't run (musl distros)
+  ic=""; [ -n "$d" ] && ic=$(sed -n 's/^Icon=//p' "$d" | head -n1)
   for f in $(find -L x/squashfs-root/usr/share/icons x/squashfs-root -maxdepth 6 -type f \( -name "${ic:-none}.png" -o -name "${ic:-none}.svg" \) 2>/dev/null | sort -V) \
            $(find -L x/squashfs-root -maxdepth 1 -type f \( -name '*.png' -o -name '*.svg' \) 2>/dev/null); do icon=$f; done
   if [ -n "$icon" ]; then install -Dm644 "$icon" "$pkgdir$prefix/share/pixmaps/$pkgname.${icon##*.}"; icon="$prefix/share/pixmaps/$pkgname.${icon##*.}"; fi
