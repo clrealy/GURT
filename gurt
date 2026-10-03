@@ -3663,7 +3663,7 @@ cmd_complete() {
     installed) for d in "$DB"/*/; do [[ -d $d ]] && pretty "$(basename "$d")"; done ;;
     available) for f in "$GURT_REPO_DIR"/packages/*/.gurtinfo; do [[ -f $f ]] || continue
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
-    commands)  printf '%s\n' sync search info install update upgrade self-update remove autoremove list files owns lottery sysup \
+    commands)  printf '%s\n' sync search info install update upgrade self-update uninstall remove autoremove list files owns lottery sysup \
                  build add srcinfo checksum new repo dirt gui de outsource rollback hold unhold export import completions doctor version help yo \
                  convert key verify sus why hogs compare profile notify snapshots achievements utils setup ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman flatpak snap dirt ;;
@@ -4350,6 +4350,67 @@ ensure_completions() {
     echo "$GURT_VERSION" > "$stamp"
   } 2>/dev/null || true
 }
+# ── gurt uninstall: take gurt off this computer (and, if you say so, every app it installed) ──
+cmd_uninstall() {
+  local self keys=() k list="" data="${XDG_DATA_HOME:-$HOME/.local/share}" cfg="${XDG_CONFIG_HOME:-$HOME/.config}"
+  self=$(readlink -f "$0")
+  [[ -t 0 || -r /dev/tty ]] || die "run gurt uninstall in a terminal (it asks before deleting anything)"
+  for k in "$DB"/*/; do [[ -d $k ]] && keys+=("$(basename "$k")"); done
+  msg "uninstalling gurt 🦆👋"
+  ask_really "really take gurt off this computer?" || die "keeping gurt 😌"
+  if (( ${#keys[@]} )); then
+    # save the list first, so the Setup Wizard (or gurt import) can put it all back
+    list="$HOME/gurt-apps-$(date +%F).txt"
+    cmd_export "$list"
+    msg2 "gurt installed ${#keys[@]} thing(s): $(for k in "${keys[@]}"; do pretty "$k"; done | head -n 12 | paste -sd' ')$( (( ${#keys[@]} > 12 )) && echo " …")"
+    if ask_really "remove the apps gurt installed too? (no = they stay, gurt just stops tracking them)"; then
+      FORCE=true QUIET_YEET=true
+      for k in "${keys[@]}"; do [[ -d $DB/$k ]] && { remove_pkg "$k" || warn "couldn't remove $(pretty "$k")"; }; done
+    else
+      msg2 "keeping your apps"
+    fi
+  fi
+  cmd_notify off >/dev/null 2>&1 || true
+  # the menu entry, icons, file type + tab completion gurt made just for you
+  rm -f "$data/applications/gurt.desktop" "$data/icons/hicolor/256x256/apps/gurt.png" \
+        "$data/icons/hicolor/256x256/mimetypes/application-x-gurt-package.png" "$data/mime/packages/gurt.xml" \
+        "$data/bash-completion/completions/gurt" "$cfg/fish/completions/gurt.fish" 2>/dev/null || true
+  command -v update-mime-database >/dev/null && update-mime-database "$data/mime" >/dev/null 2>&1 || true
+  command -v update-desktop-database >/dev/null && update-desktop-database -q "$data/applications" 2>/dev/null || true
+  if ask_really "also delete your gurt settings, cache and signing key? (no = they stay for next time)"; then
+    rm -rf -- "$cfg/gurt" "$GURT_CACHE" "$data/gurt"
+  fi
+  [[ -z $R ]] && asroot rm -rf -- /var/lib/gurt
+  is_wsl && msg2 "on Windows: also remove GURT in Settings → Apps (that takes the gurt command off Windows)"
+  [[ -n $list ]] && msg2 "your app list is saved: $list (the GURT Setup Wizard can import it)"
+  # installed from a GURTSetupWizard package: let the distro's package manager take it off, so it stays in sync
+  if [[ $self == /usr/bin/gurt ]] && case $PM in
+       apt) dpkg -S /usr/bin/gurt ;; dnf|yum|zypper) rpm -qf /usr/bin/gurt ;; pacman) pacman -Qo /usr/bin/gurt ;;
+       apk) apk info -W /usr/bin/gurt ;; xbps) xbps-query -o /usr/bin/gurt ;; eopkg) eopkg search-file /usr/bin/gurt ;; *) false ;;
+     esac >/dev/null 2>&1; then
+    msg "bye from gurt 🫡 removing the gurt package"
+    case $PM in
+      apt)    exec_root apt-get remove -y gurt ;;
+      dnf)    exec_root dnf remove -y gurt ;;
+      yum)    exec_root yum remove -y gurt ;;
+      zypper) exec_root zypper --non-interactive remove gurt ;;
+      pacman) exec_root pacman -R --noconfirm gurt ;;
+      apk)    exec_root apk del gurt ;;
+      xbps)   exec_root xbps-remove -y gurt ;;
+      eopkg)  exec_root eopkg remove -y gurt ;;
+    esac
+  fi
+  # running straight out of a folder (a git clone): that folder is yours, leave it alone
+  [[ $self == */bin/gurt ]] || { msg "gurt's off your system 🫡 this copy runs from $(dirname "$self"), delete that folder yourself if you want"; exit 0; }
+  # installed by hand (install.sh): those files are gurt's own
+  asroot rm -rf -- "$(dirname "$(dirname "$self")")/share/gurt" /usr/local/share/gurt
+  [[ -f /etc/gurt.conf ]] && asroot rm -f /etc/gurt.conf
+  asroot rm -f -- "$self"
+  msg "gurt's gone. bye 🫡🦆 (want it back? grab a GURTSetupWizard from github.com/clrealy/GURT/releases)"
+  exit 0
+}
+# run a command as root and never come back (gurt's own file is about to vanish)
+exec_root() { if (( EUID == 0 )); then exec "$@"; elif command -v sudo >/dev/null; then exec sudo "$@"; else exec doas "$@"; fi; }
 cmd_self_update() {
   local self new tmp dir
   self=$(readlink -f "$0")
@@ -4965,6 +5026,7 @@ ${B}using packages${R0}
   utils [list]         install the utilities most apps need (flatpak, git, curl, unzip tools, a compiler…)
                        (on Donk OS 🫏 gurt does this by itself)
   self-update          update gurt itself
+  uninstall            take gurt off this computer (saves your app list, asks before removing your apps)
   remove pkg…          uninstall (only removes files gurt put there)
   autoremove           remove deps nothing needs anymore
   list                 what you've got installed
@@ -5106,6 +5168,8 @@ main() {
     notify|alerts)     cmd_notify "$@" ;;
     snapshots|snaps)   cmd_snapshots ;;
     self-update|selfupdate) cmd_self_update ;;
+    uninstall)         if (( $# )); then for p; do remove_pkg "$p"; done; play_scream; achieve yeet   # gurt uninstall <app> = gurt remove <app>
+                       else cmd_uninstall; fi ;;
     remove|rm|yeet)    (( $# )) || die "remove what tho"; for p; do remove_pkg "$p"; done; play_scream; achieve yeet ;;
     autoremove|clean)  cmd_autoremove ;;
     list|ls)           cmd_list ;;
