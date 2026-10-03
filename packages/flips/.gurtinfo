@@ -1,0 +1,13 @@
+pkgname = flips
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A patcher for IPS and BPS files
+url = https://flathub.org/apps/com.github.Alcaro.Flips
+license = GPL-3.0+
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.Alcaro.Flips

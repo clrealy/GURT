@@ -1,0 +1,15 @@
+# The serial port monitor for Arduino (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tauno-monitor
+pkgver=flathub
+pkgrel=1
+pkgdesc="The serial port monitor for Arduino"
+url="https://flathub.org/apps/art.taunoerik.tauno-monitor"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=art.taunoerik.tauno-monitor

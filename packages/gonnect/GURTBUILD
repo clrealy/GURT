@@ -1,0 +1,15 @@
+# Make phone calls and hold video conferences (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=gonnect
+pkgver=flathub
+pkgrel=1
+pkgdesc="Make phone calls and hold video conferences"
+url="https://flathub.org/apps/de.gonicus.gonnect"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=de.gonicus.gonnect

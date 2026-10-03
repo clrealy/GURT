@@ -1,0 +1,15 @@
+# Puzzle game (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=enigma
+pkgver=flathub
+pkgrel=1
+pkgdesc="Puzzle game"
+url="https://flathub.org/apps/org.nongnu.enigma"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.nongnu.enigma

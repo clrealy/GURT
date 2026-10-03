@@ -1,0 +1,15 @@
+# Deftly Guide a Rolling Ball through Many Slick 3D Levels (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=neverball
+pkgver=flathub
+pkgrel=1
+pkgdesc="Deftly Guide a Rolling Ball through Many Slick 3D Levels"
+url="https://flathub.org/apps/org.neverball.Neverball"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.neverball.Neverball

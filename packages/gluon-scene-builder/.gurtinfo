@@ -1,0 +1,13 @@
+pkgname = gluon-scene-builder
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Design JavaFX user interfaces
+url = https://flathub.org/apps/com.gluonhq.SceneBuilder
+license = 0BSD
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.gluonhq.SceneBuilder

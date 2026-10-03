@@ -1,0 +1,13 @@
+pkgname = marker
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Powerful markdown editor for the GNOME desktop
+url = https://flathub.org/apps/com.github.fabiocolacio.marker
+license = GPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.fabiocolacio.marker

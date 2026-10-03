@@ -1,0 +1,15 @@
+# Stream music from your Navidrome Server (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=subsound
+pkgver=flathub
+pkgrel=1
+pkgdesc="Stream music from your Navidrome Server"
+url="https://flathub.org/apps/io.github.subsoundorg.Subsound"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.subsoundorg.Subsound

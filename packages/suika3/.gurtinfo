@@ -1,0 +1,13 @@
+pkgname = suika3
+pkgver = flathub
+pkgrel = 1
+pkgdesc = 2D game engine for visual novels
+url = https://flathub.org/apps/vn.suika3.engine
+license = Zlib
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = vn.suika3.engine

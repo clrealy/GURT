@@ -1,0 +1,13 @@
+pkgname = naev
+pkgver = flathub
+pkgrel = 1
+pkgdesc = 2D action/rpg space trading combat game
+url = https://flathub.org/apps/org.naev.Naev
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.naev.Naev

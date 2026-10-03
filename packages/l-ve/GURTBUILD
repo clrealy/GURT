@@ -1,0 +1,15 @@
+# LÖVE is an awesome 2D game framework for Lua (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=l-ve
+pkgver=flathub
+pkgrel=1
+pkgdesc="LÖVE is an awesome 2D game framework for Lua"
+url="https://flathub.org/apps/org.love2d.love2d"
+license="Zlib"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.love2d.love2d

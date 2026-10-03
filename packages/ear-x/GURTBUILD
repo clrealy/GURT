@@ -1,0 +1,15 @@
+# Control your Nothing earbuds' settings (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=ear-x
+pkgver=flathub
+pkgrel=1
+pkgdesc="Control your Nothing earbuds' settings"
+url="https://flathub.org/apps/com.somaxa8.earx"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.somaxa8.earx

@@ -1,0 +1,15 @@
+# Educational Java IDE for beginners with support for graphics, animation and sound (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=greenfoot
+pkgver=flathub
+pkgrel=1
+pkgdesc="Educational Java IDE for beginners with support for graphics, animation and sound"
+url="https://flathub.org/apps/org.greenfoot.Greenfoot"
+license="GPL-2.0-or-later WITH Classpath-exception-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.greenfoot.Greenfoot

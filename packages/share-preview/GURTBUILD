@@ -1,0 +1,15 @@
+# Test social media cards locally (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=share-preview
+pkgver=flathub
+pkgrel=1
+pkgdesc="Test social media cards locally"
+url="https://flathub.org/apps/com.rafaelmardojai.SharePreview"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.rafaelmardojai.SharePreview

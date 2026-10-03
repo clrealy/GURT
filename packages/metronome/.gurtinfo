@@ -1,0 +1,13 @@
+pkgname = metronome
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Keep the tempo
+url = https://flathub.org/apps/com.adrienplazas.Metronome
+license = GPL-3.0+
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.adrienplazas.Metronome

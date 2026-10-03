@@ -1,0 +1,15 @@
+# Design model railroad layouts (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=xtrackcad
+pkgver=flathub
+pkgrel=1
+pkgdesc="Design model railroad layouts"
+url="https://flathub.org/apps/io.sourceforge.xtrkcad_fork.xtrkcad"
+license="GPL-3.0"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.sourceforge.xtrkcad_fork.xtrkcad

@@ -1,0 +1,13 @@
+pkgname = xmind-8
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Amazing brainstorming and mind mapping tool
+url = https://flathub.org/apps/net.xmind.XMind8
+license = see Flathub
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.xmind.XMind8

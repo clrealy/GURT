@@ -1,0 +1,15 @@
+# Calm, fast screen capture for Linux (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=silori
+pkgver=flathub
+pkgrel=1
+pkgdesc="Calm, fast screen capture for Linux"
+url="https://flathub.org/apps/org.sinzala.silori"
+license="see Flathub"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.sinzala.silori

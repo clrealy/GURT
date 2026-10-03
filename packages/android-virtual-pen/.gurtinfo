@@ -1,0 +1,13 @@
+pkgname = android-virtual-pen
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Capture android pen input on Linux
+url = https://flathub.org/apps/io.github.androidvirtualpen.virtualpen
+license = GPL-3.0-only
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.androidvirtualpen.virtualpen

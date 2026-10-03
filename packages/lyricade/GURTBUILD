@@ -1,0 +1,15 @@
+# Download and manage lyrics (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=lyricade
+pkgver=flathub
+pkgrel=1
+pkgdesc="Download and manage lyrics"
+url="https://flathub.org/apps/io.github.weiteck.Lyricade"
+license="Apache-2.0"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.weiteck.Lyricade

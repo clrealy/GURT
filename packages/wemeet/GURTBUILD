@@ -1,0 +1,15 @@
+# A cloud-based HD conferencing product leveraging Tencent's 20+ years of experience in audiovisual communications (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=wemeet
+pkgver=flathub
+pkgrel=1
+pkgdesc="A cloud-based HD conferencing product leveraging Tencent's 20+ years of experience in audiovisual communications"
+url="https://flathub.org/apps/com.tencent.wemeet"
+license="see Flathub"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.tencent.wemeet

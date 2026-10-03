@@ -1,0 +1,13 @@
+pkgname = scantailor-advanced
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Interactive post-processing tool for scanned pages
+url = https://flathub.org/apps/com.github._4lex4.ScanTailor-Advanced
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github._4lex4.ScanTailor-Advanced

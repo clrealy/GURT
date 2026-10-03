@@ -1,0 +1,15 @@
+# Geo-sync your photos easily (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=geotagging
+pkgver=flathub
+pkgrel=1
+pkgdesc="Geo-sync your photos easily"
+url="https://flathub.org/apps/com.github.jmlich.geotagging"
+license="GPL-3.0"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.jmlich.geotagging

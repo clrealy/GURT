@@ -1,0 +1,13 @@
+pkgname = gmtp
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A simple multimedia manager for MTP-based Digital Audio Players
+url = https://flathub.org/apps/app.gmtp.gMTP
+license = BSD-3-Clause
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = app.gmtp.gMTP

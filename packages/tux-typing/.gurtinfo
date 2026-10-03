@@ -1,0 +1,13 @@
+pkgname = tux-typing
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Educational typing tutor game starring Tux
+url = https://flathub.org/apps/com.tux4kids.tuxtype
+license = GPL-3.0+
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.tux4kids.tuxtype

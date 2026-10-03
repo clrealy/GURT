@@ -1,0 +1,15 @@
+# Instant file and folder comparison (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=spekter
+pkgver=flathub
+pkgrel=1
+pkgdesc="Instant file and folder comparison"
+url="https://flathub.org/apps/org.babelserver.spekter"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.babelserver.spekter

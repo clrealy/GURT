@@ -1,0 +1,15 @@
+# A terminal based Pokemon like game (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=pokete
+pkgver=flathub
+pkgrel=1
+pkgdesc="A terminal based Pokemon like game"
+url="https://flathub.org/apps/com.github.lxgr_linux.pokete"
+license="GPL-3.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.lxgr_linux.pokete

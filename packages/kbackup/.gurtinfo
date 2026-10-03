@@ -1,0 +1,13 @@
+pkgname = kbackup
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Create backups as .tar files to a local folder or remote URL
+url = https://flathub.org/apps/org.kde.kbackup
+license = GPL-2.0+
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.kde.kbackup

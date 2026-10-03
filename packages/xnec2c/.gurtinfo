@@ -1,0 +1,13 @@
+pkgname = xnec2c
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A multi-threaded EM tool based on NEC2 to model antenna radiation patterns
+url = https://flathub.org/apps/org.xnec2c.Xnec2c
+license = GPL-2.0+
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.xnec2c.Xnec2c

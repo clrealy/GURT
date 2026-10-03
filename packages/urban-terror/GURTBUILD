@@ -1,0 +1,15 @@
+# Tactical first person shooter with action movie elements (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=urban-terror
+pkgver=flathub
+pkgrel=1
+pkgdesc="Tactical first person shooter with action movie elements"
+url="https://flathub.org/apps/info.urbanterror.UrbanTerror"
+license="GPL-2.0+ AND"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=info.urbanterror.UrbanTerror

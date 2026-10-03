@@ -1,0 +1,15 @@
+# Editing TeX documents made simple (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=texworks
+pkgver=flathub
+pkgrel=1
+pkgdesc="Editing TeX documents made simple"
+url="https://flathub.org/apps/org.tug.texworks"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.tug.texworks

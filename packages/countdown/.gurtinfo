@@ -1,0 +1,13 @@
+pkgname = countdown
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Track events until they happen or since they happened
+url = https://flathub.org/apps/io.github.lainsce.Countdown
+license = GPL-3.0+
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.lainsce.Countdown

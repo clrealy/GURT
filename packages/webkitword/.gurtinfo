@@ -1,0 +1,13 @@
+pkgname = webkitword
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Rich text editor using WebKit
+url = https://flathub.org/apps/io.github.fastrizwaan.WebkitWord
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.fastrizwaan.WebkitWord

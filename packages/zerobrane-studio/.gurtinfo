@@ -1,0 +1,13 @@
+pkgname = zerobrane-studio
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Lightweight Lua-based IDE for Lua
+url = https://flathub.org/apps/com.zerobrane.studio
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.zerobrane.studio

@@ -1,0 +1,13 @@
+pkgname = trenchbroom
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Level editor for Quake-engine based games
+url = https://flathub.org/apps/com.kristianduske.TrenchBroom
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.kristianduske.TrenchBroom

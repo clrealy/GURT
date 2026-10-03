@@ -1,0 +1,15 @@
+# Graphical tool for merging and comparing text files (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=diffuse
+pkgver=flathub
+pkgrel=1
+pkgdesc="Graphical tool for merging and comparing text files"
+url="https://flathub.org/apps/io.github.mightycreak.Diffuse"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.mightycreak.Diffuse

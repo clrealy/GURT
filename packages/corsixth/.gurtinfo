@@ -1,0 +1,13 @@
+pkgname = corsixth
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Open source clone of Theme Hospital
+url = https://flathub.org/apps/com.corsixth.corsixth
+license = BSD-3-Clause AND MIT
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.corsixth.corsixth

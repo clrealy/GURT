@@ -1,0 +1,13 @@
+pkgname = gelectrical
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Electrical distribution network design and analysis
+url = https://flathub.org/apps/com.kavilgroup.gelectrical
+license = GPL-3.0
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.kavilgroup.gelectrical

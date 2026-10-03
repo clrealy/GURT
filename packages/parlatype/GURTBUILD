@@ -1,0 +1,15 @@
+# Media player for transcription (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=parlatype
+pkgver=flathub
+pkgrel=1
+pkgdesc="Media player for transcription"
+url="https://flathub.org/apps/xyz.parlatype.Parlatype"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=xyz.parlatype.Parlatype

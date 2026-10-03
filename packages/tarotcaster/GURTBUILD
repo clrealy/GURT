@@ -1,0 +1,15 @@
+# Cast in Style (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tarotcaster
+pkgver=flathub
+pkgrel=1
+pkgdesc="Cast in Style"
+url="https://flathub.org/apps/io.github.alamahant.TarotCaster"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.alamahant.TarotCaster

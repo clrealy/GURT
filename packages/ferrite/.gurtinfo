@@ -1,0 +1,13 @@
+pkgname = ferrite
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Write and preview markdown
+url = https://flathub.org/apps/io.github.olaproeis.Ferrite
+license = MIT
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.olaproeis.Ferrite

@@ -1,0 +1,13 @@
+pkgname = processing-ide
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Open-source software prototyping platform
+url = https://flathub.org/apps/org.processing.processingide
+license = GPL-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.processing.processingide

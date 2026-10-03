@@ -1,0 +1,13 @@
+pkgname = roger-router
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Journal, Fax-Software and Call-Monitor for AVM FRITZ!Box or compatible
+url = https://flathub.org/apps/org.tabos.roger
+license = GPL-2.0
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.tabos.roger

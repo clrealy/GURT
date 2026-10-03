@@ -1,0 +1,13 @@
+pkgname = retux
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Action platformer starring the Linux mascot, Tux
+url = https://flathub.org/apps/io.github.retux_game.retux
+license = GPL-3.0+
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.retux_game.retux

@@ -1,0 +1,13 @@
+pkgname = sublime-merge
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Sublime Merge is a Git client, from the makers of Sublime Text
+url = https://flathub.org/apps/com.sublimemerge.App
+license = see Flathub
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.sublimemerge.App

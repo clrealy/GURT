@@ -1,0 +1,15 @@
+# GUI interface for espanso (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=espansogui
+pkgver=flathub
+pkgrel=1
+pkgdesc="GUI interface for espanso"
+url="https://flathub.org/apps/io.unobserved.espansoGUI"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.unobserved.espansoGUI

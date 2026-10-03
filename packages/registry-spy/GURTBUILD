@@ -1,0 +1,15 @@
+# Browse Windows registry files (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=registry-spy
+pkgver=flathub
+pkgrel=1
+pkgdesc="Browse Windows registry files"
+url="https://flathub.org/apps/org.ajsmith.RegistrySpy"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.ajsmith.RegistrySpy

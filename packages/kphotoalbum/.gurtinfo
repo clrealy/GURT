@@ -1,0 +1,13 @@
+pkgname = kphotoalbum
+pkgver = flathub
+pkgrel = 1
+pkgdesc = KDE image management software
+url = https://flathub.org/apps/org.kde.kphotoalbum
+license = GPL-3.0
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.kde.kphotoalbum

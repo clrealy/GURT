@@ -1,0 +1,15 @@
+# A plane flying shooter game (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=missile-math
+pkgver=flathub
+pkgrel=1
+pkgdesc="A plane flying shooter game"
+url="https://flathub.org/apps/com.endlessnetwork.missilemath"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.endlessnetwork.missilemath

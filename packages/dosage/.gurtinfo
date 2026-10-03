@@ -1,0 +1,13 @@
+pkgname = dosage
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Keep track of your treatments
+url = https://flathub.org/apps/io.github.diegopvlk.Dosage
+license = GPL-3.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.diegopvlk.Dosage

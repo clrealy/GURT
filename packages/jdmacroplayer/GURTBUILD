@@ -1,0 +1,15 @@
+# Wayland compatible macro player for Linux (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=jdmacroplayer
+pkgver=flathub
+pkgrel=1
+pkgdesc="Wayland compatible macro player for Linux"
+url="https://flathub.org/apps/page.codeberg.JakobDev.jdMacroPlayer"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=page.codeberg.JakobDev.jdMacroPlayer

@@ -1,0 +1,15 @@
+# Create and validate e-invoices (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=billance
+pkgver=flathub
+pkgrel=1
+pkgdesc="Create and validate e-invoices"
+url="https://flathub.org/apps/de.billance.billance"
+license="see Flathub"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=de.billance.billance

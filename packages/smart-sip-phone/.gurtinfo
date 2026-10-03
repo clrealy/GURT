@@ -1,0 +1,13 @@
+pkgname = smart-sip-phone
+pkgver = flathub
+pkgrel = 1
+pkgdesc = The next-generation SIP client by EDNT
+url = https://flathub.org/apps/eu.acall.smart-sip-phone-hybrid
+license = see Flathub
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = eu.acall.smart-sip-phone-hybrid

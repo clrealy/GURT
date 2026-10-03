@@ -1,0 +1,13 @@
+pkgname = x-air-edit
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Behringer XR mixers user interface
+url = https://flathub.org/apps/com.behringer.XAirEdit
+license = see Flathub
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.behringer.XAirEdit

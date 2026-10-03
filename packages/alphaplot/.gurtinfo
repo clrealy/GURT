@@ -1,0 +1,13 @@
+pkgname = alphaplot
+pkgver = flathub
+pkgrel = 1
+pkgdesc = AlphaPlot is a free application for Scientific Data Analysis and Visualization
+url = https://flathub.org/apps/io.github.narunlifescience.AlphaPlot
+license = GPL-2.0
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.narunlifescience.AlphaPlot

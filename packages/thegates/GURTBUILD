@@ -1,0 +1,15 @@
+# Free and open-source 3D internet browser build with Godot Engine (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=thegates
+pkgver=flathub
+pkgrel=1
+pkgdesc="Free and open-source 3D internet browser build with Godot Engine"
+url="https://flathub.org/apps/io.itch.nordup.TheGates"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.itch.nordup.TheGates

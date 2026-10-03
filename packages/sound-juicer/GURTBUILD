@@ -1,0 +1,15 @@
+# CD ripper with a clean interface and simple preferences (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=sound-juicer
+pkgver=flathub
+pkgrel=1
+pkgdesc="CD ripper with a clean interface and simple preferences"
+url="https://flathub.org/apps/org.gnome.SoundJuicer"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.SoundJuicer

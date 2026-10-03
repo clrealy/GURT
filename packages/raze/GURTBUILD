@@ -1,0 +1,15 @@
+# Source port for Build engine games (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=raze
+pkgver=flathub
+pkgrel=1
+pkgdesc="Source port for Build engine games"
+url="https://flathub.org/apps/org.zdoom.Raze"
+license="see Flathub"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.zdoom.Raze

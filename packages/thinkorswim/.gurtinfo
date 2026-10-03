@@ -1,0 +1,13 @@
+pkgname = thinkorswim
+pkgver = flathub
+pkgrel = 1
+pkgdesc = ThinkOrSwim Desktop application
+url = https://flathub.org/apps/com.tdameritrade.ThinkOrSwim
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.tdameritrade.ThinkOrSwim

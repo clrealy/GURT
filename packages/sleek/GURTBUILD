@@ -1,0 +1,15 @@
+# Todo manager based on the todo.txt syntax for Linux, free and open-source (FOSS) (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=sleek
+pkgver=flathub
+pkgrel=1
+pkgdesc="Todo manager based on the todo.txt syntax for Linux, free and open-source (FOSS)"
+url="https://flathub.org/apps/com.github.ransome1.sleek"
+license="MIT"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.ransome1.sleek

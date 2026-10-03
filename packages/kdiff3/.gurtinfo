@@ -1,0 +1,13 @@
+pkgname = kdiff3
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A file and folder comparison and merge tool
+url = https://flathub.org/apps/org.kde.kdiff3
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.kde.kdiff3

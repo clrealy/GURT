@@ -1,0 +1,13 @@
+pkgname = nanosaur
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Send dinosaur eggs to the future before a meteor hits the Earth!
+url = https://flathub.org/apps/io.jor.nanosaur
+license = CC-BY-NC-SA-4.0
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.jor.nanosaur

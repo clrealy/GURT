@@ -1,0 +1,13 @@
+pkgname = crispy-doom
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Limit-removing enhanced-resolution Doom source port
+url = https://flathub.org/apps/io.github.fabiangreffrath.Doom
+license = GPL-2.0+
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.fabiangreffrath.Doom

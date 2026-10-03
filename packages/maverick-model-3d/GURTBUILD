@@ -1,0 +1,15 @@
+# 3D model editor and animator for games (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=maverick-model-3d
+pkgver=flathub
+pkgrel=1
+pkgdesc="3D model editor and animator for games"
+url="https://flathub.org/apps/moe.clover.mm3d"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=moe.clover.mm3d

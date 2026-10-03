@@ -1,0 +1,13 @@
+pkgname = entangle
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Tethered Camera Control & Capture
+url = https://flathub.org/apps/org.entangle_photo.Manager
+license = GPL-3.0+
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.entangle_photo.Manager

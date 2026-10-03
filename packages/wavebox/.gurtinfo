@@ -1,0 +1,13 @@
+pkgname = wavebox
+pkgver = flathub
+pkgrel = 1
+pkgdesc = The next generation of web-desktop communication
+url = https://flathub.org/apps/io.wavebox.Wavebox
+license = see Flathub
+maintainer = clrealy
+category = browsers
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.wavebox.Wavebox

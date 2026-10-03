@@ -1,0 +1,13 @@
+pkgname = gresistor
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Resistor color codes calculator
+url = https://flathub.org/apps/eu.stethewwolf.gresistor
+license = LGPL-3.0-or-later
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = eu.stethewwolf.gresistor

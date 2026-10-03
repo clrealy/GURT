@@ -1,0 +1,13 @@
+pkgname = strongbox
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Addon manager for World of Warcraft
+url = https://flathub.org/apps/la.ogri.strongbox
+license = AGPL-3.0-only
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = la.ogri.strongbox

@@ -1,0 +1,13 @@
+pkgname = oculante
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A fast and simple image viewer/editor
+url = https://flathub.org/apps/io.github.woelper.Oculante
+license = MIT
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.woelper.Oculante

@@ -1,0 +1,13 @@
+pkgname = unvanquished
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Fast paced, first person strategy game
+url = https://flathub.org/apps/net.unvanquished.Unvanquished
+license = MIT AND GPL-3.0-or-later AND Zlib AND BSD-3-Clause
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.unvanquished.Unvanquished

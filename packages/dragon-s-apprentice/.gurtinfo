@@ -1,0 +1,13 @@
+pkgname = dragon-s-apprentice
+pkgver = flathub
+pkgrel = 1
+pkgdesc = An RPG-like puzzle-solving dungeon-crawling game, and more!
+url = https://flathub.org/apps/com.endlessnetwork.dragonsapprentice
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.endlessnetwork.dragonsapprentice

@@ -1,0 +1,15 @@
+# A decentralized bitcoin exchange network (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=bisq
+pkgver=flathub
+pkgrel=1
+pkgdesc="A decentralized bitcoin exchange network"
+url="https://flathub.org/apps/network.bisq.Bisq"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=network.bisq.Bisq

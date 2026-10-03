@@ -1,0 +1,13 @@
+pkgname = wallrus
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Create colorful abstract wallpapers
+url = https://flathub.org/apps/io.github.megakode.Wallrus
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.megakode.Wallrus

@@ -1,0 +1,13 @@
+pkgname = syncara
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Sync YouTube playlists offline
+url = https://flathub.org/apps/io.github.khaled_0.TubeSync
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.khaled_0.TubeSync

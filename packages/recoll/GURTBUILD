@@ -1,0 +1,15 @@
+# Full-text search for your desktop (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=recoll
+pkgver=flathub
+pkgrel=1
+pkgdesc="Full-text search for your desktop"
+url="https://flathub.org/apps/org.recoll.recoll"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.recoll.recoll

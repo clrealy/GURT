@@ -1,0 +1,13 @@
+pkgname = sendworm
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Send files securely
+url = https://flathub.org/apps/to.bnt.sendworm
+license = MIT
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = to.bnt.sendworm

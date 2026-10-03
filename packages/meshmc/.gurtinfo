@@ -1,0 +1,13 @@
+pkgname = meshmc
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Custom Minecraft Launcher to easily manage multiple Minecraft installations at once
+url = https://flathub.org/apps/org.projecttick.MeshMC
+license = Apache-2.0
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.projecttick.MeshMC

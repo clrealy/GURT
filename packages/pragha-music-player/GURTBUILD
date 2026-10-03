@@ -1,0 +1,15 @@
+# Manage and listen your music (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=pragha-music-player
+pkgver=flathub
+pkgrel=1
+pkgdesc="Manage and listen your music"
+url="https://flathub.org/apps/io.github.pragha_music_player.pragha"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.pragha_music_player.pragha

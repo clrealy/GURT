@@ -1,0 +1,13 @@
+pkgname = jpdf-tweak
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Swiss Army Knife for PDF files
+url = https://flathub.org/apps/net.sourceforge.jpdftweak.jPdfTweak
+license = AGPL-3.0-or-later
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.sourceforge.jpdftweak.jPdfTweak

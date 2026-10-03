@@ -1,0 +1,15 @@
+# A standalone graphical utility that displays Java sources from CLASS files (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=jd-gui
+pkgver=flathub
+pkgrel=1
+pkgdesc="A standalone graphical utility that displays Java sources from CLASS files"
+url="https://flathub.org/apps/io.github.java_decompiler.jd-gui"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.java_decompiler.jd-gui

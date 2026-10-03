@@ -1,0 +1,15 @@
+# Control your music server (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=cantata
+pkgver=flathub
+pkgrel=1
+pkgdesc="Control your music server"
+url="https://flathub.org/apps/dog.unix.cantata.Cantata"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dog.unix.cantata.Cantata

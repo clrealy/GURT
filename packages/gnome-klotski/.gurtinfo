@@ -1,0 +1,13 @@
+pkgname = gnome-klotski
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Slide blocks to solve the puzzle
+url = https://flathub.org/apps/org.gnome.Klotski
+license = GPL-3.0+
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.gnome.Klotski

@@ -1,0 +1,15 @@
+# Capable and Ergonomic Go IDE (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=goland
+pkgver=flathub
+pkgrel=1
+pkgdesc="Capable and Ergonomic Go IDE"
+url="https://flathub.org/apps/com.jetbrains.GoLand"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.jetbrains.GoLand

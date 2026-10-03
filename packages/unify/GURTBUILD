@@ -1,0 +1,15 @@
+# Web app aggregator (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=unify
+pkgver=flathub
+pkgrel=1
+pkgdesc="Web app aggregator"
+url="https://flathub.org/apps/io.github.denysmb.unify"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.denysmb.unify

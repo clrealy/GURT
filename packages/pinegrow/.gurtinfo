@@ -1,0 +1,13 @@
+pkgname = pinegrow
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Visual web editor for professionals
+url = https://flathub.org/apps/com.pinegrow.Pinegrow
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.pinegrow.Pinegrow

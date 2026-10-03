@@ -1,0 +1,13 @@
+pkgname = libre-trainsim
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Free Train Simulator for everyone
+url = https://flathub.org/apps/org.libretrainsim.Libre-TrainSim
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.libretrainsim.Libre-TrainSim

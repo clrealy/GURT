@@ -1,0 +1,13 @@
+pkgname = pigment
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Get color palettes from images
+url = https://flathub.org/apps/com.jeffser.Pigment
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.jeffser.Pigment

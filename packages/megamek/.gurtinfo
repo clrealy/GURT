@@ -1,0 +1,13 @@
+pkgname = megamek
+pkgver = flathub
+pkgrel = 1
+pkgdesc = TableTop BattleTech on your computer
+url = https://flathub.org/apps/org.megamek.MegaMek
+license = GPL-2.0+
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.megamek.MegaMek

@@ -1,0 +1,15 @@
+# Create invoices, accept payments, track expenses & time tasks (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=invoice-ninja
+pkgver=flathub
+pkgrel=1
+pkgdesc="Create invoices, accept payments, track expenses & time tasks"
+url="https://flathub.org/apps/com.invoiceninja.InvoiceNinja"
+license="AAL"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.invoiceninja.InvoiceNinja

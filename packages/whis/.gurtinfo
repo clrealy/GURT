@@ -1,0 +1,13 @@
+pkgname = whis
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Turn speech into text
+url = https://flathub.org/apps/ink.whis.Whis
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = ink.whis.Whis

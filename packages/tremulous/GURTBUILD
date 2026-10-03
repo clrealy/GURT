@@ -1,0 +1,15 @@
+# Aliens vs Humans, First Person Shooter game with elements of Real Time Strategy (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tremulous
+pkgver=flathub
+pkgrel=1
+pkgdesc="Aliens vs Humans, First Person Shooter game with elements of Real Time Strategy"
+url="https://flathub.org/apps/io.github.grangerhub.Tremulous"
+license="GPL-2.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.grangerhub.Tremulous

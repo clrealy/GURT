@@ -1,0 +1,13 @@
+pkgname = nextcloud-password-client
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Manage Nextcloud Passwords on your desktop
+url = https://flathub.org/apps/com.gitlab.j0chn.nextcloud_password_client
+license = WTFPL
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.gitlab.j0chn.nextcloud_password_client

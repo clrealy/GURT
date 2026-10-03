@@ -1,0 +1,13 @@
+pkgname = t-crisis-4-110-a-i-turbo-remix
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Tetris-like falling blocks puzzle game with 4-player local multiplayer
+url = https://flathub.org/apps/io.github.savantsavior.t-crisis4
+license = MIT
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.savantsavior.t-crisis4

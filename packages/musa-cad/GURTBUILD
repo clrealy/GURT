@@ -1,0 +1,15 @@
+# High-performance multi-threaded 2D CAD (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=musa-cad
+pkgver=flathub
+pkgrel=1
+pkgdesc="High-performance multi-threaded 2D CAD"
+url="https://flathub.org/apps/org.musacad.MusaCAD"
+license="LGPL-3.0-or-later"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.musacad.MusaCAD

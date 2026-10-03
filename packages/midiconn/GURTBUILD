@@ -1,0 +1,15 @@
+# Virtual MIDI hub (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=midiconn
+pkgver=flathub
+pkgrel=1
+pkgdesc="Virtual MIDI hub"
+url="https://flathub.org/apps/xyz.safeworlds.midiconn"
+license="MIT"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=xyz.safeworlds.midiconn

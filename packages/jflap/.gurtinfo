@@ -1,0 +1,13 @@
+pkgname = jflap
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Formal languages testing
+url = https://flathub.org/apps/org.jflap.JFLAP
+license = see Flathub
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.jflap.JFLAP

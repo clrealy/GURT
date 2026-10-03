@@ -1,0 +1,13 @@
+pkgname = ai-generated-game
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Save your friends from the ghosts!
+url = https://flathub.org/apps/com.voxdsp.aigeneratedgame
+license = GPL-2.0-only
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.voxdsp.aigeneratedgame

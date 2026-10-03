@@ -1,0 +1,13 @@
+pkgname = doomsday-engine
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Enhanced source port of Doom, Heretic, and Hexen
+url = https://flathub.org/apps/net.dengine.Doomsday
+license = GPL-3.0+
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.dengine.Doomsday

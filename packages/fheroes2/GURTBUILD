@@ -1,0 +1,15 @@
+# Fheroes2 is a recreation of the Heroes of Might and Magic II game engine (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=fheroes2
+pkgver=flathub
+pkgrel=1
+pkgdesc="Fheroes2 is a recreation of the Heroes of Might and Magic II game engine"
+url="https://flathub.org/apps/io.github.ihhub.Fheroes2"
+license="GPL-2.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.ihhub.Fheroes2

@@ -1,0 +1,15 @@
+# Generate placeholder text (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=lorem
+pkgver=flathub
+pkgrel=1
+pkgdesc="Generate placeholder text"
+url="https://flathub.org/apps/org.gnome.design.Lorem"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.design.Lorem

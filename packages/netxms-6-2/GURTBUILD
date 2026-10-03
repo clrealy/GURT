@@ -1,0 +1,15 @@
+# Control your network monitoring (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=netxms-6-2
+pkgver=flathub
+pkgrel=1
+pkgdesc="Control your network monitoring"
+url="https://flathub.org/apps/com.netxms.NetXMSClient62"
+license="GPL-2.0-only"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.netxms.NetXMSClient62

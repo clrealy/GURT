@@ -1,0 +1,15 @@
+# Kanban board application (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=progress
+pkgver=flathub
+pkgrel=1
+pkgdesc="Kanban board application"
+url="https://flathub.org/apps/io.github.smolblackcat.Progress"
+license="MIT"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.smolblackcat.Progress

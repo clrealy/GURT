@@ -1,0 +1,13 @@
+pkgname = spek
+pkgver = flathub
+pkgrel = 1
+pkgdesc = View spectrograms of your audio files
+url = https://flathub.org/apps/cc.spek.Spek
+license = GPL-3.0-only
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = cc.spek.Spek

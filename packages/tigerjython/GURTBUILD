@@ -1,0 +1,15 @@
+# Python IDE for schools (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tigerjython
+pkgver=flathub
+pkgrel=1
+pkgdesc="Python IDE for schools"
+url="https://flathub.org/apps/ch.tigerjython.TigerJython2"
+license="BSD-3-Clause"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=ch.tigerjython.TigerJython2

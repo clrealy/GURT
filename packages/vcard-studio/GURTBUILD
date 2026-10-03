@@ -1,0 +1,15 @@
+# Contact management application (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=vcard-studio
+pkgver=flathub
+pkgrel=1
+pkgdesc="Contact management application"
+url="https://flathub.org/apps/net.zdechov.app.vCardStudio"
+license="CC0-1.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.zdechov.app.vCardStudio

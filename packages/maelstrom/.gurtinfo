@@ -1,0 +1,13 @@
+pkgname = maelstrom
+pkgver = flathub
+pkgrel = 1
+pkgdesc = High Quality Asteroids Clone
+url = https://flathub.org/apps/org.libsdl.Maelstrom
+license = GPL-2.0+ and CC-BY-3.0
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.libsdl.Maelstrom

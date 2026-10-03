@@ -1,0 +1,13 @@
+pkgname = clipboard
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Cut, copy, and paste anything, anytime, anywhere
+url = https://flathub.org/apps/app.getclipboard.Clipboard
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = app.getclipboard.Clipboard

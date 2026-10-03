@@ -1,0 +1,13 @@
+pkgname = muon
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Graphical SFTP client and terminal emulator with helpful utilities
+url = https://flathub.org/apps/io.github.subhra74.Muon
+license = GPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.subhra74.Muon

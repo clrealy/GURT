@@ -1,0 +1,13 @@
+pkgname = megabasterd
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Download, upload or stream files from MEGA
+url = https://flathub.org/apps/com.tonikelope.MegaBasterd
+license = GPL-3.0-only
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.tonikelope.MegaBasterd

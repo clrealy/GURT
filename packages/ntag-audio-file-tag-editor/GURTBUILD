@@ -1,0 +1,15 @@
+# NTag is a cross platform-graphical tag editor focused on everyday life use cases (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=ntag-audio-file-tag-editor
+pkgver=flathub
+pkgrel=1
+pkgdesc="NTag is a cross platform-graphical tag editor focused on everyday life use cases"
+url="https://flathub.org/apps/com.github.nrittsti.NTag"
+license="GPL-3.0"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.nrittsti.NTag

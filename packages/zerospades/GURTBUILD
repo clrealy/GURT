@@ -1,0 +1,15 @@
+# Open Source voxel shooter (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=zerospades
+pkgver=flathub
+pkgrel=1
+pkgdesc="Open Source voxel shooter"
+url="https://flathub.org/apps/io.github.zerospades.ZeroSpades"
+license="GPL-3.0+ AND"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.zerospades.ZeroSpades

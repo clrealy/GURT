@@ -1,0 +1,13 @@
+pkgname = fcast-sender
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Sender for playing multimedia content on FCast receivers
+url = https://flathub.org/apps/org.fcast.Sender
+license = GPL-3.0-only
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.fcast.Sender

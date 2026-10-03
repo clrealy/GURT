@@ -1,0 +1,13 @@
+pkgname = material-maker
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Procedural texture generation and mesh painting tool
+url = https://flathub.org/apps/io.github.RodZill4.Material-Maker
+license = MIT
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.RodZill4.Material-Maker

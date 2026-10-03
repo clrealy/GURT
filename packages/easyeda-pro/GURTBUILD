@@ -1,0 +1,15 @@
+# Online PCB design tool (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=easyeda-pro
+pkgver=flathub
+pkgrel=1
+pkgdesc="Online PCB design tool"
+url="https://flathub.org/apps/com.easyeda.EasyEDAPro"
+license="see Flathub"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.easyeda.EasyEDAPro

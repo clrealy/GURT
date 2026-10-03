@@ -1,0 +1,15 @@
+# Rediscover your music (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=byte
+pkgver=flathub
+pkgrel=1
+pkgdesc="Rediscover your music"
+url="https://flathub.org/apps/com.github.alainm23.byte"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.alainm23.byte

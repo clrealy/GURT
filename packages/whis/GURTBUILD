@@ -1,0 +1,15 @@
+# Turn speech into text (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=whis
+pkgver=flathub
+pkgrel=1
+pkgdesc="Turn speech into text"
+url="https://flathub.org/apps/ink.whis.Whis"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=ink.whis.Whis

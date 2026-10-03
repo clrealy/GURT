@@ -1,0 +1,13 @@
+pkgname = the-passage
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Hack your way through this side-scrolling action adventure shooting game
+url = https://flathub.org/apps/com.endlessnetwork.passage
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.endlessnetwork.passage

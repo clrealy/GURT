@@ -1,0 +1,13 @@
+pkgname = mimiri-notes
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Secure Device-Synchronized Notepad
+url = https://flathub.org/apps/io.mimiri.notes
+license = GPL-2.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.mimiri.notes

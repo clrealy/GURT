@@ -1,0 +1,13 @@
+pkgname = git-cola
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Sleek and powerful Git GUI
+url = https://flathub.org/apps/com.github.git_cola.git-cola
+license = GPL-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.git_cola.git-cola

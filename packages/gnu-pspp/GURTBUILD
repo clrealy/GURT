@@ -1,0 +1,15 @@
+# GNU PSPP is a program for statistical analysis of sampled data (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=gnu-pspp
+pkgver=flathub
+pkgrel=1
+pkgdesc="GNU PSPP is a program for statistical analysis of sampled data"
+url="https://flathub.org/apps/org.gnu.pspp"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnu.pspp

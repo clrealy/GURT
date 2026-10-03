@@ -1,0 +1,15 @@
+# Write and preview markdown (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=ferrite
+pkgver=flathub
+pkgrel=1
+pkgdesc="Write and preview markdown"
+url="https://flathub.org/apps/io.github.olaproeis.Ferrite"
+license="MIT"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.olaproeis.Ferrite

@@ -1,0 +1,15 @@
+# Fitness and nutrition tracker (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=wger
+pkgver=flathub
+pkgrel=1
+pkgdesc="Fitness and nutrition tracker"
+url="https://flathub.org/apps/de.wger.flutter"
+license="AGPL-3.0-or-later"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=de.wger.flutter

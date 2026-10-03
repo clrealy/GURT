@@ -1,0 +1,13 @@
+pkgname = tic-80
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Fantasy computer for making, playing and sharing tiny games
+url = https://flathub.org/apps/com.tic80.TIC_80
+license = MIT
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.tic80.TIC_80

@@ -1,0 +1,13 @@
+pkgname = alpine-client
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Elevate your Minecraft gameplay
+url = https://flathub.org/apps/com.alpineclient.AlpineClient
+license = MPL-2.0
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.alpineclient.AlpineClient

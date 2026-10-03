@@ -1,0 +1,13 @@
+pkgname = pocket-casts
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Online podcast player
+url = https://flathub.org/apps/tech.feliciano.pocket-casts
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = tech.feliciano.pocket-casts

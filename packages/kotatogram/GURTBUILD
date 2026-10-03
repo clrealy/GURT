@@ -1,0 +1,15 @@
+# Experimental Telegram messenger (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=kotatogram
+pkgver=flathub
+pkgrel=1
+pkgdesc="Experimental Telegram messenger"
+url="https://flathub.org/apps/io.github.kotatogram"
+license="GPL-3.0"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.kotatogram

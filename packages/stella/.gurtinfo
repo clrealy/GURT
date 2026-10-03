@@ -1,0 +1,13 @@
+pkgname = stella
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Multi-platform Atari 2600 VCS emulator
+url = https://flathub.org/apps/io.github.stella_emu.Stella
+license = GPL-2.0
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.stella_emu.Stella

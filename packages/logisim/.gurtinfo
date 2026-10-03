@@ -1,0 +1,13 @@
+pkgname = logisim
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Logisim a graphical tool for desigining and simulating logic circuits
+url = https://flathub.org/apps/com.cburch.Logisim
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.cburch.Logisim

@@ -1,0 +1,15 @@
+# Convert S3, SFTP, WebDAV or Rclone back-end into your encrypted storage (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=s3drive
+pkgver=flathub
+pkgrel=1
+pkgdesc="Convert S3, SFTP, WebDAV or Rclone back-end into your encrypted storage"
+url="https://flathub.org/apps/io.kapsa.drive"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.kapsa.drive

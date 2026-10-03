@@ -1,0 +1,15 @@
+# Free and open source multiphysical simulation software (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=elmer
+pkgver=flathub
+pkgrel=1
+pkgdesc="Free and open source multiphysical simulation software"
+url="https://flathub.org/apps/fi.csc.Elmer"
+license="LGPL-2.0-only"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=fi.csc.Elmer

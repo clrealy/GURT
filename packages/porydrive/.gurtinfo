@@ -1,0 +1,13 @@
+pkgname = porydrive
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A car game where you must catch Porygon!
+url = https://flathub.org/apps/com.voxdsp.PoryDrive
+license = GPL-2.0-only
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.voxdsp.PoryDrive

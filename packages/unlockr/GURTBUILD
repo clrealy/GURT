@@ -1,0 +1,15 @@
+# PDF Password remover (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=unlockr
+pkgver=flathub
+pkgrel=1
+pkgdesc="PDF Password remover"
+url="https://flathub.org/apps/com.github.jkotra.unlockr"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.jkotra.unlockr

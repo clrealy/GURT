@@ -1,0 +1,15 @@
+# KVIrc is a free portable IRC client (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=kvirc
+pkgver=flathub
+pkgrel=1
+pkgdesc="KVIrc is a free portable IRC client"
+url="https://flathub.org/apps/net.kvirc.KVIrc"
+license="GPL-2.0"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.kvirc.KVIrc

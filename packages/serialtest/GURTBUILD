@@ -1,0 +1,15 @@
+# A cross-platform test tool for serial port, Bluetooth, TCP and UDP (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=serialtest
+pkgver=flathub
+pkgrel=1
+pkgdesc="A cross-platform test tool for serial port, Bluetooth, TCP and UDP"
+url="https://flathub.org/apps/io.github.wh201906.serialtest"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.wh201906.serialtest

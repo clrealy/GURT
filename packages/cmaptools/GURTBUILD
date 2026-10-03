@@ -1,0 +1,15 @@
+# Create and share concept maps (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=cmaptools
+pkgver=flathub
+pkgrel=1
+pkgdesc="Create and share concept maps"
+url="https://flathub.org/apps/us.ihmc.cmap.CmapTools"
+license="see Flathub"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=us.ihmc.cmap.CmapTools

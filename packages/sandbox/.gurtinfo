@@ -1,0 +1,13 @@
+pkgname = sandbox
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A sand simulation game
+url = https://flathub.org/apps/com.github.jms55.Sandbox
+license = AGPL-3.0-only
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.jms55.Sandbox

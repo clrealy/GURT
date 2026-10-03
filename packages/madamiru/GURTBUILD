@@ -1,0 +1,15 @@
+# Dynamic multi-multimedia player (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=madamiru
+pkgver=flathub
+pkgrel=1
+pkgdesc="Dynamic multi-multimedia player"
+url="https://flathub.org/apps/com.mtkennerly.madamiru"
+license="MIT"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.mtkennerly.madamiru

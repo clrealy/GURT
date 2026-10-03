@@ -1,0 +1,15 @@
+# SysEx Controls for Linux (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=sysex-controls
+pkgver=flathub
+pkgrel=1
+pkgdesc="SysEx Controls for Linux"
+url="https://flathub.org/apps/hu.irl.sysex-controls"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=hu.irl.sysex-controls

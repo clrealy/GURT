@@ -1,0 +1,13 @@
+pkgname = tribler
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Towards making Bittorrent anonymous and impossible to shut down
+url = https://flathub.org/apps/org.tribler.Tribler
+license = LGPL-3.0-only
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.tribler.Tribler

@@ -1,0 +1,13 @@
+pkgname = bespokesynth
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A modular DAW for Linux
+url = https://flathub.org/apps/com.bespokesynth.BespokeSynth
+license = GPL-3.0+
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.bespokesynth.BespokeSynth

@@ -1,0 +1,13 @@
+pkgname = expresslrs-configurator
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Cross platform configuration tool for the ExpressLRS firmware
+url = https://flathub.org/apps/org.expresslrs.ExpressLRSConfigurator
+license = GPL-3.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.expresslrs.ExpressLRSConfigurator

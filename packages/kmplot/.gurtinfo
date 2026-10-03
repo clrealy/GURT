@@ -1,0 +1,13 @@
+pkgname = kmplot
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Mathematical Function Plotter
+url = https://flathub.org/apps/org.kde.kmplot
+license = GPL-2.0+
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.kde.kmplot

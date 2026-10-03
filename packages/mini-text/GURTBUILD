@@ -1,0 +1,15 @@
+# Ephemeral scratch pad (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=mini-text
+pkgver=flathub
+pkgrel=1
+pkgdesc="Ephemeral scratch pad"
+url="https://flathub.org/apps/io.github.nokse22.minitext"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.nokse22.minitext

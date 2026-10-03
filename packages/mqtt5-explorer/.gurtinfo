@@ -1,0 +1,13 @@
+pkgname = mqtt5-explorer
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Simple yet powerful MQTT5 client
+url = https://flathub.org/apps/io.github.Omniaevo.mqtt5-explorer
+license = GPL-3.0-only
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.Omniaevo.mqtt5-explorer

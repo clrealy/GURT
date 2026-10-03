@@ -1,0 +1,13 @@
+pkgname = chats
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Messaging application for mobile and desktop
+url = https://flathub.org/apps/sm.puri.Chatty
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = chat
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = sm.puri.Chatty

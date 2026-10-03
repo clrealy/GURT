@@ -1,0 +1,13 @@
+pkgname = dust-racing-2d
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Traditional top-down car racing game including a level editor
+url = https://flathub.org/apps/com.github.juzzlin.DustRacing2D
+license = GPL-3.0 and CC-BY-SA-3.0
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.juzzlin.DustRacing2D

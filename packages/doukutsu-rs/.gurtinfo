@@ -1,0 +1,13 @@
+pkgname = doukutsu-rs
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A reimplementation of Cave Story's engine with many quality-of-life improvements
+url = https://flathub.org/apps/io.github.doukutsu_rs.doukutsu-rs
+license = MIT
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.doukutsu_rs.doukutsu-rs

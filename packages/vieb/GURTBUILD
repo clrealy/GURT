@@ -1,0 +1,15 @@
+# Vim Inspired Electron Browser (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=vieb
+pkgver=flathub
+pkgrel=1
+pkgdesc="Vim Inspired Electron Browser"
+url="https://flathub.org/apps/dev.vieb.Vieb"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="browsers"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.vieb.Vieb

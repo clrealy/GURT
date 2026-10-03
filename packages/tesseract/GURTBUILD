@@ -1,0 +1,15 @@
+# First-person shooter with cooperative in-game map editing (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tesseract
+pkgver=flathub
+pkgrel=1
+pkgdesc="First-person shooter with cooperative in-game map editing"
+url="https://flathub.org/apps/gg.tesseract.Tesseract"
+license="Zlib"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=gg.tesseract.Tesseract

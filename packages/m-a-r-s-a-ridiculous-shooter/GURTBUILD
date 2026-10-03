@@ -1,0 +1,15 @@
+# 2D space shooter with awesome visual effects (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=m-a-r-s-a-ridiculous-shooter
+pkgver=flathub
+pkgrel=1
+pkgdesc="2D space shooter with awesome visual effects"
+url="https://flathub.org/apps/net.sourceforge.mars-game"
+license="GPL-3.0+ and CC-BY and CC-BY-SA"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.sourceforge.mars-game

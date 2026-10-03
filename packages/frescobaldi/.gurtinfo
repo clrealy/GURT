@@ -1,0 +1,13 @@
+pkgname = frescobaldi
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Write beautiful music sheets
+url = https://flathub.org/apps/org.frescobaldi.Frescobaldi
+license = GPL-2.0+
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.frescobaldi.Frescobaldi

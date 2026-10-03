@@ -1,0 +1,13 @@
+pkgname = aria-for-misskey
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Dive into the interplanetary microblogging platform
+url = https://flathub.org/apps/com.poppingmoon.aria
+license = AGPL-3.0-only
+maintainer = clrealy
+category = chat
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.poppingmoon.aria

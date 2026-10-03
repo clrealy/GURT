@@ -1,0 +1,13 @@
+pkgname = fldigi
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Amateur Radio Sound Card Communications
+url = https://flathub.org/apps/com.w1hkj.fldigi
+license = GPL-3.0
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.w1hkj.fldigi

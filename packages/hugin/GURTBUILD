@@ -1,0 +1,15 @@
+# A panoramic photo stitcher and more (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=hugin
+pkgver=flathub
+pkgrel=1
+pkgdesc="A panoramic photo stitcher and more"
+url="https://flathub.org/apps/net.sourceforge.Hugin"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.sourceforge.Hugin

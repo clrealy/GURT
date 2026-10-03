@@ -1,0 +1,15 @@
+# Controller client to emulate an xbox360 controller for windows (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=godotgem
+pkgver=flathub
+pkgrel=1
+pkgdesc="Controller client to emulate an xbox360 controller for windows"
+url="https://flathub.org/apps/io.github.iSlammedMyKindle.godotGem"
+license="CC-BY-SA-4.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.iSlammedMyKindle.godotGem

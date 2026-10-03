@@ -1,0 +1,15 @@
+# Fast native Git client for GNOME (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=gitpulsar
+pkgver=flathub
+pkgrel=1
+pkgdesc="Fast native Git client for GNOME"
+url="https://flathub.org/apps/io.gitlab.ilshat_apps.gitpulsar"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.gitlab.ilshat_apps.gitpulsar

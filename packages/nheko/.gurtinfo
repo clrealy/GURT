@@ -1,0 +1,13 @@
+pkgname = nheko
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Desktop client for the Matrix protocol
+url = https://flathub.org/apps/im.nheko.Nheko
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = chat
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = im.nheko.Nheko

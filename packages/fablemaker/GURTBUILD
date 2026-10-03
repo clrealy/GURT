@@ -1,0 +1,15 @@
+# Hack Aesop’s fables (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=fablemaker
+pkgver=flathub
+pkgrel=1
+pkgdesc="Hack Aesop’s fables"
+url="https://flathub.org/apps/com.endlessnetwork.fablemaker"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.endlessnetwork.fablemaker

@@ -1,0 +1,15 @@
+# Self-hosted, end-to-end encrypted privacy suite, chat, passwords, notes, bookmarks and ephemeral sharing on Nostr relays (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=gupt
+pkgver=flathub
+pkgrel=1
+pkgdesc="Self-hosted, end-to-end encrypted privacy suite, chat, passwords, notes, bookmarks and ephemeral sharing on Nostr relays"
+url="https://flathub.org/apps/com.besoeasy.gupt"
+license="CC-BY-NC-4.0"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.besoeasy.gupt

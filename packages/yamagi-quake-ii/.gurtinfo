@@ -1,0 +1,13 @@
+pkgname = yamagi-quake-ii
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Yamagi Quake II is an alternative client for id Software's Quake II
+url = https://flathub.org/apps/org.yamagi.YamagiQ2
+license = GPL-2.0
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.yamagi.YamagiQ2

@@ -1,0 +1,15 @@
+# Color picking with style (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=piccolo
+pkgver=flathub
+pkgrel=1
+pkgdesc="Color picking with style"
+url="https://flathub.org/apps/art.fatdawlf.Piccolo"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=art.fatdawlf.Piccolo

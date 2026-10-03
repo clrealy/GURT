@@ -1,0 +1,15 @@
+# Fast Tracker II inspired music tracker (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=milkytracker
+pkgver=flathub
+pkgrel=1
+pkgdesc="Fast Tracker II inspired music tracker"
+url="https://flathub.org/apps/org.milkytracker.MilkyTracker"
+license="GPL-3.0+ AND BSD-3-Clause"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.milkytracker.MilkyTracker

@@ -1,0 +1,13 @@
+pkgname = switchfin
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Third-party native Jellyfin client
+url = https://flathub.org/apps/fun.dragonfly.switchfin
+license = Apache-2.0
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = fun.dragonfly.switchfin

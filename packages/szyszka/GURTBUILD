@@ -1,0 +1,15 @@
+# Simple but powerful file renamer, written in Rust (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=szyszka
+pkgver=flathub
+pkgrel=1
+pkgdesc="Simple but powerful file renamer, written in Rust"
+url="https://flathub.org/apps/com.github.qarmin.szyszka"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.qarmin.szyszka

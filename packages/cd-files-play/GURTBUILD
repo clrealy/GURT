@@ -1,0 +1,15 @@
+# Playback of files ripped from CDs (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=cd-files-play
+pkgver=flathub
+pkgrel=1
+pkgdesc="Playback of files ripped from CDs"
+url="https://flathub.org/apps/info.cinfinity.cdfp"
+license="GPL-2.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=info.cinfinity.cdfp

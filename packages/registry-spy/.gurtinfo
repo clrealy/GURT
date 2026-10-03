@@ -1,0 +1,13 @@
+pkgname = registry-spy
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Browse Windows registry files
+url = https://flathub.org/apps/org.ajsmith.RegistrySpy
+license = GPL-3.0-only
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.ajsmith.RegistrySpy

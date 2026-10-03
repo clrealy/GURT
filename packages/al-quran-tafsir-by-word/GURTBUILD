@@ -1,0 +1,15 @@
+# Study the Quran through Word by Word Analysis, Colored Tajweed, Tafsir & Audio (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=al-quran-tafsir-by-word
+pkgver=flathub
+pkgrel=1
+pkgdesc="Study the Quran through Word by Word Analysis, Colored Tajweed, Tafsir & Audio"
+url="https://flathub.org/apps/org.gtaf.quran"
+license="LicenseRef-Proprietary"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gtaf.quran

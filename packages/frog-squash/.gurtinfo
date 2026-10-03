@@ -1,0 +1,13 @@
+pkgname = frog-squash
+pkgver = flathub
+pkgrel = 1
+pkgdesc = An addictive crossy roads game with a twist
+url = https://flathub.org/apps/com.endlessnetwork.frogsquash
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.endlessnetwork.frogsquash

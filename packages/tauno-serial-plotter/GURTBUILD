@@ -1,0 +1,15 @@
+# Simple serial plotter (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tauno-serial-plotter
+pkgver=flathub
+pkgrel=1
+pkgdesc="Simple serial plotter"
+url="https://flathub.org/apps/art.taunoerik.tauno-serial-plotter"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=art.taunoerik.tauno-serial-plotter

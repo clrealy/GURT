@@ -1,0 +1,13 @@
+pkgname = blobby-volley-2
+pkgver = flathub
+pkgrel = 1
+pkgdesc = The head-to-head multiplayer volley-ball game
+url = https://flathub.org/apps/de.blobbyvolley.BlobbyVolley2
+license = GPL-2.0
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = de.blobbyvolley.BlobbyVolley2

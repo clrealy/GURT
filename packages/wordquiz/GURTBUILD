@@ -1,0 +1,15 @@
+# Flash card trainer (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=wordquiz
+pkgver=flathub
+pkgrel=1
+pkgdesc="Flash card trainer"
+url="https://flathub.org/apps/org.kde.kwordquiz"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.kwordquiz

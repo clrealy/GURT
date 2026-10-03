@@ -1,0 +1,15 @@
+# AWESOME calculator program (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=awesome-calculator
+pkgver=flathub
+pkgrel=1
+pkgdesc="AWESOME calculator program"
+url="https://flathub.org/apps/io.github.deaen.awesomecalculator"
+license="LGPL-2.1-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.deaen.awesomecalculator

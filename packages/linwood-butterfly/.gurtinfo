@@ -1,0 +1,13 @@
+pkgname = linwood-butterfly
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Infinite-canvas notes and sketches
+url = https://flathub.org/apps/dev.linwood.butterfly
+license = AGPL-3.0-only
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = dev.linwood.butterfly

@@ -1,0 +1,13 @@
+pkgname = grafx2
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A bitmap paint program specialized in 256 color drawing
+url = https://flathub.org/apps/com.chez.GrafX2
+license = GPL-2.0 and CECILL-2.0
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.chez.GrafX2

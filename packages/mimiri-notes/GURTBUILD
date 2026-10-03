@@ -1,0 +1,15 @@
+# Secure Device-Synchronized Notepad (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=mimiri-notes
+pkgver=flathub
+pkgrel=1
+pkgdesc="Secure Device-Synchronized Notepad"
+url="https://flathub.org/apps/io.mimiri.notes"
+license="GPL-2.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.mimiri.notes

@@ -1,0 +1,15 @@
+# Application for scientific data analysis and visualization (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=scidavis
+pkgver=flathub
+pkgrel=1
+pkgdesc="Application for scientific data analysis and visualization"
+url="https://flathub.org/apps/net.sourceforge.scidavis"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.sourceforge.scidavis

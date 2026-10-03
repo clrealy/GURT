@@ -1,0 +1,13 @@
+pkgname = chess-comp-stomp-with-hacks
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Defeat the chess AI using hacks!
+url = https://flathub.org/apps/io.github.dtsudo.ChessCompStompWithHacks
+license = MIT
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.dtsudo.ChessCompStompWithHacks

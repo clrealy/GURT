@@ -1,0 +1,15 @@
+# Software using the JS8 Digital Mode providing weak signal keyboard to keyboard messaging to Amateur Radio Operators (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=js8call
+pkgver=flathub
+pkgrel=1
+pkgdesc="Software using the JS8 Digital Mode providing weak signal keyboard to keyboard messaging to Amateur Radio Operators"
+url="https://flathub.org/apps/com.js8call.JS8Call"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.js8call.JS8Call

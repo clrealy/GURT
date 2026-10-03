@@ -1,0 +1,15 @@
+# Rules-based browser launcher (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=switchyard
+pkgver=flathub
+pkgrel=1
+pkgdesc="Rules-based browser launcher"
+url="https://flathub.org/apps/io.github.alyraffauf.Switchyard"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="browsers"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.alyraffauf.Switchyard

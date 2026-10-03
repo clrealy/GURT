@@ -1,0 +1,15 @@
+# Scan and generate QR-codes (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=qr-scangen
+pkgver=flathub
+pkgrel=1
+pkgdesc="Scan and generate QR-codes"
+url="https://flathub.org/apps/tech.emendir.QR-ScanGen"
+license="MIT-0 OR CC0-1.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=tech.emendir.QR-ScanGen

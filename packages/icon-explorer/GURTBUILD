@@ -1,0 +1,15 @@
+# Icon Previewer for Artists and Developers (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=icon-explorer
+pkgver=flathub
+pkgrel=1
+pkgdesc="Icon Previewer for Artists and Developers"
+url="https://flathub.org/apps/org.kde.iconexplorer"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.iconexplorer

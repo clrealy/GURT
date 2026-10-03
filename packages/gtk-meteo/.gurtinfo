@@ -1,0 +1,13 @@
+pkgname = gtk-meteo
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Select location from map and show forecast
+url = https://flathub.org/apps/ch.bailu.gtk_meteo
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = ch.bailu.gtk_meteo

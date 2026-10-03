@@ -1,0 +1,13 @@
+pkgname = intiface-central
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Buttplug Frontend Application
+url = https://flathub.org/apps/com.nonpolynomial.intiface_central
+license = GPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.nonpolynomial.intiface_central

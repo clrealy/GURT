@@ -1,0 +1,15 @@
+# Get Git forges notifications (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=forge-sparks
+pkgver=flathub
+pkgrel=1
+pkgdesc="Get Git forges notifications"
+url="https://flathub.org/apps/com.mardojai.ForgeSparks"
+license="MIT"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.mardojai.ForgeSparks

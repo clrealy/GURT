@@ -1,0 +1,15 @@
+# Draw using your laptop's touchpad (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=fingerpaint
+pkgver=flathub
+pkgrel=1
+pkgdesc="Draw using your laptop's touchpad"
+url="https://flathub.org/apps/io.github.wazzaps.Fingerpaint"
+license="GPL-2.0"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.wazzaps.Fingerpaint

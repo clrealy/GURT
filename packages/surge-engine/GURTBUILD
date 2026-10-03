@@ -1,0 +1,15 @@
+# Fun retro platformer & game creator (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=surge-engine
+pkgver=flathub
+pkgrel=1
+pkgdesc="Fun retro platformer & game creator"
+url="https://flathub.org/apps/org.opensurge2d.OpenSurge"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.opensurge2d.OpenSurge

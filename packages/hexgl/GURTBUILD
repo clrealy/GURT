@@ -1,0 +1,15 @@
+# Space racing game (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=hexgl
+pkgver=flathub
+pkgrel=1
+pkgdesc="Space racing game"
+url="https://flathub.org/apps/org.gnome.HexGL"
+license="MIT"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.HexGL

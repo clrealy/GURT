@@ -1,0 +1,15 @@
+# Keyboard, video and mouse over USB (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=usbkvm
+pkgver=flathub
+pkgrel=1
+pkgdesc="Keyboard, video and mouse over USB"
+url="https://flathub.org/apps/net.carrotindustries.usbkvm"
+license="GPL-3.0"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.carrotindustries.usbkvm

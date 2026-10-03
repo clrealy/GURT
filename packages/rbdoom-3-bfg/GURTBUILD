@@ -1,0 +1,15 @@
+# A modernization effort of DOOM-3-BFG (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=rbdoom-3-bfg
+pkgver=flathub
+pkgrel=1
+pkgdesc="A modernization effort of DOOM-3-BFG"
+url="https://flathub.org/apps/io.github.RobertBeckebans.RBDOOM-3-BFG"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.RobertBeckebans.RBDOOM-3-BFG

@@ -1,0 +1,15 @@
+# MIDI Sequencer and Notation Editor with Audio Support (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=rosegarden
+pkgver=flathub
+pkgrel=1
+pkgdesc="MIDI Sequencer and Notation Editor with Audio Support"
+url="https://flathub.org/apps/com.rosegardenmusic.rosegarden"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.rosegardenmusic.rosegarden

@@ -1,0 +1,15 @@
+# Jump 'n run game made in the spirit of old classic platformers (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=pekka-kana-2
+pkgver=flathub
+pkgrel=1
+pkgdesc="Jump 'n run game made in the spirit of old classic platformers"
+url="https://flathub.org/apps/net.pistegamez.PekkaKana2"
+license="CC-BY-NC-4.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.pistegamez.PekkaKana2

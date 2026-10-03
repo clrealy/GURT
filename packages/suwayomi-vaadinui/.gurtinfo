@@ -1,0 +1,13 @@
+pkgname = suwayomi-vaadinui
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Desktop client for Tachidesk
+url = https://flathub.org/apps/online.hatsune_miku.tachidesk-vaadinui
+license = MPL-2.0
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = online.hatsune_miku.tachidesk-vaadinui

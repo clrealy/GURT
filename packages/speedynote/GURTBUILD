@@ -1,0 +1,15 @@
+# Fast stylus note-taking app (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=speedynote
+pkgver=flathub
+pkgrel=1
+pkgdesc="Fast stylus note-taking app"
+url="https://flathub.org/apps/org.speedynote.SpeedyNote"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.speedynote.SpeedyNote

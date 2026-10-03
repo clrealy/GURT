@@ -1,0 +1,13 @@
+pkgname = voyager
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Browse and join online communities
+url = https://flathub.org/apps/app.vger.voyager
+license = AGPL-3.0-only
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = app.vger.voyager

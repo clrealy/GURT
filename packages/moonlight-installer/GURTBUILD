@@ -1,0 +1,15 @@
+# Installer for moonlight, yet another Discord client mod (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=moonlight-installer
+pkgver=flathub
+pkgrel=1
+pkgdesc="Installer for moonlight, yet another Discord client mod"
+url="https://flathub.org/apps/io.github.moonlight_mod.moonlight-installer"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.moonlight_mod.moonlight-installer

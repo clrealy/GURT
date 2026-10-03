@@ -1,0 +1,13 @@
+pkgname = rota-bend-gravity
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Gravity bends beneath your feet
+url = https://flathub.org/apps/net.hhoney.rota
+license = MIT
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.hhoney.rota

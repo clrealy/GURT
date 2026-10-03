@@ -1,0 +1,15 @@
+# Graphical Java application for managing BibTeX and biblatex (.bib) databases (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=jabref
+pkgver=flathub
+pkgrel=1
+pkgdesc="Graphical Java application for managing BibTeX and biblatex (.bib) databases"
+url="https://flathub.org/apps/org.jabref.jabref"
+license="MIT"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.jabref.jabref

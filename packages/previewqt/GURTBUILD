@@ -1,0 +1,15 @@
+# Preview all kinds of files (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=previewqt
+pkgver=flathub
+pkgrel=1
+pkgdesc="Preview all kinds of files"
+url="https://flathub.org/apps/org.previewqt.PreviewQt"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.previewqt.PreviewQt

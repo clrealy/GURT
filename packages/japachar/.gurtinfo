@@ -1,0 +1,13 @@
+pkgname = japachar
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Learn Japanese characters
+url = https://flathub.org/apps/me.sergiotarxz.JapaChar
+license = AGPL-3.0-only
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = me.sergiotarxz.JapaChar
