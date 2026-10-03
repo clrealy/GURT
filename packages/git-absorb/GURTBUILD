@@ -1,0 +1,19 @@
+# Automatically fixup commits into the right place
+pkgname=git-absorb
+pkgver=0.9.0
+pkgrel=1
+pkgdesc="Automatically fixup commits into the right place"
+url="https://github.com/tummychow/git-absorb"
+license="BSD-3-Clause"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64)
+# official prebuilt release binary
+source=("https://github.com/tummychow/git-absorb/releases/download/${pkgver}/git-absorb-${pkgver}-x86_64-unknown-linux-musl.tar.gz")
+sha256sums=(517b442260a38617b05df0078b9e659b95068fabe8d0a83a33589d15f198d9a7)
+
+package() {
+  local f
+  f=$(find . -type f -name git-absorb -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name git-absorb | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/git-absorb"
+}

@@ -1,0 +1,20 @@
+# Fast HTTP benchmarking tool
+pkgname=bombardier
+pkgver=2.0.2
+pkgrel=1
+pkgdesc="Fast HTTP benchmarking tool"
+url="https://github.com/codesenberg/bombardier"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("bombardier::https://github.com/codesenberg/bombardier/releases/download/${_tag}/bombardier-linux-amd64")
+source_aarch64=("bombardier::https://github.com/codesenberg/bombardier/releases/download/${_tag}/bombardier-linux-arm64")
+sha256sums_x86_64=(d3dc4a9ecec3f8bd43f8c196ad533cb4b79ca55b11fc74c3184231e00a95bc0b)
+sha256sums_aarch64=(258025ea4dc183bbe3f4ccc7772de1faf2c73700e9f81aa5b84e0c1799d7323c)
+
+package() {
+  install -Dm755 bombardier "$pkgdir$prefix/bin/bombardier"
+}

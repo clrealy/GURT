@@ -1,0 +1,11 @@
+pkgname = bombardier
+pkgver = 2.0.2
+pkgrel = 1
+pkgdesc = Fast HTTP benchmarking tool
+url = https://github.com/codesenberg/bombardier
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = bombardier::https://github.com/codesenberg/bombardier/releases/download/v2.0.2/bombardier-linux-amd64

@@ -1,0 +1,19 @@
+# Pick an SSH host from your config in a nice menu
+pkgname=sshs
+pkgver=4.8.0
+pkgrel=1
+pkgdesc="Pick an SSH host from your config in a nice menu"
+url="https://github.com/quantumsheep/sshs"
+license="MIT"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+# official prebuilt release binary
+source_x86_64=("sshs::https://github.com/quantumsheep/sshs/releases/download/${pkgver}/sshs-linux-amd64")
+source_aarch64=("sshs::https://github.com/quantumsheep/sshs/releases/download/${pkgver}/sshs-linux-arm64")
+sha256sums_x86_64=(74afb1f7bbaf907c99c3bf0262e6c98a1084e8e1f939202917c5f35486afeab8)
+sha256sums_aarch64=(5a9f1b2e832406f26966dc6c62a6367d509978d76a568be5a40d643c9340f1f8)
+
+package() {
+  install -Dm755 sshs "$pkgdir$prefix/bin/sshs"
+}

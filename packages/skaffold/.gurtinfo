@@ -1,0 +1,11 @@
+pkgname = skaffold
+pkgver = 2.25.0
+pkgrel = 1
+pkgdesc = Build and deploy to Kubernetes while you code
+url = https://github.com/GoogleContainerTools/skaffold
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = skaffold::https://github.com/GoogleContainerTools/skaffold/releases/download/v2.25.0/skaffold-linux-amd64

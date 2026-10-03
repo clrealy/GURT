@@ -1,0 +1,11 @@
+pkgname = nuclei
+pkgver = 3.11.1
+pkgrel = 1
+pkgdesc = Fast vulnerability scanner driven by templates
+url = https://github.com/projectdiscovery/nuclei
+license = MIT
+maintainer = clrealy
+category = security
+arch = x86_64
+arch = aarch64
+source = https://github.com/projectdiscovery/nuclei/releases/download/v3.11.1/nuclei_3.11.1_linux_amd64.zip

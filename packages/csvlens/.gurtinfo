@@ -1,0 +1,10 @@
+pkgname = csvlens
+pkgver = 0.15.1
+pkgrel = 1
+pkgdesc = View CSV files in the terminal, like less but for spreadsheets
+url = https://github.com/YS-L/csvlens
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+source = https://github.com/YS-L/csvlens/releases/download/v0.15.1/csvlens-x86_64-unknown-linux-musl.tar.xz

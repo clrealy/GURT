@@ -1,0 +1,11 @@
+pkgname = dyff
+pkgver = 1.12.0
+pkgrel = 1
+pkgdesc = Diff for YAML files that makes sense
+url = https://github.com/homeport/dyff
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/homeport/dyff/releases/download/v1.12.0/dyff_1.12.0_linux_amd64.tar.gz

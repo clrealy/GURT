@@ -1,0 +1,22 @@
+# Next-gen web crawler
+pkgname=katana
+pkgver=1.7.0
+pkgrel=1
+pkgdesc="Next-gen web crawler"
+url="https://github.com/projectdiscovery/katana"
+license="MIT"
+maintainer="clrealy"
+category="security"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/projectdiscovery/katana/releases/download/${_tag}/katana_${pkgver}_linux_amd64.zip")
+source_aarch64=("https://github.com/projectdiscovery/katana/releases/download/${_tag}/katana_${pkgver}_linux_arm64.zip")
+sha256sums_x86_64=(fe1142d92f418549338ea46d67a472124878482e225d279e9a42700c75d76a4d)
+sha256sums_aarch64=(9a6885fe9fda850129b110e0f079d42529b0693dd81b59c316f04084935300f0)
+
+package() {
+  local f
+  f=$(find . -type f -name katana -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name katana | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/katana"
+}

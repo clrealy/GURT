@@ -1,0 +1,22 @@
+# Install Rust tools as binaries instead of compiling them
+pkgname=cargo-binstall
+pkgver=1.25.0
+pkgrel=1
+pkgdesc="Install Rust tools as binaries instead of compiling them"
+url="https://github.com/cargo-bins/cargo-binstall"
+license="GPL-3.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/cargo-bins/cargo-binstall/releases/download/${_tag}/cargo-binstall-x86_64-unknown-linux-musl.tgz")
+source_aarch64=("https://github.com/cargo-bins/cargo-binstall/releases/download/${_tag}/cargo-binstall-aarch64-unknown-linux-musl.tgz")
+sha256sums_x86_64=(6d864dd99e63386b54c7ca1808eb000571a9e00f530ed86a2c0016d0290083b9)
+sha256sums_aarch64=(4d3cc6e0308d2f76b7de7f69d1d316a2749917bb6c1a9c69cea803400460e5a6)
+
+package() {
+  local f
+  f=$(find . -type f -name cargo-binstall -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name cargo-binstall | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/cargo-binstall"
+}

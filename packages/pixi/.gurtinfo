@@ -1,0 +1,11 @@
+pkgname = pixi
+pkgver = 0.81.0
+pkgrel = 1
+pkgdesc = Package manager for Python, C++ and more, built on conda
+url = https://github.com/prefix-dev/pixi
+license = BSD-3-Clause
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/prefix-dev/pixi/releases/download/v0.81.0/pixi-x86_64-unknown-linux-musl.tar.gz

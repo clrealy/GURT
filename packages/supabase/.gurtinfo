@@ -1,0 +1,11 @@
+pkgname = supabase
+pkgver = 2.119.0
+pkgrel = 1
+pkgdesc = Develop with Supabase locally
+url = https://github.com/supabase/cli
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/supabase/cli/releases/download/v2.119.0/supabase_2.119.0_linux_amd64.tar.gz

@@ -1,0 +1,18 @@
+# Lightning fast search engine you can self-host
+pkgname=meilisearch
+pkgver=1.54.3
+pkgrel=1
+pkgdesc="Lightning fast search engine you can self-host"
+url="https://github.com/meilisearch/meilisearch"
+license="MIT"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("meilisearch::https://github.com/meilisearch/meilisearch/releases/download/${_tag}/meilisearch-linux-amd64")
+sha256sums=(0ece934f9791f0db83e1184f4f505a38eae7d93ff1c47efaa9426cf2b3a12ba7)
+
+package() {
+  install -Dm755 meilisearch "$pkgdir$prefix/bin/meilisearch"
+}

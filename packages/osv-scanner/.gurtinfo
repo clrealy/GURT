@@ -1,0 +1,11 @@
+pkgname = osv-scanner
+pkgver = 2.6.0
+pkgrel = 1
+pkgdesc = Find known vulnerabilities in your project's dependencies
+url = https://github.com/google/osv-scanner
+license = Apache-2.0
+maintainer = clrealy
+category = security
+arch = x86_64
+arch = aarch64
+source = osv-scanner::https://github.com/google/osv-scanner/releases/download/v2.6.0/osv-scanner_linux_amd64

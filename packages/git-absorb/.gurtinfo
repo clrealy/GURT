@@ -1,0 +1,10 @@
+pkgname = git-absorb
+pkgver = 0.9.0
+pkgrel = 1
+pkgdesc = Automatically fixup commits into the right place
+url = https://github.com/tummychow/git-absorb
+license = BSD-3-Clause
+maintainer = clrealy
+category = dev
+arch = x86_64
+source = https://github.com/tummychow/git-absorb/releases/download/0.9.0/git-absorb-0.9.0-x86_64-unknown-linux-musl.tar.gz

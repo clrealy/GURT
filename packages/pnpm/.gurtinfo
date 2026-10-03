@@ -1,0 +1,11 @@
+pkgname = pnpm
+pkgver = 12.9.0
+pkgrel = 1
+pkgdesc = Fast, disk-friendly package manager for JavaScript
+url = https://github.com/pnpm/pnpm
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/pnpm/pnpm/releases/download/v12.9.0/pnpm-linux-x64-musl.tar.gz

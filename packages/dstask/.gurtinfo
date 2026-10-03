@@ -1,0 +1,10 @@
+pkgname = dstask
+pkgver = 1.0.1
+pkgrel = 1
+pkgdesc = Git-powered personal task tracker
+url = https://github.com/naggie/dstask
+license = MIT
+maintainer = clrealy
+category = office
+arch = x86_64
+source = dstask::https://github.com/naggie/dstask/releases/download/v1.0.1/dstask-linux-amd64

@@ -1,0 +1,22 @@
+# Pretty terminal music player for MPD
+pkgname=rmpc
+pkgver=0.11.0
+pkgrel=1
+pkgdesc="Pretty terminal music player for MPD"
+url="https://github.com/mierak/rmpc"
+license="BSD-3-Clause"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/mierak/rmpc/releases/download/${_tag}/rmpc-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/mierak/rmpc/releases/download/${_tag}/rmpc-${_tag}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(9cef6597d14ae58336ab465056da9e313d3b3bb3986c67691ee6ae13b7bf5a74)
+sha256sums_aarch64=(ed5eef4a12cb1a32f05dd9d2116f0e291c6281b4acb9db16714442fdf004b21f)
+
+package() {
+  local f
+  f=$(find . -type f -name rmpc -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name rmpc | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/rmpc"
+}

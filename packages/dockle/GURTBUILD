@@ -1,0 +1,22 @@
+# Lint your container images for security best practices
+pkgname=dockle
+pkgver=0.4.15
+pkgrel=1
+pkgdesc="Lint your container images for security best practices"
+url="https://github.com/goodwithtech/dockle"
+license="Apache-2.0"
+maintainer="clrealy"
+category="security"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/goodwithtech/dockle/releases/download/${_tag}/dockle_${pkgver}_Linux-64bit.tar.gz")
+source_aarch64=("https://github.com/goodwithtech/dockle/releases/download/${_tag}/dockle_${pkgver}_Linux-ARM64.tar.gz")
+sha256sums_x86_64=(8bfc9183d1d3d67800edb45bea4bb63ddf1d28bec5f89944075a07007d79caad)
+sha256sums_aarch64=(14c2fbcd675afaa0f1717e97ab71eee178dabdef676066189f49bad0f53b8762)
+
+package() {
+  local f
+  f=$(find . -type f -name dockle -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name dockle | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/dockle"
+}

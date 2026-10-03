@@ -1,0 +1,22 @@
+# Super fast linker for C, C++ and Rust
+pkgname=mold
+pkgver=2.42.1
+pkgrel=1
+pkgdesc="Super fast linker for C, C++ and Rust"
+url="https://github.com/rui314/mold"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/rui314/mold/releases/download/${_tag}/mold-${pkgver}-x86_64-linux.tar.gz")
+source_aarch64=("https://github.com/rui314/mold/releases/download/${_tag}/mold-${pkgver}-aarch64-linux.tar.gz")
+sha256sums_x86_64=(6ff270c9bf07d2bec5c98aa324eb7c4daf6a1a4d815c05ff1708049616047855)
+sha256sums_aarch64=(16b025652d3d7456689e6025a77e1903bb2a15e7630877c26cc133f5df95b9c6)
+
+package() {
+  local f
+  f=$(find . -type f -name mold -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name mold | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/mold"
+}

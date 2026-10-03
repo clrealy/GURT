@@ -1,0 +1,11 @@
+pkgname = sing-box
+pkgver = 1.14.2
+pkgrel = 1
+pkgdesc = Universal proxy platform
+url = https://github.com/SagerNet/sing-box
+license = GPL-3.0
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = https://github.com/SagerNet/sing-box/releases/download/v1.14.2/sing-box-1.14.2-linux-amd64.tar.gz

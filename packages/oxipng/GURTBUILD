@@ -1,0 +1,22 @@
+# Shrink PNG files without losing quality
+pkgname=oxipng
+pkgver=10.2.1
+pkgrel=1
+pkgdesc="Shrink PNG files without losing quality"
+url="https://github.com/shssoichiro/oxipng"
+license="MIT"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/shssoichiro/oxipng/releases/download/${_tag}/oxipng-${pkgver}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/shssoichiro/oxipng/releases/download/${_tag}/oxipng-${pkgver}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(1813750ef592c5350ca79c88f98b2c0876d05c826dc7156245256d4255c1ad17)
+sha256sums_aarch64=(ff21aa2a005b324c8dfbdf13cd2f469fb6728b27dacded82635824ecd12e3b35)
+
+package() {
+  local f
+  f=$(find . -type f -name oxipng -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name oxipng | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/oxipng"
+}

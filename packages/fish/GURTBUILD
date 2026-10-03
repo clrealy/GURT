@@ -1,0 +1,21 @@
+# Friendly interactive shell with autosuggestions out of the box
+pkgname=fish
+pkgver=4.9.3
+pkgrel=1
+pkgdesc="Friendly interactive shell with autosuggestions out of the box"
+url="https://github.com/fish-shell/fish-shell"
+license="GPL-2.0"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+# official prebuilt release binary
+source_x86_64=("https://github.com/fish-shell/fish-shell/releases/download/${pkgver}/fish-${pkgver}-linux-x86_64.tar.xz")
+source_aarch64=("https://github.com/fish-shell/fish-shell/releases/download/${pkgver}/fish-${pkgver}-linux-aarch64.tar.xz")
+sha256sums_x86_64=(8f643d10ad1abb0ef7072764c01ceb5cf61b2d373fda400cf60f0bad69b7e095)
+sha256sums_aarch64=(57349f0111728c64b703a84e611aa97ff4d1fa8466385d64e67bd5bc3ffa49fc)
+
+package() {
+  local f
+  f=$(find . -type f -name fish -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name fish | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/fish"
+}

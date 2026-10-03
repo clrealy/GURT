@@ -1,0 +1,11 @@
+pkgname = resticprofile
+pkgver = 0.33.1
+pkgrel = 1
+pkgdesc = Config profiles and scheduling for restic backups
+url = https://github.com/creativeprojects/resticprofile
+license = GPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+source = https://github.com/creativeprojects/resticprofile/releases/download/v0.33.1/resticprofile_0.33.1_linux_amd64.tar.gz

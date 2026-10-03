@@ -1,0 +1,11 @@
+pkgname = rmpc
+pkgver = 0.11.0
+pkgrel = 1
+pkgdesc = Pretty terminal music player for MPD
+url = https://github.com/mierak/rmpc
+license = BSD-3-Clause
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+source = https://github.com/mierak/rmpc/releases/download/v0.11.0/rmpc-v0.11.0-x86_64-unknown-linux-musl.tar.gz

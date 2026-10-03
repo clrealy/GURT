@@ -1,0 +1,22 @@
+# Docker-compatible CLI for containerd
+pkgname=nerdctl
+pkgver=2.4.1
+pkgrel=1
+pkgdesc="Docker-compatible CLI for containerd"
+url="https://github.com/containerd/nerdctl"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/containerd/nerdctl/releases/download/${_tag}/nerdctl-${pkgver}-linux-amd64.tar.gz")
+source_aarch64=("https://github.com/containerd/nerdctl/releases/download/${_tag}/nerdctl-${pkgver}-linux-arm64.tar.gz")
+sha256sums_x86_64=(f6bbf02fd8a299cbcbc71a0bad113c1b63b3f33689bbb7d51b0fa98c6d361d5e)
+sha256sums_aarch64=(2b60e7311589342abec39ffd2c172bef51da31ccc1278a89ec3aa04d1d3040bb)
+
+package() {
+  local f
+  f=$(find . -type f -name nerdctl -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name nerdctl | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/nerdctl"
+}

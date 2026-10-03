@@ -1,0 +1,11 @@
+pkgname = regctl
+pkgver = 0.11.6
+pkgrel = 1
+pkgdesc = Manage container registries and images
+url = https://github.com/regclient/regclient
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = regctl::https://github.com/regclient/regclient/releases/download/v0.11.6/regctl-linux-amd64

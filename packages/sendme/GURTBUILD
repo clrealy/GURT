@@ -1,0 +1,20 @@
+# Send files between computers directly, peer to peer
+pkgname=sendme
+pkgver=0.36.0
+pkgrel=1
+pkgdesc="Send files between computers directly, peer to peer"
+url="https://github.com/n0-computer/sendme"
+license="MIT OR Apache-2.0"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/n0-computer/sendme/releases/download/${_tag}/sendme-${_tag}-linux-x86_64.tar.gz")
+sha256sums=(2ca000662b59108b7604cd115ec7feddd6097451770ca58e957f46decb3af907)
+
+package() {
+  local f
+  f=$(find . -type f -name sendme -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name sendme | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/sendme"
+}

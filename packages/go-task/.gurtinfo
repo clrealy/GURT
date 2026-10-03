@@ -1,0 +1,12 @@
+pkgname = go-task
+pkgver = 3.54.0
+pkgrel = 1
+pkgdesc = Task runner that's simpler than make (run task)
+url = https://github.com/go-task/task
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/go-task/task/releases/download/v3.54.0/task_linux_amd64.tar.gz
+alias = task

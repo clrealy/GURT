@@ -1,0 +1,22 @@
+# Fast, secure WebAssembly runtime
+pkgname=wasmtime
+pkgver=49.0.2
+pkgrel=1
+pkgdesc="Fast, secure WebAssembly runtime"
+url="https://github.com/bytecodealliance/wasmtime"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/bytecodealliance/wasmtime/releases/download/${_tag}/wasmtime-${_tag}-x86_64-linux.tar.xz")
+source_aarch64=("https://github.com/bytecodealliance/wasmtime/releases/download/${_tag}/wasmtime-${_tag}-aarch64-linux.tar.xz")
+sha256sums_x86_64=(a4d6e9e3a5a60f527cf7793d674c48930c80c2e8977995b8a275cad3254b9322)
+sha256sums_aarch64=(ca14988c6da3d92512bd9c3bad6cbd06b1f5743b6911a9e709f1a6fa30637d7f)
+
+package() {
+  local f
+  f=$(find . -type f -name wasmtime -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name wasmtime | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/wasmtime"
+}

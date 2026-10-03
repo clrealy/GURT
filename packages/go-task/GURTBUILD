@@ -1,0 +1,23 @@
+# Task runner that's simpler than make (run task)
+pkgname=go-task
+pkgver=3.54.0
+pkgrel=1
+pkgdesc="Task runner that's simpler than make (run task)"
+url="https://github.com/go-task/task"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+aliases=(task)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/go-task/task/releases/download/${_tag}/task_linux_amd64.tar.gz")
+source_aarch64=("https://github.com/go-task/task/releases/download/${_tag}/task_linux_arm64.tar.gz")
+sha256sums_x86_64=(680859dbb4d881a9c72d4d9a8f510825450849af8567deacd7302c01124416fb)
+sha256sums_aarch64=(d7189d439d4a6058e39e1b2acd7c8b27acd4856691b408f23b242e4294e1df5b)
+
+package() {
+  local f
+  f=$(find . -type f -name task -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name task | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/task"
+}

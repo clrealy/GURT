@@ -1,0 +1,11 @@
+pkgname = bazelisk
+pkgver = 1.29.0
+pkgrel = 1
+pkgdesc = Runs the right Bazel version for your project
+url = https://github.com/bazelbuild/bazelisk
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = bazelisk::https://github.com/bazelbuild/bazelisk/releases/download/v1.29.0/bazelisk-linux-amd64

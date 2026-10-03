@@ -1,0 +1,22 @@
+# Universal proxy platform
+pkgname=sing-box
+pkgver=1.14.2
+pkgrel=1
+pkgdesc="Universal proxy platform"
+url="https://github.com/SagerNet/sing-box"
+license="GPL-3.0"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/SagerNet/sing-box/releases/download/${_tag}/sing-box-${pkgver}-linux-amd64.tar.gz")
+source_aarch64=("https://github.com/SagerNet/sing-box/releases/download/${_tag}/sing-box-${pkgver}-linux-arm64.tar.gz")
+sha256sums_x86_64=(a684484d7477d1437282ee411f4d131d0340aaad60a7868841ebd5d87dd8a0c6)
+sha256sums_aarch64=(b43a1fb1bda131c6653576741ce527eb2bdeab7c9308ca90ee8b972abb7e4a7f)
+
+package() {
+  local f
+  f=$(find . -type f -name sing-box -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name sing-box | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/sing-box"
+}

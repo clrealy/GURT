@@ -1,0 +1,10 @@
+pkgname = speedtest-go
+pkgver = 1.8.3
+pkgrel = 1
+pkgdesc = Test your internet speed from the terminal
+url = https://github.com/showwin/speedtest-go
+license = MIT
+maintainer = clrealy
+category = internet
+arch = x86_64
+source = https://github.com/showwin/speedtest-go/releases/download/v1.8.3/speedtest-go_1.8.3_Linux_x86_64.tar.gz

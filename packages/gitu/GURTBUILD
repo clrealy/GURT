@@ -1,0 +1,20 @@
+# Git client for the terminal, inspired by Magit
+pkgname=gitu
+pkgver=0.43.0
+pkgrel=1
+pkgdesc="Git client for the terminal, inspired by Magit"
+url="https://github.com/altsem/gitu"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/altsem/gitu/releases/download/${_tag}/gitu-${_tag}-x86_64-unknown-linux-musl.zip")
+sha256sums=(c721ffa539f5c91d4bb8ed1a5475d36d7a15549fd2f09daf9318df2ba2b6e368)
+
+package() {
+  local f
+  f=$(find . -type f -name gitu -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name gitu | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/gitu"
+}

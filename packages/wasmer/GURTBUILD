@@ -1,0 +1,20 @@
+# Run WebAssembly anywhere
+pkgname=wasmer
+pkgver=7.5.0
+pkgrel=1
+pkgdesc="Run WebAssembly anywhere"
+url="https://github.com/wasmerio/wasmer"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/wasmerio/wasmer/releases/download/${_tag}/wasmer-linux-amd64.tar.gz")
+sha256sums=(23f99818deaad93859f8bb8292af81f0c39f25aea19eaccfb72fc7c9e8a3fae9)
+
+package() {
+  local f
+  f=$(find . -type f -name wasmer -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name wasmer | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/wasmer"
+}

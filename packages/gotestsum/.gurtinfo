@@ -1,0 +1,11 @@
+pkgname = gotestsum
+pkgver = 1.13.0
+pkgrel = 1
+pkgdesc = Nicer output for go test
+url = https://github.com/gotestyourself/gotestsum
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/gotestyourself/gotestsum/releases/download/v1.13.0/gotestsum_1.13.0_linux_amd64.tar.gz

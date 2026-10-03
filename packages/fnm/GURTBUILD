@@ -1,0 +1,20 @@
+# Fast Node.js version manager
+pkgname=fnm
+pkgver=1.39.0
+pkgrel=1
+pkgdesc="Fast Node.js version manager"
+url="https://github.com/Schniz/fnm"
+license="GPL-3.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/Schniz/fnm/releases/download/${_tag}/fnm-linux.zip")
+sha256sums=(7807664f39d39fc518da1c35ba0181e4b3267603c4b1dedeb4b5fc6ae440a224)
+
+package() {
+  local f
+  f=$(find . -type f -name fnm -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name fnm | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/fnm"
+}

@@ -1,0 +1,20 @@
+# Manage container registries and images
+pkgname=regctl
+pkgver=0.11.6
+pkgrel=1
+pkgdesc="Manage container registries and images"
+url="https://github.com/regclient/regclient"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("regctl::https://github.com/regclient/regclient/releases/download/${_tag}/regctl-linux-amd64")
+source_aarch64=("regctl::https://github.com/regclient/regclient/releases/download/${_tag}/regctl-linux-arm64")
+sha256sums_x86_64=(8e0e62a497fcdb8048d18aa927a139613176ba0531f412bc541044e28f9856bd)
+sha256sums_aarch64=(a9b71a3ee79b2d1dbbd7d51fd5e8fa214722c192864235d3d8764463c751a1ff)
+
+package() {
+  install -Dm755 regctl "$pkgdir$prefix/bin/regctl"
+}

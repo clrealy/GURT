@@ -1,0 +1,11 @@
+pkgname = netbird
+pkgver = 0.80.0
+pkgrel = 1
+pkgdesc = WireGuard-based private network between your devices
+url = https://github.com/netbirdio/netbird
+license = BSD-3-Clause
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = https://github.com/netbirdio/netbird/releases/download/v0.80.0/netbird_0.80.0_linux_amd64.tar.gz

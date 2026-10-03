@@ -1,0 +1,10 @@
+pkgname = wasmer
+pkgver = 7.5.0
+pkgrel = 1
+pkgdesc = Run WebAssembly anywhere
+url = https://github.com/wasmerio/wasmer
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+source = https://github.com/wasmerio/wasmer/releases/download/v7.5.0/wasmer-linux-amd64.tar.gz

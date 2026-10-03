@@ -1,0 +1,18 @@
+# Git-powered personal task tracker
+pkgname=dstask
+pkgver=1.0.1
+pkgrel=1
+pkgdesc="Git-powered personal task tracker"
+url="https://github.com/naggie/dstask"
+license="MIT"
+maintainer="clrealy"
+category="office"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("dstask::https://github.com/naggie/dstask/releases/download/${_tag}/dstask-linux-amd64")
+sha256sums=(c9db215310657dc1a40cec9ba6588de17350dfe4a1a74823cbb45b00519751ff)
+
+package() {
+  install -Dm755 dstask "$pkgdir$prefix/bin/dstask"
+}

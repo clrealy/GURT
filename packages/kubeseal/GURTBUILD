@@ -1,0 +1,22 @@
+# Encrypt Kubernetes secrets so they're safe to commit
+pkgname=kubeseal
+pkgver=0.40.0
+pkgrel=1
+pkgdesc="Encrypt Kubernetes secrets so they're safe to commit"
+url="https://github.com/bitnami-labs/sealed-secrets"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/bitnami-labs/sealed-secrets/releases/download/${_tag}/kubeseal-${pkgver}-linux-amd64.tar.gz")
+source_aarch64=("https://github.com/bitnami-labs/sealed-secrets/releases/download/${_tag}/kubeseal-${pkgver}-linux-arm64.tar.gz")
+sha256sums_x86_64=(9314c35916646e9d59c8f06b1314574b4e79c4d76f079433607ed7b697bb5eb7)
+sha256sums_aarch64=(d82f01e9226d194ca7ebc13e3619edefd596b5b433582bcec3d5a8e8b1a03123)
+
+package() {
+  local f
+  f=$(find . -type f -name kubeseal -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name kubeseal | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/kubeseal"
+}

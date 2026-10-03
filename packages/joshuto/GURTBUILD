@@ -1,0 +1,22 @@
+# Ranger-like terminal file manager written in Rust
+pkgname=joshuto
+pkgver=0.9.9
+pkgrel=1
+pkgdesc="Ranger-like terminal file manager written in Rust"
+url="https://github.com/kamiyaa/joshuto"
+license="LGPL-3.0"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/kamiyaa/joshuto/releases/download/${_tag}/joshuto-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/kamiyaa/joshuto/releases/download/${_tag}/joshuto-${_tag}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(5227f2b094e2afa0044e81bf27366dd1cde0662b497765cd381cee9d73933257)
+sha256sums_aarch64=(35d37f65b4b90ff5e48800897a94941b1e4a344435e7f64d2afdd8e243f4a4ce)
+
+package() {
+  local f
+  f=$(find . -type f -name joshuto -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name joshuto | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/joshuto"
+}

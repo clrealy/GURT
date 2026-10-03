@@ -1,0 +1,11 @@
+pkgname = hcloud
+pkgver = 1.69.0
+pkgrel = 1
+pkgdesc = Hetzner Cloud from the command line
+url = https://github.com/hetznercloud/cli
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/hetznercloud/cli/releases/download/v1.69.0/hcloud-linux-amd64.tar.gz

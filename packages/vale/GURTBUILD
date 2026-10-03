@@ -1,0 +1,20 @@
+# Prose linter that checks your writing style
+pkgname=vale
+pkgver=3.24.0
+pkgrel=1
+pkgdesc="Prose linter that checks your writing style"
+url="https://github.com/errata-ai/vale"
+license="MIT"
+maintainer="clrealy"
+category="office"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/errata-ai/vale/releases/download/${_tag}/vale_${pkgver}_Linux_64-bit.tar.gz")
+sha256sums=(867534ddb678abca7f214bc4706ead0922bd5252ffe8035fc227013f66c8b214)
+
+package() {
+  local f
+  f=$(find . -type f -name vale -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name vale | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/vale"
+}

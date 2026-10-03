@@ -1,0 +1,22 @@
+# Fast, disk-friendly package manager for JavaScript
+pkgname=pnpm
+pkgver=12.9.0
+pkgrel=1
+pkgdesc="Fast, disk-friendly package manager for JavaScript"
+url="https://github.com/pnpm/pnpm"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/pnpm/pnpm/releases/download/${_tag}/pnpm-linux-x64-musl.tar.gz")
+source_aarch64=("https://github.com/pnpm/pnpm/releases/download/${_tag}/pnpm-linux-arm64-musl.tar.gz")
+sha256sums_x86_64=(7da4f057f5d4ca655f36c0fe1c35d318052d9de00aeafdff409654088beb3858)
+sha256sums_aarch64=(08c25491449c3f8af4073bde2a539f7b9d4fefdd4a1d18295102f8234e624e6c)
+
+package() {
+  local f
+  f=$(find . -type f -name pnpm -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name pnpm | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/pnpm"
+}

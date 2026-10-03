@@ -1,0 +1,11 @@
+pkgname = wasmtime
+pkgver = 49.0.2
+pkgrel = 1
+pkgdesc = Fast, secure WebAssembly runtime
+url = https://github.com/bytecodealliance/wasmtime
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/bytecodealliance/wasmtime/releases/download/v49.0.2/wasmtime-v49.0.2-x86_64-linux.tar.xz

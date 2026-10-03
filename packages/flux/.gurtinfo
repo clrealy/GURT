@@ -1,0 +1,11 @@
+pkgname = flux
+pkgver = 2.9.6
+pkgrel = 1
+pkgdesc = GitOps for Kubernetes: keep your cluster in sync with git
+url = https://github.com/fluxcd/flux2
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/fluxcd/flux2/releases/download/v2.9.6/flux_2.9.6_linux_amd64.tar.gz

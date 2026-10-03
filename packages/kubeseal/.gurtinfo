@@ -1,0 +1,11 @@
+pkgname = kubeseal
+pkgver = 0.40.0
+pkgrel = 1
+pkgdesc = Encrypt Kubernetes secrets so they're safe to commit
+url = https://github.com/bitnami-labs/sealed-secrets
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.40.0/kubeseal-0.40.0-linux-amd64.tar.gz

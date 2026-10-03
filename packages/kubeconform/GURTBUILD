@@ -1,0 +1,22 @@
+# Validate Kubernetes manifests, fast
+pkgname=kubeconform
+pkgver=0.8.0
+pkgrel=1
+pkgdesc="Validate Kubernetes manifests, fast"
+url="https://github.com/yannh/kubeconform"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/yannh/kubeconform/releases/download/${_tag}/kubeconform-linux-amd64.tar.gz")
+source_aarch64=("https://github.com/yannh/kubeconform/releases/download/${_tag}/kubeconform-linux-arm64.tar.gz")
+sha256sums_x86_64=(9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883)
+sha256sums_aarch64=(1f53fc8e81258197a35e8603054162a5af1de8c5af13746c71ab680d9534ed87)
+
+package() {
+  local f
+  f=$(find . -type f -name kubeconform -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name kubeconform | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/kubeconform"
+}

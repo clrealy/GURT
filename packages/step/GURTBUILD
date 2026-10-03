@@ -1,0 +1,22 @@
+# Swiss army knife for certificates and PKI
+pkgname=step
+pkgver=0.31.0
+pkgrel=1
+pkgdesc="Swiss army knife for certificates and PKI"
+url="https://github.com/smallstep/cli"
+license="Apache-2.0"
+maintainer="clrealy"
+category="security"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/smallstep/cli/releases/download/${_tag}/step_linux_${pkgver}_amd64.tar.gz")
+source_aarch64=("https://github.com/smallstep/cli/releases/download/${_tag}/step_linux_${pkgver}_arm64.tar.gz")
+sha256sums_x86_64=(a7e13726efa8782f3d5459174dacf602ab3514b9431f2d42a6a75950b7685e5f)
+sha256sums_aarch64=(9937964c7d47de47a511cd775bd07101b8ee9854db210abd402c69093f0a6fd4)
+
+package() {
+  local f
+  f=$(find . -type f -name step -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name step | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/step"
+}

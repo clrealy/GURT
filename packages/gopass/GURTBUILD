@@ -1,0 +1,22 @@
+# Password manager for teams, built on gpg and git
+pkgname=gopass
+pkgver=1.17.3
+pkgrel=1
+pkgdesc="Password manager for teams, built on gpg and git"
+url="https://github.com/gopasspw/gopass"
+license="MIT"
+maintainer="clrealy"
+category="security"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/gopasspw/gopass/releases/download/${_tag}/gopass-${pkgver}-linux-amd64.tar.gz")
+source_aarch64=("https://github.com/gopasspw/gopass/releases/download/${_tag}/gopass-${pkgver}-linux-arm64.tar.gz")
+sha256sums_x86_64=(a9646cdd28a2a9e5503407f10823df6761e036e04657a488ab6160c67fa1e1c8)
+sha256sums_aarch64=(b83de1d43fab75d609239fe6fbd62747d28d03cf18e32d73dfe183ae3a610e91)
+
+package() {
+  local f
+  f=$(find . -type f -name gopass -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name gopass | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/gopass"
+}

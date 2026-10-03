@@ -1,0 +1,11 @@
+pkgname = gost
+pkgver = 3.3.0
+pkgrel = 1
+pkgdesc = Simple security tunnel and proxy
+url = https://github.com/go-gost/gost
+license = MIT
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = https://github.com/go-gost/gost/releases/download/v3.3.0/gost_3.3.0_linux_amd64.tar.gz

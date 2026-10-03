@@ -1,0 +1,10 @@
+pkgname = gitu
+pkgver = 0.43.0
+pkgrel = 1
+pkgdesc = Git client for the terminal, inspired by Magit
+url = https://github.com/altsem/gitu
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+source = https://github.com/altsem/gitu/releases/download/v0.43.0/gitu-v0.43.0-x86_64-unknown-linux-musl.zip

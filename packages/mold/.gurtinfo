@@ -1,0 +1,11 @@
+pkgname = mold
+pkgver = 2.42.1
+pkgrel = 1
+pkgdesc = Super fast linker for C, C++ and Rust
+url = https://github.com/rui314/mold
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/rui314/mold/releases/download/v2.42.1/mold-2.42.1-x86_64-linux.tar.gz

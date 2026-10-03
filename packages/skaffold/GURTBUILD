@@ -1,0 +1,20 @@
+# Build and deploy to Kubernetes while you code
+pkgname=skaffold
+pkgver=2.25.0
+pkgrel=1
+pkgdesc="Build and deploy to Kubernetes while you code"
+url="https://github.com/GoogleContainerTools/skaffold"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("skaffold::https://github.com/GoogleContainerTools/skaffold/releases/download/${_tag}/skaffold-linux-amd64")
+source_aarch64=("skaffold::https://github.com/GoogleContainerTools/skaffold/releases/download/${_tag}/skaffold-linux-arm64")
+sha256sums_x86_64=(42b9e2e3246c19b78fcc53dd60cc7ded1da8704293886b909a2a02b9bef34d20)
+sha256sums_aarch64=(416f5fed2009c2b4adc62ae887ee5fc19ff08cc8a0250b81d8682d55626a75fd)
+
+package() {
+  install -Dm755 skaffold "$pkgdir$prefix/bin/skaffold"
+}

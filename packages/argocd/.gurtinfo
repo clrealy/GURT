@@ -1,0 +1,11 @@
+pkgname = argocd
+pkgver = 3.5.3
+pkgrel = 1
+pkgdesc = CLI for Argo CD, GitOps continuous delivery for Kubernetes
+url = https://github.com/argoproj/argo-cd
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = argocd::https://github.com/argoproj/argo-cd/releases/download/v3.5.3/argocd-linux-amd64

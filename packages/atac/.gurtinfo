@@ -1,0 +1,11 @@
+pkgname = atac
+pkgver = 0.23.1
+pkgrel = 1
+pkgdesc = API client like Postman, but in your terminal
+url = https://github.com/Julien-cpsn/ATAC
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/Julien-cpsn/ATAC/releases/download/v0.23.1/atac-v0.23.1-x86_64-unknown-linux-musl.tar.gz

@@ -1,0 +1,22 @@
+# Very fast S3 and cloud storage tool
+pkgname=s5cmd
+pkgver=2.3.0
+pkgrel=1
+pkgdesc="Very fast S3 and cloud storage tool"
+url="https://github.com/peak/s5cmd"
+license="MIT"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/peak/s5cmd/releases/download/${_tag}/s5cmd_${pkgver}_Linux-64bit.tar.gz")
+source_aarch64=("https://github.com/peak/s5cmd/releases/download/${_tag}/s5cmd_${pkgver}_Linux-ARM64.tar.gz")
+sha256sums_x86_64=(de0fdbfa3aceae55e069ba81a0fc17b2026567637603734a387b2fca06c299b4)
+sha256sums_aarch64=(1439f0d00ecedcd2a2f1f2c6749bbb0152b2257bf5086f29646ec8ae38798e24)
+
+package() {
+  local f
+  f=$(find . -type f -name s5cmd -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name s5cmd | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/s5cmd"
+}

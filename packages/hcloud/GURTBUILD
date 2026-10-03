@@ -1,0 +1,22 @@
+# Hetzner Cloud from the command line
+pkgname=hcloud
+pkgver=1.69.0
+pkgrel=1
+pkgdesc="Hetzner Cloud from the command line"
+url="https://github.com/hetznercloud/cli"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/hetznercloud/cli/releases/download/${_tag}/hcloud-linux-amd64.tar.gz")
+source_aarch64=("https://github.com/hetznercloud/cli/releases/download/${_tag}/hcloud-linux-arm64.tar.gz")
+sha256sums_x86_64=(aca1a346c8d218a094f1811ee1705013d394cabf48e40887292caff464b64277)
+sha256sums_aarch64=(3afa68ac6c7dfb62f41d4a740376aaf88d3772e95f94a8816f41050c4bf1077e)
+
+package() {
+  local f
+  f=$(find . -type f -name hcloud -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name hcloud | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/hcloud"
+}

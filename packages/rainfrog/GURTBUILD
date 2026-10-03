@@ -1,0 +1,22 @@
+# Database tool for the terminal (Postgres, MySQL, SQLite)
+pkgname=rainfrog
+pkgver=0.4.6
+pkgrel=1
+pkgdesc="Database tool for the terminal (Postgres, MySQL, SQLite)"
+url="https://github.com/achristmascarl/rainfrog"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/achristmascarl/rainfrog/releases/download/${_tag}/rainfrog-${_tag}-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/achristmascarl/rainfrog/releases/download/${_tag}/rainfrog-${_tag}-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(973341d39cb1e04359886670d08632b5bd876de220c7a4759889498b22482887)
+sha256sums_aarch64=(919ba9e2ddcda6ace07066967e375b7b091ba0a69b67b5a8135efdea3643b507)
+
+package() {
+  local f
+  f=$(find . -type f -name rainfrog -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name rainfrog | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/rainfrog"
+}

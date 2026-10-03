@@ -1,0 +1,22 @@
+# Backend in one file: database, auth and file storage
+pkgname=pocketbase
+pkgver=0.40.4
+pkgrel=1
+pkgdesc="Backend in one file: database, auth and file storage"
+url="https://github.com/pocketbase/pocketbase"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/pocketbase/pocketbase/releases/download/${_tag}/pocketbase_${pkgver}_linux_amd64.zip")
+source_aarch64=("https://github.com/pocketbase/pocketbase/releases/download/${_tag}/pocketbase_${pkgver}_linux_arm64.zip")
+sha256sums_x86_64=(9042ec818570e79c3628dadcd0a756c1496d9e1173918ec409d133c02f82e5fa)
+sha256sums_aarch64=(86095bf8ed9345954f0d2bf0a5fb9b57584ae60b77ebf3b6cd23a8003a3fd418)
+
+package() {
+  local f
+  f=$(find . -type f -name pocketbase -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name pocketbase | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/pocketbase"
+}

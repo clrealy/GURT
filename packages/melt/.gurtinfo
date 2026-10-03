@@ -1,0 +1,10 @@
+pkgname = melt
+pkgver = 0.6.2
+pkgrel = 1
+pkgdesc = Back up SSH keys as seed words
+url = https://github.com/charmbracelet/melt
+license = MIT
+maintainer = clrealy
+category = security
+arch = x86_64
+source = https://github.com/charmbracelet/melt/releases/download/v0.6.2/melt_0.6.2_Linux_x86_64.tar.gz

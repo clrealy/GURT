@@ -1,0 +1,11 @@
+pkgname = popeye
+pkgver = 0.22.1
+pkgrel = 1
+pkgdesc = Scans your Kubernetes cluster for problems
+url = https://github.com/derailed/popeye
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/derailed/popeye/releases/download/v0.22.1/popeye_linux_amd64.tar.gz

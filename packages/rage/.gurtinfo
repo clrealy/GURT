@@ -1,0 +1,11 @@
+pkgname = rage
+pkgver = 0.12.1
+pkgrel = 1
+pkgdesc = age file encryption written in Rust
+url = https://github.com/str4d/rage
+license = MIT OR Apache-2.0
+maintainer = clrealy
+category = security
+arch = x86_64
+source = https://github.com/str4d/rage/releases/download/v0.12.1/rage-v0.12.1-x86_64-linux.tar.gz
+alias = rage-keygen

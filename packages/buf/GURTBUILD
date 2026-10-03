@@ -1,0 +1,22 @@
+# Better tooling for Protocol Buffers
+pkgname=buf
+pkgver=1.73.0
+pkgrel=1
+pkgdesc="Better tooling for Protocol Buffers"
+url="https://github.com/bufbuild/buf"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/bufbuild/buf/releases/download/${_tag}/buf-Linux-x86_64.tar.gz")
+source_aarch64=("https://github.com/bufbuild/buf/releases/download/${_tag}/buf-Linux-aarch64.tar.gz")
+sha256sums_x86_64=(f8092c1be08d5606a8d22b4ae0e4079dd690154cebb4894dc5e24a5046093aff)
+sha256sums_aarch64=(e928fa64061ddb5144d93df30fe48f3451231b0e77ea5ade684cb7b53037cc66)
+
+package() {
+  local f
+  f=$(find . -type f -name buf -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name buf | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/buf"
+}
