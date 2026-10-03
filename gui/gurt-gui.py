@@ -193,9 +193,9 @@ def save_conf(**kw):
         json.dump(c, f)
 
 
-def theme():
-    t = conf().get("theme")
-    return t if t in ("light", "dark") else "auto"
+def theme():   # dark by default; "auto" (match the system) and light are still a click away
+    t = conf().get("theme", "dark")
+    return t if t in ("light", "dark", "auto") else "dark"
 
 
 SKINS = ("gurt", "win11", "xp", "w95", "vapor", "hacker")
@@ -2138,11 +2138,11 @@ function wizRender(){
   if (wizStep === 2) pg.innerHTML = `<h3>App sources</h3><p>where should GURT get apps? your own distro's repos${d ? ` (${esc(d.pm)})` : ""} and Main GURT always work. these are extra, and you can use any of them later too.</p>`
     + WIZ_SRCS.map(([id, name, sub]) => opt("src:" + id, W.srcs.has(id), name, sub)).join("");
   if (wizStep === 3) {
-    const cur = document.documentElement.dataset.skin || "gurt", tr = MUSIC.track, th = document.documentElement.dataset.theme || "auto";
+    const cur = document.documentElement.dataset.skin || "gurt", tr = MUSIC.track, th = document.documentElement.dataset.theme || "dark";
     pg.innerHTML = `<h3>Your look</h3><p>pick a skin (every skin has its own sound effects), a music track, and light or dark. try them, it changes right away.</p>
       <div class="wiz-looks">${WIZ_SKINS.map(([id, n]) => `<button class="wiz-look${cur === id ? " on" : ""}" data-skin="${id}">${n}</button>`).join("")}</div>
       <div class="wiz-grp"><h4>music</h4><div class="wiz-apps">${WIZ_TRACKS.map(([id, n]) => `<button class="wiz-app${tr === id ? " on" : ""}" data-track="${id}">${n}</button>`).join("")}<button class="wiz-app${MUSIC.on ? "" : " on"}" data-mute="1">🔇 no music</button></div></div>
-      <div class="wiz-grp"><h4>light or dark</h4><div class="wiz-apps">${[["auto", "🌓 match my system"], ["light", "☀️ light"], ["dark", "🌙 dark"]].map(([id, n]) => `<button class="wiz-app${th === id ? " on" : ""}" data-theme="${id}">${n}</button>`).join("")}</div></div>`;
+      <div class="wiz-grp"><h4>light or dark</h4><div class="wiz-apps">${[["dark", "🌙 dark (default)"], ["light", "☀️ light"], ["auto", "🌓 match my system"]].map(([id, n]) => `<button class="wiz-app${th === id ? " on" : ""}" data-theme="${id}">${n}</button>`).join("")}</div></div>`;
   }
   if (wizStep === 4) {
     const groups = Object.entries(STARTER).map(([g, names]) => [g, names.filter(n => S.main.some(p => p.name === n))]).filter(([, n]) => n.length);

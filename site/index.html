@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v=3">
 <link rel="icon" type="image/png" href="assets/favicon.png?v=3">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=3">
-<script>try { const t = localStorage.getItem("gurt-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}</script>
+<script>document.documentElement.dataset.theme = "dark"; try { const t = localStorage.getItem("gurt-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}</script>
 <style>
 :root{
   --bg:#f3efe2; --panel:#fffdf6; --ink:#141414; --muted:#5f5a50; --line:#ddd5c1;
