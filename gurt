@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.28.0"
+GURT_VERSION="0.28.1"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -2315,6 +2315,7 @@ outsource_file() { # file-or-url reason
     *.appimage)
       ask "install $name $ver (AppImage)?" || die "aborted, no cap"
       appimage_install "$f" "$name" "$ver" "$reason" ;;
+    *.gurt)       install_file "$f" "$reason" ;;
     *.dmg)        dmg_install "$f" "$reason" ;;
     *.exe|*.msi)  win_install "$f" "$name" "$ver" "$reason" ;;
     *.snap)       ensure_snap; msg "${f##*/} → snap (unsigned, so --dangerous)"; asroot snap install --dangerous "$f" || die "snap couldn't install it"
@@ -3038,14 +3039,39 @@ gui_desktop_entry() { # add "GURT" to your app menu (just for you, no sudo)
   [[ -n $icon ]] && ! cmp -s "$icon" "$png" && cp -f "$icon" "$png" 2>/dev/null
   # full path, not just "gurt" — KDE (and some others) won't find a freshly added icon by name until their cache rebuilds
   [[ -f $png ]] && icon=$png || icon=gurt
+  gui_mime_types "$data" "$png"
   entry=$(printf '%s\n' "[Desktop Entry]" "Type=Application" "Name=GURT" "GenericName=Package Manager" \
-    "Comment=every distro's packages, on every distro" "Exec=$(readlink -f "$0") gui" "Icon=$icon" "Terminal=false" "StartupWMClass=gurt" \
-    "Categories=System;PackageManager;" "Keywords=packages;install;aur;apt;flatpak;")
+    "Comment=every distro's packages, on every distro" "Exec=$(readlink -f "$0") gui %f" "Icon=$icon" "Terminal=false" "StartupWMClass=gurt" \
+    "Categories=System;PackageManager;" "Keywords=packages;install;aur;apt;flatpak;" "MimeType=application/x-gurt-package;")
   [[ $entry == "$(cat "$data/applications/gurt.desktop" 2>/dev/null)" ]] && return 0
   printf '%s\n' "$entry" > "$data/applications/gurt.desktop"
   # tell the app menu (KDE caches it)
   command -v update-desktop-database >/dev/null && update-desktop-database -q "$data/applications" 2>/dev/null
   for f in kbuildsycoca6 kbuildsycoca5; do command -v "$f" >/dev/null && { "$f" >/dev/null 2>&1 & break; }; done
+  return 0
+}
+# .gurt files get their own type + icon, and double-clicking one opens it in GURT
+gui_mime_types() { # data-dir icon-png
+  local data=$1 png=$2 xml
+  xml='<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-gurt-package">
+    <comment>GURT package</comment>
+    <sub-class-of type="application/gzip"/>
+    <icon name="application-x-gurt-package"/>
+    <glob pattern="*.gurt" weight="90"/>
+  </mime-type>
+</mime-info>'
+  mkdir -p "$data/mime/packages" "$data/icons/hicolor/256x256/mimetypes" 2>/dev/null || return 0
+  [[ -f $png ]] && ! cmp -s "$png" "$data/icons/hicolor/256x256/mimetypes/application-x-gurt-package.png" &&
+    cp -f "$png" "$data/icons/hicolor/256x256/mimetypes/application-x-gurt-package.png" 2>/dev/null
+  if [[ $xml != "$(cat "$data/mime/packages/gurt.xml" 2>/dev/null)" ]]; then
+    printf '%s\n' "$xml" > "$data/mime/packages/gurt.xml"
+    command -v update-mime-database >/dev/null && update-mime-database "$data/mime" >/dev/null 2>&1
+  fi
+  if command -v xdg-mime >/dev/null && [[ $(xdg-mime query default application/x-gurt-package 2>/dev/null) != gurt.desktop ]]; then
+    xdg-mime default gurt.desktop application/x-gurt-package 2>/dev/null
+  fi
   return 0
 }
 gui_pkgs() { # the distro packages a real app window needs (python GObject + WebKit2GTK)
@@ -4113,6 +4139,7 @@ main() {
     info)              cmd_info "$@" ;;
     install|i|get)     (( $# )) || die "install what tho"
                        for p; do if is_pkgfile "$p"; then pkgfile_install "$p" explicit
+                                 elif [[ ${p,,} == *.gurt && -f $p ]]; then install_file "$p" explicit
                                  elif $SCAN && [[ $p != */* ]]; then scan_install "$p"; else install_any "$p" explicit; fi; done ;;
     update|refresh)    cmd_update ;;
     upgrade|up)        cmd_upgrade ;;
