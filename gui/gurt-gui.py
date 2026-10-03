@@ -292,9 +292,9 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/api/state":
             return self._send(200, state())
         if u.path == "/api/lastdrop":   # what the app window saw dropped (the page only sees "a link")
-            when, paths = LAST_DROP
+            when, dropped = LAST_DROP
             LAST_DROP[:] = [0.0, []]
-            return self._send(200, {"paths": paths if time.time() - when < 15 else []})
+            return self._send(200, {"paths": dropped if time.time() - when < 15 else []})
         if u.path == "/api/zone":
             z = zone_dir()
             items = [{"name": n, "size": os.path.getsize(os.path.join(z, n)), "time": os.path.getmtime(os.path.join(z, n))}
