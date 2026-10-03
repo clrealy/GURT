@@ -1,5 +1,5 @@
 pkgname = caddy
-pkgver = 2.11.6
+pkgver = 2.11.7
 pkgrel = 1
 pkgdesc = Web server with automatic HTTPS that just works
 url = https://github.com/caddyserver/caddy
@@ -10,4 +10,4 @@ arch = x86_64
 arch = aarch64
 makedepends = go
 makedepends = git
-source = caddy::git+https://github.com/caddyserver/caddy.git#tag=v2.11.6
+source = caddy::git+https://github.com/caddyserver/caddy.git#tag=v2.11.7

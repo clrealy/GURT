@@ -1,6 +1,6 @@
 # Web server with automatic HTTPS that just works
 pkgname=caddy
-pkgver=2.11.6
+pkgver=2.11.7
 pkgrel=1
 pkgdesc="Web server with automatic HTTPS that just works"
 url="https://github.com/caddyserver/caddy"
