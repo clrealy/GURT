@@ -176,13 +176,7 @@ Your **GitHub account is your GURT account**. There are no new passwords, and GU
 
 On Linux, your software center installs it like any other app. Then open **GURT** from your app menu (or log out and back in), and the setup wizard walks you through the rest: a system check, where apps come from, your look, a few starter apps (or 📥 import your list from your old PC), and update alerts. GURT made these files itself with `gurt convert`.
 
-**Or one command**, which does the same thing from a terminal:
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/clrealy/GURT/main/install.sh | sh
-```
-
-It installs gurt, sets up the GURT app, and opens the setup wizard in it. With no desktop (a server or SSH), the wizard runs right in the terminal instead. `GURT_WIZARD=0` skips the wizard, and `gurt setup` runs it again anytime (or 🎨 → 🧙 setup wizard in the app).
+`gurt setup` runs the wizard again anytime, in the terminal (or 🎨 → 🧙 setup wizard in the app). Picked apps on the website's 🧰 Build your setup? Hit 📄 save as a list, then 📥 import it in the wizard.
 
 Making the installers yourself: `tools/make-setup-wizard.sh` (Linux packages) and `tools/win/build-exe.sh` (the `.exe`, needs `nsis`). Pushing a `v*` tag makes a GitHub release with all of them attached (`.github/workflows/release.yml`). Add a `GURT_SIGNING_KEY` secret and they're all signed with the same key every release.
 

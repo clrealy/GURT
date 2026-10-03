@@ -239,7 +239,7 @@ body.carted{padding-bottom:84px}
       </div>
       <details class="dlall"><summary>every download</summary><div class="dlbtns" id="dlallbtns"></div></details>
     </section>
-    <div class="install mono">curl -fsSL https://raw.githubusercontent.com/clrealy/GURT/main/install.sh | sh   <span class="c"># installs gurt + opens the setup wizard 🧙</span>
+    <div class="install mono"><span class="c"># once the wizard's done:</span>
 gurt install btop          <span class="c"># Main GURT</span>
 gurt install aur/yay       <span class="c"># the AUR, anywhere</span>
 gurt install apt/cowsay    <span class="c"># Debian's repos, anywhere</span>
@@ -314,7 +314,7 @@ irm https://raw.githubusercontent.com/clrealy/GURT/main/install.ps1 | iex</div>
 
 <div id="cart" hidden><div class="in">
   <code id="cartcmd"></code>
-  <label><input type="checkbox" id="cartnew"> I don't have gurt yet</label>
+  <button class="btn ghost" id="cartsave" title="don't have GURT yet? save this, then 📥 import it in the setup wizard">📄 save as a list</button>
   <button class="btn" id="cartcopy">copy</button><button class="btn ghost" id="cartclear">clear</button>
 </div></div>
 
@@ -686,14 +686,20 @@ function renderCart() {
   const names = [...PICKED].sort();
   $("#cart").hidden = !names.length; document.body.classList.toggle("carted", names.length > 0);
   const cmd = `gurt install ${names.join(" ")}`;
-  $("#cartcmd").textContent = $("#cartnew").checked ? `curl -fsSL https://raw.githubusercontent.com/${REPO}/${BRANCH}/install.sh | GURT_WIZARD=0 sh && ${cmd}` : cmd;
+  $("#cartcmd").textContent = cmd;
 }
 $("#bcats").addEventListener("click", e => { const b = e.target.closest(".bcat"); if (!b) return; BCAT = b.dataset.c; renderBuilder(); });
 $("#bgroups").addEventListener("change", e => {
   const n = e.target.dataset.n; if (!n) return;
   e.target.checked ? PICKED.add(n) : PICKED.delete(n); e.target.closest(".bapp").classList.toggle("on", e.target.checked); renderCart();
 });
-$("#cartnew").addEventListener("change", renderCart);
+// no GURT yet? save the picks as a list: the setup wizard's 📥 import puts them in its install
+$("#cartsave").addEventListener("click", () => {
+  const txt = `# my gurt apps — from ${location.host || "the GURT site"}, ${new Date().toISOString().slice(0, 10)}\n# get GURT (download the GURT Setup Wizard), then 📥 import this list in its starter apps step\n` + [...PICKED].sort().join("\n") + "\n";
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], {type: "text/plain"})); a.download = "my-gurt-apps.txt";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  $("#cartsave").textContent = "saved ✓ import it in the wizard"; setTimeout(() => $("#cartsave").textContent = "📄 save as a list", 2500);
+});
 $("#cartclear").addEventListener("click", () => { PICKED.clear(); renderBuilder(); renderCart(); });
 $("#cartcopy").addEventListener("click", async () => { try { await navigator.clipboard.writeText($("#cartcmd").textContent); $("#cartcopy").textContent = "copied ✓"; setTimeout(() => $("#cartcopy").textContent = "copy", 1200); } catch {} });
 

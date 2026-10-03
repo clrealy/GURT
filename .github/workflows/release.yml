@@ -31,13 +31,11 @@ jobs:
       - name: the public key + checksums
         run: |
           if [ -z "$SIGN" ]; then ./gurt key export dist; fi
-          cp install.sh dist/
-          ( cd dist && sha256sum GURTSetupWizard.* install.sh > SHA256SUMS )
+          ( cd dist && sha256sum GURTSetupWizard.* > SHA256SUMS )
       - name: publish the release
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           awk '/^## /{n++} n==1' CHANGELOG.md > notes.md
           { echo; echo "### Install"; echo "- **Windows:** GURTSetupWizard.exe"
-            echo "- **Linux:** download the GURTSetupWizard file for your distro and open it (.deb Debian/Ubuntu/Mint · .rpm Fedora/openSUSE · .pkg.tar.zst Arch · .apk Alpine · .xbps Void · .eopkg Solus)"
-            echo "- **or one command:** \`curl -fsSL https://raw.githubusercontent.com/clrealy/GURT/main/install.sh | sh\`"; } >> notes.md
+            echo "- **Linux:** download the GURTSetupWizard file for your distro and open it (.deb Debian/Ubuntu/Mint · .rpm Fedora/openSUSE · .pkg.tar.zst Arch · .apk Alpine · .xbps Void · .eopkg Solus)"; } >> notes.md
           gh release create "$GITHUB_REF_NAME" --title "GURT ${GITHUB_REF_NAME#v}" --notes-file notes.md dist/*

@@ -1,6 +1,6 @@
 #!/bin/sh
 # gurt installer — works on any distro with sh + git
-# usage: curl -fsSL https://raw.githubusercontent.com/clrealy/GURT/main/install.sh | sh
+# GURTSetupWizard.exe runs this inside WSL (people install with the GURTSetupWizard downloads, not this)
 set -eu
 REPO="${GURT_REPO_URL:-https://github.com/clrealy/GURT.git}"
 BIN="${GURT_BIN:-/usr/local/bin}"
