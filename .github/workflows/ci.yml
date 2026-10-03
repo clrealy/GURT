@@ -65,12 +65,21 @@ jobs:
           printf '#!/bin/sh\necho converted by gurt\n' > /tmp/cv/gurt-cvtest-1.0/usr/bin/gurt-cvtest; chmod 755 /tmp/cv/gurt-cvtest-1.0/usr/bin/gurt-cvtest
           tar -czf /tmp/cv/gurt-cvtest-1.0.tar.gz -C /tmp/cv gurt-cvtest-1.0
           cd /tmp/cv
-          if command -v apt-get; then "$GITHUB_WORKSPACE/gurt" -y convert gurt-cvtest-1.0.tar.gz deb && dpkg -i ./gurt-cvtest_*.deb
-          elif command -v dnf; then "$GITHUB_WORKSPACE/gurt" -y convert gurt-cvtest-1.0.tar.gz rpm && dnf install -y ./gurt-cvtest-*.rpm
-          elif command -v pacman; then "$GITHUB_WORKSPACE/gurt" -y convert gurt-cvtest-1.0.tar.gz pacman && pacman -U --noconfirm ./gurt-cvtest-*.pkg.tar.zst
-          elif command -v apk; then "$GITHUB_WORKSPACE/gurt" -y convert gurt-cvtest-1.0.tar.gz apk && apk add --allow-untrusted ./gurt-cvtest-*.apk
-          elif command -v zypper; then "$GITHUB_WORKSPACE/gurt" -y convert gurt-cvtest-1.0.tar.gz rpm && zypper --non-interactive install --allow-unsigned-rpm ./gurt-cvtest-*.rpm; fi
+          # converted packages come out signed: trust the key, then install with each distro's signature checks ON
+          g="$GITHUB_WORKSPACE/gurt"
+          if command -v apt-get; then "$g" -y convert gurt-cvtest-1.0.tar.gz deb && grep -qa _gpgorigin ./gurt-cvtest_*.deb && dpkg -i ./gurt-cvtest_*.deb
+          elif command -v dnf; then "$g" -y convert gurt-cvtest-1.0.tar.gz rpm && "$g" -y key trust && rpm -Kv ./gurt-cvtest-*.rpm | tee /tmp/k.txt &&
+            grep -q 'Header V4 RSA/SHA256 Signature, key ID .*: OK' /tmp/k.txt && dnf install -y ./gurt-cvtest-*.rpm
+          elif command -v pacman; then "$g" -y convert gurt-cvtest-1.0.tar.gz pacman && [ -f ./gurt-cvtest-*.pkg.tar.zst.sig ] && "$g" -y key trust &&
+            pacman -U --noconfirm ./gurt-cvtest-*.pkg.tar.zst
+          elif command -v apk; then "$g" -y convert gurt-cvtest-1.0.tar.gz apk && "$g" -y key trust && apk verify ./gurt-cvtest-*.apk && apk add ./gurt-cvtest-*.apk
+          elif command -v zypper; then "$g" -y convert gurt-cvtest-1.0.tar.gz rpm && "$g" -y key trust && rpm -K ./gurt-cvtest-*.rpm &&
+            zypper --non-interactive install ./gurt-cvtest-*.rpm; fi
           [ "$(gurt-cvtest)" = "converted by gurt" ]
+          # every other format gets a signature that checks out too
+          "$g" -y key export /tmp/cv/pub && gpg --dearmor < /tmp/cv/pub/gurt-key.asc > /tmp/cv/k.gpg
+          "$g" -y convert gurt-cvtest-1.0.tar.gz zip && gpgv --keyring /tmp/cv/k.gpg ./gurt-cvtest-1.0.zip.asc ./gurt-cvtest-1.0.zip
+          "$g" -y convert gurt-cvtest-1.0.tar.gz gurt && gpgv --keyring /tmp/cv/k.gpg ./gurt-cvtest-*.gurt.asc ./gurt-cvtest-*.gurt
       - name: build changed packages
         shell: bash
         run: |

@@ -341,6 +341,29 @@ The files go across as-is. Dependencies get translated through `deps.map`, and a
 
 What it won't do: make a `.dmg`, `.exe` or `.msi`. Those are for macOS and Windows, and a Linux program doesn't run there no matter what box it's in 💀
 
+### Signed 🔏
+
+Everything gurt convert makes is signed with your own key. gurt makes the key the first time you convert and keeps it in `~/.local/share/gurt/signing`. Each format gets the kind of signature its own package manager checks:
+
+| format | signature |
+|---|---|
+| `.rpm` | inside the package, the same as `rpmsign` makes (`rpm -K` checks it) |
+| `.deb` | inside, as a debsigs `_gpgorigin` member |
+| `.apk` | inside, the way `abuild-sign` does it |
+| AppImage | inside, made by appimagetool |
+| `.pkg.tar.zst` | `.sig` next to it, which `pacman -U` checks |
+| `.xbps` | `.sig2` next to it, like `xbps-rindex --sign-pkg` makes |
+| `.gurt` `.eopkg` `.tar.gz` `.zip` | `.asc` next to it (`gpg --verify`) |
+
+```sh
+gurt key               # your key's fingerprint and where it's kept
+gurt key trust         # make this computer's rpm / pacman / apk trust it (then no --nogpgcheck or --allow-untrusted)
+gurt key export        # the public keys, to give to other computers (gurt-key.asc + an .rsa.pub for Alpine/Void)
+gurt convert app.deb rpm --no-sign   # skip signing
+```
+
+The key has no passphrase, so anyone who can read your files can sign with it. Back up that folder: losing it means new conversions get signed with a new key, which computers that trusted the old one won't know. In the app, the Download Zone™ shows 🔏 on signed files, and ⬇️ retrieve brings the `.sig`/`.asc` along.
+
 ## Oops buttons: rollback, hold, export/import ⏪
 
 In the app, the **Installed** tab has 📤 export my list (saves `gurt-list-<date>.txt` to your Downloads) and 📥 import a list.

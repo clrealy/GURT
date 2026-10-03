@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="0.28.2"
+GURT_VERSION="0.29.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -42,7 +42,7 @@ FOREIGN_SOURCES="aur apt dnf zypper pacman flatpak snap"
 IDX_DIR="$GURT_CACHE/index"
 IDX_MAX_AGE="${IDX_MAX_AGE:-86400}"   # re-download foreign indexes after a day
 
-NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT="" EXPECT_FPR="" BOX=false NOBOX=false SCAN=false NO_DESKTOP=false QUIET_YEET=false NO_SYSTEM=false
+NOSIGN=false NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false ALLSRC=false REPO="" KEYSRC="" SUITE_OPT="" EXPECT_FPR="" BOX=false NOBOX=false SCAN=false NO_DESKTOP=false QUIET_YEET=false NO_SYSTEM=false
 
 # ───────────────────────── pretty output ─────────────────────────
 if [[ -t 2 && -z ${NO_COLOR:-} ]]; then
@@ -1024,7 +1024,7 @@ idx_provider() {
 need_tool() { # cmd what-needs-it
   command -v "$1" >/dev/null && return 0
   local dep
-  case $1 in ar) dep=binutils ;; gpg|gpgv) dep=gnupg ;; bsdtar) dep=bsdtar ;; rpm2cpio|cpio) dep=rpm2cpio ;; *) dep=$1 ;; esac
+  case $1 in ar) dep=binutils ;; gpg|gpgv) dep=gnupg ;; openssl) dep=openssl-cli ;; bsdtar) dep=bsdtar ;; rpm2cpio|cpio) dep=rpm2cpio ;; *) dep=$1 ;; esac
   $NODEPS && die "$2 needs '$1' (and --nodeps is on) — install $dep from your distro first"
   msg2 "$2 needs '$1' — getting $dep from your distro ($PM)"
   # shellcheck disable=SC2046
@@ -1785,6 +1785,94 @@ conv_unpack() { # file tree scratch
   CV_ARCH=$(conv_canon_arch "$CV_ARCH")
   [[ -n $CV_DESC ]] || CV_DESC="$CV_NAME (converted by gurt)"
 }
+# ── signing what gurt convert makes: your own key, made the first time you convert ──
+# a gpg key (rpm deb pacman AppImage + .asc for the rest) and a plain RSA key (Alpine apk, Void xbps), no passphrase
+SIGN_DIR="${GURT_SIGN_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/gurt/signing}"
+SIGN_FPR="" SIGN_RSA="" SIGN_RSA_NAME=""
+sign_gpg() { GNUPGHOME="$SIGN_DIR/gnupg" gpg --batch --quiet --no-tty --pinentry-mode loopback --passphrase '' "$@"; }
+sign_setup() { # [rsa] → SIGN_FPR, and SIGN_RSA SIGN_RSA_NAME when asked for the RSA key too
+  if [[ -z $SIGN_FPR ]]; then
+    need_tool gpg "signing packages"
+    mkdir -p "$SIGN_DIR/gnupg"; chmod 700 "$SIGN_DIR" "$SIGN_DIR/gnupg"
+    if ! sign_gpg --list-secret-keys --with-colons 2>/dev/null | grep -q '^sec'; then
+      msg2 "making your signing key (first time only) 🔑"
+      sign_gpg --quick-gen-key "gurt convert ($(id -un 2>/dev/null || echo you)@${HOSTNAME:-linux}) <gurt-convert@localhost>" rsa3072 sign never 2>/dev/null ||
+        die "couldn't make a signing key (gpg said no) — convert with --no-sign to skip signing"
+    fi
+    SIGN_FPR=$(sign_gpg --list-secret-keys --with-colons | awk -F: '/^fpr/ { print $10; exit }')
+    [[ -n $SIGN_FPR ]] || die "couldn't read the signing key — convert with --no-sign to skip signing"
+  fi
+  [[ ${1:-} == rsa && -z $SIGN_RSA ]] || return 0
+  need_tool openssl "signing Alpine/Void packages"
+  local k; for k in "$SIGN_DIR"/*.rsa; do SIGN_RSA=$k; break; done
+  if [[ -z $SIGN_RSA ]]; then   # apk wants the key's file name (minus .rsa.pub) inside the package, so make it unique
+    SIGN_RSA="$SIGN_DIR/gurt-$(id -un 2>/dev/null | tr -cd 'a-z0-9' | cut -c1-16)-${SIGN_FPR: -8}.rsa"
+    ( umask 077; openssl genrsa -out "$SIGN_RSA" 4096 2>/dev/null ) || die "couldn't make the RSA signing key"
+  fi
+  [[ -f $SIGN_RSA.pub ]] || openssl rsa -in "$SIGN_RSA" -pubout -out "$SIGN_RSA.pub" 2>/dev/null
+  SIGN_RSA_NAME=${SIGN_RSA##*/}
+}
+# formats that can't carry a signature inside get one next to them: pacman's .sig, Void's .sig2, a plain .asc for the rest
+conv_sign() { # fmt out work
+  local fmt=$1 out=$2
+  case $fmt in
+    deb|rpm|apk) ;;   # signed inside, while packing
+    appimage) ${APPIMG_SIGNED:-false} || sign_gpg -u "$SIGN_FPR" --digest-algo SHA256 --armor --detach-sign --yes -o "$out.asc" "$out" || die "couldn't sign ${out##*/}" ;;
+    pacman) sign_gpg -u "$SIGN_FPR" --digest-algo SHA256 --detach-sign --yes -o "$out.sig" "$out" || die "couldn't sign ${out##*/}" ;;
+    xbps)   openssl dgst -sha256 -sign "$SIGN_RSA" -out "$out.sig2" "$out" || die "couldn't sign ${out##*/}" ;;
+    *)      sign_gpg -u "$SIGN_FPR" --digest-algo SHA256 --armor --detach-sign --yes -o "$out.asc" "$out" || die "couldn't sign ${out##*/}" ;;
+  esac
+}
+sign_hint() { # fmt file — how to check it / trust it
+  local f=${2##*/}
+  case $1 in
+    rpm)      msg2 "signed 🔏 trust your key once with 'gurt key trust' (or: sudo rpm --import gurt-key.asc), then: rpm -K $f" ;;
+    deb)      msg2 "signed 🔏 (debsigs-style _gpgorigin inside the .deb) · install: sudo apt install ./$f" ;;
+    apk)      msg2 "signed 🔏 trust your key once with 'gurt key trust' (copies it to /etc/apk/keys), then: apk add $f" ;;
+    pacman)   msg2 "signed 🔏 ($f.sig next to it) · trust your key once with 'gurt key trust', then: sudo pacman -U $f" ;;
+    xbps)     msg2 "signed 🔏 ($f.sig2 next to it) · on Void: xbps-rindex -a $f && xbps-install --repository=\$PWD $CV_NAME" ;;
+    appimage) if ${APPIMG_SIGNED:-false}; then msg2 "signed 🔏 (the signature is inside the AppImage)"
+              else msg2 "signed 🔏 ($f.asc next to it) · check it: gpg --verify $f.asc $f"; fi ;;
+    *)        msg2 "signed 🔏 ($f.asc next to it) · check it: gpg --verify $f.asc $f" ;;
+  esac
+}
+
+# ── gurt key: the key gurt convert signs with ──
+cmd_key() { # [show|export [dir]|trust]
+  local sub=${1:-show} dir
+  sign_setup rsa
+  case $sub in
+    show|"")
+      msg "your gurt signing key 🔑"
+      sign_gpg --list-keys --with-fingerprint "$SIGN_FPR" 2>/dev/null | sed 's/^/     /' >&2
+      msg2 "RSA key (Alpine/Void): $SIGN_RSA_NAME.pub"
+      msg2 "kept in $SIGN_DIR (back it up, anything you converted is signed with it)"
+      msg2 "gurt key export [dir] → the public keys to share · gurt key trust → make this computer trust them" ;;
+    export)
+      dir=${2:-$PWD}; mkdir -p "$dir"
+      sign_gpg --armor --export "$SIGN_FPR" > "$dir/gurt-key.asc"
+      cp "$SIGN_RSA.pub" "$dir/$SIGN_RSA_NAME.pub"
+      msg "exported 📤 $dir/gurt-key.asc (rpm deb pacman AppImage .asc) + $dir/$SIGN_RSA_NAME.pub (Alpine apk, Void xbps)"
+      msg2 "only the public halves, safe to share" ;;
+    trust)
+      local tmp; tmp=$(mktemp -d); sign_gpg --armor --export "$SIGN_FPR" > "$tmp/gurt-key.asc"
+      local did=false
+      command -v rpm >/dev/null && [[ -d /var/lib/rpm || -d /usr/lib/sysimage/rpm ]] && { asroot rpm --import "$tmp/gurt-key.asc" && msg2 "rpm trusts it ✅"; did=true; }
+      if command -v pacman-key >/dev/null; then
+        [[ -d /etc/pacman.d/gnupg ]] || asroot pacman-key --init >/dev/null 2>&1 || true
+        if asroot pacman-key --add "$tmp/gurt-key.asc" >/dev/null 2>&1 && asroot pacman-key --lsign-key "$SIGN_FPR" >/dev/null 2>&1; then msg2 "pacman trusts it ✅"
+        else warn "pacman-key wouldn't take it — try: sudo pacman-key --init, then gurt key trust again"; fi
+        did=true
+      fi
+      [[ -d /etc/apk/keys ]] && { asroot cp "$SIGN_RSA.pub" "/etc/apk/keys/$SIGN_RSA_NAME.pub" && msg2 "apk trusts it ✅"; did=true; }
+      command -v xbps-install >/dev/null && { msg2 "Void asks to trust the key the first time you install from the repo you made"; did=true; }
+      command -v apt-get >/dev/null && { msg2 "apt doesn't check signatures on .deb files, nothing to trust there"; did=true; }
+      rm -rf "$tmp"
+      $did || msg2 "no package manager here checks package signatures — nothing to trust" ;;
+    *) die "usage: gurt key [show|export [dir]|trust]" ;;
+  esac
+}
+
 # arch names per format
 conv_arch_for() { # fmt canon-arch
   case $1:$2 in
@@ -1796,6 +1884,17 @@ conv_arch_for() { # fmt canon-arch
 # write the package (python does the formats that are just tar/zip/ar with a little metadata)
 CONV_PY=$(cat <<'PY'
 import os, sys, io, json, time, tarfile, gzip, hashlib, zipfile, plistlib, lzma
+import subprocess
+def gpg_sig(data, armor=False):   # detached signature with your gurt key (none when --no-sign)
+    if not os.environ.get("CV_GPG"): return None
+    r = subprocess.run(["gpg", "--batch", "--quiet", "--no-tty", "--pinentry-mode", "loopback", "--passphrase", "", "-u", os.environ["CV_GPG"],
+                        "--digest-algo", "SHA256", "--detach-sign"] + (["--armor"] if armor else []), input=data, capture_output=True)
+    if r.returncode or not r.stdout: sys.exit("==> nah: couldn't sign it: " + r.stderr.decode(errors="replace").strip()[-300:])
+    return r.stdout
+def rsa_sig(data):   # RSA + sha256 with the plain key (Alpine, Void)
+    r = subprocess.run(["openssl", "dgst", "-sha256", "-sign", os.environ["CV_RSA"]], input=data, capture_output=True)
+    if r.returncode or not r.stdout: sys.exit("==> nah: couldn't sign it: " + r.stderr.decode(errors="replace").strip()[-300:])
+    return r.stdout
 fmt, tree, out = sys.argv[1:4]
 m = json.loads(os.environ["CV_META"])
 def walk():
@@ -1838,12 +1937,17 @@ if fmt == "deb":
     control = gzip.compress(tar_bytes([mem("./control", ctl.encode()), mem("./md5sums", md5.encode())]), mtime=0)
     data = lzma.compress(tar_bytes(tree_entries("./")))
     def ar(name, d): return b"%-16s%-12d%-6d%-6d%-8s%-10d`\n" % (name.encode(), int(time.time()), 0, 0, b"100644", len(d)) + d + (b"\n" if len(d) % 2 else b"")
-    open(out, "wb").write(b"!<arch>\n" + ar("debian-binary", b"2.0\n") + ar("control.tar.gz", control) + ar("data.tar.xz", data))
+    sig = gpg_sig(b"2.0\n" + control + data, armor=True)   # debsigs' "origin" signature: over the three members, in order
+    open(out, "wb").write(b"!<arch>\n" + ar("debian-binary", b"2.0\n") + ar("control.tar.gz", control) + ar("data.tar.xz", data) + (ar("_gpgorigin", sig) if sig else b""))
 elif fmt == "apk":   # Alpine: gzip(control tar, no end blocks) + gzip(data tar), datahash ties them together
     data = gzip.compress(tar_bytes(tree_entries("", apk=True)), mtime=0)
     info = "# Generated by gurt convert\npkgname = %s\npkgver = %s\npkgdesc = %s\nurl = \nbuilddate = %d\npackager = gurt\nsize = %d\narch = %s\norigin = %s\nlicense = unknown\n" % (m["name"], m["ver"], m["desc"], int(time.time()), size, m["arch"], m["name"])
     info += "".join("depend = %s\n" % d.split("|")[0] for d in m["deps"]) + "datahash = %s\n" % hashlib.sha256(data).hexdigest()
-    open(out, "wb").write(gzip.compress(tar_bytes([mem(".PKGINFO", info.encode())], eof=False), mtime=0) + data)
+    control = gzip.compress(tar_bytes([mem(".PKGINFO", info.encode())], eof=False), mtime=0)
+    sign = b""   # abuild-sign's way: one more gzip'd tar in front, holding an RSA/sha256 signature of the control part
+    if os.environ.get("CV_RSA"):
+        sign = gzip.compress(tar_bytes([mem(".SIGN.RSA256.%s.pub" % os.environ["CV_RSA_NAME"], rsa_sig(control))], eof=False), mtime=0)
+    open(out, "wb").write(sign + control + data)
 elif fmt == "xbps":  # Void: props.plist + files.plist + the files, in one tarball
     fl = {"files": [], "links": [], "dirs": []}
     for rel, full in walk():
@@ -1922,8 +2026,11 @@ elif fmt == "rpm":   # RPM v4: lead + signature header + main header + gzip'd cp
               (1096, I32, list(range(1, n + 1))), (1097, ARR, [""] * n),
               (1116, I32, [x[0] for x in names]), (1117, ARR, [x[1] for x in names]), (1118, ARR, dirs)]
     main = header(h, 63)
-    sig = header([(269, STR, hashlib.sha1(main).hexdigest()), (273, STR, hashlib.sha256(main).hexdigest()),
-                  (1000, I32, [len(main) + len(payload)]), (1004, BIN, hashlib.md5(main + payload).digest()), (1007, I32, [len(cpio)])], 62)
+    sigs = [(269, STR, hashlib.sha1(main).hexdigest()), (273, STR, hashlib.sha256(main).hexdigest()),
+            (1000, I32, [len(main) + len(payload)]), (1004, BIN, hashlib.md5(main + payload).digest()), (1007, I32, [len(cpio)])]
+    if os.environ.get("CV_GPG"):   # what rpmsign adds: an RSA signature of the header (268), and of header + payload for older rpm (1002)
+        sigs += [(268, BIN, gpg_sig(main)), (1002, BIN, gpg_sig(main + payload))]
+    sig = header(sigs, 62)
     sig += b"\0" * (-len(sig) % 8)
     archnum = {"x86_64": 1, "i686": 1, "aarch64": 19, "noarch": 255}.get(m["arch"], 1)
     lead = b"\xed\xab\xee\xdb\x03\x00" + struct.pack(">hh", 0, archnum) + ("%s-%s" % (m["name"], full_ver)).encode()[:65].ljust(66, b"\0") + struct.pack(">hh", 1, 5) + b"\0" * 16
@@ -1944,6 +2051,7 @@ conv_pack() { # fmt tree out — CV_* already set for the target
       CV_META=$(CV_NAME=$CV_NAME CV_TVER=$CV_TVER CV_DESC=$CV_DESC CV_TARCH=$CV_TARCH CV_FROM=$CV_FROM CVE=$CVE python3 -c '
 import os, json, sys
 print(json.dumps({"name": os.environ["CV_NAME"], "ver": os.environ["CV_TVER"], "epoch": os.environ["CVE"], "desc": os.environ["CV_DESC"], "arch": os.environ["CV_TARCH"], "from": os.environ["CV_FROM"], "deps": json.loads(sys.argv[1])}))' "$deps_json") \
+        CV_GPG=${SIGN_FPR:-} CV_RSA=${SIGN_RSA:-} CV_RSA_NAME=${SIGN_RSA_NAME:-} GNUPGHOME="$SIGN_DIR/gnupg" \
         python3 -c "$CONV_PY" "$fmt" "$tree" "$out" ;;
     tar.gz) tar --owner=0 --group=0 --numeric-owner -czf "$out" -C "$tree" . ;;
     gurt)
@@ -2004,8 +2112,14 @@ EOF
     download "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$CARCH.AppImage" "$tool.part" && mv "$tool.part" "$tool" && chmod 755 "$tool" ||
       die "couldn't download appimagetool"
   fi
-  ARCH=$CARCH APPIMAGE_EXTRACT_AND_RUN=1 "$tool" --no-appstream "$dir" "$out" >"$work/appimagetool.log" 2>&1 ||
-    { tail -n 20 "$work/appimagetool.log" >&2; die "appimagetool couldn't make it"; }
+  APPIMG_SIGNED=false
+  if [[ -n $SIGN_FPR ]] && GNUPGHOME="$SIGN_DIR/gnupg" ARCH=$CARCH APPIMAGE_EXTRACT_AND_RUN=1 "$tool" --no-appstream --sign --sign-key "$SIGN_FPR" "$dir" "$out" >"$work/appimagetool.log" 2>&1 &&
+     grep -qa 'BEGIN PGP SIGNATURE' "$out"; then
+    APPIMG_SIGNED=true
+  else
+    ARCH=$CARCH APPIMAGE_EXTRACT_AND_RUN=1 "$tool" --no-appstream "$dir" "$out" >"$work/appimagetool.log" 2>&1 ||
+      { tail -n 20 "$work/appimagetool.log" >&2; die "appimagetool couldn't make it"; }
+  fi
   warn "an AppImage made from a distro package still uses your system's libraries, so it runs best on a distro like the one it came from"
 }
 cmd_convert() { # file|url format|out-file [-o dir]
@@ -2065,13 +2179,19 @@ cmd_convert() { # file|url format|out-file [-o dir]
     local more=""; (( ${#CV_DROPPED[@]} > 10 )) && more=" and $(( ${#CV_DROPPED[@]} - 10 )) more"
     warn "left out deps gurt doesn't know the $fmt names for (if the app complains, install them yourself): ${CV_DROPPED[*]:0:10}$more"
   fi
+  if ! $NOSIGN; then case $fmt in apk|xbps) sign_setup rsa ;; *) sign_setup ;; esac; fi
+  rm -f "$out.sig" "$out.sig2" "$out.asc"   # a signature left from an earlier convert to the same name would no longer match
   conv_pack "$fmt" "$tree" "$out" "$work"
+  $NOSIGN || conv_sign "$fmt" "$out" "$work"
   msg "made ${out} ✅ ($(du -h "$out" | cut -f1))"
-  case $fmt in
-    apk)   msg2 "it's unsigned, so on Alpine install it with: apk add --allow-untrusted ${out##*/}" ;;
-    xbps)  msg2 "on Void: xbps-rindex -a ${out##*/} && xbps-install --repository=\$PWD $CV_NAME" ;;
-    rpm)   msg2 "it's unsigned, so dnf may want: dnf install --nogpgcheck ./${out##*/}" ;;
-  esac
+  if ! $NOSIGN; then sign_hint "$fmt" "$out"
+  else
+    case $fmt in
+      apk)   msg2 "it's unsigned (--no-sign), so on Alpine install it with: apk add --allow-untrusted ${out##*/}" ;;
+      xbps)  msg2 "on Void: xbps-rindex -a ${out##*/} && xbps-install --repository=\$PWD $CV_NAME" ;;
+      rpm)   msg2 "it's unsigned (--no-sign), so dnf may want: dnf install --nogpgcheck ./${out##*/}" ;;
+    esac
+  fi
 }
 
 # ── gurt outsource <file|url>: whatever you downloaded, on whatever distro you run — no box ──
@@ -4043,6 +4163,8 @@ ${B}making packages${R0}
   install ./app.deb    install a .deb / .rpm / .pkg.tar.zst file (or url) on ANY distro, no box → file/<name>
   convert <file> <fmt> turn any Linux package into another: deb rpm pacman apk xbps eopkg appimage gurt tar.gz zip
                        (gurt convert app.rpm deb · gurt convert app.deb app.pkg.tar.zst · .exe → package that runs it in Wine)
+                       signed with your own key 🔏 (--no-sign to skip)
+  key [export|trust]   the key gurt convert signs with · export the public halves · make this computer trust them
   add <file.gurt>      install a .gurt file
   srcinfo [dir]        print .gurtinfo for a recipe (commit this!)
   checksum [dir]       print sha256sums for a recipe's sources
@@ -4108,6 +4230,7 @@ main() {
       --no-system)    NO_SYSTEM=true ;;
       --quiet-yeet)   QUIET_YEET=true ;;
       --keep)         KEEP=true ;;
+      --no-sign|--nosign) NOSIGN=true ;;
       --root)         shift; GURT_ROOT=${1:?--root needs a dir}; R="${GURT_ROOT%/}"; DB="$R/var/lib/gurt/local" ;;
       --root=*)       GURT_ROOT=${1#*=}; R="${GURT_ROOT%/}"; DB="$R/var/lib/gurt/local" ;;
       -h|--help)      args=(help "${args[@]}") ;;
@@ -4146,6 +4269,7 @@ main() {
     sysup|system-upgrade|syu) cmd_sysup ;;
     utils|utilities|essentials) cmd_utils "$@" ;;
     convert|conv)      cmd_convert "$@" ;;
+    key|keys)          cmd_key "$@" ;;
     self-update|selfupdate) cmd_self_update ;;
     remove|rm|yeet)    (( $# )) || die "remove what tho"; for p; do remove_pkg "$p"; done; play_scream ;;
     autoremove|clean)  cmd_autoremove ;;

@@ -45,6 +45,7 @@ lua         apt=lua5.4  dnf=lua  pacman=lua  zypper=lua54  apk=lua5.4  xbps=lua5
 
 # ── libraries (headers included) ──
 openssl     apt=libssl-dev  dnf=openssl-devel  pacman=openssl  zypper=libopenssl-devel  apk=openssl-dev  xbps=openssl-devel  emerge=dev-libs/openssl
+openssl-cli apt=openssl  dnf=openssl  pacman=openssl  zypper=openssl  apk=openssl  xbps=openssl  emerge=dev-libs/openssl
 zlib        apt=zlib1g-dev  dnf=zlib-devel  pacman=zlib  zypper=zlib-devel  apk=zlib-dev  xbps=zlib-devel  emerge=sys-libs/zlib
 ncurses     apt=libncurses-dev  dnf=ncurses-devel  pacman=ncurses  zypper=ncurses-devel  apk=ncurses-dev  xbps=ncurses-devel  emerge=sys-libs/ncurses
 libcurl     apt=libcurl4-openssl-dev  dnf=libcurl-devel  pacman=curl  zypper=libcurl-devel  apk=curl-dev  xbps=libcurl-devel  emerge=net-misc/curl

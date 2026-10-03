@@ -5,7 +5,7 @@ Runs a web server on 127.0.0.1 only (random port + secret token), opens it in an
 and runs the real `gurt` CLI for everything. No extra packages: just python3 + a browser.
 Started by:  gurt gui
 """
-import argparse, json, os, re, secrets, shutil, stat, subprocess, sys, tempfile, threading, time
+import argparse, json, os, re, secrets, shutil, stat, subprocess, sys, tempfile, threading, time, zlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs, unquote
 
@@ -33,6 +33,32 @@ def zone_dir():   # the Download Zone™: where The Congurter™ drops what it m
     d = os.path.join(paths().get("cache") or os.path.expanduser("~/.cache/gurt"), "zone")
     os.makedirs(d, exist_ok=True)
     return d
+
+
+SIG_EXTS = (".sig", ".sig2", ".asc")   # signatures gurt convert puts next to what it makes
+
+
+def zone_signed(path):   # how a converted file is signed: "inside" it, the ext of the signature next to it, or None
+    for ext in SIG_EXTS:
+        if os.path.isfile(path + ext):
+            return ext
+    try:
+        with open(path, "rb") as f:
+            head = f.read(4 << 20)
+        low = path.lower()
+        if low.endswith(".deb") and b"_gpgorigin " in head:
+            return "inside"
+        if low.endswith(".rpm") and head[96:99] == b"\x8e\xad\xe8":   # signature header: look for an RSA/DSA signature tag
+            n = int.from_bytes(head[104:108], "big")
+            if any(int.from_bytes(head[112 + i * 16:116 + i * 16], "big") in (267, 268) for i in range(min(n, 64))):
+                return "inside"
+        if low.endswith(".apk") and zlib.decompressobj(31).decompress(head[:65536], 512)[:6] == b".SIGN.":
+            return "inside"
+        if low.endswith(".appimage") and b"BEGIN PGP SIGNATURE" in head:
+            return "inside"
+    except (OSError, zlib.error):
+        pass
+    return None
 
 
 def downloads_dir():
@@ -297,8 +323,9 @@ class H(BaseHTTPRequestHandler):
             return self._send(200, {"paths": dropped if time.time() - when < 15 else []})
         if u.path == "/api/zone":
             z = zone_dir()
-            items = [{"name": n, "size": os.path.getsize(os.path.join(z, n)), "time": os.path.getmtime(os.path.join(z, n))}
-                     for n in os.listdir(z) if os.path.isfile(os.path.join(z, n)) and not n.endswith(".part")]
+            items = [{"name": n, "size": os.path.getsize(os.path.join(z, n)), "time": os.path.getmtime(os.path.join(z, n)),
+                      "signed": zone_signed(os.path.join(z, n))}
+                     for n in os.listdir(z) if os.path.isfile(os.path.join(z, n)) and not n.endswith((".part",) + SIG_EXTS)]
             return self._send(200, {"items": sorted(items, key=lambda x: -x["time"])})
         if u.path == "/api/ping":
             LAST_PING[0] = time.time()
@@ -342,12 +369,18 @@ class H(BaseHTTPRequestHandler):
                 return self._send(400, {"error": "that's not in the Download Zone™"})
             dst = unique_path(downloads_dir(), name)
             shutil.copy2(src, dst)
+            for ext in SIG_EXTS:   # its signature comes along, named to match
+                if os.path.isfile(src + ext):
+                    shutil.copy2(src + ext, dst + ext)
             return self._send(200, {"path": dst})
         if u.path == "/api/zone/delete":
             name = self._body().get("name", "")
             src = os.path.join(zone_dir(), name)
             if DROP_NAME_RE.match(name) and os.path.isfile(src):
                 os.remove(src)
+                for ext in SIG_EXTS:
+                    if os.path.isfile(src + ext):
+                        os.remove(src + ext)
             return self._send(200, {"ok": True})
         if u.path == "/api/opendir":
             subprocess.Popen(["xdg-open", downloads_dir()], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
@@ -1444,7 +1477,7 @@ $("#cgbtn").addEventListener("click", async () => {
 async function loadZone(fresh){
   const z = await api("/api/zone").catch(() => ({items:[]}));
   const items = z.items || [];
-  $("#zone").innerHTML = items.length ? items.map((it, i) => `<div class="cg-item${fresh && i === 0 ? " drop" : ""}"><span>📦</span><b>${esc(it.name)}</b><small>${fmtSize(it.size)}</small>
+  $("#zone").innerHTML = items.length ? items.map((it, i) => `<div class="cg-item${fresh && i === 0 ? " drop" : ""}"><span>📦</span><b>${esc(it.name)}</b><small>${fmtSize(it.size)}${it.signed ? ` · <span title="${it.signed === "inside" ? "signed with your gurt key (the signature is inside the file)" : `signed with your gurt key (${esc(it.signed)} file comes along)`}">🔏 signed</span>` : ""}</small>
       <button class="btn small" data-get="${esc(it.name)}">⬇️ retrieve</button><button class="btn ghost small" data-del="${esc(it.name)}" title="toss it">🗑</button></div>`).join("")
     : `<div class="cg-empty">empty… for now 👀</div>`;
 }
