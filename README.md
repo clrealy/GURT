@@ -147,7 +147,7 @@ gurt repo remove claude
 
 Your **GitHub account is your GURT account**. There are no new passwords, and GURT never sees your login.
 
-- **Profiles:** every maintainer gets a page at `clrealy.github.io/GURT/?u=<github-username>` with their packages. The `maintainer=` field in a recipe is a GitHub username
+- **Profiles:** every maintainer gets a page at `gurtproject.org/?u=<github-username>` with their packages. The `maintainer=` field in a recipe is a GitHub username
 - **Votes 👍 + comments 💬:** every package has them. You sign in with GitHub through [giscus](https://giscus.app), and everything is stored in this repo's GitHub Discussions
 - **🚩 Flag out of date:** opens a pre-filled GitHub issue
 
@@ -178,7 +178,7 @@ On Linux, your software center installs it like any other app. Then open **GURT*
 
 `gurt setup` runs the wizard again anytime, in the terminal (or 🎨 → 🧙 setup wizard in the app). Picked apps on the website's 🧰 Build your setup? Hit 📄 save as a list, then 📥 import it in the wizard.
 
-**🧪 Dev build (openSUSE, Fedora and other rpm distros):** [`GURTSetupWizard-dev.rpm`](https://clrealy.github.io/GURT/dev/GURTSetupWizard-dev.rpm) is rebuilt on every change to `main`. It adds the `gurt-dev` repo, so `sudo zypper up` / `sudo dnf upgrade` keep you on the newest dev build. Dev builds come with every achievement unlocked 🏆, and every package in the app gets ✏️ edit / 🗑️ delete buttons that open it on GitHub (GitHub still decides who can change the repo). Expect bugs 🐛. Going back to stable: `sudo zypper rr gurt-dev` (or delete `/etc/yum.repos.d/gurt-dev.repo`), then install the stable `.rpm`.
+**🧪 Dev build (openSUSE, Fedora and other rpm distros):** [`GURTSetupWizard-dev.rpm`](https://gurtproject.org/dev/GURTSetupWizard-dev.rpm) is rebuilt on every change to `main`. It adds the `gurt-dev` repo, so `sudo zypper up` / `sudo dnf upgrade` keep you on the newest dev build. Dev builds come with every achievement unlocked 🏆, and every package in the app gets ✏️ edit / 🗑️ delete buttons that open it on GitHub (GitHub still decides who can change the repo). Expect bugs 🐛. Going back to stable: `sudo zypper rr gurt-dev` (or delete `/etc/yum.repos.d/gurt-dev.repo`), then install the stable `.rpm`.
 
 **Uninstall:** `gurt uninstall`. It saves your app list to `~/gurt-apps-<date>.txt`, asks whether to remove the apps gurt installed too, then takes gurt off (through your package manager if you used a GURTSetupWizard package). `gurt uninstall <app>` still just removes that app.
 
@@ -243,7 +243,7 @@ gurt utils list   # see what you've got (gurt doctor shows it too)
 
 Main GURT has **2,500+ apps**: 280+ that GURT installs itself (official prebuilt releases with pinned checksums, AppImages, source builds, official repos) and the rest from Flathub. `tools/gen-flathub.py` adds Flathub's most popular apps that GURT doesn't have yet.
 
-The [website](https://clrealy.github.io/GURT/) has a **Build your setup** picker (like tuxmate, but gurt): tick the apps you want, grouped by category, and copy one `gurt install …` command that works on every distro. Tick "I don't have gurt yet" and the command installs gurt first.
+The [website](https://gurtproject.org/) has a **Build your setup** picker (like tuxmate, but gurt): tick the apps you want, grouped by category, and copy one `gurt install …` command that works on every distro. Tick "I don't have gurt yet" and the command installs gurt first.
 
 Can't decide? Spin for one:
 

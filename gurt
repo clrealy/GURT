@@ -4973,7 +4973,7 @@ cmd_version() {
     "${c2}recipes${r}  $recipes"
     "${c3}sources${r}  gurt aur apt dnf zypper pacman flatpak snap"
     "${c4}DIRT${r}     $dirt"
-    "${c2}site${r}     https://clrealy.github.io/GURT"
+    "${c2}site${r}     https://gurtproject.org"
     ""
     "\e[40m   \e[41m   \e[42m   \e[43m   \e[44m   \e[45m   \e[46m   \e[47m   ${r}"
   )

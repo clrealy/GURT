@@ -11,7 +11,7 @@ for a; do case $a in --no-sign) sign=(--no-sign) ;; --dev) dev=$(date -u +%Y%m%d
 ver=$(sed -n 's/^GURT_VERSION="\(.*\)"/\1/p' "$root/gurt")
 [[ -n $ver ]] || { echo "couldn't read GURT_VERSION" >&2; exit 1; }
 [[ -z $dev || $dev =~ ^[0-9]+$ ]] || { echo "--dev=N takes a number" >&2; exit 1; }
-DEV_URL=https://clrealy.github.io/GURT/dev/rpm
+DEV_URL=https://gurtproject.org/dev/rpm
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 t=$tmp/tree
 mkdir -p "$out"; out=$(cd "$out" && pwd)
