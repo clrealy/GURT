@@ -1,0 +1,15 @@
+# DSO software for Hantek USB digital signal oscilloscopes 6022BE/BL (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=openhantek6022
+pkgver=flathub
+pkgrel=1
+pkgdesc="DSO software for Hantek USB digital signal oscilloscopes 6022BE/BL"
+url="https://flathub.org/apps/org.openhantek.OpenHantek6022"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.openhantek.OpenHantek6022

@@ -1,0 +1,13 @@
+pkgname = nui-sftp
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A SSH/SFTP client using the NuiCpp UI Framework
+url = https://flathub.org/apps/org.nuicpp.nui_sftp
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.nuicpp.nui_sftp

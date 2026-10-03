@@ -1,0 +1,15 @@
+# A 3D first person tank battle game (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=bzflag
+pkgver=flathub
+pkgrel=1
+pkgdesc="A 3D first person tank battle game"
+url="https://flathub.org/apps/org.bzflag.BZFlag"
+license="LGPL-2.1 or MPL-2.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.bzflag.BZFlag

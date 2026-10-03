@@ -1,0 +1,15 @@
+# A DnD dice rolling application for the COSMIC™ desktop (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=dnd-dice-roller
+pkgver=flathub
+pkgrel=1
+pkgdesc="A DnD dice rolling application for the COSMIC™ desktop"
+url="https://flathub.org/apps/page.codeberg.friedrich.DND-Dice-Roller"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=page.codeberg.friedrich.DND-Dice-Roller

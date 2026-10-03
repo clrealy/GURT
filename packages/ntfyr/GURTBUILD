@@ -1,0 +1,15 @@
+# Receive and send ntfy notifications (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=ntfyr
+pkgver=flathub
+pkgrel=1
+pkgdesc="Receive and send ntfy notifications"
+url="https://flathub.org/apps/io.github.tobagin.Ntfyr"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.tobagin.Ntfyr

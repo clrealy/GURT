@@ -1,0 +1,11 @@
+pkgname = navidrome
+pkgver = 0.64.2
+pkgrel = 1
+pkgdesc = Your own music streaming server
+url = https://github.com/navidrome/navidrome
+license = GPL-3.0
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+source = https://github.com/navidrome/navidrome/releases/download/v0.64.2/navidrome_0.64.2_linux_amd64.tar.gz

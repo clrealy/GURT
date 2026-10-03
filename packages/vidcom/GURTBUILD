@@ -1,0 +1,15 @@
+# Archive your videos easily (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=vidcom
+pkgver=flathub
+pkgrel=1
+pkgdesc="Archive your videos easily"
+url="https://flathub.org/apps/io.github.seja_arctic_fox.vidcom"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.seja_arctic_fox.vidcom

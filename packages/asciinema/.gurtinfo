@@ -1,0 +1,10 @@
+pkgname = asciinema
+pkgver = 3.2.1
+pkgrel = 1
+pkgdesc = Record and share your terminal sessions
+url = https://github.com/asciinema/asciinema
+license = GPL-3.0
+maintainer = clrealy
+category = cli
+arch = x86_64
+source = asciinema::https://github.com/asciinema/asciinema/releases/download/v3.2.1/asciinema-x86_64-unknown-linux-musl

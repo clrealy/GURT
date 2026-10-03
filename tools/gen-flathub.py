@@ -116,9 +116,9 @@ def main():
         if not name or not summary:
             continue
         pkg = slug(name)
-        if not pkg or not re.match(r"^[a-z0-9]", pkg) or pkg in names:
-            pkg = slug(name + "-" + app_id.rsplit(".", 1)[-1])
-        if not pkg or pkg in names or len(pkg) > 60:
+        # name already taken: that's usually the same app from another source (1password, chrome…),
+        # so skip it rather than adding a "name-appid" copy
+        if not pkg or not re.match(r"^[a-z0-9]", pkg) or pkg in names or len(pkg) > 60:
             continue
         cat = category(hit)
         lic = clean(hit.get("project_license") or "", 80)

@@ -1,0 +1,15 @@
+# Interactive post-processing tool for scanned pages (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=scan-tailor
+pkgver=flathub
+pkgrel=1
+pkgdesc="Interactive post-processing tool for scanned pages"
+url="https://flathub.org/apps/org.scantailor.ScanTailor"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.scantailor.ScanTailor

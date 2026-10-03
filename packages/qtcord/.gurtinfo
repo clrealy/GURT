@@ -1,0 +1,13 @@
+pkgname = qtcord
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Lightweight Discord client
+url = https://flathub.org/apps/io.github.mak448a.QTCord
+license = MIT
+maintainer = clrealy
+category = chat
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.mak448a.QTCord

@@ -1,0 +1,15 @@
+# Play music at a different speed (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=play-it-slowly
+pkgver=flathub
+pkgrel=1
+pkgdesc="Play music at a different speed"
+url="https://flathub.org/apps/ch.x29a.playitslowly"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=ch.x29a.playitslowly

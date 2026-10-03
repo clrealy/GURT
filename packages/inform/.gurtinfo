@@ -1,0 +1,13 @@
+pkgname = inform
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Write interactive fiction
+url = https://flathub.org/apps/com.inform7.IDE
+license = GPL-3.0 AND Artistic-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.inform7.IDE

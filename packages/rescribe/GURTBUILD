@@ -1,0 +1,15 @@
+# OCR images, PDFs and Google Books (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=rescribe
+pkgver=flathub
+pkgrel=1
+pkgdesc="OCR images, PDFs and Google Books"
+url="https://flathub.org/apps/xyz.rescribe.rescribe"
+license="GPL-3.0"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=xyz.rescribe.rescribe

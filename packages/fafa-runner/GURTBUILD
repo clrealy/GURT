@@ -1,0 +1,15 @@
+# Enjoy smooth gameplay, stunning graphics, and endless fun (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=fafa-runner
+pkgver=flathub
+pkgrel=1
+pkgdesc="Enjoy smooth gameplay, stunning graphics, and endless fun"
+url="https://flathub.org/apps/com.fafarunner.FaFaRunner"
+license="MIT"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.fafarunner.FaFaRunner

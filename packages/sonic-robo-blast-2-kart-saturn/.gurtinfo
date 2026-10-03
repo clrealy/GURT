@@ -1,0 +1,13 @@
+pkgname = sonic-robo-blast-2-kart-saturn
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Modded SRB2Kart adding many custom features
+url = https://flathub.org/apps/org.srb2.SRB2Kart-Saturn
+license = GPL-2.0+
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.srb2.SRB2Kart-Saturn

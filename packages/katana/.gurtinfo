@@ -1,0 +1,11 @@
+pkgname = katana
+pkgver = 1.7.0
+pkgrel = 1
+pkgdesc = Next-gen web crawler
+url = https://github.com/projectdiscovery/katana
+license = MIT
+maintainer = clrealy
+category = security
+arch = x86_64
+arch = aarch64
+source = https://github.com/projectdiscovery/katana/releases/download/v1.7.0/katana_1.7.0_linux_amd64.zip

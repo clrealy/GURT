@@ -1,0 +1,11 @@
+pkgname = rainfrog
+pkgver = 0.4.6
+pkgrel = 1
+pkgdesc = Database tool for the terminal (Postgres, MySQL, SQLite)
+url = https://github.com/achristmascarl/rainfrog
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/achristmascarl/rainfrog/releases/download/v0.4.6/rainfrog-v0.4.6-x86_64-unknown-linux-musl.tar.gz

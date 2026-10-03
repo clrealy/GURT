@@ -1,0 +1,15 @@
+# Gestion des feuilles de match de handball en France (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=fdme-ffhandball
+pkgver=flathub
+pkgrel=1
+pkgdesc="Gestion des feuilles de match de handball en France"
+url="https://flathub.org/apps/fr.ffhandball.fdme"
+license="see Flathub"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=fr.ffhandball.fdme

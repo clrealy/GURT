@@ -1,0 +1,10 @@
+pkgname = vhs
+pkgver = 0.12.1
+pkgrel = 1
+pkgdesc = Script terminal recordings and turn them into GIFs
+url = https://github.com/charmbracelet/vhs
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+source = https://github.com/charmbracelet/vhs/releases/download/v0.12.1/vhs_0.12.1_Linux_x86_64.tar.gz

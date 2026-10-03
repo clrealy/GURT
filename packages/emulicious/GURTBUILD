@@ -1,0 +1,15 @@
+# Multi-system emulator (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=emulicious
+pkgver=flathub
+pkgrel=1
+pkgdesc="Multi-system emulator"
+url="https://flathub.org/apps/net.emulicious.Emulicious"
+license="see Flathub"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.emulicious.Emulicious

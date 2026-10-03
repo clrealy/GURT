@@ -1,0 +1,15 @@
+# Audio/video conversion and youtube downloader (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=azul-box
+pkgver=flathub
+pkgrel=1
+pkgdesc="Audio/video conversion and youtube downloader"
+url="https://flathub.org/apps/page.codeberg.tahoso.azul-box"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=page.codeberg.tahoso.azul-box

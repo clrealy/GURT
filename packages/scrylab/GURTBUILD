@@ -1,0 +1,15 @@
+# Data analysis for engineers (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=scrylab
+pkgver=flathub
+pkgrel=1
+pkgdesc="Data analysis for engineers"
+url="https://flathub.org/apps/de.scrylab.ScryLab"
+license="see Flathub"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=de.scrylab.ScryLab

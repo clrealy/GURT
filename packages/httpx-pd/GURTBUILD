@@ -1,0 +1,23 @@
+# Probe lots of web servers fast (ProjectDiscovery httpx)
+pkgname=httpx-pd
+pkgver=1.12.0
+pkgrel=1
+pkgdesc="Probe lots of web servers fast (ProjectDiscovery httpx)"
+url="https://github.com/projectdiscovery/httpx"
+license="MIT"
+maintainer="clrealy"
+category="security"
+arch=(x86_64 aarch64)
+aliases=(httpx)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/projectdiscovery/httpx/releases/download/${_tag}/httpx_${pkgver}_linux_amd64.zip")
+source_aarch64=("https://github.com/projectdiscovery/httpx/releases/download/${_tag}/httpx_${pkgver}_linux_arm64.zip")
+sha256sums_x86_64=(9d8439e8b6c9aa7d1e2314817a392e00d5178da3af5652f7475f88868f418f76)
+sha256sums_aarch64=(fd7b123c1dfbc3d69f19f524e4eebcd6ec06b9a6cbd56813c76f11645197331e)
+
+package() {
+  local f
+  f=$(find . -type f -name httpx -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name httpx | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/httpx"
+}

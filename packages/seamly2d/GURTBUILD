@@ -1,0 +1,15 @@
+# Sewing pattern design software (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=seamly2d
+pkgver=flathub
+pkgrel=1
+pkgdesc="Sewing pattern design software"
+url="https://flathub.org/apps/io.seamly.seamly2d"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.seamly.seamly2d

@@ -1,0 +1,15 @@
+# A simple kanban-styled planner (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=schedule
+pkgver=flathub
+pkgrel=1
+pkgdesc="A simple kanban-styled planner"
+url="https://flathub.org/apps/io.github.zhrexl.thisweekinmylife"
+license="AGPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.zhrexl.thisweekinmylife

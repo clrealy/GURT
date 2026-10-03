@@ -1,0 +1,10 @@
+pkgname = gobuster
+pkgver = 3.8.2
+pkgrel = 1
+pkgdesc = Brute force URLs, DNS subdomains and more
+url = https://github.com/OJ/gobuster
+license = Apache-2.0
+maintainer = clrealy
+category = security
+arch = x86_64
+source = https://github.com/OJ/gobuster/releases/download/v3.8.2/gobuster_Linux_x86_64.tar.gz

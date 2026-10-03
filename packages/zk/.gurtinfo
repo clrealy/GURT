@@ -1,0 +1,11 @@
+pkgname = zk
+pkgver = 0.15.6
+pkgrel = 1
+pkgdesc = Plain text note-taking assistant for Markdown notes
+url = https://github.com/zk-org/zk
+license = GPL-3.0
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+source = https://github.com/zk-org/zk/releases/download/v0.15.6/zk-v0.15.6-linux-amd64.tar.gz

@@ -1,0 +1,15 @@
+# Visualize embedded device data (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=serial-studio
+pkgver=flathub
+pkgrel=1
+pkgdesc="Visualize embedded device data"
+url="https://flathub.org/apps/com.serial_studio.Serial-Studio"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.serial_studio.Serial-Studio

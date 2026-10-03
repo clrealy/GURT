@@ -1,0 +1,13 @@
+pkgname = missingno
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Multi-system emulator and debugger
+url = https://flathub.org/apps/net.andyofniall.missingno
+license = MIT
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.andyofniall.missingno

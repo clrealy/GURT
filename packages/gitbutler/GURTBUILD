@@ -1,0 +1,15 @@
+# Git, finally designed for humans (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=gitbutler
+pkgver=flathub
+pkgrel=1
+pkgdesc="Git, finally designed for humans"
+url="https://flathub.org/apps/com.gitbutler.gitbutler"
+license="see Flathub"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.gitbutler.gitbutler

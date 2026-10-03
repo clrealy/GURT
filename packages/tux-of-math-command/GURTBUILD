@@ -1,0 +1,15 @@
+# TuxMath is an arcade game that helps kids practice their math facts (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tux-of-math-command
+pkgver=flathub
+pkgrel=1
+pkgdesc="TuxMath is an arcade game that helps kids practice their math facts"
+url="https://flathub.org/apps/com.tux4kids.tuxmath"
+license="GPL-3.0+ and CC-BY and OFL-1.1"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.tux4kids.tuxmath

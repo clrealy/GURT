@@ -1,0 +1,11 @@
+pkgname = fish
+pkgver = 4.9.3
+pkgrel = 1
+pkgdesc = Friendly interactive shell with autosuggestions out of the box
+url = https://github.com/fish-shell/fish-shell
+license = GPL-2.0
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+source = https://github.com/fish-shell/fish-shell/releases/download/4.9.3/fish-4.9.3-linux-x86_64.tar.xz

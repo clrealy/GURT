@@ -1,0 +1,13 @@
+pkgname = pure-data-pd
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Realtime computer music system
+url = https://flathub.org/apps/info.puredata.Pd
+license = BSD-3-Clause
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = info.puredata.Pd

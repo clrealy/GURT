@@ -1,0 +1,11 @@
+pkgname = doctl
+pkgver = 1.177.0
+pkgrel = 1
+pkgdesc = DigitalOcean from the command line
+url = https://github.com/digitalocean/doctl
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/digitalocean/doctl/releases/download/v1.177.0/doctl-1.177.0-linux-amd64.tar.gz

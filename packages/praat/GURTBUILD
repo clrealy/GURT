@@ -1,0 +1,15 @@
+# Analyze, synthesize, and manipulate speech (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=praat
+pkgver=flathub
+pkgrel=1
+pkgdesc="Analyze, synthesize, and manipulate speech"
+url="https://flathub.org/apps/org.praat.Praat"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.praat.Praat

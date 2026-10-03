@@ -1,0 +1,15 @@
+# Rescue Helicopter Simulator (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=search-and-rescue-ii
+pkgver=flathub
+pkgrel=1
+pkgdesc="Rescue Helicopter Simulator"
+url="https://flathub.org/apps/io.github.searchandrescue2.sar2"
+license="GPL-2.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.searchandrescue2.sar2

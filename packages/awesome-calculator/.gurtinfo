@@ -1,0 +1,13 @@
+pkgname = awesome-calculator
+pkgver = flathub
+pkgrel = 1
+pkgdesc = AWESOME calculator program
+url = https://flathub.org/apps/io.github.deaen.awesomecalculator
+license = LGPL-2.1-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.deaen.awesomecalculator

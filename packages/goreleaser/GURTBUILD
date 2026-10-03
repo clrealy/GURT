@@ -1,0 +1,20 @@
+# Release Go projects as fast as you can build them
+pkgname=goreleaser
+pkgver=2.18.2
+pkgrel=1
+pkgdesc="Release Go projects as fast as you can build them"
+url="https://github.com/goreleaser/goreleaser"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/goreleaser/goreleaser/releases/download/${_tag}/goreleaser_Linux_x86_64.tar.gz")
+sha256sums=(0a96edc9d9bc594e4a41cc4d59467c182062910ab24d9d1f6dd7b667d32606d3)
+
+package() {
+  local f
+  f=$(find . -type f -name goreleaser -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name goreleaser | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/goreleaser"
+}

@@ -1,0 +1,10 @@
+pkgname = vale
+pkgver = 3.24.0
+pkgrel = 1
+pkgdesc = Prose linter that checks your writing style
+url = https://github.com/errata-ai/vale
+license = MIT
+maintainer = clrealy
+category = office
+arch = x86_64
+source = https://github.com/errata-ai/vale/releases/download/v3.24.0/vale_3.24.0_Linux_64-bit.tar.gz

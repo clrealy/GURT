@@ -1,0 +1,11 @@
+pkgname = pocketbase
+pkgver = 0.40.4
+pkgrel = 1
+pkgdesc = Backend in one file: database, auth and file storage
+url = https://github.com/pocketbase/pocketbase
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/pocketbase/pocketbase/releases/download/v0.40.4/pocketbase_0.40.4_linux_amd64.zip

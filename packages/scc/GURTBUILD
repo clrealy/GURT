@@ -1,0 +1,20 @@
+# Count lines of code fast, with complexity estimates
+pkgname=scc
+pkgver=4.1.0
+pkgrel=1
+pkgdesc="Count lines of code fast, with complexity estimates"
+url="https://github.com/boyter/scc"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/boyter/scc/releases/download/${_tag}/scc_Linux_x86_64.tar.gz")
+sha256sums=(c7328436d3027f4357d3d7853f7dc3ac2bbcb4ca08f1adad91a27c593884079b)
+
+package() {
+  local f
+  f=$(find . -type f -name scc -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name scc | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/scc"
+}

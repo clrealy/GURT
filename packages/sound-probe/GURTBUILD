@@ -1,0 +1,15 @@
+# Discover sounds of space (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=sound-probe
+pkgver=flathub
+pkgrel=1
+pkgdesc="Discover sounds of space"
+url="https://flathub.org/apps/io.gitlab.lekernelpanic.sound-probe"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.gitlab.lekernelpanic.sound-probe

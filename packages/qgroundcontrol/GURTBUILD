@@ -1,0 +1,15 @@
+# UAS ground control station (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=qgroundcontrol
+pkgver=flathub
+pkgrel=1
+pkgdesc="UAS ground control station"
+url="https://flathub.org/apps/org.mavlink.qgroundcontrol"
+license="GPL-3.0 AND Apache-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.mavlink.qgroundcontrol

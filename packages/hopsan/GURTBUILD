@@ -1,0 +1,15 @@
+# A modelling and simulation tool for fluid power and mechatronic systems (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=hopsan
+pkgver=flathub
+pkgrel=1
+pkgdesc="A modelling and simulation tool for fluid power and mechatronic systems"
+url="https://flathub.org/apps/com.github.hopsan.Hopsan"
+license="Apache-2.0 AND GPL-3.0"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.hopsan.Hopsan

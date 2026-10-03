@@ -1,0 +1,15 @@
+# Cosmic horror first-person shooter (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=librequake
+pkgver=flathub
+pkgrel=1
+pkgdesc="Cosmic horror first-person shooter"
+url="https://flathub.org/apps/io.github.lavenderdotpet.LibreQuake"
+license="BSD-3-Clause"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.lavenderdotpet.LibreQuake

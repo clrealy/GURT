@@ -1,0 +1,15 @@
+# Image viewer (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=vipsdisp
+pkgver=flathub
+pkgrel=1
+pkgdesc="Image viewer"
+url="https://flathub.org/apps/org.libvips.vipsdisp"
+license="MIT"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.libvips.vipsdisp

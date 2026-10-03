@@ -1,0 +1,13 @@
+pkgname = qt-widgets-designer
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Design GUIs for Qt applications
+url = https://flathub.org/apps/io.qt.Designer
+license = GPL-3.0-only
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.qt.Designer

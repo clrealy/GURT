@@ -1,0 +1,13 @@
+pkgname = sprawl-96
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A Quake mod based on the retro shooter SPRAWL
+url = https://flathub.org/apps/io.github.voidforce.qsprawl
+license = GPL-2.0-only
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.voidforce.qsprawl

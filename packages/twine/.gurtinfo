@@ -1,0 +1,13 @@
+pkgname = twine
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Twine is an open-source tool for telling interactive, nonlinear stories
+url = https://flathub.org/apps/org.twinery.Twine
+license = GPL-3.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.twinery.Twine

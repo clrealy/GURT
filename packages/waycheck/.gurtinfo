@@ -1,0 +1,13 @@
+pkgname = waycheck
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Show Wayland compositor details
+url = https://flathub.org/apps/dev.serebit.Waycheck
+license = Apache-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = dev.serebit.Waycheck

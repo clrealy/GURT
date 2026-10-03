@@ -1,0 +1,13 @@
+pkgname = oboete
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Flashcards application
+url = https://flathub.org/apps/dev.mariinkys.Oboete
+license = GPL-3.0-only
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = dev.mariinkys.Oboete

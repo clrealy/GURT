@@ -1,0 +1,20 @@
+# Script terminal recordings and turn them into GIFs
+pkgname=vhs
+pkgver=0.12.1
+pkgrel=1
+pkgdesc="Script terminal recordings and turn them into GIFs"
+url="https://github.com/charmbracelet/vhs"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/charmbracelet/vhs/releases/download/${_tag}/vhs_${pkgver}_Linux_x86_64.tar.gz")
+sha256sums=(eb33787a5b1cebf91fe0b18bd231e2d71d36c1ff4babd99ddac1a6ab411efd10)
+
+package() {
+  local f
+  f=$(find . -type f -name vhs -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name vhs | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/vhs"
+}

@@ -1,0 +1,15 @@
+# Behringer XR mixers user interface (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=x-air-edit
+pkgver=flathub
+pkgrel=1
+pkgdesc="Behringer XR mixers user interface"
+url="https://flathub.org/apps/com.behringer.XAirEdit"
+license="see Flathub"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.behringer.XAirEdit

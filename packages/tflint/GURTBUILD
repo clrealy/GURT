@@ -1,0 +1,22 @@
+# Linter for Terraform code
+pkgname=tflint
+pkgver=0.64.0
+pkgrel=1
+pkgdesc="Linter for Terraform code"
+url="https://github.com/terraform-linters/tflint"
+license="MPL-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/terraform-linters/tflint/releases/download/${_tag}/tflint_linux_amd64.zip")
+source_aarch64=("https://github.com/terraform-linters/tflint/releases/download/${_tag}/tflint_linux_arm64.zip")
+sha256sums_x86_64=(cca9d13e2e1d7a2c627af60ff899a3c9b74212899416aeb96ec764d2ef954537)
+sha256sums_aarch64=(560da89aacf59389d4eb029730dd5b109b7288096c32f2726a0d9e783a5ea8eb)
+
+package() {
+  local f
+  f=$(find . -type f -name tflint -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name tflint | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/tflint"
+}

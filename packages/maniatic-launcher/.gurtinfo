@@ -1,0 +1,13 @@
+pkgname = maniatic-launcher
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A Retro Engine v5 launcher
+url = https://flathub.org/apps/io.github.santiagocezar.maniatic-launcher
+license = GPL-3.0 AND
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.santiagocezar.maniatic-launcher

@@ -1,0 +1,13 @@
+pkgname = gitfourchette
+pkgver = flathub
+pkgrel = 1
+pkgdesc = The comfortable Git UI
+url = https://flathub.org/apps/org.gitfourchette.gitfourchette
+license = GPL-3.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.gitfourchette.gitfourchette

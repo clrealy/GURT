@@ -1,0 +1,20 @@
+# Simple, framework-agnostic database migrations
+pkgname=dbmate
+pkgver=2.36.0
+pkgrel=1
+pkgdesc="Simple, framework-agnostic database migrations"
+url="https://github.com/amacneil/dbmate"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("dbmate::https://github.com/amacneil/dbmate/releases/download/${_tag}/dbmate-linux-amd64")
+source_aarch64=("dbmate::https://github.com/amacneil/dbmate/releases/download/${_tag}/dbmate-linux-arm64")
+sha256sums_x86_64=(47e284b3d8cbad1ba5f090495aa05afd1bbd5f35e2ed5577aad06da74ce780ce)
+sha256sums_aarch64=(c7d49db4b54e487eddf8ce7d6e88f4035e1eb04c7edb16008f668cdfad2f29e8)
+
+package() {
+  install -Dm755 dbmate "$pkgdir$prefix/bin/dbmate"
+}

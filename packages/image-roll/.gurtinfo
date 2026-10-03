@@ -1,0 +1,13 @@
+pkgname = image-roll
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Image viewer with basic image manipulation tools
+url = https://flathub.org/apps/com.github.weclaw1.ImageRoll
+license = MIT
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.weclaw1.ImageRoll

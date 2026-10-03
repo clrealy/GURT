@@ -1,0 +1,13 @@
+pkgname = wxmaxima
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A graphical user interface for Maxima, a powerful computer algebra system
+url = https://flathub.org/apps/io.github.wxmaxima_developers.wxMaxima
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.wxmaxima_developers.wxMaxima

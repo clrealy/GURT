@@ -1,0 +1,15 @@
+# Amateur Radio Rig Control (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=flrig
+pkgver=flathub
+pkgrel=1
+pkgdesc="Amateur Radio Rig Control"
+url="https://flathub.org/apps/com.w1hkj.flrig"
+license="GPL-3.0"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.w1hkj.flrig

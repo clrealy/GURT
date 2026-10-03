@@ -1,0 +1,13 @@
+pkgname = dxx-rebirth
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Modern cross-platform port of the Descent engine
+url = https://flathub.org/apps/io.github.dxx_rebirth.dxx-rebirth
+license = GPL-3.0 AND
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.dxx_rebirth.dxx-rebirth

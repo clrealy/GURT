@@ -1,0 +1,13 @@
+pkgname = linux-show-player
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Cue player designed for stage productions
+url = https://flathub.org/apps/org.linuxshowplayer.LinuxShowPlayer
+license = GPL-3.0+
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.linuxshowplayer.LinuxShowPlayer

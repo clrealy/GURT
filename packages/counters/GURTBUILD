@@ -1,0 +1,15 @@
+# Keep track of anything (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=counters
+pkgver=flathub
+pkgrel=1
+pkgdesc="Keep track of anything"
+url="https://flathub.org/apps/io.gitlab.guillermop.Counters"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.gitlab.guillermop.Counters

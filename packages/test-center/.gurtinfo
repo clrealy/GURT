@@ -1,0 +1,13 @@
+pkgname = test-center
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Install and manage experiments
+url = https://flathub.org/apps/cx.modal.TestCenter
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = cx.modal.TestCenter

@@ -1,0 +1,11 @@
+pkgname = gopass
+pkgver = 1.17.3
+pkgrel = 1
+pkgdesc = Password manager for teams, built on gpg and git
+url = https://github.com/gopasspw/gopass
+license = MIT
+maintainer = clrealy
+category = security
+arch = x86_64
+arch = aarch64
+source = https://github.com/gopasspw/gopass/releases/download/v1.17.3/gopass-1.17.3-linux-amd64.tar.gz

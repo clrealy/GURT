@@ -1,0 +1,13 @@
+pkgname = popout3d
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Creates 3D images from photographs taken with a phone or camera
+url = https://flathub.org/apps/com.github.PopoutApps.popout3d
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.PopoutApps.popout3d

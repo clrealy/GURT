@@ -1,0 +1,15 @@
+# Turn-based space empire and galactic conquest game (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=freeorion
+pkgver=flathub
+pkgrel=1
+pkgdesc="Turn-based space empire and galactic conquest game"
+url="https://flathub.org/apps/org.freeorion.FreeOrion"
+license="GPL-2.0 AND CC-BY-SA-3.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.freeorion.FreeOrion

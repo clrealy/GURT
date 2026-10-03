@@ -1,0 +1,13 @@
+pkgname = mqtt-x
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Your All-in-One MQTT Client Toolbox
+url = https://flathub.org/apps/com.emqx.MQTTX
+license = Apache-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.emqx.MQTTX

@@ -1,0 +1,13 @@
+pkgname = jagged-alliance-2-stracciatella
+pkgver = flathub
+pkgrel = 1
+pkgdesc = An improved, cross-platform, stable Jagged Alliance 2 runtime
+url = https://flathub.org/apps/io.github.ja2_stracciatella.JA2-Stracciatella
+license = see Flathub
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.ja2_stracciatella.JA2-Stracciatella

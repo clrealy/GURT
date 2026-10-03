@@ -1,0 +1,15 @@
+# Companion app for HUAWEI earphones (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=openfreebuds
+pkgver=flathub
+pkgrel=1
+pkgdesc="Companion app for HUAWEI earphones"
+url="https://flathub.org/apps/pw.mmk.OpenFreebuds"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=pw.mmk.OpenFreebuds

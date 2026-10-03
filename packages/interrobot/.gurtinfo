@@ -1,0 +1,13 @@
+pkgname = interrobot
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Website crawler and analyzer
+url = https://flathub.org/apps/com.pragmar.interrobot
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.pragmar.interrobot

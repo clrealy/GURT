@@ -1,0 +1,13 @@
+pkgname = bitfighter
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Multiplayer vector graphics space game
+url = https://flathub.org/apps/org.bitfighter.Bitfighter
+license = GPL-2.0+
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.bitfighter.Bitfighter

@@ -1,0 +1,15 @@
+# Simple text editor (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=janus
+pkgver=flathub
+pkgrel=1
+pkgdesc="Simple text editor"
+url="https://flathub.org/apps/dev.pantheum.janus"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.pantheum.janus

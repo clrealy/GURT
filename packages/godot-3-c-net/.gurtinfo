@@ -1,0 +1,13 @@
+pkgname = godot-3-c-net
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Easily create 2D and 3D games
+url = https://flathub.org/apps/org.godotengine.Godot3Sharp
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.godotengine.Godot3Sharp

@@ -1,0 +1,13 @@
+pkgname = gb-enhanced+
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Game Boy family emulator
+url = https://flathub.org/apps/com.github.shonumi.gbe-plus
+license = GPL-2.0+
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.shonumi.gbe-plus

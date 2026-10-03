@@ -1,0 +1,15 @@
+# Brogue: Community Edition - a community-lead fork of the much-loved minimalist roguelike game (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=brogue-ce
+pkgver=flathub
+pkgrel=1
+pkgdesc="Brogue: Community Edition - a community-lead fork of the much-loved minimalist roguelike game"
+url="https://flathub.org/apps/com.github.tmewett.BrogueCE"
+license="AGPL-3.0+"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.tmewett.BrogueCE

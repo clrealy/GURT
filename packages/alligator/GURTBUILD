@@ -1,0 +1,15 @@
+# RSS feed reader (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=alligator
+pkgver=flathub
+pkgrel=1
+pkgdesc="RSS feed reader"
+url="https://flathub.org/apps/org.kde.alligator"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.alligator

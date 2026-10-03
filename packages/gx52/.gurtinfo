@@ -1,0 +1,13 @@
+pkgname = gx52
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Provides control of LEDs and MFD for Logitech X52 and X52 Pro H.O.T.A.S
+url = https://flathub.org/apps/com.leinardi.gx52
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.leinardi.gx52

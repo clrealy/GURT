@@ -1,0 +1,15 @@
+# Online multiplayer shooter game (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=teeworlds
+pkgver=flathub
+pkgrel=1
+pkgdesc="Online multiplayer shooter game"
+url="https://flathub.org/apps/com.teeworlds.Teeworlds"
+license="Zlib and CC-BY-SA-3.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.teeworlds.Teeworlds

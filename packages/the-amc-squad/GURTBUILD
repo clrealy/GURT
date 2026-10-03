@@ -1,0 +1,15 @@
+# Epic story-driven FPS running on the Build Engine (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=the-amc-squad
+pkgver=flathub
+pkgrel=1
+pkgdesc="Epic story-driven FPS running on the Build Engine"
+url="https://flathub.org/apps/io.itch.amcsquad.amcsquad"
+license="GPL-2.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.itch.amcsquad.amcsquad

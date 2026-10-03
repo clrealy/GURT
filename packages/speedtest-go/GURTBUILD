@@ -1,0 +1,20 @@
+# Test your internet speed from the terminal
+pkgname=speedtest-go
+pkgver=1.8.3
+pkgrel=1
+pkgdesc="Test your internet speed from the terminal"
+url="https://github.com/showwin/speedtest-go"
+license="MIT"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/showwin/speedtest-go/releases/download/${_tag}/speedtest-go_${pkgver}_Linux_x86_64.tar.gz")
+sha256sums=(c55caae22927cd719a2f8c0bef96ecf74b5fe8ca919ff9200d76328ae5de9477)
+
+package() {
+  local f
+  f=$(find . -type f -name speedtest-go -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name speedtest-go | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/speedtest-go"
+}

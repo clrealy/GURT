@@ -1,0 +1,15 @@
+# A free to play, graphical MMORPG (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=eternal-lands
+pkgver=flathub
+pkgrel=1
+pkgdesc="A free to play, graphical MMORPG"
+url="https://flathub.org/apps/org.pjbroad.EternallandsClient"
+license="QPL-1.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.pjbroad.EternallandsClient

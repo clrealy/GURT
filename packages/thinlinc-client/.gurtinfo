@@ -1,0 +1,13 @@
+pkgname = thinlinc-client
+pkgver = flathub
+pkgrel = 1
+pkgdesc = The Linux remote desktop server built on open source technology
+url = https://flathub.org/apps/se.cendio.tlclient
+license = see Flathub
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = se.cendio.tlclient

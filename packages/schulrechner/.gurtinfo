@@ -1,0 +1,13 @@
+pkgname = schulrechner
+pkgver = flathub
+pkgrel = 1
+pkgdesc = The calculator you know from school
+url = https://flathub.org/apps/io.github.CardiJey.schulrechner
+license = GPL-3.0-only
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.CardiJey.schulrechner

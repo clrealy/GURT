@@ -1,0 +1,13 @@
+pkgname = slimevr
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Accessible full-body tracking in VR
+url = https://flathub.org/apps/dev.slimevr.SlimeVR
+license = MIT OR Apache-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = dev.slimevr.SlimeVR

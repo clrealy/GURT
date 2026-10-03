@@ -1,0 +1,22 @@
+# Fast vulnerability scanner driven by templates
+pkgname=nuclei
+pkgver=3.11.1
+pkgrel=1
+pkgdesc="Fast vulnerability scanner driven by templates"
+url="https://github.com/projectdiscovery/nuclei"
+license="MIT"
+maintainer="clrealy"
+category="security"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/projectdiscovery/nuclei/releases/download/${_tag}/nuclei_${pkgver}_linux_amd64.zip")
+source_aarch64=("https://github.com/projectdiscovery/nuclei/releases/download/${_tag}/nuclei_${pkgver}_linux_arm64.zip")
+sha256sums_x86_64=(ea63d4ae232808cd7c6bc00d0142428e231fab59dae01042246097d195835ab6)
+sha256sums_aarch64=(8044e3d9768ba0a744b2872c1a87e813006f013da97ca9f50f7661a4203bec07)
+
+package() {
+  local f
+  f=$(find . -type f -name nuclei -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name nuclei | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/nuclei"
+}

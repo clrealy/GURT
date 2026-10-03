@@ -1,0 +1,13 @@
+pkgname = synology-note-station
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Powerful note-taking application for personal and professional use
+url = https://flathub.org/apps/com.synology.synology-note-station
+license = see Flathub
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.synology.synology-note-station

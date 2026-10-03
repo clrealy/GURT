@@ -1,0 +1,15 @@
+# Play board games in a 3D sandbox (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tabletop-club
+pkgver=flathub
+pkgrel=1
+pkgdesc="Play board games in a 3D sandbox"
+url="https://flathub.org/apps/net.tabletopclub.TabletopClub"
+license="MIT"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.tabletopclub.TabletopClub

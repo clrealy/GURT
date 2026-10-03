@@ -1,0 +1,13 @@
+pkgname = inochi-session
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Stream with Inochi2D puppets
+url = https://flathub.org/apps/com.inochi2d.inochi-session
+license = BSD-2-Clause
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.inochi2d.inochi-session

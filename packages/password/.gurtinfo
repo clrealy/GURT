@@ -1,0 +1,13 @@
+pkgname = password
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Password calculator and generator
+url = https://flathub.org/apps/io.gitlab.elescoute.password
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.gitlab.elescoute.password

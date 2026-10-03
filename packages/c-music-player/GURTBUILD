@@ -1,0 +1,15 @@
+# Console music player (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=c-music-player
+pkgver=flathub
+pkgrel=1
+pkgdesc="Console music player"
+url="https://flathub.org/apps/io.github.cmus.cmus"
+license="GPL-2.0"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.cmus.cmus

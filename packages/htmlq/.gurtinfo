@@ -1,0 +1,10 @@
+pkgname = htmlq
+pkgver = 0.4.0
+pkgrel = 1
+pkgdesc = Like jq, but for HTML
+url = https://github.com/mgdm/htmlq
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+source = https://github.com/mgdm/htmlq/releases/download/v0.4.0/htmlq-x86_64-linux.tar.gz

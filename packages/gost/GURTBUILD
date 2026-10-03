@@ -1,0 +1,22 @@
+# Simple security tunnel and proxy
+pkgname=gost
+pkgver=3.3.0
+pkgrel=1
+pkgdesc="Simple security tunnel and proxy"
+url="https://github.com/go-gost/gost"
+license="MIT"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/go-gost/gost/releases/download/${_tag}/gost_${pkgver}_linux_amd64.tar.gz")
+source_aarch64=("https://github.com/go-gost/gost/releases/download/${_tag}/gost_${pkgver}_linux_arm64.tar.gz")
+sha256sums_x86_64=(676fb7f78d267b6ae73df719c0c7f2b565dde7147da935cfafbc1e1da558b6d5)
+sha256sums_aarch64=(d03699e3f385d4ff5dad68046712adfcc7515325a064d2ab046e0bece30f8f8f)
+
+package() {
+  local f
+  f=$(find . -type f -name gost -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name gost | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/gost"
+}

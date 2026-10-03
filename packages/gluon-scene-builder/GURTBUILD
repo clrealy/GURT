@@ -1,0 +1,15 @@
+# Design JavaFX user interfaces (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=gluon-scene-builder
+pkgver=flathub
+pkgrel=1
+pkgdesc="Design JavaFX user interfaces"
+url="https://flathub.org/apps/com.gluonhq.SceneBuilder"
+license="0BSD"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.gluonhq.SceneBuilder

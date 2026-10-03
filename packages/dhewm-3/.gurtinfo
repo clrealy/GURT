@@ -1,0 +1,13 @@
+pkgname = dhewm-3
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Dhewm 3 is a Doom 3 GPL source port
+url = https://flathub.org/apps/org.dhewm3.Dhewm3
+license = GPL-3.0
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.dhewm3.Dhewm3

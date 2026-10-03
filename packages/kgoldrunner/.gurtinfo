@@ -1,0 +1,13 @@
+pkgname = kgoldrunner
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Hunt Gold, Dodge Enemies and Solve Puzzles
+url = https://flathub.org/apps/org.kde.kgoldrunner
+license = GPL-2.0+
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.kde.kgoldrunner

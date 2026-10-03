@@ -1,0 +1,13 @@
+pkgname = fingrom
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Platform-agnostic financial accounting application for personal finance management
+url = https://flathub.org/apps/com.tercad.fingrom
+license = CC-BY-NC-ND-4.0
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.tercad.fingrom

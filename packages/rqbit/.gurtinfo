@@ -1,0 +1,11 @@
+pkgname = rqbit
+pkgver = 9.0.1
+pkgrel = 1
+pkgdesc = Fast BitTorrent client with a web UI
+url = https://github.com/ikatson/rqbit
+license = Apache-2.0
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = rqbit::https://github.com/ikatson/rqbit/releases/download/v9.0.1/rqbit-linux-amd64

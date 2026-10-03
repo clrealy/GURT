@@ -1,0 +1,22 @@
+# Scans your Kubernetes cluster for problems
+pkgname=popeye
+pkgver=0.22.1
+pkgrel=1
+pkgdesc="Scans your Kubernetes cluster for problems"
+url="https://github.com/derailed/popeye"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/derailed/popeye/releases/download/${_tag}/popeye_linux_amd64.tar.gz")
+source_aarch64=("https://github.com/derailed/popeye/releases/download/${_tag}/popeye_linux_arm64.tar.gz")
+sha256sums_x86_64=(d58a3c0ba45805d452c32628320eecdcb5172fd5f42c82e12aeecc7a17eb930b)
+sha256sums_aarch64=(5188b0b521966113580f0fef7769173af6303061dee10df247536f9bb55fe988)
+
+package() {
+  local f
+  f=$(find . -type f -name popeye -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name popeye | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/popeye"
+}

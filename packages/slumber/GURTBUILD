@@ -1,0 +1,22 @@
+# Terminal HTTP client you set up with a file
+pkgname=slumber
+pkgver=5.3.0
+pkgrel=1
+pkgdesc="Terminal HTTP client you set up with a file"
+url="https://github.com/LucasPickering/slumber"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/LucasPickering/slumber/releases/download/${_tag}/slumber-x86_64-unknown-linux-musl.tar.xz")
+source_aarch64=("https://github.com/LucasPickering/slumber/releases/download/${_tag}/slumber-aarch64-unknown-linux-musl.tar.xz")
+sha256sums_x86_64=(3a813dcbed2b28a4438f9cb777566d8c06f026aa74e0623706ca4a2c48e2a8b4)
+sha256sums_aarch64=(b85f6bbfd47ca3f04065aee0cb92ee04cef0a234c8a2971ee2a6fc81278675ad)
+
+package() {
+  local f
+  f=$(find . -type f -name slumber -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name slumber | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/slumber"
+}

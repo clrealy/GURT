@@ -1,0 +1,13 @@
+pkgname = hurry-curry
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Multiplayer co-op coooking game
+url = https://flathub.org/apps/org.metamuffin.hurrycurry.client
+license = AGPL-3.0-only
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.metamuffin.hurrycurry.client

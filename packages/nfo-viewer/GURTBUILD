@@ -1,0 +1,15 @@
+# Viewer for NFO files (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=nfo-viewer
+pkgver=flathub
+pkgrel=1
+pkgdesc="Viewer for NFO files"
+url="https://flathub.org/apps/io.otsaloma.nfoview"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.otsaloma.nfoview

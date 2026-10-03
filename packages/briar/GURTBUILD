@@ -1,0 +1,15 @@
+# Secure messaging, anywhere (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=briar
+pkgver=flathub
+pkgrel=1
+pkgdesc="Secure messaging, anywhere"
+url="https://flathub.org/apps/org.briarproject.Briar"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.briarproject.Briar

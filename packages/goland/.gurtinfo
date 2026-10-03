@@ -1,0 +1,13 @@
+pkgname = goland
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Capable and Ergonomic Go IDE
+url = https://flathub.org/apps/com.jetbrains.GoLand
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.jetbrains.GoLand

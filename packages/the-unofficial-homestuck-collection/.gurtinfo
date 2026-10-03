@@ -1,0 +1,13 @@
+pkgname = the-unofficial-homestuck-collection
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Offline collection of Homestuck and its related works
+url = https://flathub.org/apps/dev.bambosh.UnofficialHomestuckCollection
+license = GPL-3.0
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = dev.bambosh.UnofficialHomestuckCollection

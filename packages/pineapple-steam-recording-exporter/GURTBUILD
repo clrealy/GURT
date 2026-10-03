@@ -1,0 +1,15 @@
+# Export Steam game recordings to MP4 videos (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=pineapple-steam-recording-exporter
+pkgver=flathub
+pkgrel=1
+pkgdesc="Export Steam game recordings to MP4 videos"
+url="https://flathub.org/apps/net.blumia.pineapple-steam-recording-exporter"
+license="GPL-3.0"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.blumia.pineapple-steam-recording-exporter

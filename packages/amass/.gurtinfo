@@ -1,0 +1,11 @@
+pkgname = amass
+pkgver = 5.1.1
+pkgrel = 1
+pkgdesc = Map a network's attack surface
+url = https://github.com/owasp-amass/amass
+license = Apache-2.0
+maintainer = clrealy
+category = security
+arch = x86_64
+arch = aarch64
+source = https://github.com/owasp-amass/amass/releases/download/v5.1.1/amass_linux_amd64.tar.gz

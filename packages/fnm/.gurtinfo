@@ -1,0 +1,10 @@
+pkgname = fnm
+pkgver = 1.39.0
+pkgrel = 1
+pkgdesc = Fast Node.js version manager
+url = https://github.com/Schniz/fnm
+license = GPL-3.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+source = https://github.com/Schniz/fnm/releases/download/v1.39.0/fnm-linux.zip

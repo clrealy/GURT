@@ -1,0 +1,20 @@
+# Like curl, but for gRPC servers
+pkgname=grpcurl
+pkgver=1.9.4
+pkgrel=1
+pkgdesc="Like curl, but for gRPC servers"
+url="https://github.com/fullstorydev/grpcurl"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/fullstorydev/grpcurl/releases/download/${_tag}/grpcurl_${pkgver}_Linux_x86_64.tar.gz")
+sha256sums=(97e13d58d2733a0e62cd2571d1d5f0c02823f0d25282f08bddedf1ad9c5d1736)
+
+package() {
+  local f
+  f=$(find . -type f -name grpcurl -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name grpcurl | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/grpcurl"
+}

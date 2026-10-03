@@ -1,0 +1,13 @@
+pkgname = blockstream
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A simple and secure Bitcoin and Liquid Network wallet
+url = https://flathub.org/apps/com.blockstream.Green
+license = GPL-3.0-only
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.blockstream.Green

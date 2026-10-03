@@ -1,0 +1,13 @@
+pkgname = linuxdc++
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A file-sharing client for the Direct Connect network
+url = https://flathub.org/apps/com.pypyrev.linuxdcpp
+license = GPL-2.0-only
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.pypyrev.linuxdcpp

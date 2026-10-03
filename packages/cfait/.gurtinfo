@@ -1,0 +1,13 @@
+pkgname = cfait
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Powerful, fast and elegant CalDAV task manager
+url = https://flathub.org/apps/com.trougnouf.Cfait
+license = GPL-3.0-only
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.trougnouf.Cfait

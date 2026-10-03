@@ -1,0 +1,13 @@
+pkgname = feishu
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A collaboration platform
+url = https://flathub.org/apps/cn.feishu.Feishu
+license = see Flathub
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = cn.feishu.Feishu

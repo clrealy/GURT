@@ -1,0 +1,18 @@
+# A fast jq clone
+pkgname=jaq
+pkgver=3.1.1
+pkgrel=1
+pkgdesc="A fast jq clone"
+url="https://github.com/01mf02/jaq"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("jaq::https://github.com/01mf02/jaq/releases/download/${_tag}/jaq-x86_64-unknown-linux-musl")
+sha256sums=(b9a07a6f10f0305d96d333ea7db69d60704eb4d4e71c98094157e3cc9fe08110)
+
+package() {
+  install -Dm755 jaq "$pkgdir$prefix/bin/jaq"
+}

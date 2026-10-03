@@ -1,0 +1,15 @@
+# Browser overlays on your screen (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=stream-overlay
+pkgver=flathub
+pkgrel=1
+pkgdesc="Browser overlays on your screen"
+url="https://flathub.org/apps/com.hperrin.StreamOverlay"
+license="Apache-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.hperrin.StreamOverlay

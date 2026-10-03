@@ -1,0 +1,13 @@
+pkgname = giada
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Your hardcore loop machine
+url = https://flathub.org/apps/com.giadamusic.Giada
+license = GPL-2.0+
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.giadamusic.Giada

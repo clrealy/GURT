@@ -1,0 +1,15 @@
+# Procedural texture generation and mesh painting tool (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=material-maker
+pkgver=flathub
+pkgrel=1
+pkgdesc="Procedural texture generation and mesh painting tool"
+url="https://flathub.org/apps/io.github.RodZill4.Material-Maker"
+license="MIT"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.RodZill4.Material-Maker

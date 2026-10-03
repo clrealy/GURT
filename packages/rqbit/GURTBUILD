@@ -1,0 +1,20 @@
+# Fast BitTorrent client with a web UI
+pkgname=rqbit
+pkgver=9.0.1
+pkgrel=1
+pkgdesc="Fast BitTorrent client with a web UI"
+url="https://github.com/ikatson/rqbit"
+license="Apache-2.0"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("rqbit::https://github.com/ikatson/rqbit/releases/download/${_tag}/rqbit-linux-amd64")
+source_aarch64=("rqbit::https://github.com/ikatson/rqbit/releases/download/${_tag}/rqbit-linux-arm64")
+sha256sums_x86_64=(82ed2c23f4c7b91bb2c92eaab92e4a850d386cdf337bcdf9e0971c8ce3da4335)
+sha256sums_aarch64=(9ac50a7d1917cd458111265a12346a924b4f7cea7520327782ed5bd6f423b561)
+
+package() {
+  install -Dm755 rqbit "$pkgdir$prefix/bin/rqbit"
+}

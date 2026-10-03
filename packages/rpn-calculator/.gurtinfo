@@ -1,0 +1,13 @@
+pkgname = rpn-calculator
+pkgver = flathub
+pkgrel = 1
+pkgdesc = HP Calculator Simulator
+url = https://flathub.org/apps/io.github.mike632t.x11-calc
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.mike632t.x11-calc

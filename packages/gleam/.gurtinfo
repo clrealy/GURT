@@ -1,0 +1,11 @@
+pkgname = gleam
+pkgver = 1.18.1
+pkgrel = 1
+pkgdesc = Friendly, type-safe language for the Erlang VM
+url = https://github.com/gleam-lang/gleam
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/gleam-lang/gleam/releases/download/v1.18.1/gleam-v1.18.1-x86_64-unknown-linux-musl.tar.gz

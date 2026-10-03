@@ -1,0 +1,15 @@
+# Stay on track during speeches (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=teleprompter
+pkgver=flathub
+pkgrel=1
+pkgdesc="Stay on track during speeches"
+url="https://flathub.org/apps/io.github.nokse22.teleprompter"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.nokse22.teleprompter

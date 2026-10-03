@@ -1,0 +1,15 @@
+# Programmable calculator for complex expressions (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=abcalc-plus
+pkgver=flathub
+pkgrel=1
+pkgdesc="Programmable calculator for complex expressions"
+url="https://flathub.org/apps/com.alliedbits.ABCalcPlus"
+license="see Flathub"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.alliedbits.ABCalcPlus

@@ -1,0 +1,15 @@
+# Anime imageboard browser, aggregator, downloader, tagger, converter, collection manager (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tsuki-tag
+pkgver=flathub
+pkgrel=1
+pkgdesc="Anime imageboard browser, aggregator, downloader, tagger, converter, collection manager"
+url="https://flathub.org/apps/eu.ngdevelopment.tsukitag"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=eu.ngdevelopment.tsukitag

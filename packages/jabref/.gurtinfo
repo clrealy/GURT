@@ -1,0 +1,13 @@
+pkgname = jabref
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Graphical Java application for managing BibTeX and biblatex (.bib) databases
+url = https://flathub.org/apps/org.jabref.jabref
+license = MIT
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.jabref.jabref

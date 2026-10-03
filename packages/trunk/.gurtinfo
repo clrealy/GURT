@@ -1,0 +1,11 @@
+pkgname = trunk
+pkgver = 0.21.14
+pkgrel = 1
+pkgdesc = Build and bundle Rust WebAssembly web apps
+url = https://github.com/trunk-rs/trunk
+license = MIT OR Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/trunk-rs/trunk/releases/download/v0.21.14/trunk-x86_64-unknown-linux-musl.tar.gz

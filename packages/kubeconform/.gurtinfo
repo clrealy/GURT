@@ -1,0 +1,11 @@
+pkgname = kubeconform
+pkgver = 0.8.0
+pkgrel = 1
+pkgdesc = Validate Kubernetes manifests, fast
+url = https://github.com/yannh/kubeconform
+license = Apache-2.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/yannh/kubeconform/releases/download/v0.8.0/kubeconform-linux-amd64.tar.gz

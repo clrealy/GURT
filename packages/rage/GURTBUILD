@@ -1,0 +1,23 @@
+# age file encryption written in Rust
+pkgname=rage
+pkgver=0.12.1
+pkgrel=1
+pkgdesc="age file encryption written in Rust"
+url="https://github.com/str4d/rage"
+license="MIT OR Apache-2.0"
+maintainer="clrealy"
+category="security"
+arch=(x86_64)
+aliases=(rage-keygen)
+_tag=v$pkgver
+# official prebuilt release binaries
+source=("https://github.com/str4d/rage/releases/download/${_tag}/rage-${_tag}-x86_64-linux.tar.gz")
+sha256sums=(c5d7ab41fbf1213590e89721fd2b8eb122e84518c155ce35866f1c5759a3a29f)
+
+package() {
+  local f
+  f=$(find . -type f -name rage -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name rage | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/rage"
+  f=$(find . -type f -name rage-keygen -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name rage-keygen | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/rage-keygen"
+}

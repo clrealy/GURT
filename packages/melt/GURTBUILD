@@ -1,0 +1,20 @@
+# Back up SSH keys as seed words
+pkgname=melt
+pkgver=0.6.2
+pkgrel=1
+pkgdesc="Back up SSH keys as seed words"
+url="https://github.com/charmbracelet/melt"
+license="MIT"
+maintainer="clrealy"
+category="security"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/charmbracelet/melt/releases/download/${_tag}/melt_${pkgver}_Linux_x86_64.tar.gz")
+sha256sums=(82f543dcade2244a86196a506a28dcd41b55d5e0be71d692d291fc4f6803ac82)
+
+package() {
+  local f
+  f=$(find . -type f -name melt -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name melt | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/melt"
+}

@@ -1,0 +1,22 @@
+# Diff for YAML files that makes sense
+pkgname=dyff
+pkgver=1.12.0
+pkgrel=1
+pkgdesc="Diff for YAML files that makes sense"
+url="https://github.com/homeport/dyff"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/homeport/dyff/releases/download/${_tag}/dyff_${pkgver}_linux_amd64.tar.gz")
+source_aarch64=("https://github.com/homeport/dyff/releases/download/${_tag}/dyff_${pkgver}_linux_arm64.tar.gz")
+sha256sums_x86_64=(50b43017a7474c2216694d0b5387439488a1d3c2b5eefe1674cd0e5c18bc0316)
+sha256sums_aarch64=(c9710f57940306abc1e34e2bf1a1ba94e6a92c543cde4e5dfaea169ded06e832)
+
+package() {
+  local f
+  f=$(find . -type f -name dyff -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name dyff | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/dyff"
+}

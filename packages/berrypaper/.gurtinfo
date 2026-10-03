@@ -1,0 +1,13 @@
+pkgname = berrypaper
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A unofficial Client to download Raspberry Pi magazines
+url = https://flathub.org/apps/de.informationsanarchistik.teapot.megamichi.berrypaper
+license = AGPL-3.0-or-later
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = de.informationsanarchistik.teapot.megamichi.berrypaper

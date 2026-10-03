@@ -1,0 +1,13 @@
+pkgname = invesalius
+pkgver = flathub
+pkgrel = 1
+pkgdesc = 3D medical imaging reconstruction software
+url = https://flathub.org/apps/br.gov.cti.invesalius
+license = GPL-2.0-only
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = br.gov.cti.invesalius

@@ -1,0 +1,13 @@
+pkgname = taisei-project
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Bullet hell shoot 'em up game set in the Tōhō universe
+url = https://flathub.org/apps/org.taisei_project.Taisei
+license = MIT and CC-BY-4.0 and CC0-1.0
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.taisei_project.Taisei

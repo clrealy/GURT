@@ -1,0 +1,15 @@
+# Write novels and essays (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=wonderpen
+pkgver=flathub
+pkgrel=1
+pkgdesc="Write novels and essays"
+url="https://flathub.org/apps/com.tominlab.wonderpen"
+license="see Flathub"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.tominlab.wonderpen

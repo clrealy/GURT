@@ -1,0 +1,15 @@
+# VESC® Tool is the all new and 100% revised replacement for BLDC-Tool (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=vesctool
+pkgver=flathub
+pkgrel=1
+pkgdesc="VESC® Tool is the all new and 100% revised replacement for BLDC-Tool"
+url="https://flathub.org/apps/com.vesc_project.VescTool"
+license="GPL-3.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.vesc_project.VescTool

@@ -1,0 +1,15 @@
+# Open source Stronghold fan remake (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=stone-kingdoms
+pkgver=flathub
+pkgrel=1
+pkgdesc="Open source Stronghold fan remake"
+url="https://flathub.org/apps/io.gitlab.stone_kingdoms.StoneKingdoms"
+license="Apache-2.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.gitlab.stone_kingdoms.StoneKingdoms

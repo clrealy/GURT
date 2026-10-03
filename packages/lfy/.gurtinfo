@@ -1,0 +1,13 @@
+pkgname = lfy
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Translation software designed for reading scientific research literature, supporting mainstream online engines and Ollama for local LLM workflows
+url = https://flathub.org/apps/cool.ldr.lfy
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = cool.ldr.lfy

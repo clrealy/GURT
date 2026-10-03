@@ -1,0 +1,15 @@
+# Multiplayer co-op coooking game (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=hurry-curry
+pkgver=flathub
+pkgrel=1
+pkgdesc="Multiplayer co-op coooking game"
+url="https://flathub.org/apps/org.metamuffin.hurrycurry.client"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.metamuffin.hurrycurry.client

@@ -1,0 +1,15 @@
+# Watch torrents with your friends (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=multiplex
+pkgver=flathub
+pkgrel=1
+pkgdesc="Watch torrents with your friends"
+url="https://flathub.org/apps/com.pojtinger.felicitas.Multiplex"
+license="AGPL-3.0-or-later"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.pojtinger.felicitas.Multiplex

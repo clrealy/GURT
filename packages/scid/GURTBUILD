@@ -1,0 +1,15 @@
+# A chess database application (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=scid
+pkgver=flathub
+pkgrel=1
+pkgdesc="A chess database application"
+url="https://flathub.org/apps/io.github.benini.scid"
+license="GPL-2.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.benini.scid

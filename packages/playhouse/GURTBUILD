@@ -1,0 +1,15 @@
+# Playground for HTML/CSS/JavaScript (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=playhouse
+pkgver=flathub
+pkgrel=1
+pkgdesc="Playground for HTML/CSS/JavaScript"
+url="https://flathub.org/apps/re.sonny.Playhouse"
+license="GPL-3.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=re.sonny.Playhouse

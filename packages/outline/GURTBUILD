@@ -1,0 +1,15 @@
+# Access to the free and open Internet (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=outline
+pkgver=flathub
+pkgrel=1
+pkgdesc="Access to the free and open Internet"
+url="https://flathub.org/apps/org.getoutline.OutlineClient"
+license="Apache-2.0"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.getoutline.OutlineClient

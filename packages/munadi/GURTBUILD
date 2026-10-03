@@ -1,0 +1,15 @@
+# Your simple and beautiful athan app (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=munadi
+pkgver=flathub
+pkgrel=1
+pkgdesc="Your simple and beautiful athan app"
+url="https://flathub.org/apps/org.munadi.Munadi"
+license="AGPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.munadi.Munadi

@@ -1,0 +1,13 @@
+pkgname = corepaint
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A paint app for C Suite
+url = https://flathub.org/apps/org.cubocore.CorePaint
+license = GPL-3.0
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.cubocore.CorePaint

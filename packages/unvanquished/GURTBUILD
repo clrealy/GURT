@@ -1,0 +1,15 @@
+# Fast paced, first person strategy game (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=unvanquished
+pkgver=flathub
+pkgrel=1
+pkgdesc="Fast paced, first person strategy game"
+url="https://flathub.org/apps/net.unvanquished.Unvanquished"
+license="MIT AND GPL-3.0-or-later AND Zlib AND BSD-3-Clause"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.unvanquished.Unvanquished

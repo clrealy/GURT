@@ -1,0 +1,15 @@
+# Icecast and Shoutcast streaming client (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=butt
+pkgver=flathub
+pkgrel=1
+pkgdesc="Icecast and Shoutcast streaming client"
+url="https://flathub.org/apps/de.danielnoethen.butt"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=de.danielnoethen.butt

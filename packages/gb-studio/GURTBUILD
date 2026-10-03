@@ -1,0 +1,15 @@
+# A quick and easy to use drag and drop retro game creator for Game Boy (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=gb-studio
+pkgver=flathub
+pkgrel=1
+pkgdesc="A quick and easy to use drag and drop retro game creator for Game Boy"
+url="https://flathub.org/apps/dev.gbstudio.gb-studio"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.gbstudio.gb-studio

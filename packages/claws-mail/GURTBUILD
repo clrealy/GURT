@@ -1,0 +1,15 @@
+# Claws Mail is an email client (and news reader), based on GTK+ (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=claws-mail
+pkgver=flathub
+pkgrel=1
+pkgdesc="Claws Mail is an email client (and news reader), based on GTK+"
+url="https://flathub.org/apps/org.claws_mail.Claws-Mail"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.claws_mail.Claws-Mail

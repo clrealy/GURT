@@ -1,0 +1,15 @@
+# Open source user-first messaging platform (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=revolt
+pkgver=flathub
+pkgrel=1
+pkgdesc="Open source user-first messaging platform"
+url="https://flathub.org/apps/chat.revolt.RevoltDesktop"
+license="AGPL-3.0"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=chat.revolt.RevoltDesktop

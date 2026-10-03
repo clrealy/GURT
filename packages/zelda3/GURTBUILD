@@ -1,0 +1,15 @@
+# Zelda3 is a reverse engineered clone of Zelda - A Link to the Past (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=zelda3
+pkgver=flathub
+pkgrel=1
+pkgdesc="Zelda3 is a reverse engineered clone of Zelda - A Link to the Past"
+url="https://flathub.org/apps/io.github.snesrev.Zelda3"
+license="MIT"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.snesrev.Zelda3

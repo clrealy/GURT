@@ -1,0 +1,13 @@
+pkgname = freeciv21
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Develop your civilization from humble roots to a global empire
+url = https://flathub.org/apps/net.longturn.freeciv21
+license = GPL-3.0+
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.longturn.freeciv21

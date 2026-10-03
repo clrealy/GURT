@@ -1,0 +1,22 @@
+# Plain text note-taking assistant for Markdown notes
+pkgname=zk
+pkgver=0.15.6
+pkgrel=1
+pkgdesc="Plain text note-taking assistant for Markdown notes"
+url="https://github.com/zk-org/zk"
+license="GPL-3.0"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/zk-org/zk/releases/download/${_tag}/zk-${_tag}-linux-amd64.tar.gz")
+source_aarch64=("https://github.com/zk-org/zk/releases/download/${_tag}/zk-${_tag}-linux-arm64.tar.gz")
+sha256sums_x86_64=(50b2f0a8c533d607e5a8a1f478fe78d5585317178bd86456659c049965a8945d)
+sha256sums_aarch64=(80550e5ab50b826fef660e72fc6c7c8c872ad8673ffb798dabc32c714f63fdd5)
+
+package() {
+  local f
+  f=$(find . -type f -name zk -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name zk | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/zk"
+}

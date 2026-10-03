@@ -1,0 +1,13 @@
+pkgname = cookbook
+pkgver = flathub
+pkgrel = 1
+pkgdesc = The easy to use electronic cookbook
+url = https://flathub.org/apps/de.flose.Kochbuch
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = de.flose.Kochbuch

@@ -1,0 +1,15 @@
+# Viewer and editor for mask layouts (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=klayout
+pkgver=flathub
+pkgrel=1
+pkgdesc="Viewer and editor for mask layouts"
+url="https://flathub.org/apps/de.klayout.KLayout"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=de.klayout.KLayout

@@ -1,0 +1,13 @@
+pkgname = vassal
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Play boardgames, virtually
+url = https://flathub.org/apps/org.vassalengine.vassal
+license = LGPL-2.1-or-later
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.vassalengine.vassal

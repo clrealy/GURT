@@ -1,0 +1,13 @@
+pkgname = syncbackup
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Backup and mirror your drives
+url = https://flathub.org/apps/com.darhon.syncbackup
+license = GPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.darhon.syncbackup

@@ -1,0 +1,13 @@
+pkgname = detect-it-easy
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Advanced file analyzer
+url = https://flathub.org/apps/io.github.horsicq.detect-it-easy
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.horsicq.detect-it-easy

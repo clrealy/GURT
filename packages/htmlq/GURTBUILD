@@ -1,0 +1,20 @@
+# Like jq, but for HTML
+pkgname=htmlq
+pkgver=0.4.0
+pkgrel=1
+pkgdesc="Like jq, but for HTML"
+url="https://github.com/mgdm/htmlq"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/mgdm/htmlq/releases/download/${_tag}/htmlq-x86_64-linux.tar.gz")
+sha256sums=(4f63c8d9d835aa1f18f472da2eb5fc88295ede6aebcc7949fd428403707fc74a)
+
+package() {
+  local f
+  f=$(find . -type f -name htmlq -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name htmlq | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/htmlq"
+}

@@ -1,0 +1,15 @@
+# Collection Manager (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tellico
+pkgver=flathub
+pkgrel=1
+pkgdesc="Collection Manager"
+url="https://flathub.org/apps/org.kde.tellico"
+license="GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.tellico

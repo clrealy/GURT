@@ -1,0 +1,13 @@
+pkgname = polyphone
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Turn any sound into a musical instrument
+url = https://flathub.org/apps/com.polyphone_soundfonts.polyphone
+license = GPL-3.0+
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.polyphone_soundfonts.polyphone

@@ -1,0 +1,15 @@
+# RISC-V Assembler and Runtime Simulator (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=rars
+pkgver=flathub
+pkgrel=1
+pkgdesc="RISC-V Assembler and Runtime Simulator"
+url="https://flathub.org/apps/io.github.TheThirdOne.rars"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.TheThirdOne.rars

@@ -1,0 +1,13 @@
+pkgname = exercise-timer
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Train and rest with high intensity
+url = https://flathub.org/apps/xyz.safeworlds.hiit
+license = GPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = xyz.safeworlds.hiit

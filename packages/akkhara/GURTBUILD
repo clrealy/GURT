@@ -1,0 +1,15 @@
+# The dictionary app you need (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=akkhara
+pkgver=flathub
+pkgrel=1
+pkgdesc="The dictionary app you need"
+url="https://flathub.org/apps/io.github.fidele007.akkhara"
+license="CC-BY-NC-ND-3.0"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.fidele007.akkhara

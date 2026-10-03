@@ -1,0 +1,15 @@
+# An advanced subdivision modeler (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=wings-3d
+pkgver=flathub
+pkgrel=1
+pkgdesc="An advanced subdivision modeler"
+url="https://flathub.org/apps/com.wings3d.WINGS"
+license="Apache-2.0"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.wings3d.WINGS

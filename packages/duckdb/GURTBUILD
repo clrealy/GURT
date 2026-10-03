@@ -1,0 +1,20 @@
+# Fast in-process SQL database for analytics
+pkgname=duckdb
+pkgver=1.5.6
+pkgrel=1
+pkgdesc="Fast in-process SQL database for analytics"
+url="https://github.com/duckdb/duckdb"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("duckdb.gz::https://github.com/duckdb/duckdb/releases/download/${_tag}/duckdb_cli-linux-amd64.gz")
+source_aarch64=("duckdb.gz::https://github.com/duckdb/duckdb/releases/download/${_tag}/duckdb_cli-linux-arm64.gz")
+sha256sums_x86_64=(cce2687a38681db644c248198b99ecd86170ff47e324c5f33e50c0042f142839)
+sha256sums_aarch64=(1af0541e649a3ae34eb20eec2ca564308bf0e8993e5d6dba6be77bfb289a2718)
+
+package() {
+  install -Dm755 duckdb "$pkgdir$prefix/bin/duckdb"
+}

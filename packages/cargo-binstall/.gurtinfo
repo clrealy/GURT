@@ -1,0 +1,11 @@
+pkgname = cargo-binstall
+pkgver = 1.25.0
+pkgrel = 1
+pkgdesc = Install Rust tools as binaries instead of compiling them
+url = https://github.com/cargo-bins/cargo-binstall
+license = GPL-3.0
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/cargo-bins/cargo-binstall/releases/download/v1.25.0/cargo-binstall-x86_64-unknown-linux-musl.tgz

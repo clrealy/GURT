@@ -1,0 +1,11 @@
+pkgname = kubecolor
+pkgver = 0.8.0
+pkgrel = 1
+pkgdesc = Colorized kubectl output
+url = https://github.com/kubecolor/kubecolor
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/kubecolor/kubecolor/releases/download/v0.8.0/kubecolor_0.8.0_linux_amd64.tar.gz

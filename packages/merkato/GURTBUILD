@@ -1,0 +1,15 @@
+# A modern financial market tracker for GNOME (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=merkato
+pkgver=flathub
+pkgrel=1
+pkgdesc="A modern financial market tracker for GNOME"
+url="https://flathub.org/apps/com.ekonomikas.merkato"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.ekonomikas.merkato

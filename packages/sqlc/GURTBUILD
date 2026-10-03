@@ -1,0 +1,22 @@
+# Generate type-safe code from SQL
+pkgname=sqlc
+pkgver=1.31.1
+pkgrel=1
+pkgdesc="Generate type-safe code from SQL"
+url="https://github.com/sqlc-dev/sqlc"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/sqlc-dev/sqlc/releases/download/${_tag}/sqlc_${pkgver}_linux_amd64.tar.gz")
+source_aarch64=("https://github.com/sqlc-dev/sqlc/releases/download/${_tag}/sqlc_${pkgver}_linux_arm64.tar.gz")
+sha256sums_x86_64=(497ae4fcdfa64c5b0c311ffe4c2bd991e43991e82e5367792ed78bc2dca27354)
+sha256sums_aarch64=(b7cae247740d0c51a1e657479e5b2d21e6fef428f596682a01bc55bf4ab8a23d)
+
+package() {
+  local f
+  f=$(find . -type f -name sqlc -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name sqlc | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/sqlc"
+}

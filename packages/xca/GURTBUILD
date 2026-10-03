@@ -1,0 +1,15 @@
+# X Certificate and Key management (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=xca
+pkgver=flathub
+pkgrel=1
+pkgdesc="X Certificate and Key management"
+url="https://flathub.org/apps/de.hohnstaedt.xca"
+license="BSD-3-Clause"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=de.hohnstaedt.xca

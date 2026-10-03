@@ -1,0 +1,15 @@
+# Visual web editor for professionals (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=pinegrow
+pkgver=flathub
+pkgrel=1
+pkgdesc="Visual web editor for professionals"
+url="https://flathub.org/apps/com.pinegrow.Pinegrow"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.pinegrow.Pinegrow

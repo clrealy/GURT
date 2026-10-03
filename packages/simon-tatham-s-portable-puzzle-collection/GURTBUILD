@@ -1,0 +1,15 @@
+# Puzzle game collection (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=simon-tatham-s-portable-puzzle-collection
+pkgver=flathub
+pkgrel=1
+pkgdesc="Puzzle game collection"
+url="https://flathub.org/apps/uk.org.greenend.chiark.sgtatham.puzzles"
+license="MIT"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=uk.org.greenend.chiark.sgtatham.puzzles

@@ -1,0 +1,15 @@
+# The hacker's browser (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=nyxt
+pkgver=flathub
+pkgrel=1
+pkgdesc="The hacker's browser"
+url="https://flathub.org/apps/engineer.atlas.Nyxt"
+license="BSD-3-Clause"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=engineer.atlas.Nyxt

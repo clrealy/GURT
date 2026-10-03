@@ -1,0 +1,13 @@
+pkgname = password-generator
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Create strong passwords in seconds
+url = https://flathub.org/apps/io.github.danst0.passwordgenerator
+license = CC-BY-SA-4.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.danst0.passwordgenerator

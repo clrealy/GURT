@@ -1,0 +1,15 @@
+# Learn while having fun (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=egghead
+pkgver=flathub
+pkgrel=1
+pkgdesc="Learn while having fun"
+url="https://flathub.org/apps/io.github.josephmawa.Egghead"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.josephmawa.Egghead

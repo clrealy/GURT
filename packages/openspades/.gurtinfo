@@ -1,0 +1,13 @@
+pkgname = openspades
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Open Source voxel shooter
+url = https://flathub.org/apps/jp.yvt.OpenSpades
+license = GPL-3.0+ and
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = jp.yvt.OpenSpades

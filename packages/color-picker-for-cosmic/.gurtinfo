@@ -1,0 +1,13 @@
+pkgname = color-picker-for-cosmic
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A color picker for the COSMIC™ desktop
+url = https://flathub.org/apps/io.github.pixeldoted.cosmic-ext-color-picker
+license = GPL-3.0-only
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.pixeldoted.cosmic-ext-color-picker

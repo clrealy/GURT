@@ -1,0 +1,15 @@
+# A re-implementation of Jazz Jackrabbit 2 (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=jazz-resurrection
+pkgver=flathub
+pkgrel=1
+pkgdesc="A re-implementation of Jazz Jackrabbit 2"
+url="https://flathub.org/apps/dev.de4th.jazz2"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.de4th.jazz2

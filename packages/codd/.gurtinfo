@@ -1,0 +1,13 @@
+pkgname = codd
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Lightweight PostgreSQL client
+url = https://flathub.org/apps/io.github.anil_e.Codd
+license = AGPL-3.0-or-later
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.anil_e.Codd

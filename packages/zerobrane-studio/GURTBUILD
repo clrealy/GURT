@@ -1,0 +1,15 @@
+# Lightweight Lua-based IDE for Lua (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=zerobrane-studio
+pkgver=flathub
+pkgrel=1
+pkgdesc="Lightweight Lua-based IDE for Lua"
+url="https://flathub.org/apps/com.zerobrane.studio"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.zerobrane.studio

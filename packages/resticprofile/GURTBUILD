@@ -1,0 +1,22 @@
+# Config profiles and scheduling for restic backups
+pkgname=resticprofile
+pkgver=0.33.1
+pkgrel=1
+pkgdesc="Config profiles and scheduling for restic backups"
+url="https://github.com/creativeprojects/resticprofile"
+license="GPL-3.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/creativeprojects/resticprofile/releases/download/${_tag}/resticprofile_${pkgver}_linux_amd64.tar.gz")
+source_aarch64=("https://github.com/creativeprojects/resticprofile/releases/download/${_tag}/resticprofile_${pkgver}_linux_arm64.tar.gz")
+sha256sums_x86_64=(5fecd20de21811a750a4d61e841b2258fdf018bbfffad136c96078df27b452df)
+sha256sums_aarch64=(0d547cc0c34a83a8c1d884271a70340da90fe8750ac4a2d7de8ed7aa1d9bb9c7)
+
+package() {
+  local f
+  f=$(find . -type f -name resticprofile -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name resticprofile | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/resticprofile"
+}

@@ -1,0 +1,22 @@
+# Map a network's attack surface
+pkgname=amass
+pkgver=5.1.1
+pkgrel=1
+pkgdesc="Map a network's attack surface"
+url="https://github.com/owasp-amass/amass"
+license="Apache-2.0"
+maintainer="clrealy"
+category="security"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/owasp-amass/amass/releases/download/${_tag}/amass_linux_amd64.tar.gz")
+source_aarch64=("https://github.com/owasp-amass/amass/releases/download/${_tag}/amass_linux_arm64.tar.gz")
+sha256sums_x86_64=(5e22b5f0239e7eb79439d60d43d3cd20dca2478588bc2242e91ab0c4f8fa40dd)
+sha256sums_aarch64=(d05aace46ca5216f91226ffd23eeb4ce8ad2aa2548efe3a2bd59e81e6b0765b5)
+
+package() {
+  local f
+  f=$(find . -type f -name amass -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name amass | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/amass"
+}

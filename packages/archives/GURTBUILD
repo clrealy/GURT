@@ -1,0 +1,15 @@
+# Create and view web archives (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=archives
+pkgver=flathub
+pkgrel=1
+pkgdesc="Create and view web archives"
+url="https://flathub.org/apps/dev.geopjr.Archives"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.geopjr.Archives

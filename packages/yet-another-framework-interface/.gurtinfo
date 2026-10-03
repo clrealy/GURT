@@ -1,0 +1,13 @@
+pkgname = yet-another-framework-interface
+pkgver = flathub
+pkgrel = 1
+pkgdesc = YAFI is another GUI for the Framework Laptop Embedded Controller
+url = https://flathub.org/apps/au.stevetech.yafi
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = au.stevetech.yafi

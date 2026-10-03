@@ -1,0 +1,22 @@
+# Highlights log files so you can actually read them (run tspin)
+pkgname=tailspin
+pkgver=7.0.0
+pkgrel=1
+pkgdesc="Highlights log files so you can actually read them (run tspin)"
+url="https://github.com/bensadeh/tailspin"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+aliases=(tspin)
+# official prebuilt release binary
+source_x86_64=("https://github.com/bensadeh/tailspin/releases/download/${pkgver}/tailspin-x86_64-unknown-linux-musl.tar.gz")
+source_aarch64=("https://github.com/bensadeh/tailspin/releases/download/${pkgver}/tailspin-aarch64-unknown-linux-musl.tar.gz")
+sha256sums_x86_64=(f2de9268dc24811908e63a170507d860ac90c7f6a2f1937f59e5cca78cef21a2)
+sha256sums_aarch64=(de78d9e9204af6817cc3dae342e92d41c41975c2bb11ae1abeabf30c43bc86ad)
+
+package() {
+  local f
+  f=$(find . -type f -name tspin -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name tspin | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/tspin"
+}

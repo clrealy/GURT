@@ -1,0 +1,13 @@
+pkgname = reminders
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Set reminders for yourself
+url = https://flathub.org/apps/io.github.dgsasha.Remembrance
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.dgsasha.Remembrance

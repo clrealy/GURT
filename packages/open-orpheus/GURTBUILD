@@ -1,0 +1,15 @@
+# Netease Cloud Music for Linux (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=open-orpheus
+pkgver=flathub
+pkgrel=1
+pkgdesc="Netease Cloud Music for Linux"
+url="https://flathub.org/apps/io.github.yucling.open-orpheus"
+license="MIT"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.yucling.open-orpheus

@@ -1,0 +1,15 @@
+# Digital Audio Workstation for prototyping (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=yadaw
+pkgver=flathub
+pkgrel=1
+pkgdesc="Digital Audio Workstation for prototyping"
+url="https://flathub.org/apps/io.github.mlm_games.yadaw"
+license="AGPL-3.0-or-later"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.mlm_games.yadaw

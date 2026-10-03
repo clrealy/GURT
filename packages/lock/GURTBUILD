@@ -1,0 +1,15 @@
+# Process data with GnuPG (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=lock
+pkgver=flathub
+pkgrel=1
+pkgdesc="Process data with GnuPG"
+url="https://flathub.org/apps/com.konstantintutsch.Lock"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.konstantintutsch.Lock

@@ -1,0 +1,15 @@
+# Dive into the interplanetary microblogging platform (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=aria-for-misskey
+pkgver=flathub
+pkgrel=1
+pkgdesc="Dive into the interplanetary microblogging platform"
+url="https://flathub.org/apps/com.poppingmoon.aria"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.poppingmoon.aria

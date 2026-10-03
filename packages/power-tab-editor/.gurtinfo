@@ -1,0 +1,13 @@
+pkgname = power-tab-editor
+pkgver = flathub
+pkgrel = 1
+pkgdesc = View and edit guitar tablature
+url = https://flathub.org/apps/com.github.powertab.powertabeditor
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.powertab.powertabeditor

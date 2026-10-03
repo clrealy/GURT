@@ -1,0 +1,20 @@
+# Explore JSON interactively and build jq filters as you type
+pkgname=jnv
+pkgver=0.7.1
+pkgrel=1
+pkgdesc="Explore JSON interactively and build jq filters as you type"
+url="https://github.com/ynqa/jnv"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/ynqa/jnv/releases/download/${_tag}/jnv-x86_64-unknown-linux-musl.tar.xz")
+sha256sums=(43bc90e8875f10790e2e69adba5dcc48cff393d0ebc59b9947449feb349b42e8)
+
+package() {
+  local f
+  f=$(find . -type f -name jnv -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name jnv | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/jnv"
+}

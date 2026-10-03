@@ -1,0 +1,15 @@
+# Bible app that supports multiple translations (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=bible
+pkgver=flathub
+pkgrel=1
+pkgdesc="Bible app that supports multiple translations"
+url="https://flathub.org/apps/net.lugsole.bible_gui"
+license="MIT"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.lugsole.bible_gui

@@ -1,0 +1,22 @@
+# DigitalOcean from the command line
+pkgname=doctl
+pkgver=1.177.0
+pkgrel=1
+pkgdesc="DigitalOcean from the command line"
+url="https://github.com/digitalocean/doctl"
+license="Apache-2.0"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/digitalocean/doctl/releases/download/${_tag}/doctl-${pkgver}-linux-amd64.tar.gz")
+source_aarch64=("https://github.com/digitalocean/doctl/releases/download/${_tag}/doctl-${pkgver}-linux-arm64.tar.gz")
+sha256sums_x86_64=(34d3954721bfb8cdb42032e78d98274f157426fa6332511ae356edcce59dade3)
+sha256sums_aarch64=(3adfe5bb667c2cdee15eb3501d53b57d8f04dfa945ddd4584f6f760834506992)
+
+package() {
+  local f
+  f=$(find . -type f -name doctl -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name doctl | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/doctl"
+}

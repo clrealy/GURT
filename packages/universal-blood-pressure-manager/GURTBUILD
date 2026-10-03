@@ -1,0 +1,15 @@
+# Manage blood pressure data (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=universal-blood-pressure-manager
+pkgver=flathub
+pkgrel=1
+pkgdesc="Manage blood pressure data"
+url="https://flathub.org/apps/page.codeberg.lazyt.ubpm"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=page.codeberg.lazyt.ubpm

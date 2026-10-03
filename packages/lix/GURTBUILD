@@ -1,0 +1,15 @@
+# Lemmings-like game with puzzles, editor, multiplayer (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=lix
+pkgver=flathub
+pkgrel=1
+pkgdesc="Lemmings-like game with puzzles, editor, multiplayer"
+url="https://flathub.org/apps/com.lixgame.Lix"
+license="CC0-1.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.lixgame.Lix

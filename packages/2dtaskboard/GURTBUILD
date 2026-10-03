@@ -1,0 +1,15 @@
+# Task management productivity app with markdown support (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=2dtaskboard
+pkgver=flathub
+pkgrel=1
+pkgdesc="Task management productivity app with markdown support"
+url="https://flathub.org/apps/io.github.piotrek_k._2dTaskBoard"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.piotrek_k._2dTaskBoard

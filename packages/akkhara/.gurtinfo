@@ -1,0 +1,13 @@
+pkgname = akkhara
+pkgver = flathub
+pkgrel = 1
+pkgdesc = The dictionary app you need
+url = https://flathub.org/apps/io.github.fidele007.akkhara
+license = CC-BY-NC-ND-3.0
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.fidele007.akkhara

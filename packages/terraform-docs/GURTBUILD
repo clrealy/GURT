@@ -1,0 +1,22 @@
+# Generate docs from Terraform modules
+pkgname=terraform-docs
+pkgver=0.24.0
+pkgrel=1
+pkgdesc="Generate docs from Terraform modules"
+url="https://github.com/terraform-docs/terraform-docs"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/terraform-docs/terraform-docs/releases/download/${_tag}/terraform-docs-${_tag}-linux-amd64.tar.gz")
+source_aarch64=("https://github.com/terraform-docs/terraform-docs/releases/download/${_tag}/terraform-docs-${_tag}-linux-arm64.tar.gz")
+sha256sums_x86_64=(9005daf969de0b50134493a2c00078b49f5f5b39d021cda7c89bf4d4f3d776d3)
+sha256sums_aarch64=(d12bd7b73c1fc9c64efc79f8157dd713dabd559f1ecf3cfc0f42e32279a155fd)
+
+package() {
+  local f
+  f=$(find . -type f -name terraform-docs -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name terraform-docs | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/terraform-docs"
+}

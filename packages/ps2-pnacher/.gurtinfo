@@ -1,0 +1,13 @@
+pkgname = ps2-pnacher
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Applying Pnaches directly to PS2 ISOs
+url = https://flathub.org/apps/io.github.Snaggly.PS2_Pnacher
+license = GPL-3.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.Snaggly.PS2_Pnacher

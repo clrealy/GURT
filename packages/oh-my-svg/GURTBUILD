@@ -1,0 +1,15 @@
+# Reduce the size of SVGs (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=oh-my-svg
+pkgver=flathub
+pkgrel=1
+pkgdesc="Reduce the size of SVGs"
+url="https://flathub.org/apps/re.sonny.OhMySVG"
+license="GPL-3.0"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=re.sonny.OhMySVG

@@ -1,0 +1,15 @@
+# Powerful Tox chat client that follows the Tox design guidelines (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=qtox
+pkgver=flathub
+pkgrel=1
+pkgdesc="Powerful Tox chat client that follows the Tox design guidelines"
+url="https://flathub.org/apps/io.github.qtox.qTox"
+license="GPL-3.0"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.qtox.qTox

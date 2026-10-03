@@ -1,0 +1,15 @@
+# Program an AI to beat the enemy (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tank-warriors
+pkgver=flathub
+pkgrel=1
+pkgdesc="Program an AI to beat the enemy"
+url="https://flathub.org/apps/com.endlessnetwork.tankwarriors"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.endlessnetwork.tankwarriors

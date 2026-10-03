@@ -1,0 +1,22 @@
+# Your own music streaming server
+pkgname=navidrome
+pkgver=0.64.2
+pkgrel=1
+pkgdesc="Your own music streaming server"
+url="https://github.com/navidrome/navidrome"
+license="GPL-3.0"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/navidrome/navidrome/releases/download/${_tag}/navidrome_${pkgver}_linux_amd64.tar.gz")
+source_aarch64=("https://github.com/navidrome/navidrome/releases/download/${_tag}/navidrome_${pkgver}_linux_arm64.tar.gz")
+sha256sums_x86_64=(fdd87fd107818667c2c50bc24dc6ce856962c795b3822a91f95c066cfad2c53e)
+sha256sums_aarch64=(6d1683428cb6d99cdabc3da815b94cc161de5904820130c5b9e2e42c34dcdb15)
+
+package() {
+  local f
+  f=$(find . -type f -name navidrome -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name navidrome | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/navidrome"
+}

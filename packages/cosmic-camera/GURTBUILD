@@ -1,0 +1,15 @@
+# Camera for photos, videos and QR codes (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=cosmic-camera
+pkgver=flathub
+pkgrel=1
+pkgdesc="Camera for photos, videos and QR codes"
+url="https://flathub.org/apps/io.github.cosmic_utils.camera"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.cosmic_utils.camera

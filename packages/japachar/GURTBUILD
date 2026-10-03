@@ -1,0 +1,15 @@
+# Learn Japanese characters (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=japachar
+pkgver=flathub
+pkgrel=1
+pkgdesc="Learn Japanese characters"
+url="https://flathub.org/apps/me.sergiotarxz.JapaChar"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=me.sergiotarxz.JapaChar

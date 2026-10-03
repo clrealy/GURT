@@ -1,0 +1,13 @@
+pkgname = picture-of-the-day
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Your daily wallpaper
+url = https://flathub.org/apps/de.swsnr.pictureoftheday
+license = EUPL-1.2
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = de.swsnr.pictureoftheday

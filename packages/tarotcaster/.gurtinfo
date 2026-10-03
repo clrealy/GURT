@@ -1,0 +1,13 @@
+pkgname = tarotcaster
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Cast in Style
+url = https://flathub.org/apps/io.github.alamahant.TarotCaster
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.alamahant.TarotCaster

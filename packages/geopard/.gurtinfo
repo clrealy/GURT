@@ -1,0 +1,13 @@
+pkgname = geopard
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Browse Gemini pages
+url = https://flathub.org/apps/com.ranfdev.Geopard
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.ranfdev.Geopard

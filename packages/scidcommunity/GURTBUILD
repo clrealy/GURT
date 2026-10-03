@@ -1,0 +1,15 @@
+# Community-enhanced chess database and analysis application (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=scidcommunity
+pkgver=flathub
+pkgrel=1
+pkgdesc="Community-enhanced chess database and analysis application"
+url="https://flathub.org/apps/io.github.whelanh.scidCommunity"
+license="GPL-2.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.whelanh.scidCommunity

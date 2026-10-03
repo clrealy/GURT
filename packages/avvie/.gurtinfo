@@ -1,0 +1,13 @@
+pkgname = avvie
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Crop images for avatars or wallpapers
+url = https://flathub.org/apps/com.github.taiko2k.avvie
+license = GPL-3.0+
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.github.taiko2k.avvie

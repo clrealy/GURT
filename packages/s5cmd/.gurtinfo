@@ -1,0 +1,11 @@
+pkgname = s5cmd
+pkgver = 2.3.0
+pkgrel = 1
+pkgdesc = Very fast S3 and cloud storage tool
+url = https://github.com/peak/s5cmd
+license = MIT
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+source = https://github.com/peak/s5cmd/releases/download/v2.3.0/s5cmd_2.3.0_Linux-64bit.tar.gz

@@ -1,0 +1,15 @@
+# Hardest co-op 2D platformer ever (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=ddnet
+pkgver=flathub
+pkgrel=1
+pkgdesc="Hardest co-op 2D platformer ever"
+url="https://flathub.org/apps/tw.ddnet.ddnet"
+license="Zlib"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=tw.ddnet.ddnet

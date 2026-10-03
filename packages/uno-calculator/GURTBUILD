@@ -1,0 +1,15 @@
+# Linux port of the Microsoft Windows calculator app (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=uno-calculator
+pkgver=flathub
+pkgrel=1
+pkgdesc="Linux port of the Microsoft Windows calculator app"
+url="https://flathub.org/apps/uno.platform.uno-calculator"
+license="Apache-2.0"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=uno.platform.uno-calculator

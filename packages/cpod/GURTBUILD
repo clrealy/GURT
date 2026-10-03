@@ -1,0 +1,15 @@
+# A simple, beautiful podcast app (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=cpod
+pkgver=flathub
+pkgrel=1
+pkgdesc="A simple, beautiful podcast app"
+url="https://flathub.org/apps/com.github.z.Cumulonimbus"
+license="Apache-2.0"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.z.Cumulonimbus

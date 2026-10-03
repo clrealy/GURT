@@ -1,0 +1,13 @@
+pkgname = smartsynchronize
+pkgver = flathub
+pkgrel = 1
+pkgdesc = File Manager and File/Directory Compare Tool
+url = https://flathub.org/apps/com.syntevo.SmartSynchronize
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.syntevo.SmartSynchronize

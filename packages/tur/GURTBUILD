@@ -1,0 +1,15 @@
+# A sleek, multi-engine download manager (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tur
+pkgver=flathub
+pkgrel=1
+pkgdesc="A sleek, multi-engine download manager"
+url="https://flathub.org/apps/io.github.greykaizen.tur"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.greykaizen.tur

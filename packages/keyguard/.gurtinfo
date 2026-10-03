@@ -1,0 +1,13 @@
+pkgname = keyguard
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Manage passwords
+url = https://flathub.org/apps/com.artemchep.keyguard
+license = see Flathub
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.artemchep.keyguard

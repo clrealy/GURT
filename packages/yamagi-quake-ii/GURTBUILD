@@ -1,0 +1,15 @@
+# Yamagi Quake II is an alternative client for id Software's Quake II (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=yamagi-quake-ii
+pkgver=flathub
+pkgrel=1
+pkgdesc="Yamagi Quake II is an alternative client for id Software's Quake II"
+url="https://flathub.org/apps/org.yamagi.YamagiQ2"
+license="GPL-2.0"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.yamagi.YamagiQ2

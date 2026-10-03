@@ -1,0 +1,13 @@
+pkgname = cataclysm-bn
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Try to survive the apocalypse
+url = https://flathub.org/apps/org.cataclysmbn.CataclysmBN
+license = CC-BY-SA-3.0
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.cataclysmbn.CataclysmBN

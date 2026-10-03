@@ -1,0 +1,15 @@
+# Analyze D-Bus connections (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=d-spy
+pkgver=flathub
+pkgrel=1
+pkgdesc="Analyze D-Bus connections"
+url="https://flathub.org/apps/org.gnome.dspy"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.dspy

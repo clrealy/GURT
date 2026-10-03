@@ -1,0 +1,13 @@
+pkgname = bitcoin-core
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Fully validating Bitcoin peer-to-peer network node, wallet and GUI
+url = https://flathub.org/apps/org.bitcoincore.bitcoin-qt
+license = MIT
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.bitcoincore.bitcoin-qt

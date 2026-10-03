@@ -1,0 +1,13 @@
+pkgname = ksnakeduel
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Tron-like Game
+url = https://flathub.org/apps/org.kde.ksnakeduel
+license = GPL-2.0+
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.kde.ksnakeduel

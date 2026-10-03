@@ -1,0 +1,13 @@
+pkgname = micropolis
+pkgver = flathub
+pkgrel = 1
+pkgdesc = City building game
+url = https://flathub.org/apps/com.donhopkins.Micropolis
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.donhopkins.Micropolis

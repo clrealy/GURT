@@ -227,6 +227,8 @@ gurt utils list   # see what you've got (gurt doctor shows it too)
 
 ## Build your setup + the app lottery 🧰🎰
 
+Main GURT has **2,500+ apps**: 280+ that GURT installs itself (official prebuilt releases with pinned checksums, AppImages, source builds, official repos) and the rest from Flathub. `tools/gen-flathub.py` adds Flathub's most popular apps that GURT doesn't have yet.
+
 The [website](https://clrealy.github.io/GURT/) has a **Build your setup** picker (like tuxmate, but gurt): tick the apps you want, grouped by category, and copy one `gurt install …` command that works on every distro. Tick "I don't have gurt yet" and the command installs gurt first.
 
 Can't decide? Spin for one:

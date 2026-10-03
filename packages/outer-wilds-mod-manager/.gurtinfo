@@ -1,0 +1,13 @@
+pkgname = outer-wilds-mod-manager
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Install and run Outer Wilds mods
+url = https://flathub.org/apps/com.outerwildsmods.owmods_gui
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.outerwildsmods.owmods_gui

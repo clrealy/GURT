@@ -1,0 +1,20 @@
+# Send emails from your terminal
+pkgname=pop
+pkgver=0.5.0
+pkgrel=1
+pkgdesc="Send emails from your terminal"
+url="https://github.com/charmbracelet/pop"
+license="MIT"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64)
+_tag=v$pkgver
+# official prebuilt release binary
+source=("https://github.com/charmbracelet/pop/releases/download/${_tag}/pop_${pkgver}_Linux_x86_64.tar.gz")
+sha256sums=(5017aad5378fede81c5879e4205f869a5a94841df3b65649c0248ab1a6a3d536)
+
+package() {
+  local f
+  f=$(find . -type f -name pop -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name pop | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/pop"
+}

@@ -1,0 +1,15 @@
+# Processing node for Tdarr media automation (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tdarr-node
+pkgver=flathub
+pkgrel=1
+pkgdesc="Processing node for Tdarr media automation"
+url="https://flathub.org/apps/io.tdarr.Tdarr_Node"
+license="see Flathub"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.tdarr.Tdarr_Node

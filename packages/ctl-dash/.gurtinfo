@@ -1,0 +1,13 @@
+pkgname = ctl-dash
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Manage services
+url = https://flathub.org/apps/io.github.nikelaz.CTLDash
+license = MPL-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.nikelaz.CTLDash

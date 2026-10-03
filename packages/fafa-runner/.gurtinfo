@@ -1,0 +1,13 @@
+pkgname = fafa-runner
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Enjoy smooth gameplay, stunning graphics, and endless fun
+url = https://flathub.org/apps/com.fafarunner.FaFaRunner
+license = MIT
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.fafarunner.FaFaRunner

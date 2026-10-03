@@ -1,0 +1,20 @@
+# Find known vulnerabilities in your project's dependencies
+pkgname=osv-scanner
+pkgver=2.6.0
+pkgrel=1
+pkgdesc="Find known vulnerabilities in your project's dependencies"
+url="https://github.com/google/osv-scanner"
+license="Apache-2.0"
+maintainer="clrealy"
+category="security"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("osv-scanner::https://github.com/google/osv-scanner/releases/download/${_tag}/osv-scanner_linux_amd64")
+source_aarch64=("osv-scanner::https://github.com/google/osv-scanner/releases/download/${_tag}/osv-scanner_linux_arm64")
+sha256sums_x86_64=(ca69b3d3cd08f889a49dc0a383122f71cc528b83803671df5fd874d97485b108)
+sha256sums_aarch64=(2c71403eb443d05891c4f268c3ad771cf4f16e5443463fd7851ef8f454d3c7e4)
+
+package() {
+  install -Dm755 osv-scanner "$pkgdir$prefix/bin/osv-scanner"
+}

@@ -1,0 +1,11 @@
+pkgname = step
+pkgver = 0.31.0
+pkgrel = 1
+pkgdesc = Swiss army knife for certificates and PKI
+url = https://github.com/smallstep/cli
+license = Apache-2.0
+maintainer = clrealy
+category = security
+arch = x86_64
+arch = aarch64
+source = https://github.com/smallstep/cli/releases/download/v0.31.0/step_linux_0.31.0_amd64.tar.gz

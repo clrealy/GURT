@@ -1,0 +1,13 @@
+pkgname = otp-authenticator-app
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Secure 2FA and OTP authentication manager
+url = https://flathub.org/apps/com.polydez.KeyVault
+license = see Flathub
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.polydez.KeyVault

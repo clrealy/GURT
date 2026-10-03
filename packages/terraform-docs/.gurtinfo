@@ -1,0 +1,11 @@
+pkgname = terraform-docs
+pkgver = 0.24.0
+pkgrel = 1
+pkgdesc = Generate docs from Terraform modules
+url = https://github.com/terraform-docs/terraform-docs
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/terraform-docs/terraform-docs/releases/download/v0.24.0/terraform-docs-v0.24.0-linux-amd64.tar.gz

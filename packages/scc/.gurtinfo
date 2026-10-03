@@ -1,0 +1,10 @@
+pkgname = scc
+pkgver = 4.1.0
+pkgrel = 1
+pkgdesc = Count lines of code fast, with complexity estimates
+url = https://github.com/boyter/scc
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+source = https://github.com/boyter/scc/releases/download/v4.1.0/scc_Linux_x86_64.tar.gz

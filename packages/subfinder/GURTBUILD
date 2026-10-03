@@ -1,0 +1,22 @@
+# Find subdomains of a website
+pkgname=subfinder
+pkgver=2.16.0
+pkgrel=1
+pkgdesc="Find subdomains of a website"
+url="https://github.com/projectdiscovery/subfinder"
+license="MIT"
+maintainer="clrealy"
+category="security"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/projectdiscovery/subfinder/releases/download/${_tag}/subfinder_${pkgver}_linux_amd64.zip")
+source_aarch64=("https://github.com/projectdiscovery/subfinder/releases/download/${_tag}/subfinder_${pkgver}_linux_arm64.zip")
+sha256sums_x86_64=(1b7f9c608e9a5bd59e609a5e09710d63c5485e92d3d49dc2c16eb4fdbe10cb60)
+sha256sums_aarch64=(c81d49559c0f630177be9e347e502e7a3d474aacc6ff78291ffcb4964367d63d)
+
+package() {
+  local f
+  f=$(find . -type f -name subfinder -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name subfinder | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/subfinder"
+}

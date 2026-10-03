@@ -1,0 +1,15 @@
+# Clear the screen by removing groups of colored and shaped tiles (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=swell-foop
+pkgver=flathub
+pkgrel=1
+pkgdesc="Clear the screen by removing groups of colored and shaped tiles"
+url="https://flathub.org/apps/org.gnome.SwellFoop"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnome.SwellFoop

@@ -1,0 +1,11 @@
+pkgname = sqlc
+pkgver = 1.31.1
+pkgrel = 1
+pkgdesc = Generate type-safe code from SQL
+url = https://github.com/sqlc-dev/sqlc
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+source = https://github.com/sqlc-dev/sqlc/releases/download/v1.31.1/sqlc_1.31.1_linux_amd64.tar.gz

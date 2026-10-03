@@ -1,0 +1,22 @@
+# Develop with Supabase locally
+pkgname=supabase
+pkgver=2.119.0
+pkgrel=1
+pkgdesc="Develop with Supabase locally"
+url="https://github.com/supabase/cli"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+_tag=v$pkgver
+# official prebuilt release binary
+source_x86_64=("https://github.com/supabase/cli/releases/download/${_tag}/supabase_${pkgver}_linux_amd64.tar.gz")
+source_aarch64=("https://github.com/supabase/cli/releases/download/${_tag}/supabase_${pkgver}_linux_arm64.tar.gz")
+sha256sums_x86_64=(bf1c3ae93be98533eb8a3105dbf4564bd0b2d9dc24690d8a920f980ef975c1b4)
+sha256sums_aarch64=(3f552f0a3af30fe577c2820df09506a0e1233256441246b0850ed60806ff319d)
+
+package() {
+  local f
+  f=$(find . -type f -name supabase -perm -u+x | head -n1); [ -n "$f" ] || f=$(find . -type f -name supabase | head -n1)
+  install -Dm755 "$f" "$pkgdir$prefix/bin/supabase"
+}

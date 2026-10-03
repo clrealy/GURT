@@ -1,0 +1,13 @@
+pkgname = getting-things-gnome
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Personal tasks and TODO-list items organizer
+url = https://flathub.org/apps/org.gnome.GTG
+license = GPL-3.0
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.gnome.GTG

@@ -1,0 +1,13 @@
+pkgname = zed-preview
+pkgver = flathub
+pkgrel = 1
+pkgdesc = High-performance code editor
+url = https://flathub.org/apps/dev.zed.Zed-Preview
+license = AGPL-3.0-or-later and Apache-2.0 and GPL-3.0-or-later
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = dev.zed.Zed-Preview

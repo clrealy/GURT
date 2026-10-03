@@ -1,0 +1,13 @@
+pkgname = davmail
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Office 365 and Exchange gateway
+url = https://flathub.org/apps/org.davmail.DavMail
+license = GPL-2.0
+maintainer = clrealy
+category = internet
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.davmail.DavMail

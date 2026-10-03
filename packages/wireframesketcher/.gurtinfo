@@ -1,0 +1,13 @@
+pkgname = wireframesketcher
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Wireframing tool for professionals
+url = https://flathub.org/apps/com.wireframesketcher.WireframeSketcher
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.wireframesketcher.WireframeSketcher

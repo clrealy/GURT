@@ -1,0 +1,15 @@
+# Educational Programming Environment (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=kturtle
+pkgver=flathub
+pkgrel=1
+pkgdesc="Educational Programming Environment"
+url="https://flathub.org/apps/org.kde.kturtle"
+license="GPL-2.0+"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.kturtle

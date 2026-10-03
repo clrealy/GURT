@@ -1,0 +1,11 @@
+pkgname = ffuf
+pkgver = 2.3.0
+pkgrel = 1
+pkgdesc = Fast web fuzzer
+url = https://github.com/ffuf/ffuf
+license = MIT
+maintainer = clrealy
+category = security
+arch = x86_64
+arch = aarch64
+source = https://github.com/ffuf/ffuf/releases/download/v2.3.0/ffuf_2.3.0_linux_amd64.tar.gz

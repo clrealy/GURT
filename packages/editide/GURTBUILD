@@ -1,0 +1,15 @@
+# Browse and edit source code (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=editide
+pkgver=flathub
+pkgrel=1
+pkgdesc="Browse and edit source code"
+url="https://flathub.org/apps/io.frama.editide.editide"
+license="CC0-1.0 AND CC-BY-SA-3.0 AND LGPL-2.1-or-later"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.frama.editide.editide

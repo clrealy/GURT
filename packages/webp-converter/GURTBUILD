@@ -1,0 +1,15 @@
+# The fastest way to convert images to WebP (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=webp-converter
+pkgver=flathub
+pkgrel=1
+pkgdesc="The fastest way to convert images to WebP"
+url="https://flathub.org/apps/io.itsterminal.WebPConverter"
+license="GPL-3.0"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.itsterminal.WebPConverter

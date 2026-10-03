@@ -1,0 +1,13 @@
+pkgname = asset-manager-studio
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Movie and game developer asset manager for Epic's Unreal Engine
+url = https://flathub.org/apps/studio.assetmanager.ams
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = studio.assetmanager.ams
