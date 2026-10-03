@@ -162,11 +162,29 @@ Your **GitHub account is your GURT account**. There are no new passwords, and GU
 3. Install the giscus app on this repo: <https://github.com/apps/giscus>
 4. On <https://giscus.app>, enter `clrealy/GURT` and pick the **Packages** category. Copy the `data-category-id` into `GISCUS.categoryId` in `site/index.html`
 
-## Install
+## Install 🧙
+
+**Download the GURT Setup Wizard** from the [latest release](https://github.com/clrealy/GURT/releases/latest) and open it:
+
+| your system | file |
+|---|---|
+| Windows | `GURTSetupWizard.exe` |
+| Debian, Ubuntu, Mint, Pop!_OS… | `GURTSetupWizard.deb` |
+| Fedora, openSUSE, RHEL… | `GURTSetupWizard.rpm` |
+| Arch, CachyOS, Manjaro… | `GURTSetupWizard.pkg.tar.zst` |
+| Alpine · Void · Solus | `GURTSetupWizard.apk` · `.xbps` · `.eopkg` |
+
+On Linux, your software center installs it like any other app. Then open **GURT** from your app menu (or log out and back in), and the setup wizard walks you through the rest: a system check, where apps come from, your look, a few starter apps (or 📥 import your list from your old PC), and update alerts. GURT made these files itself with `gurt convert`.
+
+**Or one command**, which does the same thing from a terminal:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/clrealy/GURT/main/install.sh | sh
 ```
+
+It installs gurt, sets up the GURT app, and opens the setup wizard in it. With no desktop (a server or SSH), the wizard runs right in the terminal instead. `GURT_WIZARD=0` skips the wizard, and `gurt setup` runs it again anytime (or 🎨 → 🧙 setup wizard in the app).
+
+Making the installers yourself: `tools/make-setup-wizard.sh` (Linux packages) and `tools/win/build-exe.sh` (the `.exe`, needs `nsis`). Pushing a `v*` tag makes a GitHub release with all of them attached (`.github/workflows/release.yml`). Add a `GURT_SIGNING_KEY` secret and they're all signed with the same key every release.
 
 You need `bash`, `git`, GNU `tar`, and `curl` or `wget`. The foreign sources also need:
 
@@ -178,7 +196,7 @@ You need `bash`, `git`, GNU `tar`, and `curl` or `wget`. The foreign sources als
 
 ### On Windows 🪟
 
-gurt runs on Windows through **WSL** (the Linux that's built into Windows). Paste this in PowerShell:
+gurt runs on Windows through **WSL** (the Linux that's built into Windows). Run `GURTSetupWizard.exe`, or paste this in PowerShell:
 
 ```powershell
 irm https://raw.githubusercontent.com/clrealy/GURT/main/install.ps1 | iex

@@ -3694,6 +3694,8 @@ gui_desktop_entry() { # add "GURT" to your app menu (just for you, no sudo)
   # full path, not just "gurt" — KDE (and some others) won't find a freshly added icon by name until their cache rebuilds
   [[ -f $png ]] && icon=$png || icon=gurt
   gui_mime_types "$data" "$png"
+  # installed from a GURTSetupWizard package: the system already has the menu entry, don't add a second one
+  if [[ -f /usr/share/applications/gurt.desktop && $(readlink -f "$0") == /usr/bin/gurt ]]; then rm -f "$data/applications/gurt.desktop"; return 0; fi
   entry=$(printf '%s\n' "[Desktop Entry]" "Type=Application" "Name=GURT" "GenericName=Package Manager" \
     "Comment=every distro's packages, on every distro" "Exec=$(readlink -f "$0") gui %f" "Icon=$icon" "Terminal=false" "StartupWMClass=gurt" \
     "Categories=System;PackageManager;" "Keywords=packages;install;aur;apt;flatpak;" "MimeType=application/x-gurt-package;")
@@ -3752,6 +3754,10 @@ gui_setup() { # py-script — install the app window bits (no questions: you ask
 }
 has_display() { [[ -n ${DISPLAY:-} || -n ${WAYLAND_DISPLAY:-} ]]; }
 cmd_gui() {
+  if [[ ${1:-} == --first-run ]]; then   # the GURTSetupWizard packages start this once at login: only until the wizard ran
+    grep -qs '"wizard": *"done"' "${XDG_CONFIG_HOME:-$HOME/.config}/gurt/gui.json" && return 0
+    shift; set -- --wizard "$@"
+  fi
   if ! command -v python3 >/dev/null; then   # step 1: python itself
     msg "GURT's app needs python3 — installing it from $PM"
     # shellcheck disable=SC2046

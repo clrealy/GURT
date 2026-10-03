@@ -15,6 +15,27 @@ jobs:
       - name: lint recipes
         run: ./tools/lint.sh
 
+  # the GURTSetupWizard installers build, and the .deb really installs (this runner is Ubuntu)
+  installers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq nsis zstd openssl python3 desktop-file-utils
+      - name: build every GURTSetupWizard
+        run: |
+          shellcheck -S warning tools/make-setup-wizard.sh tools/win/build-exe.sh
+          tools/make-setup-wizard.sh dist --no-sign
+          tools/win/build-exe.sh dist
+          ls -la dist
+          file dist/GURTSetupWizard.exe | grep -q 'PE32 executable'
+      - name: install GURTSetupWizard.deb like a double-click would
+        run: |
+          sudo apt-get install -y ./dist/GURTSetupWizard.deb
+          [ "$(gurt version)" = "gurt $(sed -n 's/^GURT_VERSION="\(.*\)"/\1/p' gurt)" ]
+          desktop-file-validate /usr/share/applications/gurt.desktop /etc/xdg/autostart/gurt-setup-wizard.desktop
+          mkdir -p ~/.config/gurt && echo '{"wizard": "done"}' > ~/.config/gurt/gui.json && timeout 20 gurt gui --first-run
+          sudo apt-get remove -y gurt && ! command -v gurt
+
   # gurt on Windows: the PowerShell installer has to parse + pass PSScriptAnalyzer on a real Windows box
   windows:
     if: github.event_name == 'pull_request'
