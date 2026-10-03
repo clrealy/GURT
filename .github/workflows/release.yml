@@ -2,7 +2,7 @@ name: release
 # push a tag like v1.0.0 → a GitHub release with every GURTSetupWizard installer attached
 on:
   push: { tags: ['v*'] }
-permissions: { contents: write }
+permissions: { contents: write, actions: write }
 
 jobs:
   release:
@@ -44,3 +44,6 @@ jobs:
           else
             gh release create "$GITHUB_REF_NAME" --title "GURT ${GITHUB_REF_NAME#v}" --notes-file notes.md dist/*
           fi
+      - name: refresh the stable repo on the website (apt / zypper / dnf / pacman updates)
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh workflow run ci.yml --ref main --repo "$GITHUB_REPOSITORY"

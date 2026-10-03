@@ -1805,7 +1805,7 @@ sign_setup() { # [rsa] → SIGN_FPR, and SIGN_RSA SIGN_RSA_NAME when asked for t
     mkdir -p "$SIGN_DIR/gnupg"; chmod 700 "$SIGN_DIR" "$SIGN_DIR/gnupg"
     if ! sign_gpg --list-secret-keys --with-colons 2>/dev/null | grep -q '^sec'; then
       msg2 "making your signing key (first time only) 🔑"
-      sign_gpg --quick-gen-key "gurt convert ($(id -un 2>/dev/null || echo you)@${HOSTNAME:-linux}) <gurt-convert@localhost>" rsa3072 sign never 2>/dev/null ||
+      sign_gpg --quick-gen-key "${GURT_SIGN_UID:-gurt convert ($(id -un 2>/dev/null || echo you)@${HOSTNAME:-linux}) <gurt-convert@localhost>}" rsa3072 sign never 2>/dev/null ||
         die "couldn't make a signing key (gpg said no) — convert with --no-sign to skip signing"
     fi
     SIGN_FPR=$(sign_gpg --list-secret-keys --with-colons | awk -F: '/^fpr/ { print $10; exit }')
@@ -4414,6 +4414,17 @@ exec_root() { if (( EUID == 0 )); then exec "$@"; elif command -v sudo >/dev/nul
 cmd_self_update() {
   local self new tmp dir
   self=$(readlink -f "$0")
+  # installed from a GURTSetupWizard package: your package manager owns gurt, so it does the updating
+  if [[ $self == /usr/bin/gurt && -f /usr/share/gurt/gurt-gui.py ]] && ! $FORCE; then
+    case $PM in
+      apt) msg "gurt came with your system updates 📦 run: sudo apt update && sudo apt upgrade" ;;
+      dnf|yum) msg "gurt came with your system updates 📦 run: sudo dnf upgrade gurt" ;;
+      zypper) msg "gurt came with your system updates 📦 run: sudo zypper up gurt" ;;
+      pacman) msg "gurt came with your system updates 📦 run: sudo pacman -Syu" ;;
+      *) msg "gurt came from a GURTSetupWizard package 📦 grab the newest one: https://github.com/clrealy/GURT/releases/latest" ;;
+    esac
+    return 0
+  fi
   sync_main
   new=$(repo_gurt_ver)
   [[ -n $new ]] || die "couldn't find gurt in the main repo"

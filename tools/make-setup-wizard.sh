@@ -12,6 +12,7 @@ ver=$(sed -n 's/^GURT_VERSION="\(.*\)"/\1/p' "$root/gurt")
 [[ -n $ver ]] || { echo "couldn't read GURT_VERSION" >&2; exit 1; }
 [[ -z $dev || $dev =~ ^[0-9]+$ ]] || { echo "--dev=N takes a number" >&2; exit 1; }
 DEV_URL=https://gurtproject.org/dev/rpm
+REPO_URL=https://gurtproject.org/repo   # the stable repo (apt + rpm + pacman), filled from the latest release
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 t=$tmp/tree
 mkdir -p "$out"; out=$(cd "$out" && pwd)
@@ -72,6 +73,38 @@ type=rpm-md
 $gpg
 REPO
   done
+fi
+
+# stable: + the gurt repo, so new GURT versions arrive with your normal system updates.
+# apt only takes signed repos, so .deb users get it when the build is signed (the GURT_SIGNING_KEY secret)
+if [[ -z $dev ]]; then
+  if (( ${#sign[@]} )); then gpg="gpgcheck=0
+repo_gpgcheck=0"; else gpg="gpgcheck=1
+repo_gpgcheck=1
+gpgkey=$REPO_URL/gurt-key.asc"; fi
+  for f in etc/zypp/repos.d/gurt.repo etc/yum.repos.d/gurt.repo; do
+    install -Dm644 /dev/stdin "$t/$f" <<REPO
+[gurt]
+name=GURT
+baseurl=$REPO_URL
+enabled=1
+autorefresh=1
+metadata_expire=6h
+type=rpm-md
+$gpg
+REPO
+  done
+  if (( ! ${#sign[@]} )); then
+    "$root/gurt" key export "$tmp/key" >/dev/null 2>&1 || { echo "couldn't export the signing key for the apt repo" >&2; exit 1; }
+    install -Dm644 "$tmp/key/gurt-key.asc" "$t/usr/share/keyrings/gurt.asc"
+    install -Dm644 /dev/stdin "$t/etc/apt/sources.list.d/gurt.sources" <<REPO
+Types: deb
+URIs: $REPO_URL
+Suites: stable
+Components: main
+Signed-By: /usr/share/keyrings/gurt.asc
+REPO
+  fi
 fi
 
 cat > "$t/.PKGINFO" <<INFO
