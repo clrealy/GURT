@@ -1051,7 +1051,7 @@ sync_source() {
     *) case $(src_kind "$s") in
          apt)    sync_apt "$tmp" "$(src_base "$s")" "$(repo_get "$s" suite)" "$(repo_get "$s" components)" "$(repo_get "$s" key)" ;;
          rpm)    sync_rpm "$s" "$tmp" "$(repo_get "$s" key)" ;;
-         pacman) sync_pacman "$tmp" "$(repo_get "$s" url)" "$(repo_get "$s" suite)" ;;
+         pacman) sync_pacman "$tmp" "$(repo_get "$s" url)" "$(repo_get "$s" suite)" "$(repo_get "$s" key)" ;;
        esac ;;
   esac > "$tmp/index.tsv"
   [[ -s $tmp/index.tsv ]] || { rm -rf "$tmp"; die "$s index came back empty (mirror down? check gurt.conf)"; }
@@ -1196,8 +1196,8 @@ for row in best.values():
 PY
 }
 
-sync_pacman() { # tmp server-template('$repo' '$arch') repos
-  local tmp=$1 tpl=$2 repos=$3 r server
+sync_pacman() { # tmp server-template('$repo' '$arch') repos [key]
+  local tmp=$1 tpl=$2 repos=$3 key=${4:-} r server
   local prog='
     function flush() { if (n != "") print n "\t" v "\t" server "/" f "\tsha256:" s "\t" d "\t" ds "\t" p; n=v=f=s=d=ds=p=""; sec="" }
     FNR == 1 { flush() }
@@ -1218,6 +1218,13 @@ sync_pacman() { # tmp server-template('$repo' '$arch') repos
   for r in $repos; do
     server=${tpl//\$repo/$r}; server=${server//\$arch/$CARCH}
     fetch_quiet "$server/$r.db" "$tmp/$r.db" 2>/dev/null || { warn "couldn't get $r.db from $server"; continue; }
+    if [[ -n $key ]]; then   # the db lists every package's sha256, so a signed db covers the packages too
+      need_tool gpgv "signed repos"
+      fetch_quiet "$server/$r.db.sig" "$tmp/$r.db.sig" 2>/dev/null || die "$r has no $r.db.sig — can't check the signature"
+      gpg_keyring "$key" "$tmp/kr.gpg"
+      gpgv --keyring "$tmp/kr.gpg" "$tmp/$r.db.sig" "$tmp/$r.db" 2>/dev/null || die "🚩 signature check FAILED for $r ($server) — not trusting this repo"
+      msg2 "signature ok 🔏"
+    fi
     mkdir -p "$tmp/$r"
     tar -xf "$tmp/$r.db" -C "$tmp/$r" 2>/dev/null || { warn "couldn't open $r.db (install zstd?)"; continue; }
     find "$tmp/$r" -name desc -exec awk -v server="$server" "$prog" {} +
@@ -4545,10 +4552,6 @@ repo_add() {
   esac
   [[ $url =~ ^(https?|file)://  ]] || die "url should start with https://"
   [[ $url == http://* ]] && warn "that's plain http — only safe with a signing key (--key)"
-  if [[ $type == pacman ]]; then
-    [[ -n $KEYSRC ]] && warn "pacman repo signatures aren't checked yet — ignoring --key (packages are still sha256-checked against the repo db)"
-    KEYSRC=""
-  fi
   if [[ -n $KEYSRC ]]; then
     key=$(fetch_key "$name" "$KEYSRC")
     if [[ -n ${EXPECT_FPR:-} ]]; then
@@ -4603,8 +4606,9 @@ repo_remove() {
 # ── gurt repo publish <dir>: a folder of .deb/.rpm files → a signed repo anyone can `gurt repo add` (or apt/dnf) ──
 PUBLISH_PY=$(cat <<'PY'
 import os, sys, io, gzip, lzma, hashlib, struct, tarfile, time, zlib
-d, debarch = sys.argv[1], sys.argv[2]
+d, debarch, reponame = sys.argv[1], sys.argv[2], sys.argv[3]
 debs, rpms = [], []
+pacs = sorted(n for n in os.listdir(d) if ".pkg.tar" in n and not n.endswith(".sig") and os.path.isfile(os.path.join(d, n)))
 for root, dirs, files in os.walk(d):
     dirs[:] = [x for x in dirs if x not in ("dists", "repodata")]
     for n in sorted(files):
@@ -4688,16 +4692,64 @@ if rpms:
               % (now, hashlib.sha256(gz).hexdigest(), hashlib.sha256(xml).hexdigest(), fn, now, len(gz), len(xml)))
     open(os.path.join(d, "repodata/repomd.xml"), "w").write(repomd)
     print("rpm %d" % len(rpms))
+# ── pacman: <repo>.db (+ .files), what repo-add makes. packages sit next to it, in the folder itself ──
+if pacs:
+    import base64, subprocess
+    def unpack(p):
+        raw = open(p, "rb").read()
+        if p.endswith(".zst"): raw = subprocess.run(["zstd", "-dcq"], input=raw, capture_output=True, check=True).stdout
+        elif p.endswith(".xz"): raw = lzma.decompress(raw)
+        elif p.endswith(".gz"): raw = gzip.decompress(raw)
+        return tarfile.open(fileobj=io.BytesIO(raw))
+    dbents, fents = [], []
+    for n in pacs:
+        p = os.path.join(d, n); t = unpack(p); info = {}
+        try: pk = t.extractfile(".PKGINFO").read().decode(errors="replace")
+        except KeyError: print("skipping %s (no .PKGINFO)" % n, file=sys.stderr); continue
+        for line in pk.splitlines():
+            if " = " in line and not line.startswith("#"):
+                k, v = line.split(" = ", 1); info.setdefault(k, []).append(v)
+        files = sorted(m.name + ("/" if m.isdir() else "") for m in t.getmembers() if not m.name.startswith("."))
+        one = lambda k: (info.get(k) or [""])[0]
+        b = open(p, "rb").read()
+        desc = {"FILENAME": [n], "NAME": [one("pkgname")], "BASE": [one("pkgbase") or one("pkgname")], "VERSION": [one("pkgver")],
+                "DESC": [one("pkgdesc")], "CSIZE": [str(len(b))], "ISIZE": [one("size") or "0"], "SHA256SUM": [hashlib.sha256(b).hexdigest()],
+                "URL": [one("url")], "LICENSE": info.get("license", []), "ARCH": [one("arch")], "BUILDDATE": [one("builddate")], "PACKAGER": [one("packager")],
+                "DEPENDS": info.get("depend", []), "OPTDEPENDS": info.get("optdepend", []), "PROVIDES": info.get("provides", []),
+                "CONFLICTS": info.get("conflict", []), "REPLACES": info.get("replaces", [])}
+        if os.path.isfile(p + ".sig"): desc["PGPSIG"] = [base64.b64encode(open(p + ".sig", "rb").read()).decode()]
+        body = "".join("%%%s%%\n%s\n\n" % (k, "\n".join(v)) for k, v in desc.items() if v and any(v)).encode()
+        dirn = "%s-%s/" % (one("pkgname"), one("pkgver"))
+        dbents.append((dirn, body)); fents.append((dirn, body, ("%FILES%\n" + "\n".join(files) + "\n").encode()))
+    def tgz(entries):
+        bio = io.BytesIO()
+        with tarfile.open(fileobj=bio, mode="w:gz") as tf:
+            for dirn, *parts in entries:
+                ti = tarfile.TarInfo(dirn.rstrip("/")); ti.type = tarfile.DIRTYPE; ti.mode = 0o755; ti.mtime = int(time.time()); tf.addfile(ti)
+                for nm, data in zip(("desc", "files"), parts):
+                    ti = tarfile.TarInfo(dirn + nm); ti.size = len(data); ti.mode = 0o644; ti.mtime = int(time.time()); tf.addfile(ti, io.BytesIO(data))
+        return bio.getvalue()
+    db, fdb = tgz(dbents), tgz(fents)
+    for nm, data in (("%s.db.tar.gz" % reponame, db), ("%s.db" % reponame, db), ("%s.files.tar.gz" % reponame, fdb), ("%s.files" % reponame, fdb)):
+        open(os.path.join(d, nm), "wb").write(data)   # real files, not symlinks: GitHub Pages and friends don't serve symlinks
+    print("pacman %d %s" % (len(dbents), reponame))
 PY
 )
 repo_publish() { # dir [name]
   local dir=${1:-} name=${2:-} out line url
   [[ -n $dir && -d $dir ]] || die "usage: gurt repo publish <folder with .deb/.rpm files> [name]"
   dir=$(readlink -f "$dir"); name=${name:-$(basename "$dir" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9.\n_-' '-')}; name=${name#[-.]}
+  [[ $name =~ ^[a-z0-9][a-z0-9._-]*$ ]] || die "repo names are lowercase letters, digits, . _ - only (gurt repo publish <dir> <name>)"
   need_tool python3 "publishing a repo"
   sign_setup
-  out=$(python3 -c "$PUBLISH_PY" "$dir" "$(debarch)") || die "couldn't make the repo indexes"
-  [[ -n $out ]] || die "no .deb or .rpm files in $dir — convert some first (gurt convert app.AppImage deb -o $dir)"
+  local p
+  for p in "$dir"/*.pkg.tar.*; do   # pacman wants each package signed (the signature also goes into the db)
+    [[ $p == *.sig || -f $p.sig ]] && continue
+    sign_gpg -u "$SIGN_FPR" --digest-algo SHA256 --detach-sign --yes -o "$p.sig" "$p" || die "couldn't sign ${p##*/}"
+  done
+  compgen -G "$dir/*.pkg.tar.zst" >/dev/null && need_tool zstd "publishing a pacman repo"
+  out=$(python3 -c "$PUBLISH_PY" "$dir" "$(debarch)" "$name") || die "couldn't make the repo indexes"
+  [[ -n $out ]] || die "no .deb, .rpm or .pkg.tar.zst files in $dir — convert some first (gurt convert app.AppImage deb -o $dir)"
   sign_gpg --armor --export "$SIGN_FPR" > "$dir/gurt-key.asc"
   url="file://$dir"
   msg "published $dir 📡 signed with your gurt key 🔏"
@@ -4714,6 +4766,14 @@ repo_publish() { # dir [name]
         sign_gpg -u "$SIGN_FPR" --digest-algo SHA256 --armor --detach-sign --yes -o "$dir/repodata/repomd.xml.asc" "$dir/repodata/repomd.xml"
         msg2 "rpm repo: $2 .rpm file(s)"
         msg2 "  gurt:  gurt repo add $name-rpm rpm $url --key $dir/gurt-key.asc" ;;
+      pacman)
+        local x; for x in "$3.db" "$3.db.tar.gz" "$3.files" "$3.files.tar.gz"; do
+          sign_gpg -u "$SIGN_FPR" --digest-algo SHA256 --detach-sign --yes -o "$dir/$x.sig" "$dir/$x"
+        done
+        msg2 "pacman repo [$3]: $2 package(s), every one signed"
+        msg2 "  gurt:  gurt repo add $3 pacman $url --key $dir/gurt-key.asc"
+        msg2 "  Arch:  sudo pacman-key --add gurt-key.asc && sudo pacman-key --lsign-key $SIGN_FPR"
+        msg2 "         then in /etc/pacman.conf:  [$3]  SigLevel = Required  Server = $url" ;;
     esac
   done <<<"$out"
   msg2 "put the folder on any web server (or a GitHub Pages site) and swap $url for its https:// address — share gurt-key.asc with it"
@@ -4843,7 +4903,7 @@ ${B}your own repos${R0}   (PPAs, vendor apt/rpm repos, COPRs, custom pacman repo
   repo add ppa:owner/name        add an Ubuntu PPA (key fetched automatically)
   repo add <name> <apt|rpm|pacman> <url> [suite] [components…] --key <url|file>
   repo remove <name>
-  repo publish <dir> [name]      turn a folder of .deb/.rpm files into a signed repo others can add 📡
+  repo publish <dir> [name]      turn a folder of .deb/.rpm/.pkg.tar.zst files into a signed repo others can add 📡
   then: gurt install <pkg> --repo <name>
 
 ${B}using packages${R0}

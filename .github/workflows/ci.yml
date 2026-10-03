@@ -76,6 +76,16 @@ jobs:
           elif command -v zypper; then "$g" -y convert gurt-cvtest-1.0.tar.gz rpm && "$g" -y key trust && rpm -K ./gurt-cvtest-*.rpm &&
             zypper --non-interactive install ./gurt-cvtest-*.rpm; fi
           [ "$(gurt-cvtest)" = "converted by gurt" ]
+          # Arch: a signed pacman repo from gurt repo publish, installed by real pacman with signatures required
+          if command -v pacman >/dev/null; then
+            mkdir -p /tmp/cv/prepo && cp ./gurt-cvtest-*.pkg.tar.zst /tmp/cv/prepo/
+            "$g" repo publish /tmp/cv/prepo cvpac
+            printf '\n[cvpac]\nSigLevel = Required\nServer = file:///tmp/cv/prepo\n' >> /etc/pacman.conf
+            pacman -Sy --noconfirm
+            pacman -S --noconfirm cvpac/gurt-cvtest
+            pacman -Qi gurt-cvtest | tee /tmp/qi.txt
+            grep -q 'Validated By.*Signature' /tmp/qi.txt
+          fi
           # every other format gets a signature that checks out too
           "$g" -y key export /tmp/cv/pub && gpg --dearmor < /tmp/cv/pub/gurt-key.asc > /tmp/cv/k.gpg
           "$g" -y convert gurt-cvtest-1.0.tar.gz zip && gpgv --keyring /tmp/cv/k.gpg ./gurt-cvtest-1.0.zip.asc ./gurt-cvtest-1.0.zip

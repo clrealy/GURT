@@ -388,7 +388,7 @@ gurt repo publish ~/myrepo                 # writes signed apt + rpm indexes and
 gurt repo add myrepo apt file://$HOME/myrepo stable main --key ~/myrepo/gurt-key.asc
 ```
 
-Put the folder on any web server (GitHub Pages works) and give people the `https://` address plus `gurt-key.asc`. It works with plain `apt` and `dnf` too.
+It handles `.deb`, `.rpm` and `.pkg.tar.zst` files: apt and rpm indexes, plus a pacman repo (`<name>.db`) where every package is signed. Put the folder on any web server (GitHub Pages works) and give people the `https://` address plus `gurt-key.asc`. It works with plain `apt`, `dnf` and `pacman` too. For pacman, add the key with `pacman-key`, then add `[<name>]`, `SigLevel = Required` and `Server = <url>` to `/etc/pacman.conf`.
 
 ## Handy stuff 🧰
 
