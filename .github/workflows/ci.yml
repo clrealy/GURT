@@ -95,6 +95,9 @@ jobs:
               ./gurt -y install "$(./gurt srcinfo packages/$p | sed -n 's/^alias = //p' | head -n1)"
             else
               ./gurt -y install "$p"
+              # lots of recipes in one PR: clean up as we go so the runner's disk doesn't fill up
+              ./gurt -y remove "$p" >/dev/null 2>&1 || true
+              rm -rf "${GURT_CACHE:-$HOME/.cache/gurt}/sources" "${GURT_CACHE:-$HOME/.cache/gurt}/pkg"
             fi
           done
 
