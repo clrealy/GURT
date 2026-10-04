@@ -310,7 +310,7 @@ def state():
         except Exception:
             pass
     return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks, "wsl": p.get("wsl") == "yes", "audio": audio_ok(),
-            "main": main, "dirtpkgs": dirt, "installed": installed, "vibes": vibes(repo), "notify": notify_on()}
+            "main": main, "dirtpkgs": dirt, "installed": installed, "vibes": vibes(repo), "notify": notify_on(), "dev": p.get("dev", "no")}
 
 
 def vibes(repo):   # vibes.map: "photoshop|photo editor: gimp krita …" → {"photoshop": [...], "photo editor": [...]}
@@ -511,6 +511,10 @@ class H(BaseHTTPRequestHandler):
         body = self._body()
         if u.path == "/api/run":
             cmd, arg = body.get("cmd"), (body.get("arg") or "").strip()
+            if cmd == "devunlock":   # 🔒 the dev build's password, handed to gurt on stdin (never on the command line)
+                pw = str(body.get("password", ""))[:200].replace("\n", "")
+                job = start_job([GURT, "__devunlock"], stdin_text=pw + "\n")
+                return self._send(200, {"job": job.id})
             if cmd == "de-list":
                 job = start_job([GURT, "de", "list"])
                 return self._send(200, {"job": job.id})
@@ -1353,6 +1357,9 @@ dialog .row{justify-content:flex-end}
   <div class="wiz-body"><ol class="wiz-rail" id="wizrail"></ol><div class="wiz-page" id="wizpage"></div></div>
   <div class="wiz-foot"><button class="btn ghost" id="wizcancel">Cancel</button><span class="spacer"></span><button class="btn ghost" id="wizback">&lt; Back</button><button class="btn" id="wiznext">Next &gt;</button></div>
 </dialog>
+<dialog id="devdlg"><h3>🧪 dev build</h3><p>this is a GURT dev build. type the dev password to keep it. a wrong one swaps in the normal GURT and removes the dev build.</p>
+  <input type="password" id="devpw" autocomplete="off" placeholder="dev password"><p class="hint" id="devmsg"></p>
+  <div class="row"><span class="spacer"></span><button class="btn" id="devgo">unlock</button></div></dialog>
 <dialog id="histdlg"><h3>📜 history</h3><div id="histlist"></div><div class="row"><span class="spacer"></span><button class="btn" id="histclose">done</button></div></dialog>
 <dialog id="achdlg"><h3>🏆 achievements</h3><div id="achlist"></div><div class="row"><span class="spacer"></span><button class="btn" id="achclose">nice</button></div></dialog>
 <div id="cmptray" hidden><span>⚖️</span><span id="cmplist"></span><span class="spacer"></span><button class="btn ghost small" id="cmpclear">clear</button><button class="btn small" id="cmpgo">compare</button></div>
@@ -1372,6 +1379,36 @@ const api = (p, body) => fetch(p, body ? {method:"POST", headers:{"X-Gurt-Token"
 let S = {main:[], installed:[]}, busy = false, cur = null;
 
 // ── state ──
+// 🔒 a dev build asks for the dev password once (right → never again, wrong → the normal GURT replaces it)
+function devGate(){
+  if (!S || S.dev !== "locked") return false;
+  const d = $("#devdlg"); if (d.open) return true;
+  d.addEventListener("cancel", e => e.preventDefault());   // Esc doesn't skip it
+  d.showModal(); setTimeout(() => $("#devpw").focus(), 50);
+  const go = async () => {
+    const pw = $("#devpw").value; if (!pw) return;
+    $("#devgo").disabled = true; $("#devmsg").textContent = "checking…";
+    const r = await api("/api/run", {cmd:"devunlock", password: pw}).catch(() => ({}));
+    $("#devpw").value = "";
+    if (!r.job) { $("#devgo").disabled = false; $("#devmsg").textContent = "couldn't check it, try again"; return; }
+    d.close(); cur = r.job; busy = true; setBusyUI(true);
+    let from = 0, lines = [], shown = false;
+    $("#ctitle").textContent = "gurt dev build"; $("#cdot").className = "dot run"; $("#console").classList.add("open"); $("#cout").textContent = "";
+    for (;;) {
+      const j = await api(`/api/job/${cur}?from=${from}`);
+      if (j.lines.length) { lines = lines.concat(j.lines); from += j.lines.length; $("#cout").textContent += j.lines.join("\n") + "\n"; }
+      if (j.ask && !shown) { shown = true; askPassword(j.ask); }
+      if (!j.ask) shown = false;
+      if (j.done) { busy = false; setBusyUI(false); $("#cdot").className = "dot " + (j.rc === 0 ? "ok" : "bad"); break; }
+      await new Promise(res => setTimeout(res, 400));
+    }
+    S = await api("/api/state"); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · 🪟 Windows" : ""}`;
+    if (S.dev === "locked") devGate();
+    else if (document.documentElement.dataset.wiz === "new") wizOpen();   // the wizard waited for this
+  };
+  $("#devgo").onclick = go; $("#devpw").onkeydown = e => { if (e.key === "Enter") go(); };
+  return true;
+}
 async function load(){ S = await api("/api/state"); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · 🪟 Windows" : ""}`;
   document.querySelector('nav button[data-tab="desktops"]').hidden = S.wsl;
   fitNav();
@@ -1502,6 +1539,7 @@ $("#achclose").addEventListener("click", () => $("#achdlg").close());
 (() => {
   const seen = document.documentElement.dataset.seen || "", ver = () => (S && S.version) || "";
   const show = () => {
+    if (devGate()) return;   // 🔒 the dev password comes first
     if (document.documentElement.dataset.wiz === "new") { wizOpen(); return; }   // brand new: the wizard covers what's new too
     if (!/^1\./.test(ver()) || /^1\./.test(seen)) return;
     $("#v1dlg").showModal(); SFX.play("legendary");
@@ -2099,7 +2137,7 @@ async function check(quiet = false){
 }
 $("#checkbtn").addEventListener("click", () => check());
 // 🔔 check for updates quietly right after opening, so the Updates tab shows its count without a click
-setTimeout(() => { if (!busy && typeof S !== "undefined" && S) bgCheck = check(true).catch(() => {}).finally(() => { bgCheck = null; }); }, 2500);
+setTimeout(() => { if (!busy && typeof S !== "undefined" && S && S.dev !== "locked") bgCheck = check(true).catch(() => {}).finally(() => { bgCheck = null; }); }, 2500);
 $("#upbtn").addEventListener("click", async () => { if (await run("upgrade")) check(); });
 $("#selfbtn").addEventListener("click", () => run("self-update"));
 $("#syncbtn").addEventListener("click", () => run("sync", "", {confirm:false}));
