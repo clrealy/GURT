@@ -221,7 +221,6 @@ jobs:
           mkdir -p site/dev/rpm
           tools/make-setup-wizard.sh site/dev/rpm --dev=${{ github.run_number }} $SIGN
           ./gurt -y repo publish site/dev/rpm gurt-dev
-          cp site/dev/rpm/GURTSetupWizard-dev.rpm site/dev/
           cp site/dev/rpm/GURTSetupWizard-dev.rpm site/IHAVECOPIUMFORHALFLIFETHREEANDTHESTEAMMACHINE/SPINNINGAPPLES/ILIKEGREENCHAMELEONS/YaSTOVERCOCKPIT/SUSEOVERRHEL/THISISTOOLONG/THISISTHEEND/HOLDYOURBREATHANDCOUNTTOTEN/AREYOUREALLYSINGINGADELE/DOWNLOAD/ACTUALDOWNLOAD/ACTUALACTUALDOWNLOAD/QWERTY/
       # 📦 the stable repo: the latest release's GURTSetupWizard .deb / .rpm / .pkg.tar.zst as an apt + rpm + pacman repo
       # at /repo. stable GURTSetupWizard packages add it, so new versions come with normal system updates

@@ -178,8 +178,6 @@ On Linux, your software center installs it like any other app. Then open **GURT*
 
 `gurt setup` runs the wizard again anytime, in the terminal (or 🎨 → 🧙 setup wizard in the app). Picked apps on the website's 🧰 Build your setup? Hit 📄 save as a list, then 📥 import it in the wizard.
 
-**🧪 Dev build (openSUSE, Fedora and other rpm distros):** [`GURTSetupWizard-dev.rpm`](https://gurtproject.org/dev/GURTSetupWizard-dev.rpm) is rebuilt on every change to `main`. It adds the `gurt-dev` repo, so `sudo zypper up` / `sudo dnf upgrade` keep you on the newest dev build. Dev builds come with every achievement unlocked 🏆, and every package in the app gets ✏️ edit / 🗑️ delete buttons that open it on GitHub (GitHub still decides who can change the repo). Expect bugs 🐛. Going back to stable: `sudo zypper rr gurt-dev` (or delete `/etc/yum.repos.d/gurt-dev.repo`), then install the stable `.rpm`.
-
 **Updates:** the GURTSetupWizard `.deb` and `.rpm` add the GURT repo (`gurtproject.org/repo`), so new versions of GURT come with your normal system updates: `sudo apt upgrade`, `sudo zypper up` / `dup`, `sudo dnf upgrade`. On Arch, add it to `/etc/pacman.conf` yourself, as below. `gurt self-update` tells you the right command.
 
 **Uninstall:** `gurt uninstall`. It saves your app list to `~/gurt-apps-<date>.txt`, asks whether to remove the apps gurt installed too, then takes gurt off (through your package manager if you used a GURTSetupWizard package). `gurt uninstall <app>` still just removes that app.
