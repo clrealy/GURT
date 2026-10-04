@@ -74,6 +74,9 @@ header{padding:48px 0 24px;position:relative}
 .desc{color:var(--muted);margin-top:2px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .chip{background:var(--tag);border-radius:999px;padding:2px 10px;font-size:12px}
+.owner{display:inline-flex;align-items:center;gap:3px;background:var(--accent);color:var(--accent-ink,#1a1a1a);border:1.5px solid var(--edge,var(--ink));border-radius:999px;padding:1px 8px;font-size:11px;font-weight:800;letter-spacing:.02em;vertical-align:middle;white-space:nowrap}
+#pname .owner{font-size:13px;margin-left:8px}
+.chip.ownerchip,:root:not(.dirt) .chip.ownerchip{background:var(--accent);color:var(--accent-ink,#1a1a1a);font-weight:800}
 dialog{border:none;border-radius:16px;padding:0;max-width:760px;width:calc(100% - 32px);background:var(--panel);color:var(--ink)}
 dialog::backdrop{background:rgba(0,0,0,.55)}
 .dhead{padding:20px 20px 8px;display:flex;justify-content:space-between;gap:12px;align-items:start}
@@ -405,6 +408,10 @@ const $ = s => document.querySelector(s);
   document.addEventListener("click", e => { const a = e.target.closest(".dlbtn"); if (a && a.dataset.k === "win") showNote(); });
 })();
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+// 👑 the people who run GURT get an owner badge next to their name
+const OWNERS = ["clrealy"];
+const isOwner = u => OWNERS.includes(String(u || "").toLowerCase());
+const ownerBadge = u => isOwner(u) ? ` <span class="owner" title="runs GURT">👑 owner</span>` : "";
 const ago = t => { const d = (Date.now()/1000 - t)/86400; return d < 1 ? "today" : d < 2 ? "yesterday" : d < 60 ? Math.floor(d)+" days ago" : new Date(t*1000).toLocaleDateString(); };
 
 const card = p => `
@@ -412,7 +419,7 @@ const card = p => `
       <div class="row"><span class="name">${esc(p.pkgname)}</span><span class="ver mono">${p.via_repo?"latest":esc(p.pkgver)+"-"+esc(p.pkgrel)}</span></div>
       <div class="desc">${esc(p.pkgdesc)}${(p.alias||[]).length ? ` <span class="aka">aka ${esc(p.alias.join(", "))}</span>` : ""}</div>
       <div class="chips">${(p.arch||[]).map(a=>`<span class="chip mono">${esc(a)}</span>`).join("")}
-        ${p.via_repo?`<span class="chip">official repo 🔏</span>`:p.via_type==="flatpak"?`<span class="chip">Flathub 📦</span>`:""}${p.maintainer?`<span class="chip who" data-u="${esc(p.maintainer)}">by ${esc(p.maintainer)}</span>`:""}<span class="chip">updated ${ago(p.updated)}</span></div>
+        ${p.via_repo?`<span class="chip">official repo 🔏</span>`:p.via_type==="flatpak"?`<span class="chip">Flathub 📦</span>`:""}${p.maintainer?`<span class="chip who${isOwner(p.maintainer) ? " ownerchip" : ""}" data-u="${esc(p.maintainer)}"${isOwner(p.maintainer) ? ` title="runs GURT"` : ""}>${isOwner(p.maintainer) ? "👑 " : ""}by ${esc(p.maintainer)}</span>`:""}<span class="chip">updated ${ago(p.updated)}</span></div>
     </button>`;
 
 function render(){
@@ -437,7 +444,7 @@ async function showPkg(name){
     row("upstream", p.url ? `<a href="${esc(p.url)}" rel="noopener">${esc(p.url)}</a>` : "") +
     row("comes from", p.via_url ? `${esc(p.via_url)} <span class="mono">(key ${esc((p.via_fingerprint||"").replace(/(.{4})/g,"$1 ").trim())})</span>` : "") +
     row("also installs as", esc((p.alias||[]).map(a => "gurt install " + pre + a).join(" · "))) +
-    row("license", esc(p.license)) + row("maintainer", p.maintainer ? `<span class="who" data-u="${esc(p.maintainer)}">${esc(p.maintainer)}</span>` : "") +
+    row("license", esc(p.license)) + row("maintainer", p.maintainer ? `<span class="who" data-u="${esc(p.maintainer)}">${esc(p.maintainer)}</span>${ownerBadge(p.maintainer)}` : "") +
     row("arch", esc((p.arch||[]).join(", "))) +
     row("depends", esc((p.depends||[]).join(", "))) +
     row("makedepends", esc((p.makedepends||[]).join(", "))) +
@@ -475,12 +482,13 @@ function loadComments(name) {
 function showProfile(u, push = true) {
   const mine = PKGS.filter(p => (p.maintainer || "").toLowerCase() === u.toLowerCase());
   $("#pav").src = `https://github.com/${encodeURIComponent(u)}.png?size=192`;
-  $("#pname").textContent = u;
+  const setName = t => { $("#pname").textContent = t; if (isOwner(u)) $("#pname").insertAdjacentHTML("beforeend", ownerBadge(u)); };
+  setName(u);
   $("#pmeta").textContent = `${mine.length} package${mine.length === 1 ? "" : "s"} on Main GURT`;
   $("#plink").href = `https://github.com/${encodeURIComponent(u)}`; $("#plink").textContent = `github.com/${u} ↗`;
   $("#plist").innerHTML = mine.length ? mine.map(card).join("") : `<div class="empty">no packages yet 👀</div>`;
   fetch(`https://api.github.com/users/${encodeURIComponent(u)}`).then(r => r.ok ? r.json() : null)
-    .then(d => { if (d && d.name) $("#pname").textContent = `${d.name} (${u})`; }).catch(() => {});
+    .then(d => { if (d && d.name) setName(`${d.name} (${u})`); }).catch(() => {});
   ["header .srcs", ".secthead", ".search", "#list", "#srcpanel", "#builder"].forEach(q => document.querySelector(q).hidden = true);
   $("#profile").hidden = false; dlg.open && dlg.close();
   if (push) try { history.pushState({ u }, "", "?u=" + encodeURIComponent(u)); } catch {}
