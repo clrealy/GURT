@@ -105,6 +105,9 @@ class Job:
         self.ask = None                 # sudo password prompt waiting for the browser
         self.answer, self.answered = None, threading.Event()
         self.proc = None
+        # one job can run sudo several times, and sudo's own "remember the password" doesn't always cover all of
+        # them (it's per process on some distros), so the job remembers it, in memory, until it ends
+        self.pw, self.pw_sudo = None, None
 
     def run(self, askpass):
         env = dict(os.environ, GURT_GUI="1", NO_COLOR="1", SUDO_ASKPASS=askpass,
@@ -124,6 +127,7 @@ class Job:
         except Exception as e:  # noqa
             self.lines.append(f"==> nah: {e}")
             self.rc = 1
+        self.pw = self.pw_sudo = None   # forget the password the moment the job's over
         self.done = True
 
 
@@ -145,7 +149,7 @@ def write_askpass():
 import json, os, sys, urllib.request
 prompt = " ".join(sys.argv[1:]) or "password"
 req = urllib.request.Request(os.environ["GURT_GUI_URL"] + "/askpass?job=" + os.environ.get("GURT_GUI_JOB", ""),
-    data=json.dumps({{"prompt": prompt}}).encode(), headers={{"X-Gurt-Token": os.environ["GURT_GUI_TOKEN"], "Content-Type": "application/json"}})
+    data=json.dumps({{"prompt": prompt, "sudo": os.getppid()}}).encode(), headers={{"X-Gurt-Token": os.environ["GURT_GUI_TOKEN"], "Content-Type": "application/json"}})
 try:
     with urllib.request.urlopen(req, timeout=600) as r:
         ans = json.load(r)
@@ -641,11 +645,18 @@ class H(BaseHTTPRequestHandler):
             job = JOBS.get((parse_qs(u.query).get("job") or [""])[0])
             if not job:
                 return self._send(404, {"cancel": True})
+            sudo = body.get("sudo")
+            if job.pw is not None and sudo != job.pw_sudo:
+                job.pw_sudo = sudo   # a new sudo in the same job: hand it the password you already typed
+                return self._send(200, {"password": job.pw})
+            job.pw = job.pw_sudo = None   # the same sudo asking again = that password was wrong, so ask you
             job.answered.clear()
             job.answer = None
             job.ask = (body.get("prompt") or "password").strip()
             job.answered.wait(600)
             ans, job.ask, job.answer = job.answer or {"cancel": True}, None, None
+            if not ans.get("cancel") and isinstance(ans.get("password"), str) and not job.done:
+                job.pw, job.pw_sudo = ans["password"], sudo
             return self._send(200, ans)
         return self._send(404, {"error": "not found"})
 
