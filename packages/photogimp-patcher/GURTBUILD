@@ -1,0 +1,26 @@
+# PhotoGIMP Patcher: one-click GUI to make GIMP 3 look + feel like Photoshop
+# patches native and Flatpak GIMP, backs up your config, restore button included
+pkgname=photogimp-patcher
+pkgver=1.0.2
+pkgrel=1
+pkgdesc="GUI-Patch GIMP for users migrating from Adobe Photoshop"
+aliases=(photogimp g2ps)
+url="https://github.com/clrealy/GURT"
+license="MIT"
+maintainer="clrealy"
+category="creative"
+arch=(any)
+depends=(python3 python3-tk)
+makedepends=()
+source=("photogimp-patcher.py" "photogimp-patcher.png")
+sha256sums=("094dd919eeb10ade3045ec2dc7b092053472651576656210e84cc0d0676591f8"
+            "27459f6e6ff9ab45daa58f164f0daca30ee2df191392de4483013e287bb012e8")
+
+package() {
+  install -Dm755 "$srcdir/photogimp-patcher.py" "$pkgdir$prefix/bin/photogimp-patcher"
+  install -Dm644 "$srcdir/photogimp-patcher.png" "$pkgdir$prefix/share/pixmaps/photogimp-patcher.png"
+  # absolute paths: launchers don't read your shell PATH. StartupWMClass matches the window so the icon sticks
+  printf '[Desktop Entry]\nType=Application\nName=PhotoGIMP Patcher\nComment=%s\nExec=%s/bin/photogimp-patcher\nIcon=%s/share/pixmaps/photogimp-patcher.png\nTerminal=false\nCategories=Graphics;Utility;\nKeywords=gimp;photoshop;photogimp;\nStartupWMClass=Photogimp-patcher\n' \
+    "$pkgdesc" "$prefix" "$prefix" > photogimp-patcher.desktop
+  install -Dm644 photogimp-patcher.desktop "$pkgdir$prefix/share/applications/photogimp-patcher.desktop"
+}

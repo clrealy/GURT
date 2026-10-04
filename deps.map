@@ -37,6 +37,8 @@ wine        apt=wine  dnf=wine  pacman=wine  zypper=wine  apk=wine  xbps=wine  e
 
 # ── languages ──
 python3     pacman=python  emerge=dev-lang/python
+# tkinter, Python's built-in GUI toolkit (Gentoo: comes with dev-lang/python[tk])
+python3-tk  apt=python3-tk  dnf=python3-tkinter  pacman=tk  zypper=python3-tk  apk=py3-tkinter  xbps=python3-tkinter  eopkg=python3-tkinter  emerge=-
 gzip        emerge=app-arch/gzip
 rust        apt=cargo  dnf=cargo  pacman=rust  zypper=cargo  apk=cargo  xbps=cargo  emerge=dev-lang/rust
 go          apt=golang-go  dnf=golang  pacman=go  zypper=go  apk=go  xbps=go  emerge=dev-lang/go

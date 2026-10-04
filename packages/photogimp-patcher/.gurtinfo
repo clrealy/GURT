@@ -1,0 +1,15 @@
+pkgname = photogimp-patcher
+pkgver = 1.0.2
+pkgrel = 1
+pkgdesc = GUI-Patch GIMP for users migrating from Adobe Photoshop
+url = https://github.com/clrealy/GURT
+license = MIT
+maintainer = clrealy
+category = creative
+arch = any
+depends = python3
+depends = python3-tk
+source = photogimp-patcher.py
+source = photogimp-patcher.png
+alias = photogimp
+alias = g2ps
