@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="1.0.0"
+GURT_VERSION="1.0.0+hotfix1"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -2334,7 +2334,9 @@ cmd_convert() { # file|url format|out-file [-o dir]
   case $fmt in
     deb)    CV_TVER="${CVE:+$CVE:}$CVU-$CVR" ;;
     pacman) CV_TVER="${CVE:+$CVE:}$CVU-$CVR" ;;
-    apk)    [[ $CVU =~ ^([0-9]+(\.[0-9]+)*) ]] && CVU=${BASH_REMATCH[1]}; CV_TVER="$CVU-r$CVR" ;;
+    apk)    # Alpine only takes 1.2.3[_p4][-r5]: 1.0.0+hotfix1 → 1.0.0_p1
+            CVX=""; [[ $CVU == *+* ]] && CVX=$(grep -o '[0-9]*$' <<<"${CVU#*+}" || true)
+            [[ $CVU =~ ^([0-9]+(\.[0-9]+)*) ]] && CVU=${BASH_REMATCH[1]}; CV_TVER="$CVU${CVX:+_p$CVX}-r$CVR" ;;
     xbps)   CV_TVER="${CVU//_/.}_$CVR" ;;
     eopkg)  CV_TVER="$CVU-$CVR" ;;
     *)      CV_TVER="$CVU-$CVR" ;;
@@ -4553,6 +4555,40 @@ compare|indecisive ⚖️|compare apps side by side
 v1|day one 🎂|be there for GURT 1.0
 wizard|you're a wizard 🧙|finish the setup wizard"
 is_dev() { [[ $GURT_VERSION == *+dev* ]]; }   # a GURTSetupWizard-dev build
+
+# ── 🔒 dev builds want the dev password once. right → never again. wrong → the normal GURT replaces the dev build ──
+DEV_PASS_SHA=122d01009107a4ba960d2e8191948a1f1e40cf1aa969ead57e87a278b1da06f4   # sha256, not the password itself
+DEV_OK="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/dev-unlocked"
+dev_state() { if ! is_dev; then echo no; elif [[ -f $DEV_OK ]]; then echo ok; else echo locked; fi; }
+dev_check() { # password → 0 if it's the dev password (and remembers that), else swaps in the normal version
+  if [[ $(printf %s "$1" | sha256sum | cut -d' ' -f1) == "$DEV_PASS_SHA" ]]; then
+    mkdir -p "${DEV_OK%/*}" && date +%F > "$DEV_OK"
+    msg "dev build unlocked 🧪🔓 it won't ask again"; return 0
+  fi
+  dev_revoke; return 3
+}
+dev_revoke() {
+  warn "wrong dev password 🔒 swapping the dev build for the normal GURT"
+  local tmp f=/usr/bin/gurt; tmp=$(mktemp -d)
+  curl -fsSL -o "$tmp/GURTSetupWizard.rpm" https://github.com/clrealy/GURT/releases/latest/download/GURTSetupWizard.rpm ||
+    { rm -rf "$tmp"; die "couldn't download the normal GURT — get it from https://github.com/clrealy/GURT/releases/latest"; }
+  case $PM in   # it's a "downgrade" (1.0.0 is older than 1.0.0+dev.N), and the gurt-dev repo goes away with the dev package
+    zypper) asroot zypper --non-interactive install --oldpackage --allow-unsigned-rpm "$tmp/GURTSetupWizard.rpm" ;;
+    dnf|yum) asroot "$PM" downgrade -y "$tmp/GURTSetupWizard.rpm" || asroot rpm -U --oldpackage "$tmp/GURTSetupWizard.rpm" ;;
+    *) asroot rpm -U --oldpackage "$tmp/GURTSetupWizard.rpm" ;;
+  esac || { rm -rf "$tmp"; die "couldn't swap in the normal GURT — get it from https://github.com/clrealy/GURT/releases/latest"; }
+  asroot rm -f /etc/zypp/repos.d/gurt-dev.repo /etc/yum.repos.d/gurt-dev.repo
+  rm -rf "$tmp"
+  msg "you're on the normal GURT now ($("$f" version 2>/dev/null || echo "gurt")) — the dev build is gone 👋"
+}
+dev_gate() { # cmd — asks once, in a terminal. scripts, background runs and gurt's own helpers never get stopped
+  [[ $(dev_state) == locked ]] || return 0
+  case $1 in __*|gui|version|uninstall|help) return 0 ;; esac
+  [[ -t 0 && -r /dev/tty ]] || return 0
+  local pw; printf '%s🧪 this is a dev build. dev password:%s ' "$MAG" "$R0" >&2
+  read -rs pw </dev/tty; echo >&2
+  dev_check "$pw" || exit 3
+}
 achieved() { is_dev || { [[ -f $ACH_FILE ]] && grep -q "^$1 " "$ACH_FILE"; }; }   # 🧪 dev builds have every achievement
 achieve() { # id — unlock it (once), with a little fanfare
   [[ ${GURT_ACHIEVEMENTS:-1} == 0 ]] && return 0
@@ -5221,6 +5257,7 @@ main() {
   set -- "${args[@]}"
   local cmd=${1:-hi}; shift || true
   [[ $cmd == __complete ]] || ensure_completions
+  dev_gate "$cmd"
   local p
   # --repo X  →  every bare package name becomes X/name
   if [[ -n $REPO ]]; then
@@ -5287,7 +5324,8 @@ main() {
     import)            cmd_import "$@" ;;
     __complete)        cmd_complete "$@" ;;
     __achieve)         [[ ${1:-} =~ ^[a-z0-9]+$ ]] && achieve "$1" ;;
-    __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\nwsl=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" "$(is_wsl && echo yes || echo no)" ;;
+    __devunlock)       [[ $(dev_state) == locked ]] || exit 0; IFS= read -r p || p=""; dev_check "$p" ;;   # the app sends it on stdin
+    __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\nwsl=%s\ndev=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" "$(is_wsl && echo yes || echo no)" "$(dev_state)" ;;
     gui)               cmd_gui "$@" ;;
     completions)       completion_script "${1:?usage: gurt completions bash|zsh|fish}" ;;
     outsource|os|clone) (( $# )) || die "outsource what tho — gurt outsource https://github.com/user/repo (or a file: gurt outsource ./app.deb)"
