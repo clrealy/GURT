@@ -21,7 +21,10 @@ RequestExecutionLevel user          ; install.ps1 asks for admin itself, only if
 InstallDir "$LOCALAPPDATA\gurt"
 ShowInstDetails show
 BrandingText "GURT ${VERSION}"
-VIProductVersion "${VERSION}.0"
+!ifndef NUMVER
+  !define NUMVER "${VERSION}.0"
+!endif
+VIProductVersion "${NUMVER}"
 VIAddVersionKey "ProductName" "GURT"
 VIAddVersionKey "FileDescription" "GURT Setup Wizard"
 VIAddVersionKey "FileVersion" "${VERSION}"

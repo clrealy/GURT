@@ -1,5 +1,31 @@
 # GURT changelog 🦆
 
+## 1.0.0+hotfix1: the stuff 1.0 should've had 🩹
+
+Same GURT 1.0, plus everything that landed right after it.
+
+### New
+- **`gurt uninstall`** takes GURT off your computer. It saves your app list first, asks before removing the apps GURT installed, then removes GURT through your package manager. `gurt uninstall <app>` still just removes that app.
+- **Updates through your system.** The `.rpm` adds the GURT repo (gurtproject.org/repo), so `zypper up` / `dnf upgrade` bring new GURT versions. The `.deb` does the same for `apt upgrade` once releases are signed.
+- **`gurt run <app>`** starts an app, and offers to install it first.
+- **`gurt history`** shows what you installed and removed, and when. It's also under 📜 in the app.
+- **`gurt cache`** shows how much space GURT's downloads use, and `gurt cache clean` frees it.
+- **"Did you mean…?"** when an app name has a typo: `gurt install fierfox` → firefox.
+
+### The app
+- **A cleaner layout.** The everyday stuff stays up front, and the rest lives under **⋯ more**.
+- **Updates count themselves.** The Updates tab shows how many are waiting as soon as the app opens.
+- **`/` jumps to the search box.**
+
+### Fixed
+- **The password prompt.** Installing a file asked for your password twice; now it's once.
+- **Crash on close.** Closing the app window left a crash report on some graphics drivers (WebKitGTK + Mesa).
+- **The setup wizard.** On the App sources and Extras steps, the checkboxes squished the text off the screen.
+- **`gurt self-update`** on a packaged install now tells you to update with your package manager instead of overwriting files.
+
+### Site
+- GURT lives at **gurtproject.org** now.
+
 ## 1.0.0: GURT 1.0 🎉
 
 No more 0.something. GURT installs any distro's packages on any distro, and 1.0 is where it's grown up enough to say so.

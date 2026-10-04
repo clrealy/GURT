@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="1.0.0"
+GURT_VERSION="1.0.0+hotfix1"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -2334,7 +2334,9 @@ cmd_convert() { # file|url format|out-file [-o dir]
   case $fmt in
     deb)    CV_TVER="${CVE:+$CVE:}$CVU-$CVR" ;;
     pacman) CV_TVER="${CVE:+$CVE:}$CVU-$CVR" ;;
-    apk)    [[ $CVU =~ ^([0-9]+(\.[0-9]+)*) ]] && CVU=${BASH_REMATCH[1]}; CV_TVER="$CVU-r$CVR" ;;
+    apk)    # Alpine only takes 1.2.3[_p4][-r5]: 1.0.0+hotfix1 → 1.0.0_p1
+            CVX=""; [[ $CVU == *+* ]] && CVX=$(grep -o '[0-9]*$' <<<"${CVU#*+}" || true)
+            [[ $CVU =~ ^([0-9]+(\.[0-9]+)*) ]] && CVU=${BASH_REMATCH[1]}; CV_TVER="$CVU${CVX:+_p$CVX}-r$CVR" ;;
     xbps)   CV_TVER="${CVU//_/.}_$CVR" ;;
     eopkg)  CV_TVER="$CVU-$CVR" ;;
     *)      CV_TVER="$CVU-$CVR" ;;
