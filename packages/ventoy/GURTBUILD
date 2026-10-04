@@ -1,7 +1,7 @@
 # Make a bootable USB once, then just copy ISO files onto it (Ventoy2Disk GUI included)
 pkgname=ventoy
 pkgver=1.1.17
-pkgrel=1
+pkgrel=2
 pkgdesc="Make a bootable USB once, then just copy ISO files onto it and boot any of them"
 url="https://www.ventoy.net"
 license="GPL-3.0-or-later"
@@ -17,10 +17,24 @@ package() {
   mkdir -p "$pkgdir$dir"
   cp -a "ventoy-$pkgver/." "$pkgdir$dir/"
   case $CARCH in x86_64) gui=x86_64 ;; aarch64) gui=aarch64 ;; *) gui=i386 ;; esac
-  # Ventoy runs from its own folder (it reads ./tool and writes its log next to itself)
-  printf '#!/bin/sh\ncd "%s" || exit 1\nexec ./VentoyGUI.%s "$@"\n' "$dir" "$gui" > ventoygui
-  printf '#!/bin/sh\ncd "%s" || exit 1\nexec bash ./Ventoy2Disk.sh "$@"\n' "$dir" > ventoy
-  printf '#!/bin/sh\ncd "%s" || exit 1\nexec bash ./VentoyWeb.sh "$@"\n' "$dir" > ventoyweb
+  # Ventoy writes log.txt and unpacks its tools next to itself, and the GUI quits without a word when it can't
+  # (like in a root-owned folder). so it runs from your own copy, the way Ventoy's docs run it (made on first launch,
+  # replaced when Ventoy updates). the GUI then asks for root itself (pkexec)
+  cat > gurt-ventoy <<LAUNCH
+#!/bin/sh
+src="$dir" ver="$pkgver-$pkgrel"
+base="\${XDG_DATA_HOME:-\$HOME/.local/share}/ventoy" dst="\$base/\$ver"
+if [ ! -f "\$dst/.gurt-copy" ]; then
+  for d in "\$base"/*/; do [ -f "\$d.gurt-copy" ] && rm -rf "\$d"; done   # older copies gurt made
+  mkdir -p "\$dst" && cp -a "\$src/." "\$dst/" && touch "\$dst/.gurt-copy" || { echo "ventoy: couldn't set up \$dst" >&2; exit 1; }
+fi
+cd "\$dst" || exit 1
+exec "\$@"
+LAUNCH
+  install -Dm755 gurt-ventoy "$pkgdir$dir/gurt-ventoy"
+  printf '#!/bin/sh\nexec "%s/gurt-ventoy" ./VentoyGUI.%s "$@"\n' "$dir" "$gui" > ventoygui
+  printf '#!/bin/sh\nexec "%s/gurt-ventoy" bash ./Ventoy2Disk.sh "$@"\n' "$dir" > ventoy
+  printf '#!/bin/sh\nexec "%s/gurt-ventoy" bash ./VentoyWeb.sh "$@"\n' "$dir" > ventoyweb
   for f in ventoygui ventoy ventoyweb; do install -Dm755 "$f" "$pkgdir$prefix/bin/$f"; done
   ln -s ventoygui "$pkgdir$prefix/bin/ventoy2diskgui"
   install -Dm644 "ventoy-$pkgver/WebUI/static/img/VentoyLogo.png" "$pkgdir$prefix/share/pixmaps/ventoy.png"
