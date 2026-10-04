@@ -690,6 +690,10 @@ def find_toolkit():
 def native_window(tk, url, icon):
     title, w, h = "GURT", 1100, 760
     if tk == "gtk":
+        # WebKitGTK + newer Mesa crash on the way out (a double free in libgallium's exit handlers → a core dump every
+        # time GURT closes). GURT's page doesn't need the GPU, so keep WebKit off it (these are set before WebKit loads)
+        os.environ.setdefault("WEBKIT_DISABLE_DMABUF_RENDERER", "1")
+        os.environ.setdefault("WEBKIT_DISABLE_COMPOSITING_MODE", "1")
         import gi
         gi.require_version("Gtk", "3.0")
         from gi.repository import Gtk, WebKit2, GLib
@@ -717,12 +721,23 @@ def native_window(tk, url, icon):
         view.connect("drag-data-received", on_drag_data)
         st = view.get_settings()
         st.set_enable_developer_extras(False)
+        try:
+            st.set_hardware_acceleration_policy(WebKit2.HardwareAccelerationPolicy.NEVER)
+        except Exception:
+            pass
         # sounds + music: WebKitGTK needs web audio switched on, and lets the page play without waiting for a click
         for name, val in (("set_enable_webaudio", True), ("set_enable_media", True), ("set_media_playback_requires_user_gesture", False)):
             if hasattr(st, name):
                 getattr(st, name)(val)
         view.load_uri(url)
         win.add(view)
+        def on_close(*_):   # end WebKit's page process ourselves, so it never runs the exit code that crashes
+            try:
+                view.terminate_web_process()
+            except Exception:
+                pass
+            return False    # then the window closes like normal
+        win.connect("delete-event", on_close)
         win.connect("destroy", Gtk.main_quit)
         win.show_all()
         Gtk.main()
