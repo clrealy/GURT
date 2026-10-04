@@ -105,6 +105,9 @@ class Job:
         self.ask = None                 # sudo password prompt waiting for the browser
         self.answer, self.answered = None, threading.Event()
         self.proc = None
+        # one job can run sudo several times, and sudo's own "remember the password" doesn't always cover all of
+        # them (it's per process on some distros), so the job remembers it, in memory, until it ends
+        self.pw, self.pw_sudo = None, None
 
     def run(self, askpass):
         env = dict(os.environ, GURT_GUI="1", NO_COLOR="1", SUDO_ASKPASS=askpass,
@@ -124,6 +127,7 @@ class Job:
         except Exception as e:  # noqa
             self.lines.append(f"==> nah: {e}")
             self.rc = 1
+        self.pw = self.pw_sudo = None   # forget the password the moment the job's over
         self.done = True
 
 
@@ -145,7 +149,7 @@ def write_askpass():
 import json, os, sys, urllib.request
 prompt = " ".join(sys.argv[1:]) or "password"
 req = urllib.request.Request(os.environ["GURT_GUI_URL"] + "/askpass?job=" + os.environ.get("GURT_GUI_JOB", ""),
-    data=json.dumps({{"prompt": prompt}}).encode(), headers={{"X-Gurt-Token": os.environ["GURT_GUI_TOKEN"], "Content-Type": "application/json"}})
+    data=json.dumps({{"prompt": prompt, "sudo": os.getppid()}}).encode(), headers={{"X-Gurt-Token": os.environ["GURT_GUI_TOKEN"], "Content-Type": "application/json"}})
 try:
     with urllib.request.urlopen(req, timeout=600) as r:
         ans = json.load(r)
@@ -398,6 +402,13 @@ class H(BaseHTTPRequestHandler):
             return self._send(200, {"distro": distro, "pm": p.get("pm", "?"), "wsl": p.get("wsl") == "yes", "mode": MODE, "audio": audio_ok(),
                                     "sudo": os.geteuid() == 0 or bool(shutil.which("sudo") or shutil.which("doas")), "utils": utils,
                                     "notify": notify_on(), "version": p.get("version", "?")})
+        if u.path == "/api/history":   # 📜 gurt history: date \t install|remove \t app \t version
+            f = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state"), "gurt", "history")
+            try:
+                with open(f, encoding="utf-8", errors="replace") as h: lines = h.read().splitlines()[-300:]
+            except OSError: lines = []
+            items = [dict(zip(("when", "what", "app", "ver"), l.split("\t"))) for l in lines if l.count("\t") == 3]
+            return self._send(200, {"items": items[::-1]})
         if u.path == "/api/achievements":
             out = subprocess.run([GURT, "achievements", "--tsv"], capture_output=True, text=True, timeout=30, env=dict(os.environ, NO_COLOR="1")).stdout
             items = [dict(zip(("id", "title", "what", "got"), l.split("\t"))) for l in out.splitlines() if l.count("\t") == 3]
@@ -634,11 +645,18 @@ class H(BaseHTTPRequestHandler):
             job = JOBS.get((parse_qs(u.query).get("job") or [""])[0])
             if not job:
                 return self._send(404, {"cancel": True})
+            sudo = body.get("sudo")
+            if job.pw is not None and sudo != job.pw_sudo:
+                job.pw_sudo = sudo   # a new sudo in the same job: hand it the password you already typed
+                return self._send(200, {"password": job.pw})
+            job.pw = job.pw_sudo = None   # the same sudo asking again = that password was wrong, so ask you
             job.answered.clear()
             job.answer = None
             job.ask = (body.get("prompt") or "password").strip()
             job.answered.wait(600)
             ans, job.ask, job.answer = job.answer or {"cancel": True}, None, None
+            if not ans.get("cancel") and isinstance(ans.get("password"), str) and not job.done:
+                job.pw, job.pw_sudo = ans["password"], sudo
             return self._send(200, ans)
         return self._send(404, {"error": "not found"})
 
@@ -683,6 +701,10 @@ def find_toolkit():
 def native_window(tk, url, icon):
     title, w, h = "GURT", 1100, 760
     if tk == "gtk":
+        # WebKitGTK + newer Mesa crash on the way out (a double free in libgallium's exit handlers → a core dump every
+        # time GURT closes). GURT's page doesn't need the GPU, so keep WebKit off it (these are set before WebKit loads)
+        os.environ.setdefault("WEBKIT_DISABLE_DMABUF_RENDERER", "1")
+        os.environ.setdefault("WEBKIT_DISABLE_COMPOSITING_MODE", "1")
         import gi
         gi.require_version("Gtk", "3.0")
         from gi.repository import Gtk, WebKit2, GLib
@@ -710,12 +732,23 @@ def native_window(tk, url, icon):
         view.connect("drag-data-received", on_drag_data)
         st = view.get_settings()
         st.set_enable_developer_extras(False)
+        try:
+            st.set_hardware_acceleration_policy(WebKit2.HardwareAccelerationPolicy.NEVER)
+        except Exception:
+            pass
         # sounds + music: WebKitGTK needs web audio switched on, and lets the page play without waiting for a click
         for name, val in (("set_enable_webaudio", True), ("set_enable_media", True), ("set_media_playback_requires_user_gesture", False)):
             if hasattr(st, name):
                 getattr(st, name)(val)
         view.load_uri(url)
         win.add(view)
+        def on_close(*_):   # end WebKit's page process ourselves, so it never runs the exit code that crashes
+            try:
+                view.terminate_web_process()
+            except Exception:
+                pass
+            return False    # then the window closes like normal
+        win.connect("delete-event", on_close)
         win.connect("destroy", Gtk.main_quit)
         win.show_all()
         Gtk.main()
@@ -927,6 +960,9 @@ nav .badge{background:var(--bad);color:#fff;border-radius:999px;font-size:11px;p
 .btn.small{padding:4px 10px;font-size:13px}
 main{flex:1;overflow:auto;padding:18px 20px 30px}
 .search{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.more{position:relative;display:inline-flex}
+.morepop{position:absolute;right:0;top:calc(100% + 8px);z-index:60;display:grid;gap:6px;min-width:220px;padding:10px;background:var(--panel);border:2px solid var(--edge,var(--line));border-radius:10px;box-shadow:5px 5px 0 var(--shadow,#0004)}
+.morepop[hidden]{display:none}.morepop .btn{width:100%;justify-content:flex-start;text-align:left}
 .search input{flex:1 1 260px;min-width:0;font:inherit;font-size:16px;padding:11px 14px;border-radius:12px;border:2px solid var(--line);background:var(--panel);color:var(--ink);outline:none}
 .search input:focus{border-color:var(--accent)}
 .hint{color:var(--muted);font-size:13px;margin:-6px 2px 12px}
@@ -1032,7 +1068,7 @@ dialog .row{justify-content:flex-end}
 #musicbtn.off{opacity:.5}
 /* the Install a file tab only shows when the header has room for it; otherwise the button in Discover does the job */
 :root.tight nav button[data-tab=dropfile]{display:none}
-:root:not(.tight) #dropbtn,:root:not(.tight) #convopen{display:none}
+
 #dropzone{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bg) 88%,transparent);pointer-events:none}
 #dropzone div{border:4px dashed var(--accent);border-radius:24px;padding:48px 64px;text-align:center;background:var(--panel);font-size:22px;font-weight:700}
 #dropzone small{display:block;font-size:14px;font-weight:400;color:var(--muted);margin-top:8px}
@@ -1118,7 +1154,7 @@ dialog .row{justify-content:flex-end}
 @media (max-width:640px){.wiz-body{grid-template-columns:1fr;height:min(70vh,560px)}.wiz-rail{display:none}}
 .v1hero{font:900 64px/1 Verdana,"DejaVu Sans",sans-serif;letter-spacing:-.04em;display:inline-block;padding:2px 14px;margin-bottom:10px;background:var(--accent);color:var(--accent-ink);border:3px solid var(--edge,#141414);border-radius:10px;box-shadow:5px 5px 0 var(--shadow,#141414)}
 .v1list{margin:0 0 16px;padding-left:20px;display:grid;gap:6px}#v1dlg{max-width:520px}
-#achlist{display:grid;gap:8px;max-height:60vh;overflow:auto;margin:6px 0 12px}
+#achlist,#histlist{display:grid;gap:8px;max-height:60vh;overflow:auto;margin:6px 0 12px}
 .ach{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.ach.locked{opacity:.5;filter:grayscale(1)}.ach b{display:block}.ach small{color:var(--muted)}.ach .when{margin-left:auto;font-size:12px;color:var(--muted)}
 .rarity{display:inline-block;font:800 12px/1 ui-monospace,monospace;padding:4px 9px;border-radius:999px;margin:0 6px 6px;letter-spacing:.06em}
 .r-common{background:var(--tag)}.r-rare{background:#2f6fde;color:#fff}.r-epic{background:#8e3ae0;color:#fff}
@@ -1270,7 +1306,7 @@ dialog .row{justify-content:flex-end}
       <button data-src="dirt" class="dirtbtn">dirt/ <small>18+</small></button>
     </div>
     <p class="blurb" id="blurb" hidden></p>
-    <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button><button class="btn lottobtn" id="lotto" title="win a random app">🎰 lottery</button><button class="btn ghost" id="dropbtn" title="install a .deb, .rpm, AppImage, .exe… you downloaded">📥 install a file</button><button class="btn ghost" id="convopen" title="turn a package into another format">🔁 convert</button><input type="file" id="dropin" hidden></div>
+    <div class="search"><input id="q" placeholder="search Main GURT… (Enter searches every source)" autocomplete="off"><button class="btn" id="qall">search everywhere</button><span class="more"><button class="btn ghost" data-more aria-haspopup="true" aria-expanded="false" title="more">⋯ more</button><span class="morepop" hidden><button class="btn ghost" id="dropbtn" title="install a .deb, .rpm, AppImage, .exe… you downloaded">📥 install a file</button><button class="btn ghost" id="convopen" title="turn a package into another format">🔁 convert a package</button><button class="btn lottobtn" id="lotto" title="win a random app">🎰 app lottery</button></span></span><input type="file" id="dropin" hidden></div>
     <p class="hint">tip: <code>aur/yay</code>, <code>apt/cowsay</code>, <code>flatpak/gimp</code>… type a full name with a source and hit install</p>
     <div id="direct" hidden class="row" style="margin-bottom:12px"><button class="btn" id="directbtn"></button></div>
     <div id="allres" hidden><h2>everywhere</h2><div class="grid" id="allgrid"></div><h2 style="margin-top:18px">Main GURT</h2></div>
@@ -1280,7 +1316,7 @@ dialog .row{justify-content:flex-end}
     <p class="cicada">Could prime Wifies solve Cicada 3301?</p>
   </section>
   <section id="t-installed" hidden>
-    <div class="search"><input id="iq" placeholder="filter installed…" autocomplete="off"><button class="btn ghost" id="lexport" title="save a list of everything you installed with gurt">📤 export my list</button><button class="btn ghost" id="limport" title="install everything from a list you exported">📥 import a list</button><button class="btn ghost" id="achbtn" title="your gurt achievements">🏆</button><button class="btn ghost" id="hogbtn" title="sort by how much disk each app takes">🐷 biggest first</button><input type="file" id="limportin" accept=".txt,text/plain" hidden></div>
+    <div class="search"><input id="iq" placeholder="filter installed…" autocomplete="off"><button class="btn ghost" id="hogbtn" title="sort by how much disk each app takes">🐷 biggest first</button><span class="more"><button class="btn ghost" data-more aria-haspopup="true" aria-expanded="false" title="more">⋯ more</button><span class="morepop" hidden><button class="btn ghost" id="lexport" title="save a list of everything you installed with gurt">📤 export my list</button><button class="btn ghost" id="limport" title="install everything from a list you exported">📥 import a list</button><button class="btn ghost" id="histbtn" title="what you installed + removed, and when">📜 history</button><button class="btn ghost" id="achbtn" title="your gurt achievements">🏆 achievements</button></span></span><input type="file" id="limportin" accept=".txt,text/plain" hidden></div>
     <div class="grid" id="igrid"></div>
   </section>
   <section id="t-updates" hidden>
@@ -1317,6 +1353,7 @@ dialog .row{justify-content:flex-end}
   <div class="wiz-body"><ol class="wiz-rail" id="wizrail"></ol><div class="wiz-page" id="wizpage"></div></div>
   <div class="wiz-foot"><button class="btn ghost" id="wizcancel">Cancel</button><span class="spacer"></span><button class="btn ghost" id="wizback">&lt; Back</button><button class="btn" id="wiznext">Next &gt;</button></div>
 </dialog>
+<dialog id="histdlg"><h3>📜 history</h3><div id="histlist"></div><div class="row"><span class="spacer"></span><button class="btn" id="histclose">done</button></div></dialog>
 <dialog id="achdlg"><h3>🏆 achievements</h3><div id="achlist"></div><div class="row"><span class="spacer"></span><button class="btn" id="achclose">nice</button></div></dialog>
 <div id="cmptray" hidden><span>⚖️</span><span id="cmplist"></span><span class="spacer"></span><button class="btn ghost small" id="cmpclear">clear</button><button class="btn small" id="cmpgo">compare</button></div>
 <dialog id="cmpdlg"><h3>⚖️ side by side</h3><div id="cmptable"></div><div class="row"><span class="spacer"></span><button class="btn" id="cmpclose">done</button></div></dialog>
@@ -1408,7 +1445,9 @@ function ask(title, body){ return new Promise(res => { $("#ctitle2").textContent
   const done = v => { d.close(); $("#cyes").onclick = $("#cno").onclick = null; res(v); };
   $("#cyes").onclick = () => done(true); $("#cno").onclick = () => done(false); d.onclose = () => res(false); d.showModal(); }); }
 
+let bgCheck = null;   // the quiet update check that runs right after the app opens
 async function run(cmd, arg="", {all=false, quiet=false, confirm=true, fmt=""} = {}){
+  if (busy && bgCheck) await bgCheck;   // the quiet update check on startup: just wait for it
   if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return null; }
   if (confirm && VERB[cmd]) {
     const warn = cmd === "outsource" ? " This builds + runs code from that repo — only do it if you trust it." :
@@ -1439,6 +1478,19 @@ let toastT = null;
 function toast(html){ const t = $("#toast"); t.innerHTML = html; t.hidden = false; t.style.animation = "none"; void t.offsetWidth; t.style.animation = ""; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 4200); }
 function achLines(lines){ lines.forEach(l => { const m = l.match(/🏆 achievement unlocked: (.+)/); if (m) { toast("🏆 " + esc(m[1])); SFX.play("achieve"); } }); }
 async function achieve(id){ const r = await api("/api/achieve", {id}).catch(() => ({})); if (r.line) achLines([r.line]); }
+$("#histbtn").addEventListener("click", async () => {
+  const r = await api("/api/history").catch(() => ({items:[]})), items = r.items || [];
+  $("#histlist").innerHTML = items.length ? items.map(i => `<div class="ach"><span>${i.what === "install" ? "➕" : "🗑️"}</span><span><b>${esc(i.app)}</b><small>${i.what === "install" ? "installed" : "removed"}${i.ver ? " · " + esc(i.ver) : ""}</small></span><span class="when">${esc(i.when)}</span></div>`).join("")
+    : `<p>nothing yet, your installs and removals show up here.</p>`;
+  $("#histdlg").showModal();
+});
+$("#histclose").addEventListener("click", () => $("#histdlg").close());
+// ⌨️ press / anywhere to jump to the search box (like GitHub + YouTube)
+document.addEventListener("keydown", e => {
+  if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey || document.querySelector("dialog[open]")) return;
+  const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+  const q = [...document.querySelectorAll("#q, #iq")].find(x => x.offsetParent); if (q) { e.preventDefault(); q.focus(); q.select(); }
+});
 $("#achbtn").addEventListener("click", async () => {
   const r = await api("/api/achievements").catch(() => ({items:[]})), items = r.items || [], n = items.filter(i => i.got).length;
   $("#achlist").innerHTML = `<div class="streak">${n}/${items.length} unlocked${n === items.length && n ? " — you beat gurt 👑" : ""}</div>` + items.map(i =>
@@ -1941,6 +1993,7 @@ let wasTight = false;
 $("#convopen").addEventListener("click", () => {
   document.querySelectorAll("nav button").forEach(x => x.classList.remove("on"));
   for (const t of ["discover","installed","updates","setup","desktops","dropfile"]) $("#t-"+t).hidden = t !== "dropfile";
+  document.querySelector('nav button[data-tab="dropfile"]').classList.add("on");
   loadZone(false);
 });
 addEventListener("resize", fitNav); fitNav();
@@ -2019,10 +2072,19 @@ $("#lotto2").addEventListener("click", () => spinLottery($("#lottowin2"), win =>
 $("#directbtn").addEventListener("click", () => run("install", $("#q").value.trim()));
 $("#iq").addEventListener("input", renderInstalled);
 
+// ⋯ more menus: the stuff you don't need every day
+function moreClose(except){ document.querySelectorAll(".more").forEach(m => { if (m === except) return; m.querySelector(".morepop").hidden = true; m.querySelector("[data-more]").setAttribute("aria-expanded", "false"); }); }
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-more]");
+  if (b) { const m = b.closest(".more"), pop = m.querySelector(".morepop"); moreClose(m); pop.hidden = !pop.hidden; b.setAttribute("aria-expanded", String(!pop.hidden)); return; }
+  moreClose();   // clicked anywhere else, or an item in a menu
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") moreClose(); });
+
 // ── updates ──
-async function check(){
+async function check(quiet = false){
   $("#ugrid").innerHTML = `<div class="empty">checking… ⏳</div>`;
-  const r = await run("update", "", {confirm:false}); if (!r) return;
+  const r = await run("update", "", {confirm:false, quiet}); if (!r) return;
   const ups = r.lines.map(l => l.match(/^\s*->\s*(\S+)\s+(\S+) -> (\S+)$/)).filter(Boolean);
   // gurt itself counts as an update too (and goes first — the new gurt might be needed for the rest)
   const selfUp = r.lines.find(l => /is out \(you have|gurt self-update/.test(l));
@@ -2035,7 +2097,9 @@ async function check(){
       + (sysM ? card({name:"your system", src:sysM[2], ver:`${sysM[1]} update${sysM[1] === "1" ? "" : "s"}`, desc:`${sysM[1]} package${sysM[1] === "1" ? "" : "s"} from your distro (${sysM[2]}) — "update everything" installs them too`, actions: actBtn("🐧 update system","sysup","")}) : "")
       + ups.map(m => card({name:m[1].split("/").pop(), src:m[1].includes("/") ? m[1].split("/")[0] : "gurt", ver:`${m[2]} → ${m[3]}`, desc:"update available", actions: actBtn("update","install",m[1])})).join("");
 }
-$("#checkbtn").addEventListener("click", check);
+$("#checkbtn").addEventListener("click", () => check());
+// 🔔 check for updates quietly right after opening, so the Updates tab shows its count without a click
+setTimeout(() => { if (!busy && typeof S !== "undefined" && S) bgCheck = check(true).catch(() => {}).finally(() => { bgCheck = null; }); }, 2500);
 $("#upbtn").addEventListener("click", async () => { if (await run("upgrade")) check(); });
 $("#selfbtn").addEventListener("click", () => run("self-update"));
 $("#syncbtn").addEventListener("click", () => run("sync", "", {confirm:false}));

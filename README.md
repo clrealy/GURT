@@ -178,7 +178,7 @@ On Linux, your software center installs it like any other app. Then open **GURT*
 
 `gurt setup` runs the wizard again anytime, in the terminal (or 🎨 → 🧙 setup wizard in the app). Picked apps on the website's 🧰 Build your setup? Hit 📄 save as a list, then 📥 import it in the wizard.
 
-**🧪 Dev build (openSUSE, Fedora and other rpm distros):** [`GURTSetupWizard-dev.rpm`](https://gurtproject.org/dev/GURTSetupWizard-dev.rpm) is rebuilt on every change to `main`. It adds the `gurt-dev` repo, so `sudo zypper up` / `sudo dnf upgrade` keep you on the newest dev build. Dev builds come with every achievement unlocked 🏆, and every package in the app gets ✏️ edit / 🗑️ delete buttons that open it on GitHub (GitHub still decides who can change the repo). Expect bugs 🐛. Going back to stable: `sudo zypper rr gurt-dev` (or delete `/etc/yum.repos.d/gurt-dev.repo`), then install the stable `.rpm`.
+**Updates:** the GURTSetupWizard `.deb` and `.rpm` add the GURT repo (`gurtproject.org/repo`), so new versions of GURT come with your normal system updates: `sudo apt upgrade`, `sudo zypper up` / `dup`, `sudo dnf upgrade`. On Arch, add it to `/etc/pacman.conf` yourself, as below. `gurt self-update` tells you the right command.
 
 **Uninstall:** `gurt uninstall`. It saves your app list to `~/gurt-apps-<date>.txt`, asks whether to remove the apps gurt installed too, then takes gurt off (through your package manager if you used a GURTSetupWizard package). `gurt uninstall <app>` still just removes that app.
 
@@ -412,9 +412,13 @@ gurt hogs                      # the apps eating the most disk
 gurt profile save gaming       # your apps + gurt settings + the app's look, under a name
 gurt profile load gaming       # …on any computer (copy the file over)
 gurt notify on                 # a desktop notification when updates are waiting (every 6 hours)
+gurt run btop                  # start an app gurt installed (not installed yet? it offers to install it first)
+gurt history                   # what you installed + removed, and when (gurt history firefox · gurt history 100)
+gurt cache                     # how much space gurt's downloads use · gurt cache clean frees it
+gurt install fierfox           # typo? gurt asks "did you mean: firefox?"
 ```
 
-In the app: type "like discord" in the search, hit ⚖️ on up to 4 cards to compare them, 🐷 on the Installed tab sorts by size, and 🔔 on the Updates tab turns alerts on.
+In the app: type "like discord" in the search, hit ⚖️ on up to 4 cards to compare them, 🐷 on the Installed tab sorts by size, 🔔 on the Updates tab turns alerts on, and `/` jumps to the search box. The everyday stuff stays up front; the rest lives under **⋯ more** (install a file, convert, the app lottery on Discover; export/import, history, achievements on Installed). The Updates tab checks by itself when the app opens and shows how many are waiting.
 
 ## Fun 🎮
 
@@ -523,6 +527,26 @@ site/                 the package-browser website (GitHub Pages)
 tools/lint.sh         recipe checks (CI runs these on every PR)
 tools/gen-index.py    builds site/packages.json
 ```
+
+## Releasing (maintainers) 📦
+Push a tag like `v1.0.1` and the release workflow builds every GURTSetupWizard, attaches them to a GitHub release, then refreshes the stable repo on gurtproject.org. Bump `GURT_VERSION` in `gurt` and the top of `CHANGELOG.md` first, since the tag has to match.
+
+**The signing key (one time).** Releases and the repos are signed with the `GURT_SIGNING_KEY` repo secret. Without it they're unsigned, and apt users don't get updates. Make the key on your own computer:
+```sh
+GURT_SIGN_DIR=~/gurt-release-key/signing GURT_SIGN_UID="GURT Project <noreply@gurtproject.org>" gurt key show
+tar czf - -C ~/gurt-release-key signing | base64 -w0 > ~/gurt-signing-secret.txt
+```
+- Paste the contents of `gurt-signing-secret.txt` into GitHub → Settings → Secrets and variables → Actions → **New repository secret**, named `GURT_SIGNING_KEY`. Then delete the txt file.
+- **Back up `~/gurt-release-key` somewhere safe and private.** If it's lost, everyone has to trust a new key.
+- Never commit it or share it. Only the public half (`gurt-key.asc`, published on the site) is meant for other people.
+
+**Arch users** add the repo to `/etc/pacman.conf`:
+```
+[gurt]
+SigLevel = Required
+Server = https://gurtproject.org/repo
+```
+Then trust the key: `curl -sO https://gurtproject.org/repo/gurt-key.asc && sudo pacman-key --add gurt-key.asc && sudo pacman-key --lsign-key <fingerprint>` (see `gurt-key.asc`).
 
 ## Hosting your own
 

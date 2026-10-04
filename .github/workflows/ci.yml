@@ -2,6 +2,7 @@ name: gurt ci
 on:
   push: { branches: [main] }
   pull_request:
+  workflow_dispatch:   # the release workflow runs this, so the stable repo picks up a new release right away
 permissions: { contents: read, pages: write, id-token: write }
 
 jobs:
@@ -194,7 +195,7 @@ jobs:
           fi
 
   pages:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: lint
     runs-on: ubuntu-latest
     environment: { name: github-pages, url: "${{ steps.deploy.outputs.page_url }}" }
@@ -220,7 +221,17 @@ jobs:
           mkdir -p site/dev/rpm
           tools/make-setup-wizard.sh site/dev/rpm --dev=${{ github.run_number }} $SIGN
           ./gurt -y repo publish site/dev/rpm gurt-dev
-          cp site/dev/rpm/GURTSetupWizard-dev.rpm site/dev/
+          cp site/dev/rpm/GURTSetupWizard-dev.rpm site/IHAVECOPIUMFORHALFLIFETHREEANDTHESTEAMMACHINE/SPINNINGAPPLES/ILIKEGREENCHAMELEONS/YaSTOVERCOCKPIT/SUSEOVERRHEL/THISISTOOLONG/THISISTHEEND/HOLDYOURBREATHANDCOUNTTOTEN/AREYOUREALLYSINGINGADELE/DOWNLOAD/ACTUALDOWNLOAD/ACTUALACTUALDOWNLOAD/QWERTY/
+      # 📦 the stable repo: the latest release's GURTSetupWizard .deb / .rpm / .pkg.tar.zst as an apt + rpm + pacman repo
+      # at /repo. stable GURTSetupWizard packages add it, so new versions come with normal system updates
+      - name: the gurt stable repo
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          mkdir -p site/repo
+          if gh release download --repo "$GITHUB_REPOSITORY" -D site/repo -p GURTSetupWizard.deb -p GURTSetupWizard.rpm -p GURTSetupWizard.pkg.tar.zst; then
+            rm -f site/repo/*.sig site/repo/*.asc
+            ./gurt -y repo publish site/repo gurt
+          else echo "::warning::no release yet, so no stable repo"; fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: site }
