@@ -1,7 +1,7 @@
 # Make a bootable USB once, then just copy ISO files onto it (Ventoy2Disk GUI included)
 pkgname=ventoy
 pkgver=1.1.17
-pkgrel=1
+pkgrel=2
 pkgdesc="Make a bootable USB once, then just copy ISO files onto it and boot any of them"
 url="https://www.ventoy.net"
 license="GPL-3.0-or-later"
@@ -17,10 +17,33 @@ package() {
   mkdir -p "$pkgdir$dir"
   cp -a "ventoy-$pkgver/." "$pkgdir$dir/"
   case $CARCH in x86_64) gui=x86_64 ;; aarch64) gui=aarch64 ;; *) gui=i386 ;; esac
-  # Ventoy runs from its own folder (it reads ./tool and writes its log next to itself)
-  printf '#!/bin/sh\ncd "%s" || exit 1\nexec ./VentoyGUI.%s "$@"\n' "$dir" "$gui" > ventoygui
-  printf '#!/bin/sh\ncd "%s" || exit 1\nexec bash ./Ventoy2Disk.sh "$@"\n' "$dir" > ventoy
-  printf '#!/bin/sh\ncd "%s" || exit 1\nexec bash ./VentoyWeb.sh "$@"\n' "$dir" > ventoyweb
+  # Ventoy needs root (it writes log.txt + unpacks its tools in its own folder, and it partitions USB sticks).
+  # its GUI's own pkexec restart breaks in a root-owned folder and under SELinux ("Error executing … Permission
+  # denied"), so gurt-ventoy gets root first (pkexec on itself, keeping your display), then starts Ventoy as root
+  cat > gurt-ventoy <<LAUNCH
+#!/bin/bash
+# gurt-ventoy gui|cli|web [args] — runs Ventoy as root from $dir
+if [[ \$(id -u) != 0 ]]; then
+  if [[ \$1 == gui ]] && command -v pkexec >/dev/null && [[ -n \$DISPLAY\$WAYLAND_DISPLAY ]]; then
+    keep=(); for v in DISPLAY WAYLAND_DISPLAY XAUTHORITY XDG_RUNTIME_DIR XDG_SESSION_TYPE XDG_CURRENT_DESKTOP LANG; do
+      [[ -n \${!v:-} ]] && keep+=("\$v=\${!v}"); done
+    [[ -z \${XAUTHORITY:-} && -f \$HOME/.Xauthority ]] && keep+=("XAUTHORITY=\$HOME/.Xauthority")
+    exec pkexec env "\${keep[@]}" "\$0" "\$@"
+  fi
+  command -v pkexec >/dev/null && exec pkexec "\$0" "\$@"
+  echo "Ventoy needs root — run it again as root" >&2; exit 1
+fi
+cd "$dir" || exit 1
+case \$1 in
+  gui) shift; exec ./VentoyGUI.$gui "\$@" ;;
+  web) shift; exec bash ./VentoyWeb.sh "\$@" ;;
+  *)   [[ \$1 == cli ]] && shift; exec bash ./Ventoy2Disk.sh "\$@" ;;
+esac
+LAUNCH
+  install -Dm755 gurt-ventoy "$pkgdir$prefix/bin/gurt-ventoy"
+  printf '#!/bin/sh\nexec "%s/bin/gurt-ventoy" gui "$@"\n' "$prefix" > ventoygui
+  printf '#!/bin/sh\nexec "%s/bin/gurt-ventoy" cli "$@"\n' "$prefix" > ventoy
+  printf '#!/bin/sh\nexec "%s/bin/gurt-ventoy" web "$@"\n' "$prefix" > ventoyweb
   for f in ventoygui ventoy ventoyweb; do install -Dm755 "$f" "$pkgdir$prefix/bin/$f"; done
   ln -s ventoygui "$pkgdir$prefix/bin/ventoy2diskgui"
   install -Dm644 "ventoy-$pkgver/WebUI/static/img/VentoyLogo.png" "$pkgdir$prefix/share/pixmaps/ventoy.png"
