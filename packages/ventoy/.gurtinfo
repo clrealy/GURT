@@ -1,6 +1,6 @@
 pkgname = ventoy
 pkgver = 1.1.17
-pkgrel = 1
+pkgrel = 2
 pkgdesc = Make a bootable USB once, then just copy ISO files onto it and boot any of them
 url = https://www.ventoy.net
 license = GPL-3.0-or-later
