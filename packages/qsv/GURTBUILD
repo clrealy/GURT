@@ -1,6 +1,6 @@
 # Blazing fast CSV toolkit
 pkgname=qsv
-pkgver=23.0.1
+pkgver=24.0.0
 pkgrel=1
 pkgdesc="Blazing fast CSV toolkit"
 url="https://github.com/dathere/qsv"
@@ -10,7 +10,7 @@ category="cli"
 arch=(x86_64)
 # official prebuilt release binary
 source=("https://github.com/dathere/qsv/releases/download/${pkgver}/qsv-${pkgver}-x86_64-unknown-linux-musl.zip")
-sha256sums=(e4175df7ecb74b91b5b481ffb96f5adbd7e9ea129c1954bfb280b21cba325433)
+sha256sums=('0079acb8542af8b243fa861259746a6a88cef1aefc07214aaaf0f0a1b0593738')
 
 package() {
   local f

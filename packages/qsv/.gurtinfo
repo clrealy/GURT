@@ -1,5 +1,5 @@
 pkgname = qsv
-pkgver = 23.0.1
+pkgver = 24.0.0
 pkgrel = 1
 pkgdesc = Blazing fast CSV toolkit
 url = https://github.com/dathere/qsv
@@ -7,4 +7,4 @@ license = MIT OR Unlicense
 maintainer = clrealy
 category = cli
 arch = x86_64
-source = https://github.com/dathere/qsv/releases/download/23.0.1/qsv-23.0.1-x86_64-unknown-linux-musl.zip
+source = https://github.com/dathere/qsv/releases/download/24.0.0/qsv-24.0.0-x86_64-unknown-linux-musl.zip
