@@ -1,6 +1,6 @@
 # Shows info and stats about a git repo next to its logo
 pkgname=onefetch
-pkgver=2.28.1
+pkgver=3.0.0
 pkgrel=1
 pkgdesc="Shows info and stats about a git repo next to its logo"
 url="https://github.com/o2sh/onefetch"
@@ -10,7 +10,7 @@ category="dev"
 arch=(x86_64)
 # official prebuilt release binary
 source=("https://github.com/o2sh/onefetch/releases/download/${pkgver}/onefetch-linux.tar.gz")
-sha256sums=(ddf1b1b9f057cdbf71172324de24074e4615fcefd70ce09ab782e9ad5fe41b66)
+sha256sums=('ae5bbdcb44201b17b75ab76f1cfca103972bf168f06897466385c09a05a9e954')
 
 package() {
   local f

@@ -1,5 +1,5 @@
 pkgname = onefetch
-pkgver = 2.28.1
+pkgver = 3.0.0
 pkgrel = 1
 pkgdesc = Shows info and stats about a git repo next to its logo
 url = https://github.com/o2sh/onefetch
@@ -7,4 +7,4 @@ license = MIT
 maintainer = clrealy
 category = dev
 arch = x86_64
-source = https://github.com/o2sh/onefetch/releases/download/2.28.1/onefetch-linux.tar.gz
+source = https://github.com/o2sh/onefetch/releases/download/3.0.0/onefetch-linux.tar.gz
