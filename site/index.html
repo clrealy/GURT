@@ -232,27 +232,110 @@ footer a{color:inherit}
 #cart label{font:12px var(--mono);color:var(--muted);display:flex;gap:6px;align-items:center}
 body.carted{padding-bottom:74px}
 .cicada{text-align:center;font:600 14px var(--mono);color:var(--ink);margin:24px 0 0;letter-spacing:.02em}
+/* ── openSUSE-style front page: dark navbar, dark hero with one card per platform, a feature grid, a dark footer with link
+   columns. roomy up top, the package browser below stays the dense list. GURT's own colors and logo. ── */
+.topnav{position:sticky;top:0;z-index:10;background:#0b0c0e;border-bottom:1px solid #26272c;color:#e7e7ea}
+.navin{display:flex;align-items:center;gap:14px;height:48px}
+.navbrand{font:800 15px var(--mono);color:#fff;text-decoration:none;white-space:nowrap}
+.navlinks{display:flex;gap:2px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}.navlinks::-webkit-scrollbar{display:none}
+.navlinks a{color:#b8b8c0;text-decoration:none;font:600 13px var(--mono);padding:6px 9px;border-radius:var(--r);white-space:nowrap}
+.navlinks a:hover,.navlinks a:focus-visible{color:#fff;background:#1c1d21;outline:none}
+.tbar.navtools{position:static;flex:none}
+.tbar.navtools button{width:32px;height:32px;font-size:15px;background:#16171a;border-color:#2f3036;color:#e7e7ea}
+.tbar.navtools button:hover{border-color:#6b6b74}
+.search{top:48px}
+.hero{--panel:#16171b;--ink:#e7e7ea;--muted:#9a9aa3;--edge:#2f3036;--line:#24252a;--code:#0b0c0e;--tag:#1c1d21;--logo-ink:#e7e7ea;
+  background:#101114;color:var(--ink);padding:30px 0 36px;border-bottom:1px solid #26272c}
+.hero .logo .lg-gurt svg{height:96px}
+.headline{font:800 34px/1.15 var(--sans);letter-spacing:-.02em;margin:18px 0 6px;color:#fff}
+.hero .tag{color:var(--muted);max-width:72ch}.hero .tag b{color:#fff}
+.choose{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}
+.pick{background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.pick.is-mine{border-color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
+.pickhead{display:flex;align-items:center;gap:12px}
+.pickicon{font-size:30px;line-height:1}
+.pick h2{margin:0;font:800 20px var(--sans);color:#fff}
+.pickhead small{color:var(--muted)}
+.mine{margin-left:auto;font:700 10.5px var(--mono);text-transform:uppercase;letter-spacing:.06em;background:var(--accent);color:var(--accent-ink);padding:2px 7px;border-radius:var(--r);white-space:nowrap}
+.pick>p{margin:0;color:var(--muted);font-size:14px}
+.pick .dlbtns{margin-top:2px}
+.pick .smartscreen{margin-top:0}
+@media (max-width:760px){.choose{grid-template-columns:1fr}.pick.is-mine{order:-1}.headline{font-size:26px}.hero .logo .lg-gurt svg{height:72px}}
+.features{padding:34px 0 36px;background:var(--panel);border-bottom:1px solid var(--line)}
+.bandtitle{font:800 22px var(--sans);letter-spacing:-.01em;margin:0 0 14px}
+.fgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.feat{border:1px solid var(--edge);border-radius:var(--r);padding:16px;background:var(--bg);display:flex;flex-direction:column;gap:6px;min-width:0}
+.ficon{font-size:24px;line-height:1}
+.feat h3{margin:2px 0 0;font:800 16px var(--sans)}
+.feat p{margin:0;color:var(--muted);font-size:14px;flex:1}
+.feat a{align-self:flex-start;margin-top:4px;font:600 13px var(--mono);color:var(--ink);text-decoration:none;border-bottom:2px solid var(--accent)}
+.feat a:hover,.feat a:focus-visible{background:var(--hl);outline:none}
+@media (max-width:900px){.fgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.fgrid{grid-template-columns:1fr}}
+.tryit{padding:30px 0 4px}.tryit .install{margin-top:0}
+#packages{padding:26px 0 0}#packages .srcs{margin-top:0}
+footer.site{background:#0b0c0e;color:#9a9aa3;border-top:4px solid;border-image:linear-gradient(90deg,var(--c-red) 0 25%,var(--accent) 25% 50%,var(--c-green) 50% 75%,var(--c-blue) 75%) 1;padding:30px 0 10px;font-size:13.5px}
+.fcols{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:20px}
+.fcols h4{margin:0 0 8px;font:700 11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:#e7e7ea}
+.fcols a{display:block;color:#b8b8c0;text-decoration:none;padding:2px 0}.fcols a:hover{color:#fff;text-decoration:underline}
+.fbrand b{font:800 16px var(--mono);color:#fff}.fbrand p{margin:6px 0 0;max-width:34ch}
+.fnote{margin:24px 0 0;padding-top:14px;border-top:1px solid #26272c;font-size:12.5px;line-height:1.6}
+footer.site a{color:inherit}footer.site code{color:#e7e7ea}
+footer.site .cicada{color:#e7e7ea}
+@media (max-width:760px){.fcols{grid-template-columns:1fr 1fr}.fbrand{grid-column:1/-1}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="tbar"><button id="musicbtn" type="button" aria-label="background music">🎵</button><button id="sfxbtn" type="button" aria-label="sound effects"></button><button id="themebtn" type="button" aria-label="dark mode"></button></div>
+<nav class="topnav" aria-label="Site">
+  <div class="wrap navin">
+    <a class="navbrand" href="#top">🦆 GURT</a>
+    <div class="navlinks"><a href="#get">Download</a><a href="#features">Features</a><a href="#packages">Packages</a><a href="#builder">Build your setup</a><a href="https://github.com/clrealy/GURT#readme">Docs</a><a href="https://github.com/clrealy/GURT">GitHub</a></div>
+    <div class="tbar navtools"><button id="musicbtn" type="button" aria-label="background music">🎵</button><button id="sfxbtn" type="button" aria-label="sound effects"></button><button id="themebtn" type="button" aria-label="dark mode"></button></div>
+  </div>
+</nav>
+<section class="hero" id="top">
+  <div class="wrap">
     <h1 class="logo"><span class="srh">GURT, the GURT Universal Repository Thingy</span><span class="lg-gurt"><!--logo--><svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -1223 3791 1805" role="img" aria-label="gurt"><path transform="translate(70 70) rotate(-4 529 -300) translate(0 0) scale(1 -1)" d="M257 347Q79 422 79 640Q79 796 188.0 880.5Q297 965 500 965Q543 965 610.5 957.5Q678 950 709 940L934 1051L969 1008L855 846Q917 770 917 640Q917 481 809.5 395.5Q702 310 496 310Q417 310 343 322L319 246Q321 217 356.0 191.5Q391 166 442 166H661Q1004 166 1004 -98Q1004 -207 944.5 -285.5Q885 -364 769.5 -408.0Q654 -452 482 -452Q278 -452 166.0 -393.5Q54 -335 54 -233Q54 -188 90.5 -146.0Q127 -104 232 -43Q173 -20 131.5 37.0Q90 94 90 157ZM785 -166Q785 -71 658 -71H341Q253 -135 253 -216Q253 -280 314.5 -312.0Q376 -344 483 -344Q628 -344 706.5 -297.0Q785 -250 785 -166ZM494 410Q568 410 601.0 467.5Q634 525 634 640Q634 755 601.5 809.5Q569 864 494 864Q425 864 393.5 809.5Q362 755 362 640Q362 525 393.0 467.5Q424 410 494 410Z" fill="#ffc629"/><path transform="translate(70 70) rotate(3 1552 -418) translate(994 40) scale(1 -1)" d="M705 82 637 47Q497 -25 385 -25Q125 -25 125 252V850L31 874V940H414V291Q414 207 449.5 160.0Q485 113 551 113Q627 113 703 147V850L617 874V940H992V90L1084 66V0H719Z" fill="#141414"/><path transform="translate(70 70) rotate(-5 2563 -555) translate(2103 -70) scale(1 -1)" d="M461 745Q569 865 654.5 917.5Q740 970 811 970H865V627H809L750 753Q687 753 607.0 725.5Q527 698 466 661V90L617 66V0H55V66L177 90V850L55 874V940H450Z" fill="#141414"/><path transform="translate(70 70) rotate(4 3335 -556) translate(2982 10) scale(1 -1)" d="M438 -20Q303 -20 229.5 41.0Q156 102 156 217V836H33V901L178 940L295 1153H445V940H643V836H445V235Q445 170 472.0 137.0Q499 104 543 104Q596 104 673 120V35Q643 14 570.5 -3.0Q498 -20 438 -20Z" fill="#141414"/><path class="logo-g" transform="rotate(-4 529 -300) translate(0 0) scale(1 -1)" d="M257 347Q79 422 79 640Q79 796 188.0 880.5Q297 965 500 965Q543 965 610.5 957.5Q678 950 709 940L934 1051L969 1008L855 846Q917 770 917 640Q917 481 809.5 395.5Q702 310 496 310Q417 310 343 322L319 246Q321 217 356.0 191.5Q391 166 442 166H661Q1004 166 1004 -98Q1004 -207 944.5 -285.5Q885 -364 769.5 -408.0Q654 -452 482 -452Q278 -452 166.0 -393.5Q54 -335 54 -233Q54 -188 90.5 -146.0Q127 -104 232 -43Q173 -20 131.5 37.0Q90 94 90 157ZM785 -166Q785 -71 658 -71H341Q253 -135 253 -216Q253 -280 314.5 -312.0Q376 -344 483 -344Q628 -344 706.5 -297.0Q785 -250 785 -166ZM494 410Q568 410 601.0 467.5Q634 525 634 640Q634 755 601.5 809.5Q569 864 494 864Q425 864 393.5 809.5Q362 755 362 640Q362 525 393.0 467.5Q424 410 494 410Z" fill="var(--logo-ink)" stroke="#141414" stroke-width="18"/><path transform="rotate(3 1552 -418) translate(994 40) scale(1 -1)" d="M705 82 637 47Q497 -25 385 -25Q125 -25 125 252V850L31 874V940H414V291Q414 207 449.5 160.0Q485 113 551 113Q627 113 703 147V850L617 874V940H992V90L1084 66V0H719Z" fill="#e8302a" stroke="#141414" stroke-width="18"/><path transform="rotate(-5 2563 -555) translate(2103 -70) scale(1 -1)" d="M461 745Q569 865 654.5 917.5Q740 970 811 970H865V627H809L750 753Q687 753 607.0 725.5Q527 698 466 661V90L617 66V0H55V66L177 90V850L55 874V940H450Z" fill="#1fa64a" stroke="#141414" stroke-width="18"/><path transform="rotate(4 3335 -556) translate(2982 10) scale(1 -1)" d="M438 -20Q303 -20 229.5 41.0Q156 102 156 217V836H33V901L178 940L295 1153H445V940H643V836H445V235Q445 170 472.0 137.0Q499 104 543 104Q596 104 673 120V35Q643 14 570.5 -3.0Q498 -20 438 -20Z" fill="#2456e0" stroke="#141414" stroke-width="18"/></svg><!--/logo--></span><img class="lg-dirt" src="assets/dirt-logo.png?v=2" alt="dirt." width="1024" height="449"></h1>
     <div class="stripe" aria-hidden="true"></div>
-    <p class="tag"><b>G</b>URT <b>U</b>niversal <b>R</b>epository <b>T</b>hingy — <b>every</b> distro's packages on <b>every</b> distro. The AUR on Mint, apt on SUSE, zypper on Red Star OS… plus <b>Main GURT</b>, the community repo below.</p>
-    <section class="dl" id="dl" aria-label="Download GURT">
-      <div class="dlhead"><b>🧙 Download the GURT Setup Wizard</b><small id="dlfor"></small></div>
-      <div class="dlbtns" id="dlbtns"></div>
-      <div class="smartscreen" id="smartscreen" hidden>
+    <p class="headline">Every distro's apps, on every distro.</p>
+    <p class="tag"><b>G</b>URT <b>U</b>niversal <b>R</b>epository <b>T</b>hingy. The AUR on Mint, apt on SUSE, zypper on Red Star OS… plus <b>Main GURT</b>, a community repo of 2,500+ apps. Free and open source (MIT).</p>
+    <div class="choose" id="get">
+      <section class="pick" id="pick-linux" aria-labelledby="pl-h">
+        <div class="pickhead"><span class="pickicon" aria-hidden="true">🐧</span><div><h2 id="pl-h">GURT for Linux</h2><small>the GURT Setup Wizard as your distro's own package</small></div><span class="mine" hidden>your system</span></div>
+        <p>Open it like any package. It installs GURT and the app, then the setup wizard picks your sources, your look and your first apps. Updates come with your normal system updates.</p>
+        <div class="dlbtns" id="dl-linux"></div>
+      </section>
+      <section class="pick" id="pick-win" aria-labelledby="pw-h">
+        <div class="pickhead"><span class="pickicon" aria-hidden="true">🪟</span><div><h2 id="pw-h">GURT for Windows</h2><small>Windows 10 / 11, through WSL</small></div><span class="mine" hidden>your system</span></div>
+        <p>Sets up WSL if you don't have it, installs GURT inside it, and puts a <code>gurt</code> command and the GURT app in your Start menu. Linux apps you install show up there too.</p>
+        <div class="dlbtns" id="dl-win"></div>
+<div class="smartscreen" id="smartscreen" hidden>
         <b>🛡️ Windows might say "Windows protected your PC". GURT isn't malware, here's why that shows up:</b>
         <p>GURTSetupWizard.exe isn't code-signed yet (that costs money), so Windows SmartScreen doesn't recognize it. It warns about every new unsigned app, not just this one.</p>
         <ol><li>click <b>More info</b></li><li>click <b>Run anyway</b></li></ol>
         <p class="dlsafe">⚠️ Only do this with the file from <a href="https://github.com/clrealy/GURT/releases/latest">GURT's GitHub releases</a>. If you got a "GURTSetupWizard.exe" anywhere else, delete it. And if Windows Defender says it found a <b>virus</b> (not just "unrecognized app"), stop and don't run it.
         You can check your file against <code>SHA256SUMS</code> on the release page: <code>Get-FileHash GURTSetupWizard.exe</code> in PowerShell.</p>
       </div>
-      <details class="dlall"><summary>every download</summary><div class="dlbtns" id="dlallbtns"></div></details>
-    </section>
+      </section>
+    </div>
+  </div>
+</section>
+<section class="features" id="features">
+  <div class="wrap">
+    <h2 class="bandtitle">What GURT does</h2>
+    <div class="fgrid">
+      <article class="feat"><span class="ficon" aria-hidden="true">📦</span><h3>Main GURT</h3><p>2,500+ community recipes, built for your distro: official vendor repos, prebuilt downloads with pinned checksums, Flathub apps.</p><a href="#packages">browse packages →</a></article>
+      <article class="feat"><span class="ficon" aria-hidden="true">🌍</span><h3>Every distro's repos</h3><p>The AUR, apt, dnf, zypper, pacman, Flathub and the Snap Store, on whatever distro you run. <code>gurt install aur/yay</code> on Mint just works.</p><a href="https://github.com/clrealy/GURT#readme">how it works →</a></article>
+      <article class="feat"><span class="ficon" aria-hidden="true">🖥️</span><h3>The GURT app</h3><p>Search, install and update everything in one window, with an update count, history, your app list and six skins.</p><a href="#get">get the app →</a></article>
+      <article class="feat"><span class="ficon" aria-hidden="true">🔁</span><h3>Convert anything</h3><p>Turn a .deb into an .rpm, an AppImage into a pacman package, or a folder into a signed repo. Every file comes out signed.</p><a href="https://github.com/clrealy/GURT#readme">gurt convert →</a></article>
+      <article class="feat"><span class="ficon" aria-hidden="true">🛡</span><h3>Safe by default</h3><p>Signatures get checked, build scripts get a sus check before anything runs, and btrfs systems get a snapshot before big upgrades.</p><a href="https://github.com/clrealy/GURT#readme">trust + safety →</a></article>
+      <article class="feat"><span class="ficon" aria-hidden="true">⏪</span><h3>Oops buttons</h3><p>Roll back an update, hold a version, see your install history, and take your whole app list to a new PC with export / import.</p><a href="https://github.com/clrealy/GURT#readme">rollback + more →</a></article>
+    </div>
+  </div>
+</section>
+<div class="wrap">
+  <section class="tryit">
+    <h2 class="bandtitle">Once it's installed</h2>
     <div class="install mono"><span class="c"># once the wizard's done:</span>
 gurt install btop          <span class="c"># Main GURT</span>
 gurt install aur/yay       <span class="c"># the AUR, anywhere</span>
@@ -262,6 +345,9 @@ gurt install htop --repo apt  <span class="c"># same thing, flag style</span>
 gurt install flatpak/gimp  <span class="c"># Flathub, set up for you</span>
 gurt install snap/spotify  <span class="c"># Snap Store too</span>
 gurt outsource user/repo   <span class="c"># any git repo: clone + build + install</span></div>
+  </section>
+  <section id="packages">
+    <h2 class="bandtitle">Packages</h2>
     <div class="srcs" role="tablist" aria-label="Package sources">
       <button class="src on" role="tab" aria-selected="true" data-src="gurt">gurt/ <small>Main GURT</small></button>
       <button class="src" role="tab" aria-selected="false" data-src="aur">aur/ <small>Arch User Repo</small></button>
@@ -275,7 +361,6 @@ gurt outsource user/repo   <span class="c"># any git repo: clone + build + insta
     </div>
     <div class="secthead"><h2 class="sect" id="secttitle">Main GURT packages</h2><button class="btn" id="upbtn">＋ upload a package</button></div>
     <p class="dirtnote" id="dirtnote" hidden>🔞 DIRT is GURT's mature section. It's off in the CLI until you run <code>gurt dirt on</code>, then <code>gurt install dirt/&lt;name&gt;</code>. <a href="https://github.com/clrealy/GURT/blob/main/dirt/README.md" style="color:inherit">rules</a></p>
-  </header>
 
   <details id="builder" open>
     <summary><h2>🧰 Build your setup</h2><span class="hint">tick the apps you want → copy one command → done. same command on every distro.</span><button class="btn ghost small" id="lotto" type="button">🎰 app lottery</button></summary>
@@ -311,17 +396,27 @@ gurt outsource user/repo   <span class="c"># any git repo: clone + build + insta
     <div class="list" id="slist"></div>
   </section>
 
-  <footer>
+  </section>
+</div>
+<footer class="site">
+  <div class="wrap">
+    <div class="fcols">
+      <div class="fbrand"><b>🦆 GURT</b><p>GURT Universal Repository Thingy: every distro's apps, on every distro.</p></div>
+      <div><h4>Get GURT</h4><a href="#get">Download</a><a href="https://github.com/clrealy/GURT/releases/latest">Releases</a><a href="https://github.com/clrealy/GURT/blob/main/CHANGELOG.md">What's new</a></div>
+      <div><h4>Packages</h4><a href="#packages">Browse Main GURT</a><a href="#builder">Build your setup</a><a href="https://github.com/clrealy/GURT/blob/main/CONTRIBUTING.md">Submit a package</a></div>
+      <div><h4>Project</h4><a href="https://github.com/clrealy/GURT">Source code</a><a href="https://github.com/clrealy/GURT#readme">Docs</a><a href="https://github.com/clrealy/GURT/issues">Report a bug</a></div>
+    </div>
+    <p class="fnote">
     Works on Debian, Ubuntu, Mint, Fedora, Arch, openSUSE, Alpine, Void, Gentoo, Solus and friends. Other sources are searched from the CLI: <code>gurt search -a &lt;term&gt;</code>.
     Recipes are user-submitted — always read the GURTBUILD (or PKGBUILD) before you install. ·
     <a href="https://github.com/clrealy/GURT">source</a> ·
     <a href="https://github.com/clrealy/GURT/blob/main/CONTRIBUTING.md">submit a package</a><br>
-    GURT is independent and not affiliated with or endorsed by Arch Linux, Debian, Ubuntu, Fedora, openSUSE or any other distro. All trademarks belong to their owners.
-  </footer>
-  <p class="cicada">Could prime Wifies solve Cicada 3301?</p>
-  <button id="heyo" aria-label="???">HEYO</button>
-  <div id="heyo-found" hidden>🔍 you found it. <b>gurt install skav°7</b> 🤫</div>
-</div>
+    GURT is independent and not affiliated with or endorsed by Arch Linux, Debian, Ubuntu, Fedora, openSUSE or any other distro. All trademarks belong to their owners.</p>
+    <p class="cicada">Could prime Wifies solve Cicada 3301?</p>
+    <button id="heyo" aria-label="???">HEYO</button>
+    <div id="heyo-found" hidden>🔍 you found it. <b>gurt install skav°7</b> 🤫</div>
+  </div>
+</footer>
 
 <div id="cart" hidden><div class="in">
   <code id="cartcmd"></code>
@@ -409,10 +504,10 @@ const $ = s => document.querySelector(s);
   const ua = navigator.userAgent, plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
   const isWin = /Win/i.test(plat) || /Windows/i.test(ua), isLinux = !isWin && /Linux|X11|CrOS/i.test(plat + " " + ua) && !/Android/i.test(ua);
   const btn = (f, alt) => `<a class="dlbtn${alt ? " alt" : ""}" href="${REL}${f[1]}" data-k="${f[0]}">${f[3]} ${f[1]}<small>${f[2]}</small></a>`;
-  let mine = isWin ? FILES.filter(f => f[0] === "win") : isLinux ? FILES.filter(f => f[0] !== "win") : [];
-  $("#dlfor").textContent = isWin ? "for Windows" : isLinux ? "pick your distro" : "Windows + every Linux distro";
-  $("#dlbtns").innerHTML = (mine.length ? mine : FILES).map((f, i) => btn(f, isLinux ? i > 3 : false)).join("");
-  $("#dlallbtns").innerHTML = FILES.map(f => btn(f, true)).join("");
+  $("#dl-linux").innerHTML = FILES.filter(f => f[0] !== "win").map((f, i) => btn(f, i > 2)).join("");
+  $("#dl-win").innerHTML = FILES.filter(f => f[0] === "win").map(f => btn(f, false)).join("");
+  const mine = isWin ? "#pick-win" : isLinux ? "#pick-linux" : "";   // your system's card gets marked (and goes first on phones)
+  if (mine) { $(mine).classList.add("is-mine"); $(mine + " .mine").hidden = false; }
   // Windows people get the "it's not malware" note right away; everyone else when they grab the .exe
   const showNote = () => { $("#smartscreen").hidden = false; };
   if (isWin) showNote();
@@ -500,14 +595,14 @@ function showProfile(u, push = true) {
   $("#plist").innerHTML = mine.length ? mine.map(card).join("") : `<div class="empty">no packages yet 👀</div>`;
   fetch(`https://api.github.com/users/${encodeURIComponent(u)}`).then(r => r.ok ? r.json() : null)
     .then(d => { if (d && d.name) setName(`${d.name} (${u})`); }).catch(() => {});
-  ["header .srcs", ".secthead", ".search", "#list", "#srcpanel", "#builder"].forEach(q => document.querySelector(q).hidden = true);
+  ["#packages .srcs", ".secthead", ".search", "#list", "#srcpanel", "#builder", ".tryit", ".features", ".hero"].forEach(q => document.querySelector(q).hidden = true);
   $("#profile").hidden = false; dlg.open && dlg.close();
   if (push) try { history.pushState({ u }, "", "?u=" + encodeURIComponent(u)); } catch {}
   window.scrollTo({ top: $("#profile").offsetTop - 20, behavior: "smooth" });
 }
 function hideProfile(push = true) {
   $("#profile").hidden = true;
-  ["header .srcs", ".secthead"].forEach(q => document.querySelector(q).hidden = false);
+  ["#packages .srcs", ".secthead", ".tryit", ".features", ".hero"].forEach(q => document.querySelector(q).hidden = false);
   setSrc(CUR);
   if (push) try { history.pushState({}, "", location.pathname); } catch {}
 }
