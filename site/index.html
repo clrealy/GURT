@@ -2,8 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2873912802866559"
-     crossorigin="anonymous"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GURT: every Linux distro's apps, on every distro</title>
 <meta name="description" content="GURT (GURT Universal Repository Thingy) is a free package manager and app store for Linux. Install apps from Arch, the AUR, Debian, Fedora, openSUSE, Flathub and Snap on any distro, with one command or one click.">
@@ -275,29 +273,6 @@ body.carted{padding-bottom:74px}
 @media (max-width:900px){.fgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:560px){.fgrid{grid-template-columns:1fr}}
 .tryit{padding:30px 0 4px}.tryit .install{margin-top:0}
-/* 🚇 ads, as station signs: black panel, the white band up top, round line bullets, Helvetica. ads.json picks what fills
-   them: direct sponsors (AD), then Google AdSense (an ad inside the sign frame, AD), then GURT's own (SERVICE NOTICE) */
-.station{margin:22px 0 0}
-.station[hidden]{display:none}
-.sign{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 14px;padding:14px 16px 12px;background:#111;color:#fff;
-  border:1px solid #000;border-top:6px solid #111;box-shadow:inset 0 3px #fff;text-decoration:none;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif}
-.sign:hover{background:#000}
-.sign:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.sign .bul{display:flex;gap:5px}
-.sign .bul i{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;font:700 21px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;font-style:normal;color:#fff}
-.sign .bul i.dk{color:#111}
-.sign .txt{min-width:0}
-.sign b{display:block;font-size:22px;line-height:1.15;font-weight:700;letter-spacing:-.01em;overflow-wrap:anywhere}
-.sign small{display:block;margin-top:2px;font-size:14px;color:#cfcfd4;overflow-wrap:anywhere}
-.sign .dir{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:28px;line-height:1;font-weight:700}
-.sign .tag{font:700 10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#111;background:#cfcfd4;padding:3px 5px;border-radius:var(--r);white-space:nowrap}
-.sign .tag.notice{background:var(--accent)}
-.sign.adsense{display:block;padding:10px 12px 12px;cursor:default}
-.sign.adsense:hover{background:#111}
-.sign.adsense .tag{display:inline-block;margin-bottom:8px}
-.sign.adsense ins{display:block;min-height:90px;background:#1b1b1e}
-@media (max-width:560px){.sign{grid-template-columns:auto minmax(0,1fr);padding:12px}.sign .dir{grid-column:1 / -1;flex-direction:row;justify-content:space-between;align-items:center;font-size:22px}
-  .sign .bul i{width:28px;height:28px;font-size:17px}.sign b{font-size:18px}}
 #packages{padding:26px 0 0}#packages .srcs{margin-top:0}
 footer.site{background:#0b0c0e;color:#9a9aa3;border-top:4px solid;border-image:linear-gradient(90deg,var(--c-red) 0 25%,var(--accent) 25% 50%,var(--c-green) 50% 75%,var(--c-blue) 75%) 1;padding:30px 0 10px;font-size:13.5px}
 .fcols{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:20px}
@@ -359,7 +334,6 @@ footer.site .cicada{color:#e7e7ea}
   </div>
 </section>
 <div class="wrap">
-  <aside class="station" id="ad-a" aria-label="advertisement" hidden></aside>
   <section class="tryit">
     <h2 class="bandtitle">Once it's installed</h2>
     <div class="install mono"><span class="c"># once the wizard's done:</span>
@@ -423,7 +397,6 @@ gurt outsource user/repo   <span class="c"># any git repo: clone + build + insta
   </section>
 
   </section>
-  <aside class="station" id="ad-b" aria-label="advertisement" hidden></aside>
 </div>
 <footer class="site">
   <div class="wrap">
@@ -622,14 +595,14 @@ function showProfile(u, push = true) {
   $("#plist").innerHTML = mine.length ? mine.map(card).join("") : `<div class="empty">no packages yet 👀</div>`;
   fetch(`https://api.github.com/users/${encodeURIComponent(u)}`).then(r => r.ok ? r.json() : null)
     .then(d => { if (d && d.name) setName(`${d.name} (${u})`); }).catch(() => {});
-  ["#packages .srcs", ".secthead", ".search", "#list", "#srcpanel", "#builder", ".tryit", ".features", ".hero", "#ad-a"].forEach(q => document.querySelector(q).hidden = true);
+  ["#packages .srcs", ".secthead", ".search", "#list", "#srcpanel", "#builder", ".tryit", ".features", ".hero"].forEach(q => document.querySelector(q).hidden = true);
   $("#profile").hidden = false; dlg.open && dlg.close();
   if (push) try { history.pushState({ u }, "", "?u=" + encodeURIComponent(u)); } catch {}
   window.scrollTo({ top: $("#profile").offsetTop - 20, behavior: "smooth" });
 }
 function hideProfile(push = true) {
   $("#profile").hidden = true;
-  ["#packages .srcs", ".secthead", ".tryit", ".features", ".hero", "#ad-a"].forEach(q => document.querySelector(q).hidden = false);
+  ["#packages .srcs", ".secthead", ".tryit", ".features", ".hero"].forEach(q => document.querySelector(q).hidden = false);
   setSrc(CUR);
   if (push) try { history.pushState({}, "", location.pathname); } catch {}
 }
@@ -983,69 +956,6 @@ $("#sfxbtn").addEventListener("click", () => {
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paintTbar); paintTbar();
 $("#bgroups").addEventListener("change", e => { if (e.target.dataset.n) SFX.play(e.target.checked ? "pick" : "unpick"); });
 $("#heyo").addEventListener("click", () => { $("#heyo-found").hidden = false; $("#heyo").style.opacity = 1; });
-// 🚇 the station signs: sponsors from ads.json first, then GURT's own notices. one per slot, picked fresh each visit
-(() => {
-  const HOUSE = [
-    {lines: [["G", "#ffc629"]], title: "Main GURT", sub: "2,500+ apps · one command · every distro", url: "#packages"},
-    {lines: [["A", "#e8302a"], ["F", "#2456e0"]], title: "The AUR & Flathub", sub: "on Mint, Fedora, openSUSE… gurt install aur/yay", url: "https://github.com/clrealy/GURT#readme"},
-    {lines: [["W", "#1fa64a"]], title: "Setup Wizard", sub: "every distro's installer · Linux + Windows", url: "#get"},
-    {lines: [["C", "#2456e0"]], title: "Convert anything", sub: ".deb ⇄ .rpm ⇄ pacman · AppImage · signed", url: "https://github.com/clrealy/GURT#readme"},
-    {lines: [["R", "#e8302a"]], title: "Rollback", sub: "a bad update? gurt rollback. stand clear of the closing doors", url: "https://github.com/clrealy/GURT#readme"},
-    {lines: [["$", "#ffc629"]], title: "Your ad here", sub: "put your project on a GURT station sign", url: "https://github.com/clrealy/GURT/issues/new?title=Ad%20on%20gurtproject.org"},
-  ];
-  const ok = a => a && typeof a.title === "string" && /^(https?:\/\/|#)/.test(a.url || "") && Array.isArray(a.lines);
-  const shuffle = xs => xs.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(p => p[1]);
-  const sign = a => {
-    const el = document.createElement("a"); el.className = "sign"; el.href = a.url;
-    if (/^https?:/.test(a.url)) { el.target = "_blank"; el.rel = a.sponsor ? "sponsored noopener" : "noopener"; }
-    const bul = document.createElement("span"); bul.className = "bul"; bul.setAttribute("aria-hidden", "true");
-    for (const [ch, col] of a.lines.slice(0, 3)) {
-      const i = document.createElement("i"); i.textContent = String(ch).slice(0, 2);
-      const c = /^#[0-9a-f]{6}$/i.test(col) ? col : "#808183"; i.style.background = c;
-      const n = parseInt(c.slice(1), 16), lum = ((n >> 16) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000;
-      if (lum > 160) i.className = "dk"; bul.append(i);
-    }
-    const txt = document.createElement("span"); txt.className = "txt";
-    const b = document.createElement("b"); b.textContent = a.title; txt.append(b);
-    if (a.sub) { const sm = document.createElement("small"); sm.textContent = a.sub; txt.append(sm); }
-    const dir = document.createElement("span"); dir.className = "dir";
-    const tag = document.createElement("span"); tag.className = "tag" + (a.sponsor ? "" : " notice"); tag.textContent = a.sponsor ? "ad" : "service notice";
-    const arr = document.createElement("span"); arr.setAttribute("aria-hidden", "true"); arr.textContent = "→";
-    dir.append(tag, arr); el.append(bul, txt, dir); return el;
-  };
-  // Google AdSense, inside a sign frame. an ad Google can't fill gets a GURT sign instead of an empty box
-  let adsLoaded = false;
-  const adsense = (cfg, slotId, fallback) => {
-    if (!adsLoaded && !document.querySelector('script[src*="adsbygoogle.js"]')) {   // the <head> already loads it
-      const sc = document.createElement("script"); sc.async = true; sc.crossOrigin = "anonymous";
-      sc.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + encodeURIComponent(cfg.client);
-      document.head.append(sc); adsLoaded = true;
-    }
-    const box = document.createElement("div"); box.className = "sign adsense";
-    const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = "ad";
-    const ins = document.createElement("ins"); ins.className = "adsbygoogle";
-    ins.dataset.adClient = cfg.client; ins.dataset.adSlot = slotId; ins.dataset.adFormat = "horizontal"; ins.dataset.fullWidthResponsive = "true";
-    box.append(tag, ins);
-    new MutationObserver((_, mo) => { if (ins.dataset.adStatus === "unfilled") { mo.disconnect(); box.replaceWith(sign(fallback)); } })
-      .observe(ins, {attributes: true, attributeFilter: ["data-ad-status"]});
-    return [box, () => { try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch {} }];
-  };
-  const fill = (sponsors, cfg) => {
-    const direct = shuffle(sponsors.filter(ok).map(a => ({...a, sponsor: true}))), house = shuffle(HOUSE);
-    const g = cfg && /^ca-pub-\d{10,20}$/.test(cfg.client || "") ? cfg : null;
-    ["ad-a", "ad-b"].forEach((id, k) => {
-      const slot = document.getElementById(id); if (!slot) return;
-      const gslot = g && Array.isArray(g.slots) && /^\d{6,20}$/.test(String(g.slots[k] || "")) ? String(g.slots[k]) : "";
-      let start = null;
-      if (direct[k]) slot.replaceChildren(sign(direct[k]));
-      else if (gslot) { const [box, go] = adsense(g, gslot, house[k]); slot.replaceChildren(box); start = go; }
-      else if (house[k]) slot.replaceChildren(sign(house[k]));
-      slot.hidden = id === "ad-a" && !!document.querySelector(".hero[hidden]");
-      if (start) start();   // after it's on the page, so AdSense can measure the space
-    });
-  };
-  fetch("ads.json").then(r => r.ok ? r.json() : {}).then(d => fill(Array.isArray(d.ads) ? d.ads : [], d.adsense)).catch(() => fill([], null));
-})();
 fetch("packages.json").then(r => r.json()).then(d => { PKGS = d.packages; render(); renderBuilder(); const u = new URLSearchParams(location.search).get("u"); if (u) showProfile(u, false); })
   .catch(() => { $("#count").textContent = "couldn't load packages.json"; });
 </script>
