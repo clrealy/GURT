@@ -14,7 +14,7 @@ gurt dirt off
 ## rules
 - 18+ only, and everything here must be legal where you live and clearly labeled
 - **nothing involving minors, ever** — instant removal + ban
-- no malware, no piracy, no non-consensual content
+- no malware, ~~no piracy~~, no non-consensual content
 - same recipe rules as `packages/` (no sudo, no `curl | sh`, folder name == pkgname)
 
 It's empty for now — recipes go in `dirt/<name>/GURTBUILD` and get reviewed like any other PR.
