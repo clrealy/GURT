@@ -1,7 +1,7 @@
 # Make a bootable USB once, then just copy ISO files onto it (Ventoy2Disk GUI included)
 pkgname=ventoy
-pkgver=1.1.17
-pkgrel=2
+pkgver=1.1.18
+pkgrel=1
 pkgdesc="Make a bootable USB once, then just copy ISO files onto it and boot any of them"
 url="https://www.ventoy.net"
 license="GPL-3.0-or-later"
@@ -10,7 +10,7 @@ category="system"
 arch=(x86_64 aarch64 i686)
 aliases=(ventoy2diskgui ventoygui ventoy2disk)
 source=("https://github.com/ventoy/Ventoy/releases/download/v$pkgver/ventoy-$pkgver-linux.tar.gz")
-sha256sums=(7fb4ed08cef6a6b4d39dd19260d8c80291a78dfdf9af7d461571e23cbbc43805)
+sha256sums=('d86ff9de63d94c8b8f1f6b14d23c55af4b88e8207bf2893890892a6a97b1ad54')
 
 package() {
   local dir="$prefix/lib/ventoy" gui
