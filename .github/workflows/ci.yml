@@ -33,9 +33,18 @@ jobs:
         run: |
           sudo apt-get install -y ./dist/GURTSetupWizard.deb
           [ "$(gurt version)" = "gurt $(sed -n 's/^GURT_VERSION="\(.*\)"/\1/p' gurt)" ]
-          desktop-file-validate /usr/share/applications/gurt.desktop /etc/xdg/autostart/gurt-setup-wizard.desktop
+          desktop-file-validate /usr/share/applications/gurt.desktop /usr/share/applications/gurt-setup.desktop /etc/xdg/autostart/gurt-setup-wizard.desktop
           mkdir -p ~/.config/gurt && echo '{"wizard": "done"}' > ~/.config/gurt/gui.json && timeout 20 gurt gui --first-run
           sudo apt-get remove -y gurt && ! command -v gurt
+      - name: the dev .deb installs, and a wrong dev password swaps in the normal GURT from the latest release
+        run: |
+          tools/make-setup-wizard.sh dev --dev=1 --only=deb --no-sign
+          sudo apt-get install -y ./dev/GURTSetupWizard-dev.deb
+          [ "$(gurt version)" = "gurt $(sed -n 's/^GURT_VERSION="\(.*\)"/\1/p' gurt)+dev.1" ]
+          gurt __paths | grep -qx dev=locked
+          ! printf 'nope\n' | gurt __devunlock
+          gurt version | tee /tmp/v.txt; ! grep -q '+dev' /tmp/v.txt
+          sudo apt-get remove -y gurt
 
   # the dev build: install dev build 1 from the gurt-dev repo, publish dev build 2, and the distro's own update picks it up
   dev-rpm:
@@ -53,13 +62,13 @@ jobs:
         shell: bash
         run: |
           r=/tmp/devrepo; mkdir -p $r
-          tools/make-setup-wizard.sh $r --dev=1 --no-sign && ./gurt -y repo publish $r gurt-dev
+          tools/make-setup-wizard.sh $r --dev=1 --only=rpm --no-sign && ./gurt -y repo publish $r gurt-dev
           rpm -qlp $r/GURTSetupWizard-dev.rpm | grep -q /etc/zypp/repos.d/gurt-dev.repo
           if command -v dnf >/dev/null; then dnf install -y $r/GURTSetupWizard-dev.rpm; else zypper -n --no-gpg-checks install $r/GURTSetupWizard-dev.rpm; fi
           [ "$(gurt version)" = "gurt $(sed -n 's/^GURT_VERSION="\(.*\)"/\1/p' gurt)+dev.1" ]
           # point the installed repo at this test repo instead of the website, then publish build 2
           sed -i "s|^baseurl=.*|baseurl=file://$r|" /etc/yum.repos.d/gurt-dev.repo /etc/zypp/repos.d/gurt-dev.repo
-          rm -f $r/*.rpm; tools/make-setup-wizard.sh $r --dev=2 --no-sign && ./gurt -y repo publish $r gurt-dev
+          rm -f $r/*.rpm; tools/make-setup-wizard.sh $r --dev=2 --only=rpm --no-sign && ./gurt -y repo publish $r gurt-dev
           if command -v dnf >/dev/null; then dnf upgrade -y --refresh gurt; else zypper -n --gpg-auto-import-keys refresh gurt-dev && zypper -n up gurt; fi
           rpm -q gurt | tee /tmp/q.txt; grep -q '+dev.2' /tmp/q.txt
           [ "$(gurt version)" = "gurt $(sed -n 's/^GURT_VERSION="\(.*\)"/\1/p' gurt)+dev.2" ]
@@ -206,8 +215,9 @@ jobs:
       - run: python3 tools/gen-index.py
       - name: serve the installer + script from the site too
         run: cp install.sh gurt deps.map vibes.map site/
-      # 🧪 the dev build: GURTSetupWizard-dev.rpm + an rpm repo at /dev/rpm, rebuilt on every push to main.
-      # the dev rpm adds that repo to zypper / dnf, so zypper up / dnf upgrade bring each new dev build
+      # 🧪 the dev build, for every distro: /dev/GURTSetupWizard-dev.<ext>, and the .rpm + an rpm repo at /dev/rpm, rebuilt on
+      # every push to main. the dev rpm adds that repo to zypper / dnf, so zypper up / dnf upgrade bring each new dev build.
+      # everywhere else, gurt self-update grabs the newest one
       - name: signing key (same GURT_SIGNING_KEY secret as releases; without it the dev repo is unsigned)
         env: { KEY: "${{ secrets.GURT_SIGNING_KEY }}" }
         run: |
@@ -215,14 +225,15 @@ jobs:
             mkdir -p "$HOME/.local/share/gurt" && echo "$KEY" | base64 -d | tar xzf - -C "$HOME/.local/share/gurt"
             chmod -R go-rwx "$HOME/.local/share/gurt/signing"; echo "SIGN=" >> "$GITHUB_ENV"
           else echo "SIGN=--no-sign" >> "$GITHUB_ENV"; fi
-      - name: GURTSetupWizard-dev.rpm + the gurt-dev repo
+      - name: GURTSetupWizard-dev.* + the gurt-dev repo
         run: |
           sudo apt-get install -y -qq zstd gnupg python3 >/dev/null
           mkdir -p site/dev/rpm
-          tools/make-setup-wizard.sh site/dev/rpm --dev=${{ github.run_number }} $SIGN
+          tools/make-setup-wizard.sh site/dev --dev=${{ github.run_number }} $SIGN
+          mv site/dev/GURTSetupWizard-dev.rpm* site/dev/rpm/
           ./gurt -y repo publish site/dev/rpm gurt-dev
           v=IHAVECOPIUMFORHALFLIFETHREEANDTHESTEAMMACHINE/SPINNINGAPPLES/ILIKEGREENCHAMELEONS/YaSTOVERCOCKPIT/SUSEOVERRHEL/THISISTOOLONG/THISISTHEEND/HOLDYOURBREATHANDCOUNTTOTEN/AREYOUREALLYSINGINGADELE/DOWNLOAD/ACTUALDOWNLOAD/ACTUALACTUALDOWNLOAD/QWERTY
-          cp site/dev/rpm/GURTSetupWizard-dev.rpm "site/$v/"
+          cp site/dev/rpm/GURTSetupWizard-dev.rpm site/dev/GURTSetupWizard-dev.{deb,pkg.tar.zst,apk,xbps,eopkg} "site/$v/"
           V=$(printf %s "$v" | tr a-z A-Z); mkdir -p "site/$V" && cp "site/$v"/* "site/$V/"   # an all-caps twin: 404.html sends any spelling of it there
       # 📦 the stable repo: the latest release's GURTSetupWizard .deb / .rpm / .pkg.tar.zst as an apt + rpm + pacman repo
       # at /repo. stable GURTSetupWizard packages add it, so new versions come with normal system updates

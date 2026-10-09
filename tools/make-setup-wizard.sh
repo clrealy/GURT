@@ -2,12 +2,13 @@
 # builds the GURTSetupWizard installers: gurt + the app + a menu entry + a one-time wizard at login,
 # as every distro's own package, made by gurt convert itself (signed with your gurt key unless --no-sign)
 #   tools/make-setup-wizard.sh [out-dir] [--no-sign]   → GURTSetupWizard.deb .rpm .pkg.tar.zst .apk .xbps .eopkg
-#   tools/make-setup-wizard.sh [out-dir] --dev[=N]     → GURTSetupWizard-dev.rpm: version <ver>+dev.N, and it adds the
-#     gurt-dev repo to zypper/dnf, so every new dev build arrives with zypper up / dnf upgrade
+#   tools/make-setup-wizard.sh [out-dir] --dev[=N]     → GURTSetupWizard-dev.<every ext>: version <ver>+dev.N. the .rpm adds
+#     the gurt-dev repo to zypper/dnf, so every new dev build arrives with zypper up / dnf upgrade (elsewhere: gurt self-update)
+#   --only=deb,rpm,…  just those formats (deb rpm pacman apk xbps eopkg)
 set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
-out=$root/dist sign=() dev=""
-for a; do case $a in --no-sign) sign=(--no-sign) ;; --dev) dev=$(date -u +%Y%m%d%H%M) ;; --dev=*) dev=${a#--dev=} ;; *) out=$a ;; esac; done
+out=$root/dist sign=() dev="" only=""
+for a; do case $a in --no-sign) sign=(--no-sign) ;; --dev) dev=$(date -u +%Y%m%d%H%M) ;; --dev=*) dev=${a#--dev=} ;; --only=*) only=${a#--only=} ;; *) out=$a ;; esac; done
 ver=$(sed -n 's/^GURT_VERSION="\(.*\)"/\1/p' "$root/gurt")
 [[ -n $ver ]] || { echo "couldn't read GURT_VERSION" >&2; exit 1; }
 [[ -z $dev || $dev =~ ^[0-9]+$ ]] || { echo "--dev=N takes a number" >&2; exit 1; }
@@ -139,7 +140,8 @@ INFO
 
 declare -A ext=([deb]=deb [rpm]=rpm [pacman]=pkg.tar.zst [apk]=apk [xbps]=xbps [eopkg]=eopkg)
 fmts=(deb rpm pacman apk xbps eopkg) name=GURTSetupWizard
-[[ -n $dev ]] && fmts=(rpm) name=GURTSetupWizard-dev
+[[ -n $dev ]] && name=GURTSetupWizard-dev
+if [[ -n $only ]]; then IFS=, read -ra fmts <<<"$only"; for f in "${fmts[@]}"; do [[ -n ${ext[$f]:-} ]] || { echo "--only: no format called $f" >&2; exit 1; }; done; fi
 for fmt in "${fmts[@]}"; do
   rm -rf "$tmp/o"; mkdir -p "$tmp/o"
   "$root/gurt" -y convert "$tmp/gurt-$ver-1-any.gurt" "$fmt" -o "$tmp/o" "${sign[@]}" >"$tmp/$fmt.log" 2>&1 || { tail -5 "$tmp/$fmt.log" >&2; exit 1; }

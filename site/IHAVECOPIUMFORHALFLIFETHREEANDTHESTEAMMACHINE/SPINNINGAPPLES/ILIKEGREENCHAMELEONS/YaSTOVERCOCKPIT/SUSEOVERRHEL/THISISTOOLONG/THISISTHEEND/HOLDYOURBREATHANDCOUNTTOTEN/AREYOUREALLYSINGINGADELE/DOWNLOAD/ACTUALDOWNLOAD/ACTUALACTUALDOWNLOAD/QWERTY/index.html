@@ -7,14 +7,53 @@
 <title>&#8203;</title>
 <style>
   html,body{margin:0;height:100%;background:#000}
-  body{display:grid;place-items:center}
+  body{display:grid;place-items:center;align-content:center}
   a{font:800 18px/1 system-ui,sans-serif;color:#000;background:#ffc629;text-decoration:none;padding:16px 30px;border:2px solid #fff;border-radius:10px;box-shadow:5px 5px 0 #333;letter-spacing:.04em}
   a:hover{transform:translate(-1px,-1px);box-shadow:6px 6px 0 #444}
   a:active{transform:translate(3px,3px);box-shadow:2px 2px 0 #333}
   a:focus-visible{outline:3px solid #fff;outline-offset:4px}
+  main{display:grid;justify-items:center;gap:22px;padding:16px}
+  main>a{text-align:center}
+  #picks{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;max-width:420px;font:12px/1.4 ui-monospace,monospace}
+  #picks a{all:unset;cursor:pointer;color:#666}
+  #picks a:hover,#picks a:focus-visible{color:#ffc629}
+  #picks a.on{color:#ffc629}
+  #picks.big{gap:8px;max-width:520px}
+  #picks.big a{font:800 14px/1 system-ui,sans-serif;color:#000;background:#ffc629;padding:12px 16px;border:2px solid #fff;border-radius:10px;letter-spacing:.04em}
+  #picks.big a:hover{background:#ffd75c;color:#000}
 </style>
 </head>
 <body>
-<a href="GURTSetupWizard-dev.rpm" download>download</a>
+<main>
+<a id="dl" href="GURTSetupWizard-dev.rpm" download>download</a>
+<nav id="picks" aria-label="other distros"></nav>
+</main>
+<script>
+// browsers only sometimes say which distro you're on (Firefox on Ubuntu, Fedora…), so: a guess, else what you picked last time
+const F = {deb: "GURTSetupWizard-dev.deb", rpm: "GURTSetupWizard-dev.rpm", pacman: "GURTSetupWizard-dev.pkg.tar.zst",
+           apk: "GURTSetupWizard-dev.apk", xbps: "GURTSetupWizard-dev.xbps", eopkg: "GURTSetupWizard-dev.eopkg"};
+const NAMES = [["deb", "Debian / Ubuntu"], ["rpm", "Fedora / openSUSE"], ["pacman", "Arch"], ["apk", "Alpine"], ["xbps", "Void"], ["eopkg", "Solus"]];
+const SEEN = [[/ubuntu|kubuntu|xubuntu/i, "deb", "Ubuntu"], [/linux ?mint/i, "deb", "Mint"], [/pop!?_?os/i, "deb", "Pop!_OS"], [/debian|raspbian/i, "deb", "Debian"],
+  [/elementary|zorin|kali|deepin/i, "deb", ""], [/fedora/i, "rpm", "Fedora"], [/opensuse|suse/i, "rpm", "openSUSE"], [/red ?hat|rhel|centos|rocky|alma/i, "rpm", ""],
+  [/mageia|nobara|ultramarine/i, "rpm", ""], [/manjaro/i, "pacman", "Manjaro"], [/endeavour|cachyos|garuda|arch/i, "pacman", "Arch"],
+  [/alpine/i, "apk", "Alpine"], [/void/i, "xbps", "Void"], [/solus/i, "eopkg", "Solus"]];
+let fmt = "", label = "";
+for (const [re, f, n] of SEEN) if (re.test(navigator.userAgent)) { fmt = f; label = n; break; }
+if (!fmt) { try { const f = localStorage.getItem("gurt-dev-fmt"); if (F[f]) fmt = f; } catch {} }
+const dl = document.getElementById("dl"), picks = document.getElementById("picks");
+function show(){
+  const name = (NAMES.find(n => n[0] === fmt) || [])[1];
+  if (fmt) { dl.href = F[fmt]; dl.textContent = `download for ${label || name}`; dl.hidden = false; }
+  else { dl.hidden = true; }
+  picks.innerHTML = ""; picks.className = fmt ? "" : "big";   // no guess: every distro gets a real button
+  for (const [f, n] of NAMES) {
+    const a = document.createElement("a"); a.href = F[f]; a.textContent = n; a.className = f === fmt ? "on" : "";
+    a.download = "";
+    a.addEventListener("click", () => { try { localStorage.setItem("gurt-dev-fmt", f); } catch {} if (f !== fmt) { fmt = f; label = ""; setTimeout(show, 0); } });
+    picks.append(a);
+  }
+}
+show();
+</script>
 </body>
 </html>

@@ -2334,9 +2334,15 @@ cmd_convert() { # file|url format|out-file [-o dir]
   case $fmt in
     deb)    CV_TVER="${CVE:+$CVE:}$CVU-$CVR" ;;
     pacman) CV_TVER="${CVE:+$CVE:}$CVU-$CVR" ;;
-    apk)    # Alpine only takes 1.2.3[_p4][-r5]: 1.0.0+hotfix1 → 1.0.0_p1
-            CVX=""; [[ $CVU == *+* ]] && CVX=$(grep -o '[0-9]*$' <<<"${CVU#*+}" || true)
-            [[ $CVU =~ ^([0-9]+(\.[0-9]+)*) ]] && CVU=${BASH_REMATCH[1]}; CV_TVER="$CVU${CVX:+_p$CVX}-r$CVR" ;;
+    apk)    # Alpine only takes 1.2.3[_suffixN…][-r5]: 1.0.0+hotfix1 → 1.0.0_p1, 1.0.0+hotfix1+dev.7 → 1.0.0_p1_git7
+            CVX=""; local seg n
+            if [[ $CVU == *+* ]]; then
+              while IFS= read -r seg; do
+                n=$(grep -o '[0-9]*$' <<<"$seg" || true); [[ -n $n ]] || continue
+                [[ $seg == dev* ]] && CVX+="_git$n" || CVX+="_p$n"
+              done < <(tr '+' '\n' <<<"${CVU#*+}")
+            fi
+            [[ $CVU =~ ^([0-9]+(\.[0-9]+)*) ]] && CVU=${BASH_REMATCH[1]}; CV_TVER="$CVU$CVX-r$CVR" ;;
     xbps)   CV_TVER="${CVU//_/.}_$CVR" ;;
     eopkg)  CV_TVER="$CVU-$CVR" ;;
     *)      CV_TVER="$CVU-$CVR" ;;
@@ -4501,6 +4507,18 @@ exec_root() { if (( EUID == 0 )); then exec "$@"; elif command -v sudo >/dev/nul
 cmd_self_update() {
   local self new tmp dir
   self=$(readlink -f "$0")
+  # 🧪 a dev build: the newest dev build for your distro, from gurtproject.org/dev
+  if [[ $self == /usr/bin/gurt ]] && is_dev; then
+    local ext url; ext=$(own_pkg_ext) || die "no dev build for $PM yet"
+    [[ $ext == rpm ]] && url="$DEV_URL/rpm/GURTSetupWizard-dev.rpm" || url="$DEV_URL/GURTSetupWizard-dev.$ext"
+    tmp=$(mktemp -d)
+    msg "grabbing the newest dev build for $PM 🧪"
+    curl -fsSL -o "$tmp/GURTSetupWizard-dev.$ext" "$url" || { rm -rf "$tmp"; die "couldn't download $url"; }
+    own_pkg_install "$tmp/GURTSetupWizard-dev.$ext" || { rm -rf "$tmp"; die "$PM couldn't install the dev build"; }
+    rm -rf "$tmp"
+    msg "you're on $(/usr/bin/gurt version 2>/dev/null || echo "the newest dev build") ✅"
+    return 0
+  fi
   # installed from a GURTSetupWizard package: your package manager owns gurt, so it does the updating
   if [[ $self == /usr/bin/gurt && -f /usr/share/gurt/gurt-gui.py ]] && ! $FORCE; then
     case $PM in
@@ -4563,6 +4581,26 @@ compare|indecisive ⚖️|compare apps side by side
 v1|day one 🎂|be there for GURT 1.0
 wizard|you're a wizard 🧙|finish the setup wizard"
 is_dev() { [[ $GURT_VERSION == *+dev* ]]; }   # a GURTSetupWizard-dev build
+DEV_URL=https://gurtproject.org/dev   # the dev builds: /dev/rpm/GURTSetupWizard-dev.rpm (an rpm repo too), /dev/GURTSetupWizard-dev.<ext>
+own_pkg_ext() { # → the GURTSetupWizard file ending your package manager takes
+  case $PM in
+    apt) echo deb ;; dnf|yum|zypper) echo rpm ;; pacman) echo pkg.tar.zst ;; apk) echo apk ;; xbps) echo xbps ;; eopkg) echo eopkg ;;
+    *) return 1 ;;
+  esac
+}
+own_pkg_install() { # file — install a GURTSetupWizard package with your package manager (an older one too: it swaps)
+  local f; f=$(readlink -f "$1")
+  case $PM in
+    apt)     asroot apt-get install -y --allow-downgrades "$f" ;;
+    dnf|yum) asroot "$PM" install -y "$f" || asroot "$PM" downgrade -y "$f" || asroot rpm -U --oldpackage "$f" ;;
+    zypper)  asroot zypper --non-interactive install --oldpackage --allow-unsigned-rpm "$f" ;;
+    pacman)  asroot pacman -U --noconfirm "$f" ;;
+    apk)     asroot apk add --allow-untrusted "$f" ;;
+    xbps)    asroot xbps-rindex -a "$f" >/dev/null && asroot xbps-install -y -f --repository="${f%/*}" gurt ;;
+    eopkg)   asroot eopkg install -y "$f" ;;
+    *)       return 1 ;;
+  esac
+}
 
 # ── 🔒 dev builds want the dev password once. right → never again. wrong → the normal GURT replaces the dev build ──
 DEV_PASS_SHA=122d01009107a4ba960d2e8191948a1f1e40cf1aa969ead57e87a278b1da06f4   # sha256, not the password itself
@@ -4577,14 +4615,13 @@ dev_check() { # password → 0 if it's the dev password (and remembers that), el
 }
 dev_revoke() {
   warn "wrong dev password 🔒 swapping the dev build for the normal GURT"
-  local tmp f=/usr/bin/gurt; tmp=$(mktemp -d)
-  curl -fsSL -o "$tmp/GURTSetupWizard.rpm" https://github.com/clrealy/GURT/releases/latest/download/GURTSetupWizard.rpm ||
+  local tmp ext f=/usr/bin/gurt; tmp=$(mktemp -d)
+  ext=$(own_pkg_ext) || { rm -rf "$tmp"; die "no normal GURT package for $PM — get it from https://github.com/clrealy/GURT/releases/latest"; }
+  curl -fsSL -o "$tmp/GURTSetupWizard.$ext" "https://github.com/clrealy/GURT/releases/latest/download/GURTSetupWizard.$ext" ||
     { rm -rf "$tmp"; die "couldn't download the normal GURT — get it from https://github.com/clrealy/GURT/releases/latest"; }
-  case $PM in   # it's a "downgrade" (1.0.0 is older than 1.0.0+dev.N), and the gurt-dev repo goes away with the dev package
-    zypper) asroot zypper --non-interactive install --oldpackage --allow-unsigned-rpm "$tmp/GURTSetupWizard.rpm" ;;
-    dnf|yum) asroot "$PM" downgrade -y "$tmp/GURTSetupWizard.rpm" || asroot rpm -U --oldpackage "$tmp/GURTSetupWizard.rpm" ;;
-    *) asroot rpm -U --oldpackage "$tmp/GURTSetupWizard.rpm" ;;
-  esac || { rm -rf "$tmp"; die "couldn't swap in the normal GURT — get it from https://github.com/clrealy/GURT/releases/latest"; }
+  # it's a "downgrade" (1.0.0 is older than 1.0.0+dev.N), and the gurt-dev repo goes away with the dev package
+  own_pkg_install "$tmp/GURTSetupWizard.$ext" ||
+    { rm -rf "$tmp"; die "couldn't swap in the normal GURT — get it from https://github.com/clrealy/GURT/releases/latest"; }
   asroot rm -f /etc/zypp/repos.d/gurt-dev.repo /etc/yum.repos.d/gurt-dev.repo
   rm -rf "$tmp"
   msg "you're on the normal GURT now ($("$f" version 2>/dev/null || echo "gurt")) — the dev build is gone 👋"
