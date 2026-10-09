@@ -1,0 +1,5 @@
+{
+  "_how": "what fills the two station signs on gurtproject.org. adsense: your AdSense publisher id (ca-pub-…) and one display ad unit id per sign ([under the features, above the footer]). ads: direct sponsors, shown before AdSense: lines = up to 3 [letter, #rrggbb] bullets, title, sub, url (https:// or #anchor). with neither, GURT's own signs show",
+  "adsense": {"client": "ca-pub-2873912802866559", "slots": ["", ""]},
+  "ads": []
+}
