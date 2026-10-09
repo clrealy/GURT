@@ -174,9 +174,9 @@ Your **GitHub account is your GURT account**. There are no new passwords, and GU
 | Arch, CachyOS, Manjaro… | `GURTSetupWizard.pkg.tar.zst` |
 | Alpine · Void · Solus | `GURTSetupWizard.apk` · `.xbps` · `.eopkg` |
 
-On Linux, your software center installs it like any other app. Then open **GURT** from your app menu (or log out and back in), and the setup wizard walks you through the rest: a system check, where apps come from, your look, a few starter apps (or 📥 import your list from your old PC), and update alerts. GURT made these files itself with `gurt convert`.
+On Linux, your software center installs it like any other app. Then open **GURT Setup Wizard** from your app menu (it also opens by itself at your next login). It's its own app, separate from GURT, and walks you through the rest: a system check, where apps come from, your look, a few starter apps (or 📥 import your list from your old PC), and update alerts. GURT made these files itself with `gurt convert`.
 
-`gurt setup` runs the wizard again anytime, in the terminal (or 🎨 → 🧙 setup wizard in the app). Picked apps on the website's 🧰 Build your setup? Hit 📄 save as a list, then 📥 import it in the wizard.
+`gurt setup` opens the wizard again anytime (`gurt setup --terminal` asks the same questions right in the terminal, and 🎨 → 🧙 setup wizard in GURT opens it too). Picked apps on the website's 🧰 Build your setup? Hit 📄 save as a list, then 📥 import it in the wizard.
 
 **Updates:** the GURTSetupWizard `.deb` and `.rpm` add the GURT repo (`gurtproject.org/repo`), so new versions of GURT come with your normal system updates: `sudo apt upgrade`, `sudo zypper up` / `dup`, `sudo dnf upgrade`. On Arch, add it to `/etc/pacman.conf` yourself, as below. `gurt self-update` tells you the right command.
 

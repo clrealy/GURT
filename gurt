@@ -3531,9 +3531,13 @@ for i, lab in enumerate(labels):
 '
 }
 
-# ── 🧙 gurt setup: the setup wizard, terminal edition (the app has the clicky one) ──
+# ── 🧙 gurt setup: the GURT Setup Wizard. its own app on a desktop; gurt setup --terminal (or no desktop) asks here ──
 SETUP_PICKS="firefox brave librewolf discord vesktop telegram signal vlc spotify obs-studio gimp krita libreoffice obsidian vscodium vscode neovim btop steam heroic prismlauncher"
 cmd_setup() {
+  if [[ ${1:-} != --terminal && ${1:-} != --cli ]] && has_display && ! $NOCONFIRM; then
+    msg "opening the GURT Setup Wizard 🧙 (gurt setup --terminal does it right here instead)"
+    cmd_gui --wizard; return
+  fi
   local d miss n=1 picks=() p f line want=()
   ensure_repo
   printf '\n%s🧙 GURT Setup Wizard%s — a minute of questions, and you can change all of it later (Ctrl+C stops it)\n' "$B" "$R0"
@@ -3773,8 +3777,12 @@ gui_desktop_entry() { # add "GURT" to your app menu (just for you, no sudo)
   # full path, not just "gurt" — KDE (and some others) won't find a freshly added icon by name until their cache rebuilds
   [[ -f $png ]] && icon=$png || icon=gurt
   gui_mime_types "$data" "$png"
-  # installed from a GURTSetupWizard package: the system already has the menu entry, don't add a second one
-  if [[ -f /usr/share/applications/gurt.desktop && $(readlink -f "$0") == /usr/bin/gurt ]]; then rm -f "$data/applications/gurt.desktop"; return 0; fi
+  # installed from a GURTSetupWizard package: the system already has the menu entries, don't add second ones
+  if [[ -f /usr/share/applications/gurt.desktop && $(readlink -f "$0") == /usr/bin/gurt ]]; then rm -f "$data/applications/gurt.desktop" "$data/applications/gurt-setup.desktop"; return 0; fi
+  # 🧙 the setup wizard is its own app in the menu too
+  printf '%s\n' "[Desktop Entry]" "Type=Application" "Name=GURT Setup Wizard" "GenericName=Setup Wizard" "Comment=set GURT up: sources, your look, starter apps" \
+    "Exec=$(readlink -f "$0") gui --wizard" "Icon=$icon" "Terminal=false" "StartupWMClass=gurt-setup" "Categories=System;Settings;" "Keywords=gurt;setup;wizard;install;" \
+    > "$data/applications/gurt-setup.desktop"
   entry=$(printf '%s\n' "[Desktop Entry]" "Type=Application" "Name=GURT" "GenericName=Package Manager" \
     "Comment=every distro's packages, on every distro" "Exec=$(readlink -f "$0") gui %f" "Icon=$icon" "Terminal=false" "StartupWMClass=gurt" \
     "Categories=System;PackageManager;" "Keywords=packages;install;aur;apt;flatpak;" "MimeType=application/x-gurt-package;")
@@ -4451,7 +4459,7 @@ cmd_uninstall() {
   fi
   cmd_notify off >/dev/null 2>&1 || true
   # the menu entry, icons, file type + tab completion gurt made just for you
-  rm -f "$data/applications/gurt.desktop" "$data/icons/hicolor/256x256/apps/gurt.png" \
+  rm -f "$data/applications/gurt.desktop" "$data/applications/gurt-setup.desktop" "$data/icons/hicolor/256x256/apps/gurt.png" \
         "$data/icons/hicolor/256x256/mimetypes/application-x-gurt-package.png" "$data/mime/packages/gurt.xml" \
         "$data/bash-completion/completions/gurt" "$cfg/fish/completions/gurt.fish" 2>/dev/null || true
   command -v update-mime-database >/dev/null && update-mime-database "$data/mime" >/dev/null 2>&1 || true
@@ -5192,7 +5200,7 @@ ${B}misc${R0}
   export [file]        save the list of stuff you installed
   lottery [category]   🎰 spin for a random app (browsers chat media creative office dev gaming system cli …)
   import <file>        install everything from an export (new PC speedrun)
-  setup                the setup wizard 🧙 system check, sources, starter apps, extras (the app has one too)
+  setup [--terminal]   the GURT Setup Wizard 🧙 its own app: system check, sources, starter apps, extras
   profile save|load|list <name>   your apps + gurt settings + the app's look, under a name (gaming, work…) 📁
   notify on|off|now    a desktop notification when updates are waiting (checks every 6 hours) 🔔
   snapshots            the snapshots gurt took before system upgrades (btrfs: snapper/timeshift/plain) 📸
@@ -5294,7 +5302,7 @@ main() {
     hogs|sizes|du)     cmd_hogs "$@" ;;
     compare|vs)        cmd_compare "$@" && achieve compare ;;
     profile|profiles)  cmd_profile "$@" ;;
-    setup|wizard)      cmd_setup ;;
+    setup|wizard)      cmd_setup "$@" ;;
     notify|alerts)     cmd_notify "$@" ;;
     snapshots|snaps)   cmd_snapshots ;;
     self-update|selfupdate) cmd_self_update ;;

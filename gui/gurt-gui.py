@@ -375,7 +375,7 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/":
             if not self._host_ok() or not secrets.compare_digest((q.get("t") or [""])[0], TOKEN):
                 return self._send(403, "nope 🔒 open GURT with: gurt gui", "text/plain")
-            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()).replace("__SFX__", "off" if conf().get("sfx") is False else "on").replace("__MUSIC__", "off" if conf().get("music") is False else "on").replace("__TRACK__", conf().get("track") if conf().get("track") in TRACKS else "auto").replace("__SEEN__", html_attr(str(conf().get("seen", "")))).replace("__WIZ__", "new" if WIZARD[0] or not conf() else str(conf().get("wizard", ""))).replace("__OPEN__", html_attr(OPEN_FILE[0])), "text/html")
+            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()).replace("__SFX__", "off" if conf().get("sfx") is False else "on").replace("__MUSIC__", "off" if conf().get("music") is False else "on").replace("__TRACK__", conf().get("track") if conf().get("track") in TRACKS else "auto").replace("__SEEN__", html_attr(str(conf().get("seen", "")))).replace("__WIZ__", "new" if not conf() or (WIZARD[0] and conf().get("wizard") != "done") else str(conf().get("wizard", ""))).replace("__APP__", "setup" if WIZARD[0] else "gurt").replace("__FROM__", "app" if WIZARD[1] else "").replace("__OPEN__", html_attr(OPEN_FILE[0])), "text/html")
         if u.path in ("/icon.png", "/logo.png", "/dirt-logo.png"):
             repo = paths().get("repo", "")
             want = {"/logo.png": "gurt-logo.png", "/dirt-logo.png": "dirt-logo.png"}.get(u.path, "apple-touch-icon.png")
@@ -624,6 +624,16 @@ class H(BaseHTTPRequestHandler):
                 return self._send(400, {"error": "light or dark tho"})
             save_conf(theme=t)
             return self._send(200, {"ok": True})
+        if u.path == "/api/setup-app":   # 🧙 the setup wizard is its own app: open it in its own window
+            subprocess.Popen([GURT, "gui", "--wizard", "--from-app"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             stdin=subprocess.DEVNULL, start_new_session=True)
+            return self._send(200, {"ok": True})
+        if u.path == "/api/close":   # the setup wizard's Finish / Cancel: close its window (+ open GURT if you asked)
+            if body.get("open"):
+                subprocess.Popen([GURT, "gui"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                 stdin=subprocess.DEVNULL, start_new_session=True)
+            threading.Timer(0.3, close_window).start()
+            return self._send(200, {"ok": True})
         if u.path == "/api/relaunch":   # reopen as a real app window, then this browser copy bows out
             subprocess.Popen([GURT, "gui"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                              stdin=subprocess.DEVNULL, start_new_session=True)
@@ -702,13 +712,24 @@ def find_toolkit():
     return None
 
 
+def close_window():
+    """close the app window (or, in a browser, quit the server: the page already says you can close the tab)"""
+    if CLOSE[0]:
+        try:
+            return CLOSE[0]()
+        except Exception:
+            pass
+    os._exit(0)
+
+
 def native_window(tk, url, icon):
-    title, w, h = "GURT", 1100, 760
+    # the setup wizard is its own app: its own title, size and window class (gurt-setup.desktop), so docks show it apart
+    title, w, h, wmclass = ("GURT Setup Wizard", 900, 640, "gurt-setup") if WIZARD[0] else ("GURT", 1100, 760, "gurt")
     if tk == "gtk":
         import gi
         gi.require_version("Gtk", "3.0")
         from gi.repository import Gtk, WebKit2, GLib
-        GLib.set_prgname("gurt")
+        GLib.set_prgname(wmclass)
         GLib.set_application_name(title)
         win = Gtk.Window(title=title)
         win.set_default_size(w, h)
@@ -748,6 +769,7 @@ def native_window(tk, url, icon):
             return False    # then the window closes like normal
         win.connect("delete-event", on_close)
         win.connect("destroy", Gtk.main_quit)
+        CLOSE[0] = lambda: GLib.idle_add(lambda: (on_close(), win.destroy(), False)[-1])
         win.show_all()
         Gtk.main()
     elif tk in ("qt6", "pyside6"):
@@ -763,7 +785,7 @@ def native_window(tk, url, icon):
             from PySide6.QtGui import QIcon
         app = QApplication(["gurt"])
         app.setApplicationName(title)
-        app.setDesktopFileName("gurt")
+        app.setDesktopFileName(wmclass)
         if icon:
             app.setWindowIcon(QIcon(icon))
         view = QWebEngineView()
@@ -777,10 +799,20 @@ def native_window(tk, url, icon):
         view.resize(w, h)
         view.load(QUrl(url))
         view.show()
+        if tk == "qt6":
+            from PyQt6.QtCore import QTimer
+        else:
+            from PySide6.QtCore import QTimer
+        want = []
+        CLOSE[0] = lambda: want.append(1)   # Qt wants it done on its own thread: a timer there checks
+        tick = QTimer()
+        tick.timeout.connect(lambda: want and view.close())
+        tick.start(200)
         app.exec()
     elif tk == "pywebview":
         import webview
-        webview.create_window(title, url, width=w, height=h)
+        win = webview.create_window(title, url, width=w, height=h)
+        CLOSE[0] = win.destroy
         webview.start()
 
 
@@ -794,7 +826,8 @@ def open_window(url):
     for b in ("chromium", "chromium-browser", "google-chrome-stable", "google-chrome", "brave", "brave-browser",
               "microsoft-edge-stable", "vivaldi-stable"):
         if shutil.which(b):
-            subprocess.Popen([b, f"--app={url}", "--window-size=1100,760", f"--class=gurt"],
+            size, cls = ("900,640", "gurt-setup") if WIZARD[0] else ("1100,760", "gurt")
+            subprocess.Popen([b, f"--app={url}", f"--window-size={size}", f"--class={cls}"],
                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
             return
     opener = shutil.which("xdg-open") or shutil.which("open")
@@ -822,10 +855,11 @@ def main():
     ap.add_argument("--no-window", action="store_true")
     ap.add_argument("--browser", action="store_true", help="use a browser window even if a native one is possible")
     ap.add_argument("--probe", action="store_true", help="exit 0 if a native app window is possible")
-    ap.add_argument("--wizard", action="store_true", help="open the setup wizard (the installer uses this)")
+    ap.add_argument("--wizard", action="store_true", help="open the GURT Setup Wizard app instead of GURT (the installers use this)")
+    ap.add_argument("--from-app", action="store_true", help=argparse.SUPPRESS)   # GURT opened the wizard (so Finish doesn't open a 2nd GURT)
     ap.add_argument("files", nargs="*", help="a package to open (double-clicking a .gurt file)")
     a = ap.parse_args()
-    WIZARD[0] = a.wizard
+    WIZARD[:] = [a.wizard, a.from_app]
     if a.files:
         f = a.files[0]
         if f.startswith("file://"):
@@ -875,10 +909,16 @@ def main():
         pass
     finally:
         shutil.rmtree(os.path.dirname(ASKPASS), ignore_errors=True)
+        if WIZARD[0] and conf().get("wizard") != "done":   # the setup wizard got closed with its ✕: skipped, so it won't nag
+            try:
+                save_conf(wizard="done")
+            except Exception:
+                pass
 
 
 PORT, ASKPASS, ICONS, MODE = 0, "", [], "browser"
-WIZARD = [False]   # gurt gui --wizard: open the setup wizard once
+WIZARD = [False, False]   # gurt gui --wizard: this window is the GURT Setup Wizard app, not GURT
+CLOSE = [None]     # closes the app window from any thread (set once the window exists)
 TK = [""]
 
 
@@ -896,7 +936,7 @@ def audio_ok():
         return False
 
 PAGE = r"""<!doctype html>
-<html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__" data-music="__MUSIC__" data-track="__TRACK__" data-seen="__SEEN__" data-wiz="__WIZ__" data-open="__OPEN__"><head>
+<html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__" data-music="__MUSIC__" data-track="__TRACK__" data-seen="__SEEN__" data-wiz="__WIZ__" data-app="__APP__" data-from="__FROM__" data-open="__OPEN__"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GURT</title><link rel="icon" href="/icon.png">
 <style>
@@ -1114,6 +1154,16 @@ dialog .row{justify-content:flex-end}
 .wiz-bar{height:14px;border:1px solid var(--edge);border-radius:var(--r);background:var(--panel);margin:10px 0;overflow:hidden}
 .wiz-bar i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,var(--accent) 0 12px,transparent 12px 14px);transition:width .3s}
 @media (max-width:640px){.wiz-body{grid-template-columns:1fr;height:min(70vh,560px)}.wiz-rail{display:none}}
+.wiz-log{margin:4px 0 0;padding:6px 8px;max-height:140px;overflow:auto;font:11.5px/1.45 var(--mono);white-space:pre-wrap;word-break:break-all;background:var(--bg);border:1px solid var(--line);border-radius:var(--r);color:var(--muted)}
+.wiz-tasks li:has(.wiz-log){flex-wrap:wrap}.wiz-tasks li .wiz-log{flex:1 0 100%}
+/* 🧙 the GURT Setup Wizard app (gurt gui --wizard): its own window, with just the wizard in it */
+:root[data-app=setup] body>header,:root[data-app=setup] body>main,:root[data-app=setup] #console,:root[data-app=setup] #soundbar,
+:root[data-app=setup] #appbar,:root[data-app=setup] #cmptray,:root[data-app=setup] #dropzone{display:none !important}
+:root[data-app=setup] #wizard{width:100vw;height:100vh;max-width:none;max-height:none;margin:0;border:0;border-radius:0}
+:root[data-app=setup] #wizard[open]{max-height:none}
+:root[data-app=setup] #wizard::backdrop{background:var(--bg)}
+:root[data-app=setup] .wiz-body{height:auto;min-height:0;flex:1 1 auto}
+:root[data-app=setup] .wiz-page{max-width:720px}
 .v1hero{font:900 56px/1 var(--mono);letter-spacing:-.04em;display:inline-block;padding:2px 12px;margin-bottom:10px;background:var(--accent);color:var(--accent-ink);border:1px solid var(--edge);border-radius:var(--r)}
 .v1list{margin:0 0 14px;padding-left:20px;display:grid;gap:5px}#v1dlg{max-width:520px}
 #achlist,#histlist{display:grid;gap:0;max-height:60vh;overflow:auto;margin:4px 0 12px;border:1px solid var(--edge);border-radius:var(--r)}
@@ -1369,7 +1419,7 @@ dialog .row{justify-content:flex-end}
   <form id="pwform"><input type="password" id="pwin" autocomplete="current-password" placeholder="your password"><div class="row"><button type="button" class="btn ghost" id="pwno">cancel</button><button class="btn" type="submit">ok</button></div></form></dialog>
 
 <script>
-const T = "__TOKEN__", MODE = "__MODE__";
+const T = "__TOKEN__", MODE = "__MODE__", SETUP = document.documentElement.dataset.app === "setup";   // SETUP: this window is the setup wizard app
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const api = (p, body) => fetch(p, body ? {method:"POST", headers:{"X-Gurt-Token":T,"Content-Type":"application/json"}, body:JSON.stringify(body)} : {headers:{"X-Gurt-Token":T}}).then(r => r.json());
@@ -1401,7 +1451,7 @@ function devGate(){
     }
     S = await api("/api/state"); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · 🪟 Windows" : ""}`;
     if (S.dev === "locked") devGate();
-    else if (document.documentElement.dataset.wiz === "new") wizOpen();   // the wizard waited for this
+    else if (SETUP || document.documentElement.dataset.wiz === "new") wizStart();   // the wizard waited for this
   };
   $("#devgo").onclick = go; $("#devpw").onkeydown = e => { if (e.key === "Enter") go(); };
   return true;
@@ -1537,11 +1587,11 @@ $("#achclose").addEventListener("click", () => $("#achdlg").close());
   const seen = document.documentElement.dataset.seen || "", ver = () => (S && S.version) || "";
   const show = () => {
     if (devGate()) return;   // 🔒 the dev password comes first
-    if (document.documentElement.dataset.wiz === "new") { wizOpen(); return; }   // brand new: the wizard covers what's new too
+    if (SETUP || document.documentElement.dataset.wiz === "new") { wizStart(); return; }   // brand new: the wizard covers what's new too
     if (!/^1\./.test(ver()) || /^1\./.test(seen)) return;
     $("#v1dlg").showModal(); SFX.play("legendary");
     $("#v1ok").onclick = () => $("#v1dlg").close();
-    $("#v1wiz").onclick = () => { $("#v1dlg").close(); wizOpen(); };
+    $("#v1wiz").onclick = () => { $("#v1dlg").close(); wizStart(); };
     $("#v1dlg").addEventListener("close", () => { api("/api/seen", {v: ver()}).catch(() => {}); achieve("v1"); }, {once: true});
   };
   const wait = setInterval(() => { if (typeof S !== "undefined" && S && S.version) { clearInterval(wait); show(); } }, 300);
@@ -2134,7 +2184,7 @@ async function check(quiet = false){
 }
 $("#checkbtn").addEventListener("click", () => check());
 // 🔔 check for updates quietly right after opening, so the Updates tab shows its count without a click
-setTimeout(() => { if (!busy && typeof S !== "undefined" && S && S.dev !== "locked") bgCheck = check(true).catch(() => {}).finally(() => { bgCheck = null; }); }, 2500);
+setTimeout(() => { if (!SETUP && !busy && typeof S !== "undefined" && S && S.dev !== "locked") bgCheck = check(true).catch(() => {}).finally(() => { bgCheck = null; }); }, 2500);
 $("#upbtn").addEventListener("click", async () => { if (await run("upgrade")) check(); });
 $("#selfbtn").addEventListener("click", () => run("self-update"));
 $("#syncbtn").addEventListener("click", () => run("sync", "", {confirm:false}));
@@ -2189,7 +2239,18 @@ if (MODE === "browser") {
   };
 }
 
-// ── 🧙 GURT Setup Wizard: a classic installer. opens by itself the first time, or from the 🎨 menu ──
+// ── 🧙 GURT Setup Wizard: its own app (gurt gui --wizard, "GURT Setup Wizard" in the app menu), a classic installer.
+//    the installers start it at your first login; GURT's 🎨 menu opens it in its own window ──
+function wizStart(){
+  if (SETUP) return wizOpen();
+  api("/api/setup-app", {}).then(() => toast("🧙 the GURT Setup Wizard opened in its own window")).catch(() => toast("couldn't open the setup wizard (try: gurt setup)"));
+}
+let wizQuitting = false;
+async function wizQuit(open){   // the setup wizard app is done: close its window (and open GURT if you ticked that)
+  wizQuitting = true;
+  if (MODE === "browser") document.body.innerHTML = `<div class="empty" style="padding:80px 20px">${open ? "GURT is opening 🦆 " : ""}you can close this tab</div>`;
+  await api("/api/close", {open: !!open}).catch(() => {});
+}
 const WIZ_STEPS = ["Welcome", "System check", "App sources", "Your look", "Starter apps", "Extras", "Install"];
 const STARTER = {"🌐 Browsers": ["firefox", "brave", "librewolf", "zen-browser", "chromium"], "💬 Chat": ["discord", "vesktop", "telegram", "signal", "element"],
   "🎬 Media": ["vlc", "mpv", "spotify", "obs-studio", "kdenlive"], "🎨 Creative": ["gimp", "krita", "inkscape", "blender"],
@@ -2202,7 +2263,7 @@ const WIZ_SKINS = [["gurt", "🦆 GURT"], ["win11", "🪟 Windows 11"], ["xp", "
 const WIZ_TRACKS = [["auto", "🎵 auto"], ["shop", "🛍️ shop"], ["lofi", "🌧️ lofi"], ["chip", "👾 chiptune"], ["synth", "🌆 synthwave"]];
 let W = null, wizStep = 0, wizDoc = null, wizState = "edit";   // edit → running → done
 function wizOpen(){
-  W = {utils: true, srcs: new Set(["flatpak"]), apps: new Set(), notify: true, appwin: MODE === "browser", tasks: []};
+  W = {utils: true, srcs: new Set(["flatpak"]), apps: new Set(), notify: true, appwin: MODE === "browser", launch: document.documentElement.dataset.from !== "app", tasks: []};
   wizStep = 0; wizState = "edit"; wizDoc = null; prefOpen(false);
   if (!$("#wizard").open) $("#wizard").showModal();
   wizRender();
@@ -2215,7 +2276,7 @@ function wizTasks(){
   for (const s of W.srcs) if (s !== "flatpak") t.push({label: `get the ${WIZ_SRCS.find(x => x[0] === s)[1]} package list`, cmd: "sync-src", arg: s});
   if (W.apps.size) t.push({label: `install ${W.apps.size} app${W.apps.size === 1 ? "" : "s"}: ${[...W.apps].join(", ")}`, cmd: "install-many", arg: [...W.apps].join(" ")});
   if (W.notify && !(wizDoc && wizDoc.notify)) t.push({label: "turn on update alerts 🔔", cmd: "notify", arg: "on"});
-  if (W.appwin && MODE === "browser") t.push({label: "install the app window (GURT reopens as a real app at the end)", cmd: "gui-setup", relaunch: true});
+  if (W.appwin && MODE === "browser") t.push({label: SETUP ? "install the app window (GURT opens as a real app)" : "install the app window (GURT reopens as a real app at the end)", cmd: "gui-setup", relaunch: true});
   return t;
 }
 const opt = (id, on, title, sub, dis = false) => `<label class="wiz-opt"><input type="checkbox" data-w="${id}"${on ? " checked" : ""}${dis ? " disabled" : ""}><span><b>${title}</b>${sub ? `<small>${sub}</small>` : ""}</span></label>`;
@@ -2223,8 +2284,8 @@ function wizRender(){
   $("#wizrail").innerHTML = WIZ_STEPS.map((n, i) => `<li class="${i === wizStep ? "on" : i < wizStep ? "done" : ""}">${n}</li>`).join("");
   $("#wizstepname").textContent = `step ${wizStep + 1} of ${WIZ_STEPS.length}: ${WIZ_STEPS[wizStep]}`;
   const d = wizDoc, pg = $("#wizpage");
-  if (wizStep === 0) pg.innerHTML = `<h3>Welcome to the GURT Setup Wizard 🦆</h3>${document.documentElement.dataset.wiz === "new" ? `<p><b>GURT ${esc((S && S.version) || "")} is installed ✅</b></p>` : ""}
-    <p>This wizard gets GURT ready on your computer: it checks your system, sets up the places apps come from, picks your look, and installs a few starter apps if you want some.</p>
+  if (wizStep === 0) pg.innerHTML = `<h3>Welcome to the GURT Setup Wizard 🦆</h3>${S && S.version ? `<p><b>GURT ${esc(S.version)} is installed ✅</b></p>` : ""}
+    <p>This wizard finishes installing GURT on your computer: it checks your system, sets up the places apps come from, picks your look, and installs a few starter apps if you want some.</p>
     <p>It takes about a minute, and you can change all of it later. Click <b>Next</b> to continue.</p>`;
   if (wizStep === 1) {
     if (!d) pg.innerHTML = `<h3>System check</h3><p>checking your system… ⏳</p>`;
@@ -2268,9 +2329,10 @@ function wizRender(){
     } else {
       const done = W.tasks.filter(t => t.st && t.st !== "run").length;
       pg.innerHTML = `<h3>${wizState === "done" ? "All done 🎉" : "Installing…"}</h3><div class="wiz-bar"><i style="width:${W.tasks.length ? Math.round(done / W.tasks.length * 100) : 100}%"></i></div>
-        <ul class="wiz-tasks">${W.tasks.map(t => `<li><span>${t.st === "ok" ? "✅" : t.st === "bad" ? "❌" : t.st === "run" ? "⏳" : "▫️"}</span><span>${esc(t.label)}</span><span class="st">${t.st === "bad" ? "didn't work (see the activity log)" : ""}</span></li>`).join("")}</ul>
+        <ul class="wiz-tasks">${W.tasks.map(t => `<li><span>${t.st === "ok" ? "✅" : t.st === "bad" ? "❌" : t.st === "run" ? "⏳" : "▫️"}</span><span>${esc(t.label)}</span><span class="st">${t.st === "bad" ? "didn't work" : ""}</span>${t.st === "bad" && t.log ? `<pre class="wiz-log">${esc(t.log)}</pre>` : ""}</li>`).join("")}</ul>
         ${wizState === "done" ? `<p style="margin-top:12px">${W.tasks.some(t => t.st === "bad") ? "some of it didn't work, but everything else is ready. " : ""}GURT is set up 🦆 click <b>Finish</b>.</p>` : ""}`;
     }
+    if (SETUP && wizState !== "running") pg.innerHTML += opt("launch", W.launch, "🦆 open GURT when I click Finish", "");
   }
   $("#wizback").disabled = wizStep === 0 || wizState !== "edit";
   $("#wizcancel").hidden = wizState !== "edit";
@@ -2284,8 +2346,8 @@ async function wizRun(){
     t.st = "run"; wizRender();
     const r = await run(t.cmd, t.arg || "", {confirm: false, quiet: true});
     t.st = r && r.rc === 0 ? "ok" : "bad";
-    if (r && r.rc !== 0) $("#cout").textContent = r.lines.join("\n");
-    if (t.relaunch && t.st === "ok") relaunch = true;
+    if (r && r.rc !== 0) { $("#cout").textContent = r.lines.join("\n"); t.log = r.lines.slice(-12).join("\n"); }
+    if (t.relaunch && t.st === "ok") { if (SETUP) W.launch = true; else relaunch = true; }   // the setup app opens the real GURT on Finish
     wizRender();
   }
   wizState = "done"; wizRender(); SFX.play("ok");
@@ -2293,17 +2355,25 @@ async function wizRun(){
   if (relaunch) { await api("/api/relaunch", {}).catch(() => {}); setTimeout(() => { document.body.innerHTML = `<div class="empty" style="padding:80px 20px">GURT reopened in its own window 🦆 you can close this tab</div>`; }, 1500); }
 }
 async function wizDone(){ document.documentElement.dataset.wiz = "done"; await api("/api/wizard", {v: (S && S.version) || ""}).catch(() => {}); achieve("wizard"); }
-$("#wiznext").addEventListener("click", () => {
+$("#wiznext").addEventListener("click", async () => {
   if (wizStep < 6) { wizStep++; return wizRender(); }
   if (wizState === "edit" && W.tasks.length) return wizRun();
-  if (wizState === "edit") wizDone();
+  if (wizState === "edit") await wizDone();
+  if (SETUP) return wizQuit(W.launch);
   $("#wizard").close();
 });
 $("#wizback").addEventListener("click", () => { if (wizStep > 0) { wizStep--; wizRender(); } });
-$("#wizcancel").addEventListener("click", () => { $("#wizard").close(); });
-$("#wizard").addEventListener("cancel", e => { if (wizState === "running") e.preventDefault(); });   // no Esc mid-install
-$("#wizard").addEventListener("close", () => { if (document.documentElement.dataset.wiz === "new") api("/api/wizard", {v: (S && S.version) || ""}).catch(() => {}); });   // skipped: don't nag
-$("#wizopen").addEventListener("click", wizOpen);
+$("#wizcancel").addEventListener("click", async () => {
+  if (!SETUP) return $("#wizard").close();
+  await api("/api/wizard", {v: (S && S.version) || ""}).catch(() => {});   // skipped: the first-login autostart won't nag
+  wizQuit(false);
+});
+$("#wizard").addEventListener("cancel", e => { if (SETUP || wizState === "running") e.preventDefault(); });   // no Esc mid-install (or out of the wizard app)
+$("#wizard").addEventListener("close", () => {
+  if (SETUP) { if (!wizQuitting) $("#wizard").showModal(); return; }   // the wizard app is the wizard: Esc can't leave an empty window
+  if (document.documentElement.dataset.wiz === "new") api("/api/wizard", {v: (S && S.version) || ""}).catch(() => {});   // skipped: don't nag
+});
+$("#wizopen").addEventListener("click", wizStart);
 $("#wizpage").addEventListener("change", async e => {
   if (e.target.id === "wizimportin") {   // an exported list or a profile → its apps join the install
     const f = e.target.files[0]; if (!f) return;

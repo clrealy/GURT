@@ -40,7 +40,21 @@ Categories=System;Settings;PackageManager;
 Keywords=packages;install;aur;apt;flatpak;setup;wizard;
 MimeType=application/x-gurt-package;
 DESK
-# at your next login: the setup wizard, once (gurt gui --first-run does nothing after you finished it)
+# 🧙 the GURT Setup Wizard: its own app in the menu (its own window, not inside GURT)
+install -Dm644 /dev/stdin "$t/usr/share/applications/gurt-setup.desktop" <<'DESK'
+[Desktop Entry]
+Type=Application
+Name=GURT Setup Wizard
+GenericName=Setup Wizard
+Comment=set GURT up: sources, your look, starter apps
+Exec=gurt gui --wizard
+Icon=gurt
+Terminal=false
+StartupWMClass=gurt-setup
+Categories=System;Settings;
+Keywords=gurt;setup;wizard;install;
+DESK
+# at your next login: the setup wizard app, once (gurt gui --first-run does nothing after you finished it)
 install -Dm644 /dev/stdin "$t/etc/xdg/autostart/gurt-setup-wizard.desktop" <<'DESK'
 [Desktop Entry]
 Type=Application
