@@ -17,6 +17,9 @@ Same GURT 1.0, plus everything that landed right after it.
 - **Updates count themselves.** The Updates tab shows how many are waiting as soon as the app opens.
 - **`/` jumps to the search box.**
 
+- **The GURT Setup Wizard is its own app.** It has its own window and its own entry in your app menu, separate from GURT. It opens at your first login, and **🦆 open GURT** on its last page starts GURT. `gurt setup` opens it, and `gurt setup --terminal` runs it in the terminal.
+- **A real 404 page on gurtproject.org.** You get a different one every time, with links back to the site.
+
 ### Fixed
 - **The password prompt.** Installing a file asked for your password twice; now it's once.
 - **Crash on close.** Closing the app window left a crash report on some graphics drivers (WebKitGTK + Mesa).

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>404 · GURT</title>
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=3">
+<link rel="icon" type="image/png" href="/assets/favicon.png?v=3">
+<script>
+document.documentElement.dataset.theme = "dark"; try { const t = localStorage.getItem("gurt-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}
+// Pages paths are case-sensitive: some paths also work in ANY case (caps lock, phone keyboards). only their hashes live here
+(async () => {
+  try {
+    let p = decodeURIComponent(location.pathname).toUpperCase().replace(/\/{2,}/g, "/").replace(/\/(INDEX\.HTML)?$/, "");
+    const rpm = /\/GURTSETUPWIZARD-DEV\.RPM$/.test(p); if (rpm) p = p.replace(/\/GURTSETUPWIZARD-DEV\.RPM$/, "");
+    const h = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(p)))].map(b => b.toString(16).padStart(2, "0")).join("");
+    if (h === "549dfd3a0eabab7d242e7b1adf65dd3ca4b3b3b4c4fef1b2447d6a7a4a57ad95") location.replace(p + "/" + (rpm ? "GURTSetupWizard-dev.rpm" : ""));
+  } catch {}
+})();
+</script>
+<style>
+/* same rules as the site + app (CLAUDE.md): flat, 1px borders, 2px corners, mono for data */
+:root{
+  --r:2px; --mono:ui-monospace,"JetBrains Mono","DejaVu Sans Mono",Menlo,monospace; --sans:system-ui,"Segoe UI",Roboto,sans-serif;
+  --bg:#ececee; --panel:#fafafa; --ink:#111113; --muted:#5b5b63; --line:#d9d9de; --edge:#b9b9c1;
+  --accent:#ffc629; --accent-ink:#111113; --code:#f4f4f5; --bad:#c62828; --good:#17803d;
+  --c-red:#e8302a; --c-green:#1fa64a; --c-blue:#2456e0;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#0a0a0b; --panel:#111113; --ink:#e7e7ea; --muted:#8e8e97; --line:#222226; --edge:#2f2f35; --code:#070708; --bad:#ff6b6b; --good:#4ade80; }
+}
+:root[data-theme="dark"]{ --bg:#0a0a0b; --panel:#111113; --ink:#e7e7ea; --muted:#8e8e97; --line:#222226; --edge:#2f2f35; --code:#070708; --bad:#ff6b6b; --good:#4ade80; }
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14.5px/1.5 var(--sans);display:flex;flex-direction:column;min-height:100vh}
+nav{background:#0a0a0b;color:#e7e7ea;border-bottom:1px solid #2f2f35}
+nav .in{max-width:880px;margin:0 auto;padding:0 16px;height:46px;display:flex;align-items:center;gap:16px;font:600 13px var(--mono)}
+nav a{color:#e7e7ea;text-decoration:none}nav a:hover{color:var(--accent)}
+nav .home{display:flex;align-items:center;gap:8px;font-weight:800;letter-spacing:.04em}
+nav .sp{flex:1}
+.stripe{height:4px;background:linear-gradient(90deg,var(--c-red) 0 25%,var(--accent) 25% 50%,var(--c-green) 50% 75%,var(--c-blue) 75%)}
+main{flex:1;width:100%;max-width:880px;margin:0 auto;padding:36px 16px 48px}
+.code{font:800 64px/1 var(--mono);letter-spacing:-.02em;margin:0}
+.code span{color:var(--accent)}
+h1{font:700 22px/1.25 var(--sans);margin:10px 0 6px}
+p.sub{color:var(--muted);margin:0 0 18px;max-width:60ch}
+.term{border:1px solid var(--edge);border-radius:var(--r);background:var(--code);font:13px/1.6 var(--mono);margin:0 0 18px;overflow:hidden}
+.term .bar{display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--edge);background:var(--panel);font:700 11px var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.term pre{margin:0;padding:10px 12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.term .p{color:var(--good)}.term .e{color:var(--bad)}.term .m{color:var(--muted)}
+.links{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));border:1px solid var(--edge);border-radius:var(--r);background:var(--panel)}
+.links a{display:block;padding:9px 12px;color:var(--ink);text-decoration:none;border-right:1px solid var(--line);border-bottom:1px solid var(--line);font:600 13px var(--mono)}
+.links a small{display:block;font:12.5px var(--sans);color:var(--muted)}
+.links a:hover{background:color-mix(in srgb,var(--accent) 18%,transparent);box-shadow:inset 3px 0 var(--accent)}
+.links a:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+footer{background:#0a0a0b;color:#8e8e97;border-top:1px solid #2f2f35;font:12px var(--mono)}
+footer .in{max-width:880px;margin:0 auto;padding:14px 16px}
+@media (max-width:520px){ .code{font-size:48px} nav .gh{display:none} }
+</style>
+</head>
+<body>
+<nav><div class="in"><a class="home" href="/">🦆 GURT</a><span class="sp"></span><a href="/#packages">packages</a><a href="/#get">download</a><a class="gh" href="https://github.com/clrealy/GURT">github</a></div></nav>
+<div class="stripe" aria-hidden="true"></div>
+<main>
+  <p class="code" aria-hidden="true">4<span>0</span>4</p>
+  <h1 id="title">this page got yeeted 🦆</h1>
+  <p class="sub" id="sub">nothing lives at this address. it might have moved, or the link has a typo.</p>
+  <div class="term" aria-label="what gurt says">
+    <div class="bar">terminal</div>
+    <pre id="term"></pre>
+  </div>
+  <div class="links">
+    <a href="/">gurtproject.org<small>the home page</small></a>
+    <a href="/#packages">packages<small>search every app GURT can install</small></a>
+    <a href="/#get">download<small>GURTSetupWizard for Linux + Windows</small></a>
+    <a href="https://github.com/clrealy/GURT/issues">report a broken link<small>on GitHub</small></a>
+  </div>
+</main>
+<footer><div class="in">GURT · GURT Universal Repository Thingy</div></footer>
+<script>
+// a different 404 every time
+const path = decodeURIComponent(location.pathname).replace(/^\/+|\/+$/g, "") || "?";
+const name = (path.split("/").pop() || path).slice(0, 60);
+const PAGES = [
+  ["this page got yeeted 🦆", "nothing lives at this address. it might have moved, or the link has a typo.",
+    [["p", `$ gurt install ${name}`], ["e", `==> nah: target not found: ${name}`], ["m", "    checked: gurt, flathub, the AUR, apt, dnf, zypper, pacman"]]],
+  ["page not found in any repo", "we looked everywhere. this address isn't a page on gurtproject.org.",
+    [["p", `$ gurt search ${name}`], ["m", "==> searching 7 sources…"], ["e", "==> 0 results. womp womp"]]],
+  ["you found the void (the wrong one)", "this one's just empty. head back and grab something real.",
+    [["p", `$ gurt info ${name}`], ["e", `==> nah: no package called '${name}'`], ["m", "    did you mean: home?"]]],
+  ["404: dependency hell", "this page needs a page that needs a page that doesn't exist.",
+    [["p", `$ gurt why ${name}`], ["m", `==> ${name} ← nothing ← nobody`], ["e", "==> it was never installed. it was never real"]]],
+  ["rollback complete", "whatever was here got undone. there's nothing left to roll back to.",
+    [["p", `$ gurt rollback ${name}`], ["m", "==> restoring snapshot…"], ["e", "==> nah: this page never had a snapshot"]]],
+];
+const [t, s, lines] = PAGES[Math.floor(Math.random() * PAGES.length)];
+document.getElementById("title").textContent = t;
+document.getElementById("sub").textContent = s;
+const term = document.getElementById("term");
+for (const [c, l] of lines) { const span = document.createElement("span"); span.className = c; span.textContent = l + "\n"; term.append(span); }
+</script>
+</body>
+</html>
