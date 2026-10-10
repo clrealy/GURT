@@ -1,6 +1,6 @@
 # Fast, offline API client for REST, GraphQL and gRPC (official AppImage)
 pkgname=yaak
-pkgver=2026.8.1
+pkgver=2026.9.0
 pkgrel=1
 pkgdesc="Fast, offline API client for REST, GraphQL and gRPC"
 url="https://github.com/mountain-loop/yaak"
@@ -11,7 +11,7 @@ arch=(x86_64)
 _tag=v${pkgver}
 # the official AppImage, kept as an AppImage
 source=("yaak.AppImage::https://github.com/mountain-loop/yaak/releases/download/${_tag}/yaak_${pkgver}_amd64.AppImage")
-sha256sums=(9d9597db83477246065ed436627b5d14087f6513da70747f6004650946dbe8d6)
+sha256sums=('f5b1efd902748a2468e5220592520ae4b24e2c9abd106fee326bef5e849f02ab')
 
 package() {
   local dir="$prefix/lib/gurt-apps/$pkgname" d icon="" ic
