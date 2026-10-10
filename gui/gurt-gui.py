@@ -1530,7 +1530,7 @@ function ask(title, body){ return new Promise(res => { $("#ctitle2").textContent
   $("#cyes").onclick = () => done(true); $("#cno").onclick = () => done(false); d.onclose = () => res(false); d.showModal(); }); }
 
 let bgCheck = null, bgStopped = false;   // the quiet update check that runs right after the app opens
-const startBgCheck = () => { if (!SETUP && !busy && !bgCheck && typeof S !== "undefined" && S && S.dev !== "locked") bgCheck = check(true).catch(() => {}).finally(() => { bgCheck = null; }); };
+const startBgCheck = () => { if (!SETUP && !busy && !bgCheck && typeof S !== "undefined" && S && S.dev !== "locked") bgCheck = check(true, true).catch(() => {}).finally(() => { bgCheck = null; }); };
 async function free(){   // can gurt start something? the quiet update check never blocks you: it stops, your thing goes first
   if (busy && bgCheck) {
     const p = bgCheck; bgStopped = true;
@@ -1540,14 +1540,14 @@ async function free(){   // can gurt start something? the quiet update check nev
   if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return false; }
   return true;
 }
-async function run(cmd, arg="", {all=false, quiet=false, confirm=true, fmt=""} = {}){
+async function run(cmd, arg="", {all=false, quiet=false, confirm=true, fmt="", bg=false} = {}){   // bg: the background update check (buttons stay clickable)
   if (!await free()) return null;
   if (confirm && VERB[cmd]) {
     const warn = cmd === "outsource" ? " This builds + runs code from that repo — only do it if you trust it." :
                  /^aur\//.test(arg) ? " AUR packages are built from random people's recipes — make sure you trust it." : "";
     if (!await ask(`${VERB[cmd]}${arg ? " " + arg : ""}?`, `gurt will ${cmd} ${arg || ""}.${warn}`)) return null;
   }
-  busy = true; setBusyUI(true);
+  busy = true; if (!bg) setBusyUI(true);
   const r = await api("/api/run", {cmd, arg, all, fmt});
   if (r.error) { busy = false; setBusyUI(false); alert(r.error); return null; }
   cur = r.job; let from = 0, lines = [];
@@ -2178,9 +2178,9 @@ document.addEventListener("click", e => {
 document.addEventListener("keydown", e => { if (e.key === "Escape") moreClose(); });
 
 // ── updates ──
-async function check(quiet = false){
+async function check(quiet = false, bg = false){
   $("#ugrid").innerHTML = `<div class="empty">checking… ⏳</div>`;
-  const r = await run("update", "", {confirm:false, quiet}); if (!r) return;
+  const r = await run("update", "", {confirm:false, quiet, bg}); if (!r) return;
   if (quiet && bgStopped) { $("#ugrid").innerHTML = `<div class="empty">hit "check for updates" 👆</div>`; return; }   // stopped for something you clicked
   const ups = r.lines.map(l => l.match(/^\s*->\s*(\S+)\s+(\S+) -> (\S+)$/)).filter(Boolean);
   // gurt itself counts as an update too (and goes first — the new gurt might be needed for the rest)
