@@ -922,8 +922,14 @@ CLOSE = [None]     # closes the app window from any thread (set once the window 
 TK = [""]
 
 
+GST_DIRS = ("/usr/lib64/gstreamer-1.0", "/usr/lib/gstreamer-1.0", "/usr/lib/x86_64-linux-gnu/gstreamer-1.0",
+            "/usr/lib/aarch64-linux-gnu/gstreamer-1.0", "/usr/local/lib/gstreamer-1.0", "/usr/local/lib64/gstreamer-1.0")
+
+
 def audio_ok():
-    """can the GTK app window actually make sound? (WebKitGTK plays audio through GStreamer)"""
+    """can the GTK app window actually make sound? WebKitGTK plays audio through GStreamer, and needs its
+    autoaudiosink (gst-plugins-good). only say no when we're sure: python's own GStreamer bindings often
+    aren't installed (openSUSE) even though WebKit's sound works fine, so that alone isn't a no"""
     if TK[0] != "gtk":
         return True
     try:
@@ -931,9 +937,14 @@ def audio_ok():
         gi.require_version("Gst", "1.0")
         from gi.repository import Gst
         Gst.init(None)
-        return Gst.ElementFactory.find("autoaudiosink") is not None
+        if Gst.ElementFactory.find("autoaudiosink") is not None:
+            return True
     except Exception:
-        return False
+        pass
+    dirs = [d for d in GST_DIRS if os.path.isdir(d)]
+    if not dirs:
+        return True   # GStreamer lives somewhere we don't know: don't guess
+    return any(os.path.isfile(os.path.join(d, "libgstautodetect.so")) for d in dirs)
 
 PAGE = r"""<!doctype html>
 <html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__" data-music="__MUSIC__" data-track="__TRACK__" data-seen="__SEEN__" data-wiz="__WIZ__" data-app="__APP__" data-from="__FROM__" data-open="__OPEN__"><head>
