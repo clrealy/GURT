@@ -1529,10 +1529,19 @@ function ask(title, body){ return new Promise(res => { $("#ctitle2").textContent
   const done = v => { d.close(); $("#cyes").onclick = $("#cno").onclick = null; res(v); };
   $("#cyes").onclick = () => done(true); $("#cno").onclick = () => done(false); d.onclose = () => res(false); d.showModal(); }); }
 
-let bgCheck = null;   // the quiet update check that runs right after the app opens
+let bgCheck = null, bgStopped = false;   // the quiet update check that runs right after the app opens
+const startBgCheck = () => { if (!SETUP && !busy && !bgCheck && typeof S !== "undefined" && S && S.dev !== "locked") bgCheck = check(true).catch(() => {}).finally(() => { bgCheck = null; }); };
+async function free(){   // can gurt start something? the quiet update check never blocks you: it stops, your thing goes first
+  if (busy && bgCheck) {
+    const p = bgCheck; bgStopped = true;
+    if (cur) await api(`/api/job/${cur}/cancel`, {}).catch(() => {});
+    await p;
+  }
+  if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return false; }
+  return true;
+}
 async function run(cmd, arg="", {all=false, quiet=false, confirm=true, fmt=""} = {}){
-  if (busy && bgCheck) await bgCheck;   // the quiet update check on startup: just wait for it
-  if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return null; }
+  if (!await free()) return null;
   if (confirm && VERB[cmd]) {
     const warn = cmd === "outsource" ? " This builds + runs code from that repo — only do it if you trust it." :
                  /^aur\//.test(arg) ? " AUR packages are built from random people's recipes — make sure you trust it." : "";
@@ -1542,7 +1551,7 @@ async function run(cmd, arg="", {all=false, quiet=false, confirm=true, fmt=""} =
   const r = await api("/api/run", {cmd, arg, all, fmt});
   if (r.error) { busy = false; setBusyUI(false); alert(r.error); return null; }
   cur = r.job; let from = 0, lines = [];
-  $("#ctitle").textContent = `gurt ${cmd} ${arg}`; $("#cdot").className = "dot run"; if (!quiet) $("#console").classList.add("open");
+  if (!quiet) { $("#ctitle").textContent = `gurt ${cmd} ${arg}`; $("#cdot").className = "dot run"; $("#console").classList.add("open"); }   // quiet ones leave the log alone
   if (!quiet) $("#cout").textContent = "";
   let pwShown = false;
   while (true) {
@@ -1551,9 +1560,11 @@ async function run(cmd, arg="", {all=false, quiet=false, confirm=true, fmt=""} =
     if (!quiet && j.lines.length) { const o = $("#cout"); o.textContent += j.lines.join("\n") + "\n"; o.scrollTop = o.scrollHeight; }
     if (j.ask && !pwShown) { pwShown = true; askPassword(j.ask); }
     if (!j.ask) pwShown = false;
-    if (j.done) { $("#cdot").className = "dot " + (j.rc === 0 ? "ok" : "bad"); if (!quiet) SFX.play(j.rc === 0 ? "ok" : "err"); busy = false; setBusyUI(false); cur = null;
+    if (j.done) { if (!quiet) { $("#cdot").className = "dot " + (j.rc === 0 ? "ok" : "bad"); SFX.play(j.rc === 0 ? "ok" : "err"); } busy = false; setBusyUI(false); cur = null;
       if (j.rc === 0 && cmd === "install" && arg && arg === LOTTO_WIN) { LOTTO_WIN = ""; achieve("lottery"); }
-      await load(); return {rc:j.rc, lines}; }
+      await load();
+      if (bgStopped && !bgCheck) { bgStopped = false; setTimeout(startBgCheck, 1500); }   // the update check you interrupted runs again after
+      return {rc:j.rc, lines}; }
     await new Promise(r => setTimeout(r, 300));
   }
 }
@@ -1948,13 +1959,13 @@ async function installFile(f){
   if (f.path) {
     const r = await linkPath(f.path);
     if (r.error) { alert(r.error); return; }
-    if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return; }
+    if (!await free()) return;
     if (!await ask(`Install ${r.orig}?`, `gurt ${/\.gurt$/i.test(r.orig) ? "installs this GURT package" : "figures out what it is and installs it straight onto your system (no box)"}. ${fmtSize(r.size)}. Only install files you trust.`)) return;
     await run("dropped", r.name, {confirm:false});
     return;
   }
   if (!DROPPABLE.test(f.name) && !/\.gurt$/i.test(f.name)) { alert(`gurt can't install "${f.name}" 🤔 — try a .deb, .rpm, AppImage, .tar.gz, .exe, .dmg…`); return; }
-  if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return; }
+  if (!await free()) return;
   if (!await ask(`Install ${f.name}?`, `gurt figures out what it is and installs it straight onto your system (no box). ${fmtSize(f.size)}. Only install files you trust.`)) return;
   $("#ctitle").textContent = `uploading ${f.name}…`; $("#cdot").className = "dot run"; $("#console").classList.add("open");
   const r = await fetch("/api/drop", {method:"POST", headers:{"X-Gurt-Token":T, "X-Filename":encodeURIComponent(f.name)}, body:f}).then(x => x.json()).catch(() => ({error:"upload failed"}));
@@ -1983,7 +1994,7 @@ async function cgLoad(f){
   if (!f) return;
   cgM().classList.remove("done", "jam");
   if (f.path) {   // already on this computer: no upload, just link it in
-    if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return; }
+    if (!await free()) return;
     const chip = $("#cgfile"); chip.textContent = "📄 " + f.name; chip.hidden = false; chip.classList.remove("in"); void chip.offsetWidth; chip.classList.add("in");
     $("#hoptxt").style.visibility = "hidden"; SFX.play("pop");
     const r = await linkPath(f.path);
@@ -1996,7 +2007,7 @@ async function cgLoad(f){
   }
   if (!DROPPABLE.test(f.name) && !/\.gurt$/i.test(f.name)) { cgCurse(`gurt can't even open ${f.name}`); return; }
   if (/\.(dmg|snap|flatpak|flatpakref|7z)$/i.test(f.name)) { cgCurse("a ." + cgExt(f.name) + " doesn't convert. try a .deb .rpm .pkg.tar.zst AppImage .exe…"); return; }
-  if (busy) { alert("gurt's still busy with the last thing, hold up ⏳"); return; }
+  if (!await free()) return;
   const chip = $("#cgfile"); chip.textContent = "📄 " + f.name; chip.hidden = false; chip.classList.remove("in"); void chip.offsetWidth; chip.classList.add("in");
   $("#hoptxt").style.visibility = "hidden"; cgScreen(`LOADING ${f.name}…`); SFX.play("pop");
   const r = await fetch("/api/drop", {method:"POST", headers:{"X-Gurt-Token":T, "X-Filename":encodeURIComponent(f.name)}, body:f}).then(x => x.json()).catch(() => ({error:"upload failed"}));
@@ -2030,7 +2041,7 @@ $("#hopper").addEventListener("dragover", e => { e.preventDefault(); e.stopPropa
 $("#hopper").addEventListener("dragleave", () => $("#hopper").classList.remove("hot"));
 $("#hopper").addEventListener("drop", async e => { e.preventDefault(); e.stopPropagation(); dragDepth = 0; $("#dropzone").hidden = true; $("#hopper").classList.remove("hot"); cgLoad(await droppedThing(e)); });
 $("#cgbtn").addEventListener("click", async () => {
-  if (!cgLoaded || busy) return;
+  if (!cgLoaded || !await free()) return;
   const b = $("#cgbtn"); b.classList.add("pressed"); setTimeout(() => b.classList.remove("pressed"), 150);
   const fmt = $("#convfmt"), what = fmt.options[fmt.selectedIndex].text.split(" ")[0];
   if (CG_SAME[cgExt(cgLoaded.orig)] === fmt.value) { cgCurse(`it's ALREADY a ${what}. you can't congurt it into itself`); return; }
@@ -2046,7 +2057,7 @@ $("#cgbtn").addEventListener("click", async () => {
     cgM().classList.add("jam"); b.disabled = false; cgM().classList.add("loaded");
     const why = (r ? r.lines : []).filter(l => /nah:|can't|couldn't/.test(l)).pop();
     cgScreen("JAMMED 💥 " + (why ? why.replace(/^==> nah:\s*/, "") : "check the log"));
-    if (r) { $("#cout").textContent = r.lines.join("\n"); $("#console").classList.add("open"); }
+    if (r) { $("#ctitle").textContent = `gurt convert ${cgLoaded.orig}`; $("#cdot").className = "dot bad"; $("#cout").textContent = r.lines.join("\n"); $("#console").classList.add("open"); }
   }
 });
 async function loadZone(fresh){
@@ -2170,6 +2181,7 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") moreClose();
 async function check(quiet = false){
   $("#ugrid").innerHTML = `<div class="empty">checking… ⏳</div>`;
   const r = await run("update", "", {confirm:false, quiet}); if (!r) return;
+  if (quiet && bgStopped) { $("#ugrid").innerHTML = `<div class="empty">hit "check for updates" 👆</div>`; return; }   // stopped for something you clicked
   const ups = r.lines.map(l => l.match(/^\s*->\s*(\S+)\s+(\S+) -> (\S+)$/)).filter(Boolean);
   // gurt itself counts as an update too (and goes first — the new gurt might be needed for the rest)
   const selfUp = r.lines.find(l => /is out \(you have|gurt self-update/.test(l));
@@ -2184,7 +2196,7 @@ async function check(quiet = false){
 }
 $("#checkbtn").addEventListener("click", () => check());
 // 🔔 check for updates quietly right after opening, so the Updates tab shows its count without a click
-setTimeout(() => { if (!SETUP && !busy && typeof S !== "undefined" && S && S.dev !== "locked") bgCheck = check(true).catch(() => {}).finally(() => { bgCheck = null; }); }, 2500);
+setTimeout(startBgCheck, 2500);
 $("#upbtn").addEventListener("click", async () => { if (await run("upgrade")) check(); });
 $("#selfbtn").addEventListener("click", () => run("self-update"));
 $("#syncbtn").addEventListener("click", () => run("sync", "", {confirm:false}));
