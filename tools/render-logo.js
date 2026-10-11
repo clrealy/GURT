@@ -12,5 +12,8 @@ const root = path.dirname(__dirname);
   for (const out of ["assets/gurt-logo.png", "site/assets/gurt-logo.png"]) await shot("assets/gurt-logo.svg", out, 1024, 488);
   await shot("site/assets/favicon.svg", "site/assets/apple-touch-icon.png", 180, 180);
   await shot("site/assets/favicon.svg", "site/assets/favicon.png", 64, 64);
+  // the "Get now on gurt" badge (tools/make-badge.py)
+  await shot("site/assets/get-on-gurt.svg", "site/assets/get-on-gurt.png", 1000, 360);
+  await shot("site/assets/get-on-gurt-dark.svg", "site/assets/get-on-gurt-dark.png", 1000, 360);
   await b.close();
 })();
