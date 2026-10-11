@@ -39,6 +39,8 @@ wine        apt=wine  dnf=wine  pacman=wine  zypper=wine  apk=wine  xbps=wine  e
 python3     pacman=python  emerge=dev-lang/python
 # tkinter, Python's built-in GUI toolkit (Gentoo: comes with dev-lang/python[tk])
 python3-tk  apt=python3-tk  dnf=python3-tkinter  pacman=tk  zypper=python3-tk  apk=py3-tkinter  xbps=python3-tkinter  eopkg=python3-tkinter  emerge=-
+# PyYAML
+python3-yaml  apt=python3-yaml  dnf=python3-pyyaml  pacman=python-yaml  zypper=python3-PyYAML  apk=py3-yaml  xbps=python3-yaml  emerge=dev-python/pyyaml
 gzip        emerge=app-arch/gzip
 rust        apt=cargo  dnf=cargo  pacman=rust  zypper=cargo  apk=cargo  xbps=cargo  emerge=dev-lang/rust
 go          apt=golang-go  dnf=golang  pacman=go  zypper=go  apk=go  xbps=go  emerge=dev-lang/go
@@ -63,3 +65,5 @@ dbus        apt=libdbus-1-dev  dnf=dbus-devel  pacman=dbus  zypper=dbus-1-devel 
 
 # ── gurt gui app window (python GObject + WebKit2GTK) ──
 gui-webview  apt=python3-gi,gir1.2-webkit2-4.1,gstreamer1.0-plugins-good  dnf=python3-gobject,webkit2gtk4.1,gstreamer1-plugins-good  pacman=python-gobject,webkit2gtk-4.1,gst-plugins-good  zypper=python3-gobject-Gdk,typelib-1_0-WebKit2-4_1,gstreamer-plugins-good  apk=py3-gobject3,webkit2gtk-4.1,gst-plugins-good  xbps=python3-gobject,libwebkit2gtk41,gst-plugins-good1  eopkg=python-gobject,libwebkit-gtk41,gstreamer-1.0-plugins-good
+# python GObject + GTK 3 (native GTK3 apps written in python)
+gui-gtk3  apt=python3-gi,gir1.2-gtk-3.0  dnf=python3-gobject,gtk3  pacman=python-gobject,gtk3  zypper=python3-gobject-Gdk,typelib-1_0-Gtk-3_0  apk=py3-gobject3,gtk+3.0  xbps=python3-gobject,gtk+3  eopkg=python-gobject,libgtk-3  emerge=dev-python/pygobject,x11-libs/gtk+:3

@@ -1,0 +1,37 @@
+# Tuxcuts: Apple Shortcuts vibes for Linux. block editor (GTK) + `tuxcut` CLI, X11 and Wayland
+# shortcuts are YAML in ~/.config/tuxcuts/shortcuts — `tuxcut init` drops in 7 examples
+pkgname=tuxcuts
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Apple Shortcuts for Linux. Stack actions into shortcuts, run them from a GUI, the terminal or a hotkey"
+aliases=(tuxcut shortcuts linux-shortcuts)
+url="https://github.com/clrealy/GURT"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(any)
+depends=(python3 python3-yaml gui-gtk3)
+makedepends=()
+source=("tuxcuts-$pkgver.tar.gz")
+sha256sums=("955a9f639d346eba932b7991eb99686f817207f8b90a1ac47a508915def51ad9")
+
+package() {
+  cd "$srcdir/tuxcuts"
+  local share="$prefix/share/tuxcuts"
+  install -d "$pkgdir$share/tuxcuts/examples"
+  install -m644 tuxcuts/*.py "$pkgdir$share/tuxcuts/"
+  install -m644 tuxcuts/examples/*.yaml "$pkgdir$share/tuxcuts/examples/"
+  install -Dm644 README.md "$pkgdir$prefix/share/doc/tuxcuts/README.md"
+  install -Dm644 LICENSE "$pkgdir$prefix/share/licenses/tuxcuts/LICENSE"
+
+  # tiny launchers so it runs off the system python without pip
+  printf '#!/bin/sh\nPYTHONPATH="%s${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m tuxcuts "$@"\n' "$share" > tuxcut.sh
+  printf '#!/bin/sh\nPYTHONPATH="%s${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m tuxcuts gui "$@"\n' "$share" > tuxcuts.sh
+  install -Dm755 tuxcut.sh "$pkgdir$prefix/bin/tuxcut"
+  install -Dm755 tuxcuts.sh "$pkgdir$prefix/bin/tuxcuts"
+
+  # absolute paths: launchers don't read your shell PATH. StartupWMClass matches the window so the icon sticks
+  printf '[Desktop Entry]\nType=Application\nName=Tuxcuts\nComment=%s\nExec=%s/bin/tuxcuts\nIcon=system-run\nTerminal=false\nCategories=Utility;\nKeywords=shortcuts;automation;macro;hotkey;\nStartupWMClass=dev.tuxcuts.Tuxcuts\n' \
+    "$pkgdesc" "$prefix" > tuxcuts.desktop
+  install -Dm644 tuxcuts.desktop "$pkgdir$prefix/share/applications/tuxcuts.desktop"
+}
