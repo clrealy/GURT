@@ -46,6 +46,7 @@ ACCENT, ACCENT_FG = "#0f4bc8", "#ffffff"
 LOG_BG, LOG_FG = "#16181d", "#d8dbe2"
 STATUS = {  # status -> (dot color, label)
     "patched":   ("#1f9d55", "patched"),
+    "outdated":  ("#0f4bc8", "update due"),
     "broken":    ("#d64545", "broken, an update undid it"),
     "unpatched": ("#c98a0b", "not patched"),
     "missing":   ("#9aa1ad", "app not installed"),
@@ -244,7 +245,7 @@ class App(tk.Tk):
         btns = tk.Frame(self.side, bg=BG)
         btns.pack(anchor="w", **pad)
         missing = r["status"] == "missing"
-        verb = {"patched": "re-apply", "broken": "fix it"}.get(r["status"], "apply")
+        verb = {"patched": "re-apply", "broken": "fix it", "outdated": "update"}.get(r["status"], "apply")
         self.b_apply = ttk.Button(btns, text=verb, style="Accent.TButton", command=self._apply)
         self.b_apply.pack(side="left")
         self.b_revert = ttk.Button(btns, text="revert", command=self._revert)

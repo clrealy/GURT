@@ -2,9 +2,9 @@
 # one app + CLI for every patch on ur system, with status, revert, and auto re-patch after app updates
 # replaces photogimp-patcher + geode-patcher (now the photogimp + geode recipes)
 pkgname=patcher-of-all
-pkgver=1.2.0
+pkgver=1.3.0
 pkgrel=1
-pkgdesc="One hub for every patch: PhotoGIMP, Geode, Balatro mods, Spicetify, Betterfox, fonts, GTK themes + auto re-patch"
+pkgdesc="One hub for every patch: PhotoGIMP, Geode, Balatro mods, Spicetify, Betterfox, fresh yt-dlp, fonts, GTK themes + auto re-patch"
 aliases=(patcher-patcher poa)
 url="https://github.com/clrealy/GURT"
 license="MIT"
@@ -13,10 +13,10 @@ category="system"
 arch=(any)
 depends=(curl python3 python3-tk)
 makedepends=()
-_recipes=(adw balatro betterfox geode msfonts nerdfont photogimp spicetify steam-shortcuts)
+_recipes=(adw balatro betterfox geode msfonts nerdfont photogimp spicetify steam-shortcuts yt-dlp)
 source=("patcher-of-all" "patcher-of-all-gui" "patcher-of-all.png" "${_recipes[@]/%/.sh}")
-sha256sums=("160d21d4c2a8cf3cee261cbf24600c77c479dcf454e00c3dc909936bf2d1851c"
-            "b85deeae858eaf33615de4150a3e6e6922ec9ccdd9bdeee9ba5633ec40286020"
+sha256sums=("bc972e5e68f41b576e3d593a1815a7a03168d23f4e002a4d643c9ef7cccbd709"
+            "253db0beb55e84df7bb72c5e9ee9e80b8af8e8b100668eb0b76924710c312cb6"
             "4a7e2d5f686ce51764365359bd26d029404227698843d17288b9ae8d9208efbf"
             "aeaf225af040e029d677af27ff3083579ea5c2d9252575297d91ce2f0d5ecd2c"
             "036fbeb1eb1eecf48036fe57b3caab0dd8dfd81eab81faeaf172df11eb5550f8"
@@ -26,7 +26,8 @@ sha256sums=("160d21d4c2a8cf3cee261cbf24600c77c479dcf454e00c3dc909936bf2d1851c"
             "0fec6b1bd118ec2eaa860bc74f152ed62f90365644d5b7d20165126b3de23433"
             "013883fb389fd9493583303aedfc7518742e4f06b3cd6d9f648775a0a24b981a"
             "7059d1c30d99d53aa65e82b518686097f297967c47f995385012cdbde517c533"
-            "c239e9a5c3fade083ce8ad77121edbadf9b57a13c5d9223b16b9c7e5897a46ea")
+            "c239e9a5c3fade083ce8ad77121edbadf9b57a13c5d9223b16b9c7e5897a46ea"
+            "04cd488a0d961c7ce45646ae96e2080ae4dcd6f59576568f933b51214913f128")
 
 package() {
   install -Dm755 "$srcdir/patcher-of-all" "$pkgdir$prefix/bin/patcher-of-all"

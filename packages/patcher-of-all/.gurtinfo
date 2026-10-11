@@ -1,7 +1,7 @@
 pkgname = patcher-of-all
-pkgver = 1.2.0
+pkgver = 1.3.0
 pkgrel = 1
-pkgdesc = One hub for every patch: PhotoGIMP, Geode, Balatro mods, Spicetify, Betterfox, fonts, GTK themes + auto re-patch
+pkgdesc = One hub for every patch: PhotoGIMP, Geode, Balatro mods, Spicetify, Betterfox, fresh yt-dlp, fonts, GTK themes + auto re-patch
 url = https://github.com/clrealy/GURT
 license = MIT
 maintainer = clrealy
@@ -22,5 +22,6 @@ source = nerdfont.sh
 source = photogimp.sh
 source = spicetify.sh
 source = steam-shortcuts.sh
+source = yt-dlp.sh
 alias = patcher-patcher
 alias = poa
