@@ -1,5 +1,5 @@
 pkgname = patcher-of-all
-pkgver = 1.1.1
+pkgver = 1.2.0
 pkgrel = 1
 pkgdesc = One hub for every patch: PhotoGIMP, Geode, Balatro mods, Spicetify, Betterfox, fonts, GTK themes + auto re-patch
 url = https://github.com/clrealy/GURT
@@ -9,7 +9,9 @@ category = system
 arch = any
 depends = curl
 depends = python3
+depends = python3-tk
 source = patcher-of-all
+source = patcher-of-all-gui
 source = patcher-of-all.png
 source = adw.sh
 source = balatro.sh

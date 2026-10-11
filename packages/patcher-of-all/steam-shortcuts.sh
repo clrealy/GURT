@@ -1,6 +1,11 @@
 # patcher-of-all recipe: steam-shortcuts
 DESC="Add non-Steam games to Steam in one go (+ artwork from SteamGridDB if u have a key)"
 URL="https://www.steamgriddb.com"
+# settings the GUI shows: VAR|type|label|extra|saved-in-file  (types: choice text dir check secret edit)
+OPTIONS=(
+  'steam-shortcuts.list|edit|Games list|'
+  'STEAMGRIDDB_KEY|secret|SteamGridDB API key (for artwork)||steamgriddb.key'
+)
 # games go in ~/.config/patcher-of-all/steam-shortcuts.list, one per line:
 #   Name | /path/to/game-or-launcher | optional launch options
 # artwork: put a SteamGridDB API key (steamgriddb.com/profile/preferences/api) in

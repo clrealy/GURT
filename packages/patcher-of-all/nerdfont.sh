@@ -1,6 +1,10 @@
 # patcher-of-all recipe: nerdfont
 DESC="Nerd Fonts (icon-patched fonts for terminals + rices), JetBrainsMono by default"
 URL="https://www.nerdfonts.com"
+# settings the GUI shows: VAR|type|label|extra|saved-in-file  (types: choice text dir check secret edit)
+OPTIONS=(
+  'NERDFONTS|text|Fonts (space separated)|JetBrainsMono|nerdfonts.list'
+)
 # pick fonts: NERDFONTS="JetBrainsMono FiraCode Hack"  or one per line in ~/.config/patcher-of-all/nerdfonts.list
 # names = release asset names from github.com/ryanoasis/nerd-fonts/releases (case matters)
 
