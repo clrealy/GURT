@@ -57,7 +57,8 @@ for page in ("gui/gurt-gui.py", "site/index.html"):   # both have it inline, so 
     a, b = g.index("<!--logo-->") + len("<!--logo-->"), g.index("<!--/logo-->")
     open(path, "w").write(g[:a] + svg("var(--logo-ink)", themed=True) + g[b:])
 
-# the icon: a big g on paper, with the red/green/blue stripe under it and a hard shadow box
+# the icon: a big g with the red/green/blue stripe under it, in a cream box with a dark outline. nothing outside the
+# outline: the corners stay transparent
 d, adv, (x0, y0, x1, y1) = glyph("g")
 gw, gh = x1 - x0, y1 - y0
 S = 1000; pad = 150; sc = (S - 2 * pad) / max(gw, gh) * 0.86
