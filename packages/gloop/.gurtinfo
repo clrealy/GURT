@@ -1,7 +1,7 @@
 pkgname = gloop
-pkgver = 0.2.0
+pkgver = 0.3.0
 pkgrel = 1
-pkgdesc = One-click game mashups and mods for Linux. Press Play, it sets everything up
+pkgdesc = Mix any game with any game. One-click mashups for Minecraft, Thunderstore and Steam games
 url = https://github.com/clrealy/GURT
 license = MIT
 maintainer = clrealy

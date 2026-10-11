@@ -18,10 +18,17 @@ Mashups live in ~/.local/share/gloop/mashups/*.json. Two kinds:
      "minecraft_version": "latest",          # or e.g. "1.21.1"
      "mods": ["fabric-api", "sodium"]}       # Modrinth slugs
 
-  Steam game (works with Proton games too):
+  Thunderstore (Lethal Company, R.E.P.O., Valheim, Risk of Rain 2...):
+    {"id": "my-mix", "name": "My Mix", "type": "thunderstore", "steam_appid": 1966720,
+     "packages": ["Owner-ModName"]}            # BepInEx + deps get added for you
+
+  Any Steam game, direct files or zips (Nexus-style; works with Proton games):
     {"id": "my-mod", "name": "My Mod", "type": "steam", "steam_appid": 400,
-     "files": [{"url": "https://...", "dest": "portal/custom/thing.vpk",
-                "sha256": "optional"}]}
+     "files": [{"url": "https://...", "dest": "portal/custom/thing.vpk", "sha256": "optional"},
+               {"path": "~/Downloads/mod.zip", "dest": "Data", "extract": true}]}
+
+  "games": [{"name": "Minecraft"}, {"name": "Portal", "steam_appid": 400}] says
+  which games a mashup mixes, so the Mix screen can find it.
 
 Minecraft mashups get their own isolated instance folder + launcher profile,
 so your normal .minecraft never gets touched. Steam mashups back up any file
@@ -38,6 +45,8 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
+import zipfile
 import sys
 import threading
 import urllib.error
@@ -46,7 +55,7 @@ import urllib.request
 from pathlib import Path
 
 APP = "gloop"
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 UA = f"gloop/{VERSION} (linux mashup launcher)"
 DATA = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / APP
 MASHUP_DIR = DATA / "mashups"
@@ -57,6 +66,8 @@ STATE_FILE = DATA / "state.json"
 FABRIC_META = "https://meta.fabricmc.net/v2"
 MODRINTH = "https://api.modrinth.com/v2"
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+TS_RE = re.compile(r"^[A-Za-z0-9_]+-[A-Za-z0-9_]+$")
+THUNDERSTORE = "https://thunderstore.io/api/experimental/package"
 
 SAMPLES = {
     "speed-craft.json": {
@@ -68,13 +79,63 @@ SAMPLES = {
         "minecraft_version": "latest",
         "mods": ["fabric-api", "sodium", "lithium"],
     },
+    "portal-craft.json": {
+        "id": "portal-craft",
+        "name": "Portal Craft",
+        "type": "minecraft",
+        "description": "A working portal gun in Minecraft. Blue portal, orange portal, go.",
+        "games": [{"name": "Minecraft"}, {"name": "Portal", "steam_appid": 400}],
+        "minecraft_version": "1.20.4",
+        "mods": ["fabric-api", "portal-gun"],
+    },
+    "stronghold-run.json": {
+        "id": "stronghold-run",
+        "name": "Stronghold Run",
+        "type": "thunderstore",
+        "description": "Loot a Minecraft stronghold in R.E.P.O., with Minecraft valuables to haul out.",
+        "games": [{"name": "R.E.P.O.", "steam_appid": 3241660}, {"name": "Minecraft"}],
+        "steam_appid": 3241660,
+        "community": "repo",
+        "packages": ["AriIcedT-MinecraftStrongholdLevel", "Kizzycocoa-MinecraftItemsPlus"],
+    },
+    "aperture-repo.json": {
+        "id": "aperture-repo",
+        "name": "Aperture Repo",
+        "type": "thunderstore",
+        "description": "A real portal gun in R.E.P.O. Shoot blue and orange, yeet loot through walls.",
+        "games": [{"name": "R.E.P.O.", "steam_appid": 3241660}, {"name": "Portal", "steam_appid": 400}],
+        "steam_appid": 3241660,
+        "community": "repo",
+        "packages": ["TheMorningStar-PortalGun"],
+    },
+    "lethal-craft.json": {
+        "id": "lethal-craft",
+        "name": "Lethal Craft",
+        "type": "thunderstore",
+        "description": "A blocky Minecraft moon to land on, plus Minecraft scrap to sell to the Company.",
+        "games": [{"name": "Lethal Company", "steam_appid": 1966720}, {"name": "Minecraft"}],
+        "steam_appid": 1966720,
+        "community": "lethal-company",
+        "packages": ["DalekMC-MinecraftMoon", "4902-Minecraft_Scraps"],
+    },
+    "lethal-64.json": {
+        "id": "lethal-64",
+        "name": "Lethal 64",
+        "type": "thunderstore",
+        "description": "Clock in as Super Mario 64 Mario. Wahoo, the Company needs scrap.",
+        "games": [{"name": "Lethal Company", "steam_appid": 1966720}, {"name": "Super Mario 64"}],
+        "steam_appid": 1966720,
+        "community": "lethal-company",
+        "packages": ["3UPPER-SM64Mario"],
+    },
     "_example-steam.json": {
         "id": "example-steam",
         "name": "Example Steam Mashup (template)",
         "type": "steam",
         "description": "Template - files starting with _ are ignored. Copy + edit me.",
         "steam_appid": 400,
-        "files": [{"url": "https://example.com/mod.vpk", "dest": "portal/custom/mod.vpk"}],
+        "files": [{"url": "https://example.com/mod.vpk", "dest": "portal/custom/mod.vpk"},
+                  {"path": "~/Downloads/some-nexus-mod.zip", "dest": "Data", "extract": True}],
     },
 }
 
@@ -142,13 +203,24 @@ def validate(m):
     if m.get("type") == "minecraft":
         if not isinstance(m.get("mods"), list) or not m["mods"]:
             raise ValueError("minecraft mashup needs a 'mods' list of Modrinth slugs")
-    elif m.get("type") == "steam":
+    elif m.get("type") in ("steam", "thunderstore"):
         if not isinstance(m.get("steam_appid"), int):
-            raise ValueError("steam mashup needs a numeric 'steam_appid'")
-        if not isinstance(m.get("files"), list) or not m["files"]:
-            raise ValueError("steam mashup needs a 'files' list")
+            raise ValueError("this mashup needs a numeric 'steam_appid'")
+        if m["type"] == "steam":
+            if not isinstance(m.get("files"), list) or not m["files"]:
+                raise ValueError("steam mashup needs a 'files' list")
+            for f in m["files"]:
+                if not isinstance(f, dict) or not (f.get("url") or f.get("path")) or "dest" not in f:
+                    raise ValueError("each file needs a 'url' or 'path', plus a 'dest'")
+        else:
+            pk = m.get("packages")
+            if not isinstance(pk, list) or not pk or not all(isinstance(x, str) and TS_RE.match(x) for x in pk):
+                raise ValueError("thunderstore mashup needs 'packages' like [\"Owner-ModName\"]")
     else:
-        raise ValueError("'type' must be 'minecraft' or 'steam'")
+        raise ValueError("'type' must be 'minecraft', 'thunderstore' or 'steam'")
+    games = m.get("games", [])
+    if not isinstance(games, list) or not all(isinstance(g, dict) and isinstance(g.get("name"), str) for g in games):
+        raise ValueError("'games' must look like [{\"name\": \"Minecraft\"}]")
     m.setdefault("name", m["id"])
     return m
 
@@ -206,9 +278,13 @@ def install_minecraft(m):
     rec = {"type": "minecraft", "instance": str(inst), "profile": f"gloop-{m['id']}",
            "version_id": vid, "created_version": created_version, "mods": []}
     try:
-        for slug in m["mods"]:
-            q = urllib.parse.urlencode({"loaders": json.dumps(["fabric"]),
-                                        "game_versions": json.dumps([game])})
+        queue, done, got = [(s, False) for s in m["mods"]], set(), set()
+        q = urllib.parse.urlencode({"loaders": json.dumps(["fabric"]), "game_versions": json.dumps([game])})
+        while queue:
+            slug, is_dep = queue.pop(0)
+            if slug in done:
+                continue
+            done.add(slug)
             try:
                 vers = http_json(f"{MODRINTH}/project/{urllib.parse.quote(slug)}/version?{q}")
             except urllib.error.HTTPError as e:
@@ -217,11 +293,18 @@ def install_minecraft(m):
             if not vers:
                 log(f"  ! {slug}: no Fabric build for {game} yet, skipping")
                 continue
-            files = vers[0]["files"]
+            v = vers[0]
+            if v.get("project_id") in got:     # same mod asked for by slug and by id
+                continue
+            got.add(v.get("project_id"))
+            files = v["files"]
             f = next((x for x in files if x.get("primary")), files[0])
             download(f["url"], mods / f["filename"], sha512=f.get("hashes", {}).get("sha512"))
             rec["mods"].append(f["filename"])
-            log(f"  + {slug} ({f['filename']}) verified")
+            log(f"  + {slug}{' (needed by another mod)' if is_dep else ''}: {f['filename']} verified")
+            for d in v.get("dependencies", []):
+                if d.get("dependency_type") == "required" and d.get("project_id"):
+                    queue.append((d["project_id"], True))
 
         lp = mc_dir() / "launcher_profiles.json"
         data = json.loads(lp.read_text()) if lp.exists() else {"profiles": {}, "version": 3}
@@ -240,6 +323,8 @@ def install_minecraft(m):
 
 def uninstall_minecraft(rec, others):
     shutil.rmtree(rec["instance"], ignore_errors=True)
+    if rec.get("prism_instance") and Path(rec["prism_instance"]).name.startswith("gloop-"):
+        shutil.rmtree(rec["prism_instance"], ignore_errors=True)
     lp = mc_dir() / "launcher_profiles.json"
     if lp.exists():
         try:
@@ -253,16 +338,76 @@ def uninstall_minecraft(rec, others):
         shutil.rmtree(mc_dir() / "versions" / rec["version_id"], ignore_errors=True)
 
 
+PRISM_FLATPAK = "org.prismlauncher.PrismLauncher"
+
+
+def prism():
+    """-> (launch command, data dir) for Prism Launcher (native or Flatpak), or None"""
+    home = Path.home()
+    if shutil.which("prismlauncher"):
+        cmd, data = [shutil.which("prismlauncher")], home / ".local/share/PrismLauncher"
+    elif shutil.which("flatpak") and subprocess.run(["flatpak", "info", PRISM_FLATPAK],
+                                                     capture_output=True).returncode == 0:
+        cmd, data = ["flatpak", "run", PRISM_FLATPAK], home / f".var/app/{PRISM_FLATPAK}/data/PrismLauncher"
+    else:
+        return None
+    if os.environ.get("GLOOP_PRISM_DIR"):
+        data = Path(os.environ["GLOOP_PRISM_DIR"])
+    return cmd, data
+
+
+def prism_instances(data):
+    inst = "instances"
+    cfg = data / "prismlauncher.cfg"
+    if cfg.exists():
+        mm = re.search(r"^InstanceDir=(.+)$", cfg.read_text(errors="ignore"), re.M)
+        if mm:
+            inst = mm.group(1).strip()
+    p = Path(os.path.expanduser(inst))
+    return p if p.is_absolute() else data / p
+
+
+def ensure_prism(m, rec, data):
+    """make (or refresh) a Prism instance for this mashup, with its own copy of the mods"""
+    pid = f"gloop-{m['id']}"
+    idir = prism_instances(data) / pid
+    mods = idir / ".minecraft" / "mods"
+    vid = rec["version_id"]                      # fabric-loader-<loader>-<game>
+    loader, game = vid[len("fabric-loader-"):].split("-", 1)
+    mods.mkdir(parents=True, exist_ok=True)
+    (idir / "instance.cfg").write_text(
+        f"[General]\nConfigVersion=1.2\nInstanceType=OneSix\nname={m['name']} [gloop]\niconKey=grass\n")
+    (idir / "mmc-pack.json").write_text(json.dumps({"formatVersion": 1, "components": [
+        {"uid": "net.minecraft", "version": game, "important": True},
+        {"uid": "net.fabricmc.intermediary", "version": game, "dependencyOnly": True},
+        {"uid": "net.fabricmc.fabric-loader", "version": loader},
+    ]}, indent=2))
+    for f in mods.glob("*.jar"):
+        f.unlink()
+    for jar in (Path(rec["instance"]) / "mods").glob("*.jar"):
+        shutil.copy2(jar, mods / jar.name)
+    rec["prism_instance"] = str(idir)
+    return pid
+
+
 def launch_minecraft(m, rec):
+    pr = prism()
+    if pr:
+        cmd, data = pr
+        pid = ensure_prism(m, rec, data)
+        subprocess.Popen(cmd + ["--launch", pid], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         start_new_session=True)
+        log(f"launching '{m['name']}' in Prism Launcher")
+        return {"msg": "Opening in Prism Launcher. First launch downloads Minecraft, so give it a sec.",
+                "save": True}
     for cmd in ("minecraft-launcher", "minecraft"):
         if shutil.which(cmd):
             subprocess.Popen([cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                              start_new_session=True)
             log(f"opened the launcher - pick the '{m['name']} [gloop]' profile and hit Play")
-            return
-    log(f"no Minecraft launcher found on PATH. open yours and pick '{m['name']} [gloop]'")
-    log(f"(Prism/MultiMC: make a Fabric {rec['version_id'].split('-')[-1]} instance and "
-        f"point it at {rec['instance']})")
+            return {"msg": f"Pick the '{m['name']} [gloop]' profile in the launcher and hit Play."}
+    raise RuntimeError("no Minecraft launcher found. install Prism Launcher "
+                       "(gurt install prismlauncher, or flatpak install flathub org.prismlauncher.PrismLauncher)")
 
 
 # ---------------------------------------------------------------- steam
@@ -307,33 +452,165 @@ def find_game(appid):
     return None
 
 
-def install_steam(m):
+class GameFiles:
+    """puts files into a game folder, backing up anything it replaces so uninstall can undo it all."""
+
+    def __init__(self, game, backup):
+        self.game, self.backup, self.files, self.seen = game, backup, [], set()
+
+    def put(self, rel, src):
+        dest = (self.game / rel).resolve()
+        if self.game not in dest.parents:
+            raise RuntimeError(f"blocked sketchy path outside the game folder: {rel}")
+        r = str(dest.relative_to(self.game))
+        if r not in self.seen:
+            self.seen.add(r)
+            entry = {"rel": r, "backed_up": False}
+            if dest.exists():
+                (self.backup / r).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(dest, self.backup / r)
+                entry["backed_up"] = True
+            self.files.append(entry)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, dest)
+
+    def put_zip(self, zpath, mapper):
+        with zipfile.ZipFile(zpath) as z, tempfile.TemporaryDirectory(dir=DATA) as tmp:
+            for info in z.infolist():
+                name = info.filename.replace("\\", "/")
+                if info.is_dir() or name.startswith("/") or ".." in name.split("/"):
+                    continue
+                rel = mapper(name)
+                if not rel:
+                    continue
+                out = Path(tmp) / "f"
+                with z.open(info) as src, open(out, "wb") as dst:
+                    shutil.copyfileobj(src, dst)
+                self.put(rel, out)
+
+
+def game_folder(m):
     game = find_game(m["steam_appid"])
     if not game or not game.exists():
         url = f"https://store.steampowered.com/app/{m['steam_appid']}"
-        raise RuntimeError(f"game {m['steam_appid']} isn't installed. grab it: {url}")
-    game = game.resolve()
-    backup = BACKUP_DIR / m["id"]
-    rec = {"type": "steam", "appid": m["steam_appid"], "game": str(game),
-           "backup": str(backup), "files": []}
+        raise RuntimeError(f"you need the game first (Steam app {m['steam_appid']}). grab it: {url}")
+    return game.resolve()
+
+
+def files_rec(m, gf):
+    return {"type": m["type"], "appid": m["steam_appid"], "game": str(gf.game),
+            "backup": str(gf.backup), "files": gf.files}
+
+
+def install_steam(m):
+    gf = GameFiles(game_folder(m), BACKUP_DIR / m["id"])
+    DATA.mkdir(parents=True, exist_ok=True)
     try:
-        for f in m["files"]:
-            dest = (game / f["dest"]).resolve()
-            if game not in dest.parents:
-                raise RuntimeError(f"blocked sketchy path outside the game folder: {f['dest']}")
-            rel = dest.relative_to(game)
-            entry = {"rel": str(rel), "backed_up": False}
-            if dest.exists():
-                (backup / rel).parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(dest, backup / rel)
-                entry["backed_up"] = True
-            rec["files"].append(entry)
-            download(f["url"], dest, sha256=f.get("sha256"))
-            log(f"  + {rel}")
+        with tempfile.TemporaryDirectory(dir=DATA) as tmp:
+            for i, f in enumerate(m["files"]):
+                if f.get("path"):
+                    src = Path(os.path.expanduser(f["path"]))
+                    if not src.is_file():
+                        raise RuntimeError(f"can't find {src} - download the mod there first")
+                    if f.get("sha256") and hashlib.sha256(src.read_bytes()).hexdigest() != f["sha256"].lower():
+                        raise RuntimeError(f"hash mismatch for {src.name} - refusing to install")
+                else:
+                    src = Path(tmp) / f"dl{i}"
+                    download(f["url"], src, sha256=f.get("sha256"))
+                if f.get("extract"):
+                    if not zipfile.is_zipfile(src):
+                        raise RuntimeError(f"{f.get('path') or f['url']} isn't a .zip (7z/rar: unzip it yourself first)")
+                    base, strip = f["dest"].strip("/"), int(f.get("strip", 0))
+
+                    def mapper(name, base=base, strip=strip):
+                        parts = name.split("/")[strip:]
+                        return "/".join([base] + parts) if parts else None
+                    gf.put_zip(src, mapper)
+                    log(f"  + unpacked into {f['dest'] or 'the game folder'}")
+                else:
+                    gf.put(f["dest"], src)
+                    log(f"  + {f['dest']}")
     except Exception:
-        uninstall_steam(rec, {})
+        uninstall_steam(files_rec(m, gf), {})
         raise
-    return rec
+    return files_rec(m, gf)
+
+
+def ts_resolve(names):
+    """Owner-Name list -> install order (deps first), always starting with a BepInEx pack."""
+    order, seen = [], set()
+
+    def visit(full):
+        key = full.lower()
+        if key in seen:
+            return
+        seen.add(key)
+        ns, name = full.split("-", 1)
+        try:
+            d = http_json(f"{THUNDERSTORE}/{urllib.parse.quote(ns)}/{urllib.parse.quote(name)}/")
+        except urllib.error.HTTPError as e:
+            raise RuntimeError(f"{full} isn't on Thunderstore ({e.code})")
+        latest = d["latest"]
+        for dep in latest.get("dependencies", []):
+            visit(dep.rsplit("-", 1)[0])           # drop the version: always take the newest
+        order.append({"full": d["full_name"], "url": latest["download_url"], "ver": latest["version_number"]})
+    for n in names:
+        visit(n)
+    if not any(p["full"].lower().startswith("bepinex-bepinexpack") or "bepinexpack" in p["full"].lower() for p in order):
+        visit("BepInEx-BepInExPack")
+        order.insert(0, order.pop())
+    else:   # the loader goes in first
+        order.sort(key=lambda p: "bepinexpack" not in p["full"].lower())
+    return order
+
+
+SKIP_TOP = {"manifest.json", "icon.png", "readme.md", "changelog.md", "license", "license.md", "license.txt"}
+
+
+def ts_mapper(full, names):
+    if "bepinexpack" in full.lower():
+        # the pack zip wraps the loader in a folder (BepInExPack/, BepInExPack_Valheim/...): unwrap it
+        tops = {n.split("/")[0] for n in names if "/" in n and n.split("/")[0].lower().startswith("bepinexpack")}
+
+        def m(name):
+            first, _, rest = name.partition("/")
+            if first in tops:
+                return rest or None
+            return None if name.lower() in SKIP_TOP else name
+        return m
+
+    def m(name):
+        parts = name.split("/")
+        if len(parts) == 1 and parts[0].lower() in SKIP_TOP:
+            return None
+        head = parts[0].lower()
+        if head == "bepinex":
+            return "/".join(["BepInEx"] + parts[1:])
+        if head in ("plugins", "patchers", "core", "monomod") and len(parts) > 1:
+            return "/".join(["BepInEx", head, full] + parts[1:])
+        if head == "config" and len(parts) > 1:
+            return "/".join(["BepInEx", "config"] + parts[1:])
+        return "/".join(["BepInEx", "plugins", full] + parts)
+    return m
+
+
+def install_thunderstore(m):
+    gf = GameFiles(game_folder(m), BACKUP_DIR / m["id"])
+    DATA.mkdir(parents=True, exist_ok=True)
+    try:
+        pkgs = ts_resolve(m["packages"])
+        with tempfile.TemporaryDirectory(dir=DATA) as tmp:
+            for p in pkgs:
+                z = Path(tmp) / f"{p['full']}.zip"
+                download(p["url"], z)
+                with zipfile.ZipFile(z) as zz:
+                    names = [i.filename.replace("\\", "/") for i in zz.infolist() if not i.is_dir()]
+                gf.put_zip(z, ts_mapper(p["full"], names))
+                log(f"  + {p['full']} {p['ver']}")
+    except Exception:
+        uninstall_steam(files_rec(m, gf), {})
+        raise
+    return files_rec(m, gf)
 
 
 def uninstall_steam(rec, _others):
@@ -344,6 +621,10 @@ def uninstall_steam(rec, _others):
             shutil.copy2(backup / e["rel"], dest)
         else:
             dest.unlink(missing_ok=True)
+            d = dest.parent   # tidy folders we made, stop at the first one that still has stuff
+            while d != game and d.is_dir() and not any(d.iterdir()):
+                d.rmdir()
+                d = d.parent
     shutil.rmtree(backup, ignore_errors=True)
 
 
@@ -352,15 +633,26 @@ def launch_steam(m, _rec):
     opener = shutil.which("xdg-open") or shutil.which("steam")
     if not opener:
         raise RuntimeError(f"couldn't find xdg-open or steam - open Steam and launch app {m['steam_appid']}")
-    subprocess.Popen([opener, url],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    subprocess.Popen([opener, url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
     log("launching through Steam")
+
+
+BEPINEX_OPT = 'WINEDLLOVERRIDES="winhttp=n,b" %command%'
+
+
+def launch_thunderstore(m, rec):
+    launch_steam(m, rec)
+    note = ("One-time setup: in Steam, right-click the game > Properties > Launch Options and paste "
+            "this, or the mods won't load under Proton.")
+    log(f"{note}  {BEPINEX_OPT}")
+    return {"msg": note, "copy": BEPINEX_OPT}
 
 
 # ------------------------------------------------------------- actions
 
-INSTALLERS = {"minecraft": install_minecraft, "steam": install_steam}
-UNINSTALLERS = {"minecraft": uninstall_minecraft, "steam": uninstall_steam}
-LAUNCHERS = {"minecraft": launch_minecraft, "steam": launch_steam}
+INSTALLERS = {"minecraft": install_minecraft, "steam": install_steam, "thunderstore": install_thunderstore}
+UNINSTALLERS = {"minecraft": uninstall_minecraft, "steam": uninstall_steam, "thunderstore": uninstall_steam}
+LAUNCHERS = {"minecraft": launch_minecraft, "steam": launch_steam, "thunderstore": launch_thunderstore}
 
 
 def get(mid):
@@ -376,6 +668,10 @@ def do_install(mid):
     if mid in state["installed"]:
         log(f"{m['name']} already installed")
         return m, state["installed"][mid]
+    if m["type"] != "minecraft":
+        for oid, o in state["installed"].items():
+            if o.get("appid") == m["steam_appid"]:
+                raise RuntimeError(f"'{oid}' is already modding that game. uninstall it first so they don't clash")
     log(f"installing {m['name']}...")
     rec = INSTALLERS[m["type"]](m)
     state["installed"][mid] = rec
@@ -384,9 +680,18 @@ def do_install(mid):
     return m, rec
 
 
-def do_play(mid):
+def do_launch(mid):
     m, rec = do_install(mid)
-    LAUNCHERS[m["type"]](m, rec)
+    note = LAUNCHERS[m["type"]](m, rec) or {}
+    if note.get("save"):            # the launcher changed the install record (e.g. made a Prism instance)
+        state = load_state()
+        state["installed"][mid] = rec
+        save_state(state)
+    return note
+
+
+def do_play(mid):
+    do_launch(mid)
 
 
 def do_uninstall(mid):
@@ -444,22 +749,62 @@ Minecraft (Fabric) mashup:
  "minecraft_version": "latest",
  "mods": ["fabric-api", "<more Modrinth project slugs>"]}
 
-Steam game mashup:
+Thunderstore mashup (Lethal Company, R.E.P.O., Valheim, Risk of Rain 2, and more):
+{"id": "lowercase-with-dashes", "name": "Cool Name", "type": "thunderstore",
+ "description": "one sentence",
+ "games": [{"name": "Lethal Company", "steam_appid": 1966720}, {"name": "Minecraft"}],
+ "steam_appid": 1966720,
+ "packages": ["Owner-ModName"]}
+
+Any other Steam game (direct files, or a zip the user downloads from Nexus etc):
 {"id": "lowercase-with-dashes", "name": "Cool Name", "type": "steam",
  "description": "one sentence",
- "games": [{"name": "Game", "steam_appid": 123}],
+ "games": [{"name": "Game", "steam_appid": 123}, {"name": "Other Game"}],
  "steam_appid": 123,
  "files": [{"url": "https://direct-download-link", "dest": "path/inside/game/folder",
-            "sha256": "hash of the file"}]}
+            "sha256": "hash of the file"},
+           {"path": "~/Downloads/the-mod.zip", "dest": "folder/in/game", "extract": true}]}
 
 Rules:
+- A mashup MIXES two games: "games" lists the game you play AND the game it brings in.
 - Only use Modrinth slugs for real Fabric mods (check modrinth.com). Always include fabric-api.
+  Pick a minecraft_version the mods actually support. Dependencies get installed for you.
+- Only use Thunderstore packages that really exist (thunderstore.io). BepInEx + deps get added for you.
+- Nexus mods need a login, so use "path" + "extract" and tell me which file to download.
 - Steam "dest" paths are relative to the game's install folder and can't leave it.
 - Only link files from places the mod author publishes them, and include sha256.
 - Keep "id" short, lowercase, letters/numbers/dashes.
 
 What I want:
 """
+
+
+GAMES = [
+    {"name": "Minecraft"}, {"name": "Lethal Company", "steam_appid": 1966720},
+    {"name": "R.E.P.O.", "steam_appid": 3241660}, {"name": "Portal", "steam_appid": 400},
+    {"name": "Portal 2", "steam_appid": 620}, {"name": "Half-Life 2", "steam_appid": 220},
+    {"name": "Super Mario 64"}, {"name": "Skyrim", "steam_appid": 489830},
+    {"name": "Elden Ring", "steam_appid": 1245620}, {"name": "Valheim", "steam_appid": 892970},
+    {"name": "Risk of Rain 2", "steam_appid": 632360}, {"name": "Terraria", "steam_appid": 105600},
+    {"name": "Content Warning", "steam_appid": 2881650},
+]
+
+
+def steam_cover(appid):
+    return f"https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/header.jpg"
+
+
+def game_list():
+    out, seen = [], set()
+    extra = [g for m in load_mashups().values() for g in m.get("games", [])]
+    for g in GAMES + extra:
+        key = g["name"].lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        a = g.get("steam_appid")
+        out.append({"name": g["name"], "cover": steam_cover(a) if isinstance(a, int) else None})
+    return out
 
 
 def web_log(line):
@@ -473,7 +818,7 @@ def cover_for(m):
     appids.append(m.get("steam_appid"))
     for a in appids:
         if isinstance(a, int):
-            return f"https://cdn.cloudflare.steamstatic.com/steam/apps/{a}/header.jpg"
+            return steam_cover(a)
     return None
 
 
@@ -501,10 +846,8 @@ def start_job(mid, action):
     def work():
         try:
             if action == "play":
-                m, rec = do_install(mid)
-                setj("starting")
-                LAUNCHERS[m["type"]](m, rec)
-                setj("launched")
+                note = do_launch(mid)
+                JOBS[mid] = {"state": "launched", "msg": note.get("msg", ""), "copy": note.get("copy", "")}
             else:
                 do_uninstall(mid)
                 setj("idle")
@@ -547,6 +890,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             q = urllib.parse.parse_qs(u.query)
             since = int(q.get("since", ["0"])[0] or 0)
             return self.send(200, {"lines": LOGS[since:], "next": len(LOGS)})
+        if u.path == "/api/games":
+            return self.send(200, {"games": game_list()})
         if u.path == "/api/agent":
             return self.send(200, AGENT_INSTRUCTIONS, "text/plain")
         self.send(404, {"error": "not found"})
@@ -769,7 +1114,26 @@ main{max-width:1180px;margin:auto;padding:12px 28px 120px}
 .ghost{border:1px solid #ffffff22;background:none;color:var(--dim);border-radius:12px;padding:10px 12px;cursor:pointer;font:inherit}
 .ghost:hover{color:var(--ink);border-color:#ffffff55}
 .err-msg{color:var(--bad);font-size:13px}
-.empty{color:var(--dim);text-align:center;padding:60px 0}
+.note{background:#b6ff3b14;border:1px solid #b6ff3b40;border-radius:10px;padding:8px 10px;font-size:13px;color:var(--ink)}
+.note code{display:block;margin:6px 0;font-size:12px;word-break:break-all;color:var(--goo)}
+.mix{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:22px 0 8px}
+.slot{flex:1 1 140px;max-width:240px;min-width:0;aspect-ratio:460/215;border-radius:14px;border:2px dashed #ffffff33;display:flex;align-items:flex-end;padding:10px;font-weight:800;background:#17141f center/cover no-repeat;cursor:pointer;position:relative;overflow:hidden}
+.slot.full{border:2px solid var(--goo)}
+.slot span{position:relative;z-index:1;text-shadow:0 1px 4px #000}
+.slot.full::before{content:"";position:absolute;inset:0;background:linear-gradient(transparent 40%,#000a)}
+.plus{font-size:34px;font-weight:900;color:var(--goo)}
+.mixbtn{padding:14px 26px;font-size:17px;flex:0 0 auto}
+@media(max-width:560px){.mix .plus{flex:0 0 auto}.mixbtn{flex:1 1 100%}.gtiles{grid-template-columns:repeat(2,1fr)}header nav button{padding:8px 9px}.logbtn{display:none}}
+.gtiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:14px}
+.gtile{aspect-ratio:460/215;border-radius:10px;background:#221d30 center/cover no-repeat;border:2px solid transparent;cursor:pointer;display:flex;align-items:flex-end;padding:6px 8px;font-size:12px;font-weight:700;position:relative;overflow:hidden;color:#fff}
+.gtile::before{content:"";position:absolute;inset:0;background:linear-gradient(transparent 35%,#000c)}
+.gtile span{position:relative}
+.gtile:hover{border-color:#b6ff3b88}.gtile.on{border-color:var(--goo)}
+.gtile.mc,.slot.mc{background:linear-gradient(#5fae3b 0 30%,#4a8a2e 30% 34%,#8b5a2b 34%)}
+.gtile.none,.slot.none{background:radial-gradient(circle at 30% 30%,#4a3d6b,#17141f)}
+.sect{margin:30px 0 12px;font-size:20px;font-weight:800}
+#mixres{margin-top:18px}
+.empty{color:var(--dim);text-align:center;padding:40px 0;grid-column:1/-1}
 .panel{background:var(--panel);border-radius:var(--r);padding:22px;border:1px solid #ffffff0d;margin-bottom:20px}
 .panel h2{margin:0 0 4px}.panel p{color:var(--dim);margin:0 0 16px}
 label{display:block;font-size:13px;color:var(--dim);margin:12px 0 4px;font-weight:600}
@@ -794,10 +1158,19 @@ textarea{min-height:90px;font-family:ui-monospace,monospace;font-size:13px}
   <button class="logbtn" id="logbtn">Logs</button>
 </header>
 <section class="hero" id="hero">
-  <h1>Mash your games <span>together.</span></h1>
-  <p>Hit Play and Gloop grabs what it needs, sets it up and launches the game. Uninstall puts every file back.</p>
+  <h1>Mix any game <span>with any game.</span></h1>
+  <p>Pick two games and hit Mix. Gloop grabs what it needs, sets it up and launches it. Uninstall puts every file back.</p>
+  <div class="mix">
+    <div class="slot none" id="slot0"><span>Pick a game</span></div>
+    <div class="plus">+</div>
+    <div class="slot none" id="slot1"><span>Pick a game</span></div>
+    <button class="play mixbtn" id="mixbtn">Mix it</button>
+  </div>
+  <div class="gtiles" id="gtiles"></div>
+  <div id="mixres"></div>
 </section>
 <main>
+  <div class="sect" id="gridtitle">All mashups</div>
   <div class="grid" id="grid"></div>
   <div id="create" hidden>
     <div class="two">
@@ -806,14 +1179,17 @@ textarea{min-height:90px;font-family:ui-monospace,monospace;font-size:13px}
         <label>Name</label><input id="c-name" placeholder="Speedy Skyblock">
         <label>Description</label><input id="c-desc" placeholder="What it plays like">
         <label>Type</label>
-        <select id="c-type"><option value="minecraft">Minecraft (Fabric mods)</option><option value="steam">Steam game (files)</option></select>
+        <select id="c-type"><option value="minecraft">Minecraft (Fabric mods)</option><option value="thunderstore">Thunderstore (Lethal Company, R.E.P.O., Valheim…)</option><option value="steam">Any Steam game (files or a zip)</option></select>
+        <label>Game it mixes in (optional)</label><input id="c-with" placeholder="Portal">
         <div id="c-mc">
           <label>Minecraft version</label><input id="c-ver" value="latest">
           <label>Modrinth mod slugs (comma or new line)</label><textarea id="c-mods">fabric-api</textarea>
         </div>
         <div id="c-steam" hidden>
-          <label>Steam app ID</label><input id="c-appid" placeholder="400">
-          <label>Files: one per line as  url | path/in/game | sha256</label><textarea id="c-files"></textarea>
+          <label>Game name</label><input id="c-game" placeholder="Lethal Company">
+          <label>Steam app ID (from the store page URL)</label><input id="c-appid" placeholder="1966720">
+          <div id="c-tsbox"><label>Thunderstore packages, Owner-ModName (comma or new line)</label><textarea id="c-pkgs" placeholder="DalekMC-MinecraftMoon"></textarea></div>
+          <div id="c-filebox"><label>One per line: link or ~/path | folder/in/game | sha256 (optional). Zips get unpacked.</label><textarea id="c-files" placeholder="~/Downloads/cool-nexus-mod.zip | Data"></textarea></div>
         </div>
         <div class="row"><button class="play" id="c-save">Create mashup</button></div>
       </div>
@@ -830,17 +1206,19 @@ textarea{min-height:90px;font-family:ui-monospace,monospace;font-size:13px}
 <div id="toast"></div>
 <script>
 const TOKEN="__TOKEN__";
-let tab="discover",data=[],logNext=0;
+let tab="discover",data=[],logNext=0,games=[],pick=[null,null];
 const $=s=>document.querySelector(s);
 const LABEL={idle:"▶ Play",installing:"Installing…",starting:"Starting…",launched:"✓ Launched — play again",removing:"Removing…",error:"Retry"};
 function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("show"),2600)}
 function mk(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
 async function post(url,body){const r=await fetch(url,{method:"POST",headers:{"X-Gloop-Token":TOKEN,"Content-Type":"application/json"},body:JSON.stringify(body||{})});let j={};try{j=await r.json()}catch(e){}if(!r.ok)throw new Error(j.error||("HTTP "+r.status));return j}
 async function load(){try{data=(await (await fetch("/api/mashups")).json()).mashups;render()}catch(e){}}
+const TYPE={minecraft:"Minecraft",thunderstore:"Thunderstore",steam:"Steam"};
+function setCover(el,cover,name){el.classList.remove("mc","none");el.style.backgroundImage="";if(cover)el.style.backgroundImage=`url("${encodeURI(cover)}")`;else el.classList.add(name&&name.toLowerCase()==="minecraft"?"mc":"none")}
 function card(m){
   const c=mk("div","card"),cv=mk("div","cover");
   if(m.cover){cv.style.backgroundImage=`url("${encodeURI(m.cover)}")`}else cv.classList.add(m.type==="minecraft"?"mc":"none");
-  const b=mk("span","badge"+(m.installed?" inst":""),m.installed?"Installed":(m.type==="minecraft"?"Minecraft":"Steam"));cv.append(b);
+  const b=mk("span","badge"+(m.installed?" inst":""),m.installed?"Installed":TYPE[m.type]);cv.append(b);
   const body=mk("div","body");
   body.append(mk("div","title",m.name));
   if(m.games.length)body.append(mk("div","games",m.games.join(" + ")));
@@ -851,10 +1229,28 @@ function card(m){
   if(m.installed){const u=mk("button","ghost","Uninstall");u.onclick=()=>{if(confirm(`Uninstall ${m.name}? Every file goes back how it was.`))act(m.id,"uninstall")};row.append(u)}
   body.append(row);
   if(st==="error"&&m.job.msg)body.append(mk("div","err-msg",m.job.msg));
+  if(st==="launched"&&m.job.msg){const n=mk("div","note",m.job.msg);
+    if(m.job.copy){n.append(mk("code",null,m.job.copy));const cb=mk("button","ghost","Copy");cb.onclick=()=>copy(m.job.copy);n.append(cb)}
+    body.append(n)}
   c.append(cv,body);return c}
+async function copy(t){try{await navigator.clipboard.writeText(t);toast("Copied 📋")}catch(e){prompt("Copy this:",t)}}
+function matches(m){const g=m.games.map(x=>x.toLowerCase());return pick.every(p=>!p||g.includes(p.name.toLowerCase()))}
+function renderMix(){
+  pick.forEach((p,i)=>{const s=$("#slot"+i);setCover(s,p&&p.cover,p&&p.name);s.classList.toggle("full",!!p);s.firstChild.textContent=p?p.name:"Pick a game"});
+  const gt=$("#gtiles");gt.replaceChildren();
+  games.forEach(g=>{const t=mk("div","gtile");setCover(t,g.cover,g.name);t.append(mk("span",null,g.name));
+    if(pick.some(p=>p&&p.name===g.name))t.classList.add("on");
+    t.onclick=()=>{const i=pick.findIndex(p=>p&&p.name===g.name);if(i>=0)pick[i]=null;else{const e=pick.indexOf(null);pick[e<0?1:e]=g}renderMix();render()};gt.append(t)})}
 function render(){
-  const g=$("#grid");$("#create").hidden=tab!=="create";g.hidden=tab==="create";$("#hero").hidden=tab!=="discover";
+  const g=$("#grid");$("#create").hidden=tab!=="create";g.hidden=tab==="create";$("#hero").hidden=tab!=="discover";$("#gridtitle").hidden=tab==="create";
   if(tab==="create")return;
+  const filt=tab==="discover"&&(pick[0]||pick[1]);
+  $("#gridtitle").textContent=tab==="mine"?"My mashups":filt?`Mashups with ${pick.filter(Boolean).map(p=>p.name).join(" + ")}`:"All mashups";
+  if(filt){const list=data.filter(matches);g.replaceChildren();
+    if(!list.length){const e=mk("div","empty",`No mashup mixes ${pick.filter(Boolean).map(p=>p.name).join(" + ")} yet. `);
+      if(pick[0]&&pick[1]){const b=mk("button","play","✨ Build this mix with your AI");b.style.marginTop="12px";b.onclick=mixAI;e.append(mk("br"),b)}
+      g.append(e)}
+    else list.forEach(m=>g.append(card(m)));return}
   const list=tab==="mine"?data.filter(m=>m.installed):data;g.replaceChildren();
   if(!list.length){g.append(mk("div","empty",tab==="mine"?"Nothing installed yet. Hit Play on something in Discover.":"No mashups yet. Make one in Create."));return}
   list.forEach(m=>g.append(card(m)))}
@@ -862,19 +1258,31 @@ async function act(id,a){try{await post(`/api/${a}/${encodeURIComponent(id)}`);l
 async function logs(){try{const j=await (await fetch("/api/logs?since="+logNext)).json();if(j.lines.length){const pre=$("#logtext");pre.textContent+=j.lines.join("\n")+"\n";pre.scrollTop=pre.scrollHeight}logNext=j.next}catch(e){}}
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));tab=b.dataset.tab;render()});
 $("#logbtn").onclick=()=>$("#logs").classList.toggle("open");
-$("#c-type").onchange=e=>{$("#c-mc").hidden=e.target.value!=="minecraft";$("#c-steam").hidden=e.target.value==="minecraft"};
+$("#c-type").onchange=e=>{const v=e.target.value;$("#c-mc").hidden=v!=="minecraft";$("#c-steam").hidden=v==="minecraft";$("#c-tsbox").hidden=v!=="thunderstore";$("#c-filebox").hidden=v!=="steam"};
+async function agentText(){return (await fetch("/api/agent")).text()}
+async function mixAI(){const [a,b]=pick;const t=(await agentText())+`Mix ${a.name} and ${b.name}. Put both in "games".`;
+  document.querySelector('nav button[data-tab="create"]').click();
+  try{await navigator.clipboard.writeText(t);toast(`Copied! Paste it into your AI, then paste the JSON here 📋`)}catch(e){$("#c-json").value=t;toast("Couldn't copy, it's in the box")}}
+$("#slot0").onclick=()=>{pick[0]=null;renderMix();render()};$("#slot1").onclick=()=>{pick[1]=null;renderMix();render()};
+$("#mixbtn").onclick=()=>{if(!pick[0]||!pick[1])return toast("pick two games first 🎮");render();$("#gridtitle").scrollIntoView({behavior:"smooth"})};
+async function loadGames(){try{games=(await (await fetch("/api/games")).json()).games;renderMix()}catch(e){}}
 const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,60);
-async function create(m){try{const j=await post("/api/create",m);toast(`Added ${j.id} ✨`);await load();document.querySelector('nav button[data-tab="discover"]').click()}catch(e){toast(e.message)}}
+async function create(m){try{const j=await post("/api/create",m);toast(`Added ${j.id} ✨`);await load();loadGames();document.querySelector('nav button[data-tab="discover"]').click()}catch(e){toast(e.message)}}
 $("#c-save").onclick=()=>{
   const name=$("#c-name").value.trim();if(!name)return toast("give it a name first");
   const m={id:slug(name),name,description:$("#c-desc").value.trim(),type:$("#c-type").value};
+  const w=$("#c-with").value.trim();
   if(m.type==="minecraft"){m.games=[{name:"Minecraft"}];m.minecraft_version=$("#c-ver").value.trim()||"latest";m.mods=$("#c-mods").value.split(/[\s,]+/).filter(Boolean)}
-  else{m.steam_appid=parseInt($("#c-appid").value,10);m.games=[{name:name,steam_appid:m.steam_appid}];
-    m.files=$("#c-files").value.split("\n").map(l=>l.split("|").map(s=>s.trim())).filter(p=>p[0]).map(([url,dest,sha256])=>sha256?{url,dest,sha256}:{url,dest})}
+  else{m.steam_appid=parseInt($("#c-appid").value,10);m.games=[{name:$("#c-game").value.trim()||name,steam_appid:m.steam_appid}];
+    if(m.type==="thunderstore")m.packages=$("#c-pkgs").value.split(/[\s,]+/).filter(Boolean);
+    else m.files=$("#c-files").value.split("\n").map(l=>l.split("|").map(s=>s.trim())).filter(p=>p[0]).map(([src,dest,sha256])=>{
+      const f=/^https?:/.test(src)?{url:src}:{path:src};f.dest=dest||"";if(sha256)f.sha256=sha256;if(/\.zip$/i.test(src))f.extract=true;return f})}
+  if(w)m.games.push({name:w});
   create(m)};
-$("#c-copy").onclick=async()=>{const t=await (await fetch("/api/agent")).text();try{await navigator.clipboard.writeText(t);toast("Copied — paste it into your AI 📋")}catch(e){$("#c-json").value=t;toast("Couldn't copy, it's in the box")}};
+$("#c-copy").onclick=async()=>{const t=await agentText();try{await navigator.clipboard.writeText(t);toast("Copied — paste it into your AI 📋")}catch(e){$("#c-json").value=t;toast("Couldn't copy, it's in the box")}};
 $("#c-import").onclick=()=>{let m;try{m=JSON.parse($("#c-json").value.replace(/^```(json)?|```$/gm,""))}catch(e){return toast("that JSON is busted")}create(m)};
-load();logs();setInterval(load,1500);setInterval(logs,1500);
+$("#c-type").onchange({target:$("#c-type")});
+load();loadGames();logs();setInterval(load,1500);setInterval(logs,1500);
 </script></body></html>
 """
 
