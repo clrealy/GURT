@@ -13,7 +13,7 @@ arch=(any)
 depends=(python3 python3-tk)
 makedepends=()
 source=("geode-patcher.py" "geode-patcher.png")
-sha256sums=("5e14917b49afeea734a52cf37a34a068397dca2244ef7c94db6ff8e0d4ad38c2"
+sha256sums=("e9ee8b7021c655072e2288c3e791dbc0e76e980c67df6f262ded16378c97bc16"
             "072bcaf7239c101b919ad6008713fdb315df455b97bf3e419adb7e801e52ebd1")
 
 package() {

@@ -177,8 +177,6 @@ class Chunky(tk.Canvas):
         dy = 4 if (self.down and self.enabled) else 0
         rrect(self, 2, 8, self.w - 2, self.h + 4, 12, fill=OUT, outline=OUT, width=3)  # base
         rrect(self, 2, 2 + dy, self.w - 2, self.h - 2 + dy, 12, fill=col, outline=OUT, width=3)
-        shine = 0.07 if self.color == FIELD else 0.28  # dark dropdowns get a faint shine, not a grey bar
-        rrect(self, 8, 6 + dy, self.w - 8, self.h * 0.42 + dy, 7, fill=mix(col, "#ffffff", shine), outline="")
         stroke_text(self, self.w / 2, self.h / 2 + dy, self.text, self.font, TEXT)
 
 
@@ -212,7 +210,6 @@ class LevelBar(tk.Canvas):
         if pct > 0:
             x2 = max(26, 4 + (self.w - 8) * pct / 100)
             rrect(self, 4, 4, x2, 26, 10, fill=LIME, outline="")
-            rrect(self, 8, 6, max(12, x2 - 4), 13, 4, fill=mix(LIME, "#ffffff", 0.35), outline="")
         stroke_text(self, self.w / 2, 15, f"{int(pct)}%", self.font, TEXT)
 
 
