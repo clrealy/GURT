@@ -1,5 +1,5 @@
 pkgname = fzf
-pkgver = 0.74.4
+pkgver = 0.74.5
 pkgrel = 1
 pkgdesc = Fuzzy finder for basically everything in your terminal
 url = https://github.com/junegunn/fzf
@@ -10,4 +10,4 @@ arch = x86_64
 arch = aarch64
 makedepends = go
 makedepends = git
-source = git+https://github.com/junegunn/fzf.git#tag=v0.74.4
+source = git+https://github.com/junegunn/fzf.git#tag=v0.74.5

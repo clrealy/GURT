@@ -1,6 +1,6 @@
 # Fuzzy finder for basically everything in your terminal
 pkgname=fzf
-pkgver=0.74.4
+pkgver=0.74.5
 pkgrel=1
 pkgdesc="Fuzzy finder for basically everything in your terminal"
 url="https://github.com/junegunn/fzf"
