@@ -1,0 +1,36 @@
+# patcher-of-all: the patcher that patches patchers 🩹
+# one CLI for every patch on ur system, with status, revert, and auto re-patch after app updates
+# replaces photogimp-patcher + geode-patcher (now the photogimp + geode recipes)
+pkgname=patcher-of-all
+pkgver=1.1.0
+pkgrel=1
+pkgdesc="One hub for every patch: PhotoGIMP, Geode, Balatro mods, Spicetify, Betterfox, fonts, GTK themes + auto re-patch"
+aliases=(patcher-patcher poa)
+url="https://github.com/clrealy/GURT"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(any)
+depends=(curl python3)
+makedepends=()
+_recipes=(adw balatro betterfox geode msfonts nerdfont photogimp spicetify steam-shortcuts)
+source=("patcher-of-all" "${_recipes[@]/%/.sh}")
+sha256sums=("300bc8899a697eaae6b6d67fdecc9ce07043c145ea15a0df320e1b1d3965e052"
+            "c1fcae53514aa2466b759d8f618a1586d556c5d411dbe4fa8b4204ba52682d6e"
+            "91fbd2f097eb3d3fce925b9594cdb3d0ab97f84f61102dc86b96d8e3e20b3a42"
+            "eac4b80c7b6d802134a7927926c07ef43969cc60d57ad3745935a82a361e623f"
+            "87aa86e4c8cac1f8da7a07d09fa3b8723ac0ca4e58c4ca8d08b9aa8a7120546d"
+            "211b245261ee3366b4dbb87749fe6c757903c0622567cadc3f5a50159a58062e"
+            "cb42e04532d98042f8de5209171573a00752d43d22d24e63129beabbf6fff919"
+            "013883fb389fd9493583303aedfc7518742e4f06b3cd6d9f648775a0a24b981a"
+            "d92e0600fdddabc8ac777d7cda3ef169cd52788de1e6fe81735df54b04b248af"
+            "73da624c6b5a7db7f3e3ba2156e73afe5aff900e267cfdee7ce152662d49738e")
+
+package() {
+  install -Dm755 "$srcdir/patcher-of-all" "$pkgdir$prefix/bin/patcher-of-all"
+  ln -sf patcher-of-all "$pkgdir$prefix/bin/patcher-patcher"
+  local r
+  for r in "${_recipes[@]}"; do
+    install -Dm644 "$srcdir/$r.sh" "$pkgdir$prefix/share/patcher-of-all/recipes/$r.sh"
+  done
+}
