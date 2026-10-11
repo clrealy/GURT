@@ -1,7 +1,7 @@
 # Stupidly good results. No questions asked. (official AppImage)
 pkgname=sgt-boost
-pkgver=1.5.4
-pkgrel=2
+pkgver=1.5.5
+pkgrel=1
 pkgdesc="SGT Boost by Stupidly Good Technologies, an FD Corp company"
 url="https://stupidlygoodtechnologies.com"
 license="LicenseRef-proprietary"
@@ -11,7 +11,7 @@ arch=(x86_64)
 aliases=(sgt sgtboost)
 # the official AppImage, kept as an AppImage
 source=("sgt-boost.AppImage::https://github.com/clrealy/StupidlyGoodTechnologies/releases/download/v${pkgver}/SGT-Boost-linux.AppImage")
-sha256sums=(a66d6c89431edc15cdf2d209d3484392da49bafea972757c3f1f76f32b1019d8)
+sha256sums=(98f1c07f78ee6c2088113a6f33a4276749d7ba3608e3959884ab28efa3249acf)
 
 package() {
   local dir="$prefix/lib/gurt-apps/$pkgname" d icon="" ic
