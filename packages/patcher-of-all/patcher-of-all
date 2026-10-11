@@ -3,7 +3,7 @@
 # aka patcher-patcher. one hub for every patch on ur system.
 set -uo pipefail
 
-VERSION="1.1.0"
+VERSION="1.1.1"
 PROG="$(basename "$0")"
 
 SELF_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
@@ -211,12 +211,18 @@ cmd_list() {
 
 cmd_status() {
   local n s any=0
+  [[ "${1:-}" == --wait ]] && printf '%s\n\n' "${B}patcher-of-all${N} — patch anything*"
   for n in $(all_recipes); do
     any=1
     s="$(status_of "$n")"
     printf '%s%-22s%s %s\n' "$B" "$n" "$N" "$(badge "$s")"
   done
   [[ $any == 1 ]] || warn "no recipes found"
+  if [[ "${1:-}" == --wait ]]; then
+    printf '\n%s\n' "${D}patch something: patcher-of-all apply <name>   ·   all commands: patcher-of-all --help${N}"
+    [[ -t 0 ]] && read -r -p "press enter to close " _
+  fi
+  return 0
 }
 
 cmd_apply() {

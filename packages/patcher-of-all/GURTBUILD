@@ -2,7 +2,7 @@
 # one CLI for every patch on ur system, with status, revert, and auto re-patch after app updates
 # replaces photogimp-patcher + geode-patcher (now the photogimp + geode recipes)
 pkgname=patcher-of-all
-pkgver=1.1.0
+pkgver=1.1.1
 pkgrel=1
 pkgdesc="One hub for every patch: PhotoGIMP, Geode, Balatro mods, Spicetify, Betterfox, fonts, GTK themes + auto re-patch"
 aliases=(patcher-patcher poa)
@@ -14,8 +14,9 @@ arch=(any)
 depends=(curl python3)
 makedepends=()
 _recipes=(adw balatro betterfox geode msfonts nerdfont photogimp spicetify steam-shortcuts)
-source=("patcher-of-all" "${_recipes[@]/%/.sh}")
-sha256sums=("300bc8899a697eaae6b6d67fdecc9ce07043c145ea15a0df320e1b1d3965e052"
+source=("patcher-of-all" "patcher-of-all.png" "${_recipes[@]/%/.sh}")
+sha256sums=("2caaf292f80e6c633eea67b4d8ad5db0769e45de03861977af1a39f2c0667d9f"
+            "4a7e2d5f686ce51764365359bd26d029404227698843d17288b9ae8d9208efbf"
             "c1fcae53514aa2466b759d8f618a1586d556c5d411dbe4fa8b4204ba52682d6e"
             "91fbd2f097eb3d3fce925b9594cdb3d0ab97f84f61102dc86b96d8e3e20b3a42"
             "eac4b80c7b6d802134a7927926c07ef43969cc60d57ad3745935a82a361e623f"
@@ -29,6 +30,11 @@ sha256sums=("300bc8899a697eaae6b6d67fdecc9ce07043c145ea15a0df320e1b1d3965e052"
 package() {
   install -Dm755 "$srcdir/patcher-of-all" "$pkgdir$prefix/bin/patcher-of-all"
   ln -sf patcher-of-all "$pkgdir$prefix/bin/patcher-patcher"
+  install -Dm644 "$srcdir/patcher-of-all.png" "$pkgdir$prefix/share/pixmaps/patcher-of-all.png"
+  # app-menu launcher opens a terminal with the patch status. absolute paths: launchers don't read your shell PATH
+  printf '[Desktop Entry]\nType=Application\nName=Patcher of All\nComment=Patch anything*: see and fix every patch on your system\nExec=%s/bin/patcher-of-all status --wait\nIcon=%s/share/pixmaps/patcher-of-all.png\nTerminal=true\nCategories=System;Utility;\nKeywords=patch;patcher;photogimp;geode;balatro;spicetify;mods;\n' \
+    "$prefix" "$prefix" > patcher-of-all.desktop
+  install -Dm644 patcher-of-all.desktop "$pkgdir$prefix/share/applications/patcher-of-all.desktop"
   local r
   for r in "${_recipes[@]}"; do
     install -Dm644 "$srcdir/$r.sh" "$pkgdir$prefix/share/patcher-of-all/recipes/$r.sh"
