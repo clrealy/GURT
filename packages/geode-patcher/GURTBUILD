@@ -14,7 +14,7 @@ depends=(python3 python3-tk)
 makedepends=()
 source=("geode-patcher.py" "geode-patcher.png")
 sha256sums=("214c087c498d1539649c492c0e459bb991a09df5dbb0791d5873dfed9cb7108f"
-            "1209b99f4a5aedfc9153ac45c6816916d71d69cc53dd4acfdc46020f77d0a38d")
+            "072bcaf7239c101b919ad6008713fdb315df455b97bf3e419adb7e801e52ebd1")
 
 package() {
   install -Dm755 "$srcdir/geode-patcher.py" "$pkgdir$prefix/bin/geode-patcher"
