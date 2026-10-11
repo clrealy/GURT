@@ -5,6 +5,7 @@ URL="https://www.steamgriddb.com"
 OPTIONS=(
   'steam-shortcuts.list|edit|Games list|'
   'STEAMGRIDDB_KEY|secret|SteamGridDB API key (for artwork)||steamgriddb.key'
+  'STEAM_AUTOCLOSE|check|Close + reopen Steam for me||steam-autoclose'
 )
 # games go in ~/.config/patcher-of-all/steam-shortcuts.list, one per line:
 #   Name | /path/to/game-or-launcher | optional launch options
@@ -23,6 +24,34 @@ _ss_roots() {
 }
 
 _ss_steam_running() { pgrep -x steam >/dev/null 2>&1 || pgrep -x steamwebhelper >/dev/null 2>&1; }
+
+# Steam rewrites shortcuts.vdf when it quits, so it has to be closed while we edit.
+# returns 0 once it's closed; sets _SS_REOPEN when we closed it so we can start it back up
+_SS_REOPEN=""
+_ss_need_closed() {
+  _ss_steam_running || return 0
+  if [[ "$(poa_setting STEAM_AUTOCLOSE steam-autoclose)" != 1 ]]; then
+    echo "Steam is open, and it overwrites shortcuts when it quits."
+    echo "close it (Steam menu → Exit) and try again, or turn on \"Close + reopen Steam for me\""
+    return 1
+  fi
+  echo "closing Steam for a sec..."
+  if flatpak info com.valvesoftware.Steam >/dev/null 2>&1 && ! command -v steam >/dev/null; then
+    _SS_REOPEN=flatpak; flatpak run com.valvesoftware.Steam -shutdown >/dev/null 2>&1 &
+  else
+    _SS_REOPEN=native; steam -shutdown >/dev/null 2>&1 &
+  fi
+  local i; for i in $(seq 1 30); do _ss_steam_running || return 0; sleep 1; done
+  echo "Steam didn't close within 30s (a game or download still running?), not touching shortcuts"
+  _SS_REOPEN=""; return 1
+}
+_ss_reopen() {
+  case "$_SS_REOPEN" in
+    flatpak) setsid flatpak run com.valvesoftware.Steam >/dev/null 2>&1 < /dev/null & echo "reopening Steam" ;;
+    native)  setsid steam >/dev/null 2>&1 < /dev/null & echo "reopening Steam" ;;
+  esac
+  return 0
+}
 
 _ss_py() { # _ss_py <apply|check|revert>
   local key="${STEAMGRIDDB_KEY:-}" roots
@@ -128,7 +157,11 @@ if mode == "check":
     if not games: sys.exit(1)
     for cfg in users():
         names = {get(e[2], "AppName") or get(e[2], "appname") for e in get(load(os.path.join(cfg, "shortcuts.vdf")), "shortcuts", []) if ours(e)}
-        if any(g[0] not in names for g in games if os.path.exists(g[1])): sys.exit(1)
+        want = [g for g in games if os.path.exists(g[1])]
+        if any(g[0] not in names for g in want):
+            # some of ours are there = u added games to the list since (update due);
+            # none of ours = Steam lost them (broken)
+            sys.exit(2 if names else 1)
     sys.exit(0)
 
 manifest_path = os.path.join(backup, "artwork.json")
@@ -181,11 +214,14 @@ poa_apply() {
                   "# Minecraft | /usr/bin/prismlauncher" > "$_SS_LIST"
     echo "made $_SS_LIST, add ur games there then run apply again"; return 1
   fi
-  _ss_steam_running && { echo "close Steam first, it overwrites shortcuts when it quits"; return 1; }
-  _ss_py apply && echo "done, open Steam to see them"
+  _ss_need_closed || return 1
+  local rc=0; _ss_py apply || rc=$?
+  [[ $rc -eq 0 ]] && echo "done, they're in ur Steam library"
+  _ss_reopen; return $rc
 }
 
 poa_revert() {
-  _ss_steam_running && { echo "close Steam first"; return 1; }
-  _ss_py revert
+  _ss_need_closed || return 1
+  local rc=0; _ss_py revert || rc=$?
+  _ss_reopen; return $rc
 }
