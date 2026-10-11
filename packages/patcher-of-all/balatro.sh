@@ -1,6 +1,11 @@
 # patcher-of-all recipe: balatro
 DESC="Balatro modding: lovely injector + Steamodded on Linux (Proton), launch option on ur clipboard"
 URL="https://github.com/Steamodded/smods"
+# settings the GUI shows: VAR|type|label|extra|saved-in-file  (types: choice text dir check secret edit)
+OPTIONS=(
+  'BALATRO_DIR|dir|Balatro folder (blank = find it)||balatro-dir'
+  'SMODS_DEV|check|Use Steamodded dev branch|'
+)
 # optional: BALATRO_DIR=/path/to/Balatro   SMODS_DEV=1 (grab Steamodded's dev branch instead of latest release)
 
 _BAL_APPID=2379780

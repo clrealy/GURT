@@ -1,6 +1,12 @@
 # patcher-of-all recipe: geode  (ported from geode-patcher)
 DESC="Geode mod loader for Geometry Dash on Linux (Steam/Flatpak/Snap, Proton)"
 URL="https://geode-sdk.org"
+# settings the GUI shows: VAR|type|label|extra|saved-in-file  (types: choice text dir check secret edit)
+OPTIONS=(
+  'GD_DIR|dir|Geometry Dash folder (blank = find it)||geode-dir'
+  'GEODE_VERSION|text|Geode version (blank = latest)|'
+  'GEODE_WIPE|check|Revert also deletes mods|'
+)
 # optional: GD_DIR=/path/to/Geometry\ Dash   GEODE_VERSION=v4.4.0   GEODE_WIPE=1 (revert also deletes mods)
 
 _GD_EXE="GeometryDash.exe"

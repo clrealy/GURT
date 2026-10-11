@@ -3,7 +3,7 @@
 # aka patcher-patcher. one hub for every patch on ur system.
 set -uo pipefail
 
-VERSION="1.1.1"
+VERSION="1.2.0"
 PROG="$(basename "$0")"
 
 SELF_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
@@ -114,6 +114,11 @@ poa_setting() {
   if [[ -n "$v" ]]; then mkdir -p "$POA_CONFIG"; printf '%s\n' "$v" > "$f"; printf '%s\n' "$v"
   elif [[ -s "$f" ]]; then head -n1 "$f"
   else printf '%s\n' "${3:-}"; fi
+}
+
+# poa_sudo <cmd...> — sudo in a terminal, pkexec (graphical password prompt) from the GUI
+poa_sudo() {
+  if [[ -t 0 ]] || ! command -v pkexec >/dev/null; then sudo "$@"; else pkexec "$@"; fi
 }
 
 poa_need() { local c; for c; do command -v "$c" >/dev/null || { echo "missing '$c' — install it first (gurt install $c)" >&2; return 1; }; done; }
@@ -327,10 +332,51 @@ EOF
   ok "made $out — go edit it"
 }
 
+json_str() { # JSON-escape $1
+  local s="$1"
+  s="${s//\\/\\\\}"; s="${s//\"/\\\"}"; s="${s//$'\n'/\\n}"; s="${s//$'\t'/\\t}"; s="${s//$'\r'/}"
+  printf '"%s"' "$s"
+}
+
+# machine-readable list for the GUI: [{name, desc, url, status, options:[...]}]
+cmd_json() {
+  local n first=1 opts o ofirst
+  printf '['
+  for n in $(all_recipes); do
+    [[ $first == 1 ]] || printf ','; first=0
+    # shellcheck disable=SC1090
+    opts="$(f="$(find_recipe "$n")"; ( source "$f" >/dev/null 2>&1; printf '%s\n' "${OPTIONS[@]}" ) 2>/dev/null)"
+    printf '{"name":%s,"desc":%s,"url":%s,"status":%s,"options":[' \
+      "$(json_str "$n")" "$(json_str "$(meta "$n" DESC)")" "$(json_str "$(meta "$n" URL)")" "$(json_str "$(status_of "$n")")"
+    ofirst=1
+    while IFS= read -r o; do
+      [[ -n "$o" ]] || continue
+      [[ $ofirst == 1 ]] || printf ','; ofirst=0
+      json_str "$o"
+    done <<<"$opts"
+    printf ']}'
+  done
+  printf ']\n'
+}
+
+autopatch_on() {
+  [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/patcher-of-all.timer" ||
+     -f "${XDG_CONFIG_HOME:-$HOME/.config}/autostart/patcher-of-all.desktop" ]]
+}
+
+cmd_gui() {
+  local g
+  for g in "$SELF_DIR/patcher-of-all-gui" "$(cd "$SELF_DIR/.." && pwd)/share/patcher-of-all/patcher-of-all-gui"; do
+    [[ -f "$g" ]] && { POA_BIN="$(readlink -f "$0")" exec python3 "$g" "$@"; }
+  done
+  die "couldn't find the GUI (patcher-of-all-gui)"
+}
+
 cmd_autopatch() {
   local unit_dir="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user" bin
   bin="$(readlink -f "$0")"
   case "${1:-on}" in
+    status) if autopatch_on; then echo on; else echo off; fi ;;
     on)
       if command -v systemctl >/dev/null && systemctl --user show-environment >/dev/null 2>&1; then
         mkdir -p "$unit_dir"
@@ -349,7 +395,7 @@ cmd_autopatch() {
       rm -f "$unit_dir/patcher-of-all.service" "$unit_dir/patcher-of-all.timer" \
             "${XDG_CONFIG_HOME:-$HOME/.config}/autostart/patcher-of-all.desktop"
       ok "auto re-patch off" ;;
-    *) die "usage: $PROG autopatch [on|off]" ;;
+    *) die "usage: $PROG autopatch [on|off|status]" ;;
   esac
 }
 
@@ -363,6 +409,7 @@ ${B}patcher-of-all${N} $VERSION — the patcher that patches patchers 🩹
   ${B}revert${N} <name>...     back to stock
   ${B}repatch${N}              re-apply anything an update un-patched
   ${B}autopatch${N} [on|off]   run repatch automatically
+  ${B}gui${N}                  open the app
   ${B}info${N} <name>          details on one recipe
   ${B}new${N} <name>           scaffold ur own recipe
   ${B}add${N} <file.sh>        install a recipe file
@@ -380,6 +427,8 @@ case "${1:-}" in
   revert|unpatch) shift; cmd_revert "$@" ;;
   repatch|fix)    shift; cmd_repatch "$@" ;;
   autopatch)      shift; cmd_autopatch "$@" ;;
+  json)           shift; cmd_json "$@" ;;
+  gui)            shift; cmd_gui "$@" ;;
   info)           shift; cmd_info "$@" ;;
   new)            shift; cmd_new "$@" ;;
   add)            shift; cmd_add "$@" ;;

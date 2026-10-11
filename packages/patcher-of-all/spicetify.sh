@@ -37,7 +37,7 @@ poa_apply() {
   local p; p="$(_spotify_path)"
   if [[ -n "$p" && ! -w "$p/Apps" ]]; then
     echo "spotify folder isn't writable, fixing perms (needs sudo)..."
-    sudo chmod a+wr "$p" && sudo chmod a+wr -R "$p/Apps" || return 1
+    poa_sudo chmod a+wr "$p" && poa_sudo chmod a+wr -R "$p/Apps" || return 1
   fi
   spicetify backup apply 2>/dev/null || spicetify restore backup apply
 }

@@ -1,0 +1,448 @@
+#!/usr/bin/env python3
+"""patcher-of-all GUI — patch anything*. A Tk front end for the patcher-of-all CLI."""
+import json
+import os
+import queue
+import shutil
+import subprocess
+import sys
+import threading
+import webbrowser
+
+try:
+    import tkinter as tk
+    from tkinter import ttk, filedialog, messagebox
+except ImportError:
+    sys.exit("the GUI needs tkinter: gurt install python3-tk")
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+CONFIG = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"), "patcher-of-all")
+GUI_STATE = os.path.join(CONFIG, "gui.json")
+
+
+def find_cli():
+    for c in (os.environ.get("POA_BIN"), os.path.join(HERE, "patcher-of-all"),
+              os.path.join(HERE, "..", "..", "bin", "patcher-of-all"), shutil.which("patcher-of-all")):
+        if c and os.path.isfile(c) and os.access(c, os.X_OK):
+            return os.path.realpath(c)
+    return None
+
+
+def find_logo():
+    for c in (os.path.join(HERE, "patcher-of-all.png"),
+              os.path.join(HERE, "..", "pixmaps", "patcher-of-all.png"),
+              os.path.join(HERE, "..", "share", "pixmaps", "patcher-of-all.png"),
+              "/usr/share/pixmaps/patcher-of-all.png", "/usr/local/share/pixmaps/patcher-of-all.png"):
+        if os.path.isfile(c):
+            return c
+    return None
+
+
+CLI = find_cli()
+
+# flat + dense, accent pulled from the logo's blue
+BG, PANEL, EDGE, TEXT, SOFT = "#ffffff", "#f3f4f6", "#d0d4db", "#16181d", "#5f6672"
+ACCENT, ACCENT_FG = "#0f4bc8", "#ffffff"
+LOG_BG, LOG_FG = "#16181d", "#d8dbe2"
+STATUS = {  # status -> (dot color, label)
+    "patched":   ("#1f9d55", "patched"),
+    "broken":    ("#d64545", "broken, an update undid it"),
+    "unpatched": ("#c98a0b", "not patched"),
+    "missing":   ("#9aa1ad", "app not installed"),
+}
+
+
+class Option:
+    """one recipe setting: VAR|type|label|extra|saved-in-file"""
+
+    def __init__(self, spec):
+        p = (spec.split("|") + ["", "", "", "", ""])[:5]
+        self.var, self.kind, self.label, self.extra, self.file = p
+
+    def file_path(self):
+        return os.path.join(CONFIG, self.file) if self.file else None
+
+    def saved(self, gui_state, recipe):
+        fp = self.file_path()
+        if fp:
+            try:
+                with open(fp) as f:
+                    lines = [l.strip() for l in f if l.strip() and not l.lstrip().startswith("#")]
+                return " ".join(lines) if fp.endswith(".list") else (lines[0] if lines else "")
+            except OSError:
+                return ""
+        return gui_state.get(recipe, {}).get(self.var, "")
+
+
+class App(tk.Tk):
+    def __init__(self):
+        super().__init__(className="patcher-of-all")
+        self.title("Patcher of All")
+        self.geometry("1040x720")
+        self.minsize(820, 520)
+        self.configure(bg=BG)
+        self.recipes, self.current, self.widgets = [], None, {}
+        self.busy, self.q = False, queue.Queue()
+        self.logo_clicks = 0
+        try:
+            with open(GUI_STATE) as f:
+                self.state_ = json.load(f)
+        except (OSError, ValueError):
+            self.state_ = {}
+        self._fonts()
+        self._style()
+        self._build()
+        if not CLI:
+            messagebox.showerror("Patcher of All", "couldn't find the patcher-of-all command")
+            self.destroy()
+            return
+        self.after(60, self._pump)
+        self.refresh()
+
+    # ------------------------------------------------------------ look
+    def _fonts(self):
+        from tkinter import font
+        fams = set(font.families())
+        mono = next((f for f in ("JetBrainsMono Nerd Font", "JetBrains Mono", "DejaVu Sans Mono", "Liberation Mono", "Monospace") if f in fams), "TkFixedFont")
+        sans = next((f for f in ("Inter", "Cantarell", "Noto Sans", "DejaVu Sans", "Liberation Sans") if f in fams), "TkDefaultFont")
+        self.f_sans, self.f_bold = (sans, 10), (sans, 10, "bold")
+        self.f_title = (sans, 15, "bold")
+        self.f_mono, self.f_mono_s = (mono, 10), (mono, 9)
+        self.f_head = (mono, 8, "bold")
+
+    def _style(self):
+        s = ttk.Style(self)
+        s.theme_use("clam")
+        s.configure(".", background=BG, foreground=TEXT, font=self.f_sans, bordercolor=EDGE,
+                    lightcolor=BG, darkcolor=BG, focuscolor=ACCENT)
+        s.configure("Treeview", background=BG, fieldbackground=BG, rowheight=26, font=self.f_mono,
+                    borderwidth=1, relief="solid")
+        s.configure("Treeview.Heading", background=PANEL, foreground=SOFT, font=self.f_head,
+                    relief="flat", borderwidth=1, padding=(6, 4))
+        s.map("Treeview", background=[("selected", "#e3ebfb")], foreground=[("selected", TEXT)])
+        s.map("Treeview.Heading", background=[("active", PANEL)])
+        for name, bg, fg in (("Accent.TButton", ACCENT, ACCENT_FG), ("TButton", PANEL, TEXT)):
+            s.configure(name, background=bg, foreground=fg, font=self.f_mono_s, padding=(10, 4),
+                        borderwidth=1, relief="solid", bordercolor=ACCENT if bg == ACCENT else EDGE)
+            s.map(name, background=[("disabled", PANEL), ("pressed", "#0b3a9c" if bg == ACCENT else EDGE),
+                                    ("active", "#1656d9" if bg == ACCENT else "#e8eaee")],
+                  foreground=[("disabled", "#a7adb8")], relief=[("pressed", "sunken")])
+        s.configure("TCheckbutton", background=BG, font=self.f_sans)
+        s.map("TCheckbutton", background=[("active", BG)])
+        s.configure("TEntry", fieldbackground=BG, borderwidth=1, padding=4)
+        s.configure("TCombobox", fieldbackground=BG, padding=3)
+        s.configure("Vertical.TScrollbar", background=PANEL, troughcolor=BG, borderwidth=0, arrowsize=12)
+
+    # ------------------------------------------------------------ layout
+    def _build(self):
+        # header: logo + name on the left, global actions on the right
+        top = tk.Frame(self, bg=BG, highlightthickness=0)
+        top.pack(fill="x", padx=12, pady=(10, 8))
+        logo = find_logo()
+        self.logo_small = None
+        if logo:
+            try:
+                img = tk.PhotoImage(file=logo)
+                self.iconphoto(True, img.subsample(max(1, img.width() // 128)))
+                self.logo_small = img.subsample(max(1, img.width() // 56))
+                l = tk.Label(top, image=self.logo_small, bg=BG, cursor="hand2")
+                l.pack(side="left")
+                l.bind("<Button-1>", self._logo_click)
+            except tk.TclError:
+                pass
+        title = tk.Frame(top, bg=BG)
+        title.pack(side="left", padx=(10, 0))
+        tk.Label(title, text="Patcher of All", font=self.f_title, bg=BG, fg=TEXT).pack(anchor="w")
+        tk.Label(title, text="patch anything*", font=self.f_mono_s, bg=BG, fg=SOFT).pack(anchor="w")
+        self.auto = tk.BooleanVar()
+        ttk.Checkbutton(top, text="auto re-patch", variable=self.auto, command=self._toggle_auto).pack(side="right", padx=(10, 0))
+        self.b_repatch = ttk.Button(top, text="🔁 repatch all", command=lambda: self.run(["repatch"], "repatching everything"))
+        self.b_repatch.pack(side="right", padx=4)
+        self.b_refresh = ttk.Button(top, text="refresh", command=self.refresh)
+        self.b_refresh.pack(side="right", padx=4)
+
+        tk.Frame(self, bg=EDGE, height=1).pack(fill="x")
+
+        # body: list (left, wide) | details (right, narrow)
+        body = tk.PanedWindow(self, orient="vertical", bg=EDGE, sashwidth=1, bd=0)
+        body.pack(fill="both", expand=True)
+        upper = tk.Frame(body, bg=BG)
+        body.add(upper, stretch="always", minsize=260)
+
+        self.side = tk.Frame(upper, bg=BG, width=330, highlightthickness=1, highlightbackground=EDGE)
+        self.side.pack(side="right", fill="y", padx=12, pady=10)
+        self.side.pack_propagate(False)
+        left = tk.Frame(upper, bg=BG)
+        left.pack(side="left", fill="both", expand=True, padx=(12, 0), pady=10)
+        cols = ("status", "name", "desc")
+        self.tree = ttk.Treeview(left, columns=cols, show="headings", selectmode="browse")
+        for c, label, w, st in (("status", "STATUS", 190, False), ("name", "PATCH", 140, False), ("desc", "WHAT IT DOES", 240, True)):
+            self.tree.heading(c, text=label, anchor="w")
+            self.tree.column(c, width=w, stretch=st, anchor="w")
+        for st, (color, _) in STATUS.items():
+            if st != "unpatched":  # unpatched is the normal state, keep it plain so problems stand out
+                self.tree.tag_configure(st, foreground=color)
+        sb = ttk.Scrollbar(left, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=sb.set)
+        self.tree.pack(side="left", fill="both", expand=True)
+        sb.pack(side="left", fill="y")
+        self.tree.bind("<<TreeviewSelect>>", self._on_select)
+        self.tree.bind("<Double-1>", lambda e: self._apply())
+        self._side_empty()
+
+
+        # log
+        lower = tk.Frame(body, bg=LOG_BG)
+        body.add(lower, minsize=100, height=160)
+        head = tk.Frame(lower, bg=LOG_BG)
+        head.pack(fill="x", padx=10, pady=(6, 0))
+        tk.Label(head, text="LOG", font=self.f_head, bg=LOG_BG, fg="#8b92a0").pack(side="left")
+        self.status_lbl = tk.Label(head, text="", font=self.f_mono_s, bg=LOG_BG, fg="#8b92a0")
+        self.status_lbl.pack(side="right")
+        self.log = tk.Text(lower, bg=LOG_BG, fg=LOG_FG, font=self.f_mono_s, bd=0, highlightthickness=0,
+                           insertbackground=LOG_FG, wrap="word", padx=10, pady=6, state="disabled")
+        self.log.pack(fill="both", expand=True)
+        self.log.tag_configure("cmd", foreground="#7fa6ff")
+        self.log.tag_configure("good", foreground="#5bd38a")
+        self.log.tag_configure("bad", foreground="#ff7a7a")
+
+    def _side_empty(self):
+        for w in self.side.winfo_children():
+            w.destroy()
+        tk.Label(self.side, text="pick a patch on the left", font=self.f_sans, bg=BG, fg=SOFT).pack(pady=30)
+
+    # ------------------------------------------------------------ details panel
+    def _on_select(self, _=None):
+        sel = self.tree.selection()
+        if not sel:
+            return
+        self.current = next((r for r in self.recipes if r["name"] == sel[0]), None)
+        self._draw_side()
+
+    def _draw_side(self):
+        r = self.current
+        for w in self.side.winfo_children():
+            w.destroy()
+        if not r:
+            return self._side_empty()
+        self.widgets = {}
+        pad = {"padx": 12}
+        tk.Label(self.side, text=r["name"], font=(self.f_mono[0], 13, "bold"), bg=BG, fg=TEXT).pack(anchor="w", pady=(10, 2), **pad)
+        color, label = STATUS.get(r["status"], ("#9aa1ad", r["status"]))
+        st = tk.Frame(self.side, bg=BG)
+        st.pack(anchor="w", **pad)
+        tk.Label(st, text="●", fg=color, bg=BG, font=self.f_sans).pack(side="left")
+        tk.Label(st, text=label, fg=SOFT, bg=BG, font=self.f_mono_s).pack(side="left", padx=4)
+        tk.Label(self.side, text=r["desc"], font=self.f_sans, bg=BG, fg=TEXT, wraplength=300,
+                 justify="left").pack(anchor="w", pady=(8, 4), **pad)
+        if r.get("url"):
+            link = tk.Label(self.side, text=r["url"], font=self.f_mono_s, bg=BG, fg=ACCENT, cursor="hand2")
+            link.pack(anchor="w", **pad)
+            link.bind("<Button-1>", lambda e, u=r["url"]: webbrowser.open(u))
+
+        tk.Frame(self.side, bg=BG, height=4).pack(fill="x", pady=(6, 0))
+        btns = tk.Frame(self.side, bg=BG)
+        btns.pack(anchor="w", **pad)
+        missing = r["status"] == "missing"
+        verb = {"patched": "re-apply", "broken": "fix it"}.get(r["status"], "apply")
+        self.b_apply = ttk.Button(btns, text=verb, style="Accent.TButton", command=self._apply)
+        self.b_apply.pack(side="left")
+        self.b_revert = ttk.Button(btns, text="revert", command=self._revert)
+        self.b_revert.pack(side="left", padx=6)
+        if missing:
+            self.b_apply.state(["disabled"])
+            tk.Label(self.side, text="install the app first, then hit refresh", font=self.f_mono_s,
+                     bg=BG, fg=SOFT).pack(anchor="w", pady=6, **pad)
+        if r["status"] in ("unpatched", "missing"):
+            self.b_revert.state(["disabled"])
+        if self.busy:
+            self.b_apply.state(["disabled"])
+            self.b_revert.state(["disabled"])
+
+        opts = [Option(o) for o in r.get("options", [])]
+        if opts:
+            tk.Frame(self.side, bg=EDGE, height=1).pack(fill="x", pady=(10, 6))
+            tk.Label(self.side, text="SETTINGS", font=self.f_head, bg=BG, fg=SOFT).pack(anchor="w", **pad)
+            for o in opts:
+                self._option_row(r["name"], o)
+
+    def _option_row(self, recipe, o):
+        row = tk.Frame(self.side, bg=BG)
+        row.pack(fill="x", padx=12, pady=3)
+        value = o.saved(self.state_, recipe)
+        if o.kind == "check":
+            v = tk.BooleanVar(value=value in ("1", True))
+            ttk.Checkbutton(row, text=o.label, variable=v).pack(anchor="w")
+            self.widgets[o.var] = (o, v)
+            return
+        if o.kind == "edit":
+            ttk.Button(row, text=f"edit {o.label.lower()}…", command=lambda: self._edit_file(o.var)).pack(anchor="w")
+            return
+        tk.Label(row, text=o.label, font=self.f_mono_s, bg=BG, fg=SOFT, wraplength=300, justify="left").pack(anchor="w")
+        v = tk.StringVar(value=value or (o.extra if o.kind == "text" else ""))
+        if o.kind == "choice":
+            choices = o.extra.split(",")
+            v.set(value or choices[0])
+            ttk.Combobox(row, textvariable=v, values=choices, state="readonly", font=self.f_mono_s).pack(fill="x")
+        elif o.kind == "dir":
+            f = tk.Frame(row, bg=BG)
+            f.pack(fill="x")
+            ttk.Entry(f, textvariable=v, font=self.f_mono_s).pack(side="left", fill="x", expand=True)
+            ttk.Button(f, text="…", width=3, command=lambda: v.set(filedialog.askdirectory() or v.get())).pack(side="left", padx=(4, 0))
+        else:
+            ttk.Entry(row, textvariable=v, font=self.f_mono_s, show="•" if o.kind == "secret" else "").pack(fill="x")
+        self.widgets[o.var] = (o, v)
+
+    def _edit_file(self, name):
+        path = os.path.join(CONFIG, name)
+        os.makedirs(CONFIG, exist_ok=True)
+        if not os.path.exists(path):
+            starter = {
+                "steam-shortcuts.list": "# one game per line:  Name | /path/to/game-or-launcher | optional launch options\n# Minecraft | /usr/bin/prismlauncher\n",
+                "adw.css": "/* @define-color lines, e.g. */\n@define-color accent_bg_color #0f4bc8;\n@define-color window_bg_color #1b1b1b;\n",
+            }.get(name, "")
+            with open(path, "w") as f:
+                f.write(starter)
+        opener = shutil.which("xdg-open") or shutil.which("gio")
+        if opener:
+            subprocess.Popen([opener, path] if opener.endswith("xdg-open") else [opener, "open", path],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self._log(f"editing {path}\n", "cmd")
+
+    # saves settings and returns the env to run the recipe with
+    def _settings_env(self):
+        env = dict(os.environ)
+        if not self.current:
+            return env
+        name = self.current["name"]
+        mine = self.state_.setdefault(name, {})
+        for var, (o, v) in self.widgets.items():
+            val = v.get()
+            val = ("1" if val else "") if isinstance(val, bool) else str(val).strip()
+            fp = o.file_path()
+            if fp:  # the CLI reads this file itself, which keeps auto re-patch using the same settings
+                os.makedirs(CONFIG, exist_ok=True)
+                if val:
+                    with open(fp, "w") as f:
+                        f.write("\n".join(val.split()) + "\n" if fp.endswith(".list") else val + "\n")
+                elif os.path.exists(fp):
+                    os.remove(fp)
+                env.pop(var, None)
+            else:
+                mine[var] = val
+                if val:
+                    env[var] = val
+                else:
+                    env.pop(var, None)
+        try:
+            os.makedirs(CONFIG, exist_ok=True)
+            with open(GUI_STATE, "w") as f:
+                json.dump(self.state_, f, indent=1)
+        except OSError:
+            pass
+        return env
+
+    def _apply(self):
+        if self.current and self.current["status"] != "missing" and not self.busy:
+            self.run(["apply", self.current["name"]], f"patching {self.current['name']}", self._settings_env())
+
+    def _revert(self):
+        r = self.current
+        if r and not self.busy and messagebox.askyesno("Patcher of All", f"revert {r['name']} back to stock?"):
+            self.run(["revert", r["name"]], f"reverting {r['name']}", self._settings_env())
+
+    def _toggle_auto(self):
+        self.run(["autopatch", "on" if self.auto.get() else "off"], "auto re-patch")
+
+    def _logo_click(self, _):
+        self.logo_clicks += 1
+        if self.logo_clicks >= 3:
+            self.logo_clicks = 0
+            self.run(["apply", "patcher-patcher"], "patching the patcher")
+
+    # ------------------------------------------------------------ running the CLI
+    def _log(self, text, tag=None):
+        self.log.configure(state="normal")
+        self.log.insert("end", text, tag)
+        self.log.see("end")
+        self.log.configure(state="disabled")
+
+    def _set_busy(self, busy, msg=""):
+        self.busy = busy
+        self.status_lbl.configure(text=msg)
+        for b in (self.b_repatch, self.b_refresh):
+            b.state(["disabled"] if busy else ["!disabled"])
+        if self.current:
+            self._draw_side()
+
+    def run(self, args, msg, env=None):
+        if self.busy:
+            return
+        self._set_busy(True, msg + "…")
+        self._log("$ patcher-of-all " + " ".join(args) + "\n", "cmd")
+
+        def work():
+            try:
+                p = subprocess.Popen([CLI] + args, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                     stderr=subprocess.STDOUT, text=True, bufsize=1, env=env or os.environ.copy())
+                for line in p.stdout:
+                    self.q.put(("line", line))
+                rc = p.wait()
+            except OSError as e:
+                self.q.put(("line", f"couldn't run it: {e}\n"))
+                rc = 1
+            self.q.put(("done", rc))
+        threading.Thread(target=work, daemon=True).start()
+
+    def refresh(self):
+        if self.busy:
+            return
+        self._set_busy(True, "checking patches…")
+
+        def work():
+            try:
+                out = subprocess.run([CLI, "json"], capture_output=True, text=True, timeout=180).stdout
+                auto = subprocess.run([CLI, "autopatch", "status"], capture_output=True, text=True, timeout=20).stdout.strip()
+                self.q.put(("list", (json.loads(out or "[]"), auto == "on")))
+            except (OSError, ValueError, subprocess.TimeoutExpired) as e:
+                self.q.put(("line", f"couldn't read patch status: {e}\n"))
+                self.q.put(("listdone", None))
+        threading.Thread(target=work, daemon=True).start()
+
+    def _pump(self):
+        try:
+            while True:
+                kind, data = self.q.get_nowait()
+                if kind == "line":
+                    tag = "good" if data.startswith("✔") else "bad" if data.startswith(("✘", "!")) else None
+                    self._log(data, tag)
+                elif kind == "done":
+                    self._log(("done ✔" if data == 0 else f"failed (exit {data})") + "\n\n", "good" if data == 0 else "bad")
+                    self._set_busy(False)
+                    self.refresh()
+                elif kind == "list":
+                    self.recipes, auto = data
+                    self.auto.set(auto)
+                    keep = self.current["name"] if self.current else None
+                    self.tree.delete(*self.tree.get_children())
+                    for r in self.recipes:
+                        color, label = STATUS.get(r["status"], ("", r["status"]))
+                        self.tree.insert("", "end", iid=r["name"], values=("● " + label, r["name"], r["desc"]), tags=(r["status"],))
+                    self._set_busy(False)
+                    if keep and self.tree.exists(keep):
+                        self.tree.selection_set(keep)
+                        self.current = next(r for r in self.recipes if r["name"] == keep)
+                        self._draw_side()
+                    elif self.recipes and not keep:
+                        first = self.recipes[0]["name"]
+                        self.tree.selection_set(first)
+                        self.tree.focus(first)
+                elif kind == "listdone":
+                    self._set_busy(False)
+        except queue.Empty:
+            pass
+        self.after(60, self._pump)
+
+
+if __name__ == "__main__":
+    App().mainloop()

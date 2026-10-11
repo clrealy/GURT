@@ -1,6 +1,11 @@
 # patcher-of-all recipe: adw
 DESC="Theme libadwaita / GTK4 apps (the hole Gradience left): gurt, catppuccin, dracula, nord, gruvbox or ur own css"
 URL=""
+# settings the GUI shows: VAR|type|label|extra|saved-in-file  (types: choice text dir check secret edit)
+OPTIONS=(
+  'ADW_THEME|choice|Theme|gurt,catppuccin,dracula,nord,gruvbox,custom|adw-theme'
+  'adw.css|edit|Custom theme css|'
+)
 # pick: ADW_THEME=dracula  or write the name into ~/.config/patcher-of-all/adw-theme
 # custom: put @define-color lines in ~/.config/patcher-of-all/adw.css and use ADW_THEME=custom
 
