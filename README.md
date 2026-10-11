@@ -554,22 +554,22 @@ Fork it, then set `GURT_REPO_URL` in `/etc/gurt.conf` to your fork. Turn on GitH
 
 ## "Get now on GURT" badge 🏷️
 
-Got an app in Main GURT? Put the badge on your site or README, like "Get it on Flathub". Swap `YOURAPP` for your package's name: the link opens gurtproject.org with your app already searched.
+Got an app in Main GURT? Put the badge on your site or README, like "Get it on Flathub". Swap `YOURAPP` for your package's name: the link opens gurtproject.org right on your app's card, with its install command.
 
-<a href="https://gurtproject.org/?q=firefox#packages"><img src="site/assets/get-on-gurt.svg" alt="Get now on GURT" width="240"></a>
+<a href="https://gurtproject.org/?app=firefox"><img src="site/assets/get-on-gurt.svg" alt="Get now on GURT" width="240"></a>
 
 ```html
-<a href="https://gurtproject.org/?q=YOURAPP#packages"><img src="https://gurtproject.org/assets/get-on-gurt.svg" alt="Get now on GURT" width="240"></a>
+<a href="https://gurtproject.org/?app=YOURAPP"><img src="https://gurtproject.org/assets/get-on-gurt.svg" alt="Get now on GURT" width="240"></a>
 ```
 
 ```markdown
-[![Get now on GURT](https://gurtproject.org/assets/get-on-gurt.svg)](https://gurtproject.org/?q=YOURAPP#packages)
+[![Get now on GURT](https://gurtproject.org/assets/get-on-gurt.svg)](https://gurtproject.org/?app=YOURAPP)
 ```
 
 On dark pages use `get-on-gurt-dark.svg` (light text). PNGs too: `get-on-gurt.png`, `get-on-gurt-dark.png`. For a GitHub README that follows light/dark mode:
 
 ```html
-<a href="https://gurtproject.org/?q=YOURAPP#packages"><picture>
+<a href="https://gurtproject.org/?app=YOURAPP"><picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://gurtproject.org/assets/get-on-gurt-dark.svg">
   <img src="https://gurtproject.org/assets/get-on-gurt.svg" alt="Get now on GURT" width="240">
 </picture></a>

@@ -956,7 +956,17 @@ $("#sfxbtn").addEventListener("click", () => {
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paintTbar); paintTbar();
 $("#bgroups").addEventListener("change", e => { if (e.target.dataset.n) SFX.play(e.target.checked ? "pick" : "unpick"); });
 $("#heyo").addEventListener("click", () => { $("#heyo-found").hidden = false; $("#heyo").style.opacity = 1; });
-fetch("packages.json").then(r => r.json()).then(d => { PKGS = d.packages; render(); renderBuilder(); const u = new URLSearchParams(location.search).get("u"); if (u) showProfile(u, false); })
+// 🏷️ the "Get now on gurt" badge links here: ?app=NAME opens that app's card (install command and all).
+// older badges used ?q=NAME#packages, so an exact name there opens its card too
+function openLinkedApp(){
+  const sp = new URLSearchParams(location.search), want = (sp.get("app") || (location.hash === "#packages" ? sp.get("q") : "") || "").trim().toLowerCase();
+  if (!want) return;
+  const p = PKGS.find(x => x.pkgname.toLowerCase() === want) || PKGS.find(x => (x.alias || []).some(a => a.toLowerCase() === want));
+  if (!p) return;
+  if (location.hash === "#packages") history.replaceState(null, "", location.pathname + location.search);   // no jump down the page behind the card
+  scrollTo(0, 0); showPkg(p.pkgname);
+}
+fetch("packages.json").then(r => r.json()).then(d => { PKGS = d.packages; render(); renderBuilder(); const u = new URLSearchParams(location.search).get("u"); if (u) showProfile(u, false); else openLinkedApp(); })
   .catch(() => { $("#count").textContent = "couldn't load packages.json"; });
 </script>
 </body>
