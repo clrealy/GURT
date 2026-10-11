@@ -1,0 +1,14 @@
+pkgname = gloop
+pkgver = 0.2.0
+pkgrel = 1
+pkgdesc = One-click game mashups and mods for Linux. Press Play, it sets everything up
+url = https://github.com/clrealy/GURT
+license = MIT
+maintainer = clrealy
+category = gaming
+arch = any
+depends = python3
+depends = gui-webview
+source = gloop.py
+source = gloop.png
+alias = gloop-mashups

@@ -1,0 +1,26 @@
+# Gloop: one-click game mashups + mods for linux (melty.gg-style)
+# native app window (GTK WebKit / Qt WebEngine), falls back to a browser window
+pkgname=gloop
+pkgver=0.2.0
+pkgrel=1
+pkgdesc="One-click game mashups and mods for Linux. Press Play, it sets everything up"
+aliases=(gloop-mashups)
+url="https://github.com/clrealy/GURT"
+license="MIT"
+maintainer="clrealy"
+category="gaming"
+arch=(any)
+depends=(python3 gui-webview)
+makedepends=()
+source=("gloop.py" "gloop.png")
+sha256sums=("10ccaae5cc0bb413c8580dbd472d77319a28c18afba30360be5c4df22c41c666"
+            "31eb053546865fd9d1b4ce5dc750f37afeda54d50140f7d9e35d3191268ac08c")
+
+package() {
+  install -Dm755 "$srcdir/gloop.py" "$pkgdir$prefix/bin/gloop"
+  install -Dm644 "$srcdir/gloop.png" "$pkgdir$prefix/share/pixmaps/gloop.png"
+  # absolute paths: launchers don't read your shell PATH. StartupWMClass matches the window so the icon sticks
+  printf '[Desktop Entry]\nType=Application\nName=Gloop\nComment=%s\nExec=%s/bin/gloop\nIcon=%s/share/pixmaps/gloop.png\nTerminal=false\nCategories=Game;Utility;\nKeywords=mods;mashups;minecraft;steam;melty;\nStartupWMClass=gloop\n' \
+    "$pkgdesc" "$prefix" "$prefix" > gloop.desktop
+  install -Dm644 gloop.desktop "$pkgdir$prefix/share/applications/gloop.desktop"
+}
