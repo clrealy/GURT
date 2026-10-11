@@ -1,0 +1,12 @@
+pkgname = sgt-boost
+pkgver = 1.5.4
+pkgrel = 2
+pkgdesc = SGT Boost by Stupidly Good Technologies, an FD Corp company
+url = https://stupidlygoodtechnologies.com
+license = LicenseRef-proprietary
+maintainer = clrealy
+category = system
+arch = x86_64
+source = sgt-boost.AppImage::https://github.com/clrealy/StupidlyGoodTechnologies/releases/download/v1.5.4/SGT-Boost-linux.AppImage
+alias = sgt
+alias = sgtboost
