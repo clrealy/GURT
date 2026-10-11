@@ -1,0 +1,37 @@
+# Stupidly good results. No questions asked. (official AppImage)
+pkgname=sgt-boost
+pkgver=1.5.4
+pkgrel=1
+pkgdesc="SGT Boost by Stupidly Good Technologies, an FD Corp company"
+url="https://stupidlygoodtechnologies.com"
+license="LicenseRef-proprietary"
+maintainer="clrealy"
+category="fun"
+arch=(x86_64)
+aliases=(sgt sgtboost)
+# the official AppImage, kept as an AppImage
+source=("sgt-boost.AppImage::https://github.com/clrealy/StupidlyGoodTechnologies/releases/download/v${pkgver}/SGT-Boost-linux.AppImage")
+sha256sums=(a66d6c89431edc15cdf2d209d3484392da49bafea972757c3f1f76f32b1019d8)
+
+package() {
+  local dir="$prefix/lib/gurt-apps/$pkgname" d icon="" ic
+  install -Dm755 "$pkgname.AppImage" "$pkgdir$dir/$pkgname.AppImage"
+  # no FUSE 2 on your system? it still runs (extract-and-run mode)
+  printf '#!/bin/sh\nldconfig -p 2>/dev/null | grep -q "libfuse\\.so\\.2" || export APPIMAGE_EXTRACT_AND_RUN=1\nexec "%s/%s.AppImage" "$@"\n' "$dir" "$pkgname" > launcher
+  install -Dm755 launcher "$pkgdir$prefix/bin/$pkgname"
+  # borrow its app menu entry + icon (the download isn't executable yet, so copy it first)
+  mkdir -p x; install -m755 "$pkgname.AppImage" x/app.AppImage
+  ( cd x && ./app.AppImage --appimage-extract >/dev/null 2>&1 || true )
+  d=$(find x/squashfs-root -maxdepth 1 -name '*.desktop' 2>/dev/null | head -n1)   # empty where the AppImage can't run (musl distros)
+  ic=""; [ -n "$d" ] && ic=$(sed -n 's/^Icon=//p' "$d" | head -n1)
+  for f in $(find -L x/squashfs-root/usr/share/icons x/squashfs-root -maxdepth 6 -type f \( -name "${ic:-none}.png" -o -name "${ic:-none}.svg" \) 2>/dev/null | sort -V) \
+           $(find -L x/squashfs-root -maxdepth 1 -type f \( -name '*.png' -o -name '*.svg' \) 2>/dev/null); do icon=$f; done
+  if [ -n "$icon" ]; then install -Dm644 "$icon" "$pkgdir$prefix/share/pixmaps/$pkgname.${icon##*.}"; icon="$prefix/share/pixmaps/$pkgname.${icon##*.}"; fi
+  if [ -n "$d" ]; then
+    sed -E "s|^Exec=[^ ]+|Exec=$prefix/bin/$pkgname|; /^TryExec=/d${icon:+; s|^Icon=.*|Icon=$icon|}" "$d" > app.desktop
+  else
+    printf '[Desktop Entry]\nType=Application\nName=%s\nExec=%s/bin/%s\nIcon=%s\nTerminal=false\nCategories=Utility;\n' "$pkgname" "$prefix" "$pkgname" "${icon:-application-x-executable}" > app.desktop
+  fi
+  install -Dm644 app.desktop "$pkgdir$prefix/share/applications/$pkgname.desktop"
+  rm -rf x
+}
