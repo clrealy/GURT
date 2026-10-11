@@ -57,13 +57,12 @@ for page in ("gui/gurt-gui.py", "site/index.html"):   # both have it inline, so 
     a, b = g.index("<!--logo-->") + len("<!--logo-->"), g.index("<!--/logo-->")
     open(path, "w").write(g[:a] + svg("var(--logo-ink)", themed=True) + g[b:])
 
-# the icon: a big g on paper, with the red/green/blue stripe under it and a hard shadow box
+# the icon: a big g with the red/green/blue stripe under it, on a transparent background
 d, adv, (x0, y0, x1, y1) = glyph("g")
 gw, gh = x1 - x0, y1 - y0
 S = 1000; pad = 150; sc = (S - 2 * pad) / max(gw, gh) * 0.86
 gx = (S - gw * sc) / 2 - x0 * sc - 14; gy = pad + (S - 2 * pad - gh * sc) / 2 - 85 + y1 * sc
 icon = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {S} {S}">'
-        f'<rect x="40" y="40" width="{S-80}" height="{S-80}" rx="140" fill="#fbf8ee" stroke="{INK}" stroke-width="44"/>'
         f'<path transform="translate({gx + 34:.0f} {gy + 34:.0f}) scale({sc:.4f} {-sc:.4f})" d="{d}" fill="{GOLD}"/>'
         f'<path transform="translate({gx:.0f} {gy:.0f}) scale({sc:.4f} {-sc:.4f})" d="{d}" fill="{INK}"/>'
         f'<rect x="200" y="800" width="200" height="70" fill="{RED}"/><rect x="400" y="800" width="200" height="70" fill="{GREEN}"/><rect x="600" y="800" width="200" height="70" fill="{BLUE}"/>'
