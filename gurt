@@ -200,10 +200,10 @@ apt_install() { # apt with the usual fresh-Debian gotchas handled
   fancy "$lbl" asroot "${ag[@]}" "${o[@]}" install -y "$@"
 }
 # zypper finds libkf6foo6 but only installs libKF6Foo6: swap in the real spelling
-zypper_names() {
+zypper_names() {   # never fails: a name zypper can't look up (busy, locked, offline) stays as it is
   local p real
   for p; do
-    real=$(zypper -q info "$p" 2>/dev/null | awk -F': *' '/^Name/ { print $2; exit }')
+    real=$(zypper -q info "$p" 2>/dev/null | awk -F': *' '/^Name/ { print $2; exit }') || real=""
     if [[ -n $real && ${real,,} == "${p,,}" ]]; then echo "$real"; else echo "$p"; fi
   done
 }
@@ -217,7 +217,8 @@ pm_install() {
     # Arch doesn't support partial upgrades: installing something against a newer package list than the rest
     # of the system can break it (Qt/KDE/desktop). so deps come with a full upgrade, and pacman shows you it.
     pacman) if $NOCONFIRM; then fancy "${1}" asroot pacman -Syu --needed --noconfirm "$@"; else asroot pacman -Syu --needed "$@"; fi ;;
-    zypper) local zn; mapfile -t zn < <(zypper_names "$@"); fancy "${zn[0]}" asroot zypper --non-interactive install "${zn[@]}" ;;
+    zypper) local zn=(); mapfile -t zn < <(zypper_names "$@"); (( ${#zn[@]} == $# )) || zn=("$@")
+            fancy "${zn[0]}" asroot zypper --non-interactive install "${zn[@]}" ;;
     apk)    asroot apk add "$@" ;;
     xbps)   asroot xbps-install -Sy "$@" ;;
     emerge) asroot emerge --noreplace "$@" ;;
