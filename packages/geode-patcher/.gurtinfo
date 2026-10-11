@@ -1,5 +1,5 @@
 pkgname = geode-patcher
-pkgver = 1.0.0
+pkgver = 1.1.0
 pkgrel = 1
 pkgdesc = GUI-Patch Geometry Dash with the Geode mod loader on Linux
 url = https://github.com/clrealy/GURT
