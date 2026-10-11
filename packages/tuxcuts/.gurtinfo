@@ -1,0 +1,16 @@
+pkgname = tuxcuts
+pkgver = 0.1.0
+pkgrel = 1
+pkgdesc = Apple Shortcuts for Linux. Stack actions into shortcuts, run them from a GUI, the terminal or a hotkey
+url = https://github.com/clrealy/GURT
+license = MIT
+maintainer = clrealy
+category = system
+arch = any
+depends = python3
+depends = python3-yaml
+depends = gui-gtk3
+source = tuxcuts-0.1.0.tar.gz
+alias = tuxcut
+alias = shortcuts
+alias = linux-shortcuts
