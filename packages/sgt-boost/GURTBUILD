@@ -1,12 +1,12 @@
 # Stupidly good results. No questions asked. (official AppImage)
 pkgname=sgt-boost
 pkgver=1.5.4
-pkgrel=1
+pkgrel=2
 pkgdesc="SGT Boost by Stupidly Good Technologies, an FD Corp company"
 url="https://stupidlygoodtechnologies.com"
 license="LicenseRef-proprietary"
 maintainer="clrealy"
-category="fun"
+category="system"
 arch=(x86_64)
 aliases=(sgt sgtboost)
 # the official AppImage, kept as an AppImage
@@ -32,6 +32,8 @@ package() {
   else
     printf '[Desktop Entry]\nType=Application\nName=%s\nExec=%s/bin/%s\nIcon=%s\nTerminal=false\nCategories=Utility;\n' "$pkgname" "$prefix" "$pkgname" "${icon:-application-x-executable}" > app.desktop
   fi
+  # show up under System in the app menu
+  sed -i 's/^Categories=.*/Categories=System;Utility;/' app.desktop
   install -Dm644 app.desktop "$pkgdir$prefix/share/applications/$pkgname.desktop"
   rm -rf x
 }
