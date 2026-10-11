@@ -1,7 +1,7 @@
 # Geode Patcher: one-click GUI to install the Geode mod loader into Geometry Dash on Linux
 # finds Steam/Flatpak/Snap installs, grabs Geode from GitHub, uninstall + launch option copy included
 pkgname=geode-patcher
-pkgver=1.0.0
+pkgver=1.1.0
 pkgrel=1
 pkgdesc="GUI-Patch Geometry Dash with the Geode mod loader on Linux"
 aliases=(geode gd-geode geode-gd)
@@ -13,7 +13,7 @@ arch=(any)
 depends=(python3 python3-tk)
 makedepends=()
 source=("geode-patcher.py" "geode-patcher.png")
-sha256sums=("214c087c498d1539649c492c0e459bb991a09df5dbb0791d5873dfed9cb7108f"
+sha256sums=("e9ee8b7021c655072e2288c3e791dbc0e76e980c67df6f262ded16378c97bc16"
             "072bcaf7239c101b919ad6008713fdb315df455b97bf3e419adb7e801e52ebd1")
 
 package() {
