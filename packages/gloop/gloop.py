@@ -9,7 +9,8 @@ Gloop - one-click mashups & mods for Linux (melty.gg-style).
   gloop play <id>       install (if needed) + launch a mashup
   gloop install <id>    install without launching
   gloop uninstall <id>  remove it and put every file back how it was
-  gloop add <file|url>  add a mashup manifest (.json)
+  gloop add <file|url>  add a mashup (.json recipe or .gloop bundle)
+  gloop export <id> [--bundle] [-o file]   save one to share
 
 Mashups live in ~/.local/share/gloop/mashups/*.json. Two kinds:
 
@@ -55,7 +56,7 @@ import urllib.request
 from pathlib import Path
 
 APP = "gloop"
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 UA = f"gloop/{VERSION} (linux mashup launcher)"
 DATA = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / APP
 MASHUP_DIR = DATA / "mashups"
@@ -87,6 +88,16 @@ SAMPLES = {
         "games": [{"name": "Minecraft"}, {"name": "Portal", "steam_appid": 400}],
         "minecraft_version": "1.20.4",
         "mods": ["fabric-api", "portal-gun"],
+    },
+    "terra-craft.json": {
+        "id": "terra-craft",
+        "name": "Terra Craft",
+        "type": "minecraft",
+        "description": "Terraria in Minecraft: bosses, gear, coins, minecarts, cabins, crates, quick stack.",
+        "games": [{"name": "Minecraft"}, {"name": "Terraria", "steam_appid": 105600}],
+        "minecraft_version": "1.20.1",
+        "mods": ["fabric-api", "terramine", "terrablender", "numismatic-overhaul", "spelunker", "terrastorage",
+                 "subterrestrial", "terracart-reloaded", "fishing-loot-crates"],
     },
     "stronghold-run.json": {
         "id": "stronghold-run",
@@ -201,7 +212,10 @@ def validate(m):
     if not ID_RE.match(str(m.get("id", ""))):
         raise ValueError("manifest needs an 'id' (lowercase letters, numbers, dashes)")
     if m.get("type") == "minecraft":
-        if not isinstance(m.get("mods"), list) or not m["mods"]:
+        bm = m.get("bundled_mods")
+        if bm is not None and (not isinstance(bm, list) or not all(isinstance(x, str) for x in bm)):
+            raise ValueError("'bundled_mods' must be a list of file names")
+        if not bm and (not isinstance(m.get("mods"), list) or not m["mods"]):
             raise ValueError("minecraft mashup needs a 'mods' list of Modrinth slugs")
     elif m.get("type") in ("steam", "thunderstore"):
         if not isinstance(m.get("steam_appid"), int):
@@ -210,7 +224,7 @@ def validate(m):
             if not isinstance(m.get("files"), list) or not m["files"]:
                 raise ValueError("steam mashup needs a 'files' list")
             for f in m["files"]:
-                if not isinstance(f, dict) or not (f.get("url") or f.get("path")) or "dest" not in f:
+                if not isinstance(f, dict) or not (f.get("url") or f.get("path") or f.get("bundled")) or "dest" not in f:
                     raise ValueError("each file needs a 'url' or 'path', plus a 'dest'")
         else:
             pk = m.get("packages")
@@ -256,10 +270,45 @@ def latest_stable(url):
     raise RuntimeError(f"no stable version found at {url}")
 
 
-def install_minecraft(m):
+def mc_game_version(m):
     game = m.get("minecraft_version", "latest")
     if game in (None, "", "latest"):
         game = latest_stable(f"{FABRIC_META}/versions/game")
+    return game
+
+
+def mc_resolve(slugs, game):
+    """Modrinth slugs -> the files to grab for this Minecraft version, required deps included"""
+    out, queue, done, got = [], [(sl, False) for sl in slugs], set(), set()
+    q = urllib.parse.urlencode({"loaders": json.dumps(["fabric"]), "game_versions": json.dumps([game])})
+    while queue:
+        slug, is_dep = queue.pop(0)
+        if slug in done:
+            continue
+        done.add(slug)
+        try:
+            vers = http_json(f"{MODRINTH}/project/{urllib.parse.quote(slug)}/version?{q}")
+        except urllib.error.HTTPError as e:
+            log(f"  ! {slug}: not found on Modrinth ({e.code}), skipping")
+            continue
+        if not vers:
+            log(f"  ! {slug}: no Fabric build for {game} yet, skipping")
+            continue
+        v = vers[0]
+        if v.get("project_id") in got:     # same mod asked for by slug and by id
+            continue
+        got.add(v.get("project_id"))
+        f = next((x for x in v["files"] if x.get("primary")), v["files"][0])
+        out.append({"slug": slug, "dep": is_dep, "url": f["url"], "filename": f["filename"],
+                    "sha512": f.get("hashes", {}).get("sha512")})
+        for d in v.get("dependencies", []):
+            if d.get("dependency_type") == "required" and d.get("project_id"):
+                queue.append((d["project_id"], True))
+    return out
+
+
+def install_minecraft(m):
+    game = mc_game_version(m)
     loader = latest_stable(f"{FABRIC_META}/versions/loader")
     log(f"Minecraft {game} + Fabric loader {loader}")
 
@@ -278,33 +327,20 @@ def install_minecraft(m):
     rec = {"type": "minecraft", "instance": str(inst), "profile": f"gloop-{m['id']}",
            "version_id": vid, "created_version": created_version, "mods": []}
     try:
-        queue, done, got = [(s, False) for s in m["mods"]], set(), set()
-        q = urllib.parse.urlencode({"loaders": json.dumps(["fabric"]), "game_versions": json.dumps([game])})
-        while queue:
-            slug, is_dep = queue.pop(0)
-            if slug in done:
-                continue
-            done.add(slug)
-            try:
-                vers = http_json(f"{MODRINTH}/project/{urllib.parse.quote(slug)}/version?{q}")
-            except urllib.error.HTTPError as e:
-                log(f"  ! {slug}: not found on Modrinth ({e.code}), skipping")
-                continue
-            if not vers:
-                log(f"  ! {slug}: no Fabric build for {game} yet, skipping")
-                continue
-            v = vers[0]
-            if v.get("project_id") in got:     # same mod asked for by slug and by id
-                continue
-            got.add(v.get("project_id"))
-            files = v["files"]
-            f = next((x for x in files if x.get("primary")), files[0])
-            download(f["url"], mods / f["filename"], sha512=f.get("hashes", {}).get("sha512"))
-            rec["mods"].append(f["filename"])
-            log(f"  + {slug}{' (needed by another mod)' if is_dep else ''}: {f['filename']} verified")
-            for d in v.get("dependencies", []):
-                if d.get("dependency_type") == "required" and d.get("project_id"):
-                    queue.append((d["project_id"], True))
+        bdir = bundle_dir(m)
+        if m.get("bundled_mods"):
+            for rel in m["bundled_mods"]:
+                src = safe_join(bdir, rel)
+                if not src.is_file():
+                    raise RuntimeError(f"this bundle is missing {rel}")
+                shutil.copy2(src, mods / src.name)
+                rec["mods"].append(src.name)
+                log(f"  + {src.name} (from the bundle)")
+        else:
+            for f in mc_resolve(m.get("mods", []), game):
+                download(f["url"], mods / f["filename"], sha512=f["sha512"])
+                rec["mods"].append(f["filename"])
+                log(f"  + {f['slug']}{' (needed by another mod)' if f['dep'] else ''}: {f['filename']} verified")
 
         lp = mc_dir() / "launcher_profiles.json"
         data = json.loads(lp.read_text()) if lp.exists() else {"profiles": {}, "version": 3}
@@ -508,7 +544,11 @@ def install_steam(m):
     try:
         with tempfile.TemporaryDirectory(dir=DATA) as tmp:
             for i, f in enumerate(m["files"]):
-                if f.get("path"):
+                if f.get("bundled"):
+                    src = safe_join(bundle_dir(m), f["bundled"])
+                    if not src.is_file():
+                        raise RuntimeError(f"this bundle is missing {f['bundled']}")
+                elif f.get("path"):
                     src = Path(os.path.expanduser(f["path"]))
                     if not src.is_file():
                         raise RuntimeError(f"can't find {src} - download the mod there first")
@@ -598,11 +638,17 @@ def install_thunderstore(m):
     gf = GameFiles(game_folder(m), BACKUP_DIR / m["id"])
     DATA.mkdir(parents=True, exist_ok=True)
     try:
-        pkgs = ts_resolve(m["packages"])
+        if m.get("bundled_packages"):
+            pkgs = [{"full": Path(r).stem, "bundled": r, "ver": "(bundled)"} for r in m["bundled_packages"]]
+        else:
+            pkgs = ts_resolve(m["packages"])
         with tempfile.TemporaryDirectory(dir=DATA) as tmp:
             for p in pkgs:
-                z = Path(tmp) / f"{p['full']}.zip"
-                download(p["url"], z)
+                if p.get("bundled"):
+                    z = safe_join(bundle_dir(m), p["bundled"])
+                else:
+                    z = Path(tmp) / f"{p['full']}.zip"
+                    download(p["url"], z)
                 with zipfile.ZipFile(z) as zz:
                     names = [i.filename.replace("\\", "/") for i in zz.infolist() if not i.is_dir()]
                 gf.put_zip(z, ts_mapper(p["full"], names))
@@ -646,6 +692,113 @@ def launch_thunderstore(m, rec):
             "this, or the mods won't load under Proton.")
     log(f"{note}  {BEPINEX_OPT}")
     return {"msg": note, "copy": BEPINEX_OPT}
+
+
+# ------------------------------------------------------- export / import
+# a mashup is a .json recipe. a .gloop bundle is a zip: mashup.json + files/ with the mods packed in,
+# so it installs the exact same files on someone else's PC (and works offline for the mods).
+
+def bundle_dir(m):
+    return MASHUP_DIR / f"{m['id']}.files"
+
+
+def safe_join(base, rel):
+    p = (base / rel).resolve()
+    if base.resolve() not in p.parents:
+        raise RuntimeError(f"blocked sketchy path in bundle: {rel}")
+    return p
+
+
+def downloads_dir():
+    try:
+        d = subprocess.run(["xdg-user-dir", "DOWNLOAD"], capture_output=True, text=True).stdout.strip()
+        if d and d != str(Path.home()):
+            return Path(d)
+    except OSError:
+        pass
+    return Path.home() / "Downloads"
+
+
+def clean_manifest(m):
+    return {k: v for k, v in m.items() if not k.startswith("_")}
+
+
+def do_export(mid, bundle=False, out=None):
+    m = clean_manifest(get(mid))
+    out = Path(out) if out else downloads_dir() / f"{mid}.{'gloop' if bundle else 'json'}"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    if not bundle:
+        out.write_text(json.dumps(m, indent=2))
+        log(f"exported the recipe to {out}")
+        return out
+    log(f"packing {m['name']} into a bundle...")
+    DATA.mkdir(parents=True, exist_ok=True)
+    tmp_out = out.with_name(out.name + ".part")
+    with tempfile.TemporaryDirectory(dir=DATA) as tmp, zipfile.ZipFile(tmp_out, "w", zipfile.ZIP_DEFLATED) as z:
+        files = []   # (path on disk, name in bundle)
+        if m["type"] == "minecraft":
+            if m.get("bundled_mods"):
+                files += [(safe_join(bundle_dir(m), r), r) for r in m["bundled_mods"]]
+            else:
+                game = mc_game_version(m)
+                m["minecraft_version"] = game   # pin it, so the packed mods match the game
+                for f in mc_resolve(m.get("mods", []), game):
+                    dst = Path(tmp) / f["filename"]
+                    download(f["url"], dst, sha512=f["sha512"])
+                    files.append((dst, f"files/{f['filename']}"))
+                    log(f"  + {f['filename']}")
+                m["bundled_mods"] = [n for _, n in files]
+        elif m["type"] == "steam":
+            for i, f in enumerate(m["files"]):
+                if f.get("bundled"):
+                    files.append((safe_join(bundle_dir(m), f["bundled"]), f["bundled"]))
+                    continue
+                src = Path(os.path.expanduser(f["path"])) if f.get("path") else Path(tmp) / f"dl{i}"
+                if f.get("path") and not src.is_file():
+                    raise RuntimeError(f"can't pack {src}, it isn't there")
+                if not f.get("path"):
+                    download(f["url"], src, sha256=f.get("sha256"))
+                name = f"files/{i}-{Path(f.get('path') or urllib.parse.urlparse(f['url']).path).name or 'file'}"
+                files.append((src, name))
+                for k in ("url", "path"):
+                    f.pop(k, None)
+                f["bundled"] = name
+        else:   # thunderstore: pack the exact package zips
+            pk = []
+            for p in ts_resolve(m["packages"]):
+                dst = Path(tmp) / f"{p['full']}.zip"
+                download(p["url"], dst)
+                files.append((dst, f"files/{p['full']}.zip"))
+                pk.append(p["full"])
+                log(f"  + {p['full']} {p['ver']}")
+            m["bundled_packages"] = [n for _, n in files]
+        for src, name in files:
+            z.write(src, name)
+        z.writestr("mashup.json", json.dumps(m, indent=2))
+    tmp_out.replace(out)
+    log(f"exported the bundle to {out} ({out.stat().st_size // 1024} KB)")
+    return out
+
+
+def do_import_bundle(path):
+    with zipfile.ZipFile(path) as z:
+        try:
+            m = validate(json.loads(z.read("mashup.json")))
+        except KeyError:
+            raise ValueError("that .gloop file has no mashup.json inside")
+        bdir = bundle_dir(m)
+        shutil.rmtree(bdir, ignore_errors=True)
+        bdir.mkdir(parents=True)
+        for info in z.infolist():
+            if info.is_dir() or not info.filename.startswith("files/"):
+                continue
+            dst = safe_join(bdir, info.filename)
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            with z.open(info) as src, open(dst, "wb") as out:
+                shutil.copyfileobj(src, out)
+    (MASHUP_DIR / f"{m['id']}.json").write_text(json.dumps(m, indent=2))
+    log(f"imported bundle '{m['id']}' - run `gloop play {m['id']}`")
+    return m
 
 
 # ------------------------------------------------------------- actions
@@ -706,6 +859,8 @@ def do_uninstall(mid):
 
 
 def do_add(src):
+    if not re.match(r"^https?://", src) and zipfile.is_zipfile(src):
+        return do_import_bundle(src)
     if re.match(r"^https?://", src):
         req = urllib.request.Request(src, headers={"User-Agent": UA})
         with urllib.request.urlopen(req, timeout=30) as r:
@@ -901,14 +1056,43 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if not self.host_ok() or self.headers.get("X-Gloop-Token") != TOKEN:
             return self.send(403, {"error": "forbidden"})
         n = int(self.headers.get("Content-Length") or 0)
+        parts = urllib.parse.urlparse(self.path).path.strip("/").split("/")
+        if parts == ["api", "import"]:   # a .json or .gloop file, sent as raw bytes
+            if n > 1024 * 1024 * 1024:
+                return self.send(413, {"error": "that file is over 1 GB"})
+            DATA.mkdir(parents=True, exist_ok=True)
+            with tempfile.NamedTemporaryFile(dir=DATA, suffix=".import", delete=False) as tf:
+                left = n
+                while left > 0:
+                    chunk = self.rfile.read(min(left, 1 << 20))
+                    if not chunk:
+                        break
+                    tf.write(chunk)
+                    left -= len(chunk)
+            try:
+                if zipfile.is_zipfile(tf.name):
+                    m = do_import_bundle(tf.name)
+                else:
+                    m = validate(json.loads(Path(tf.name).read_text()))
+                    MASHUP_DIR.mkdir(parents=True, exist_ok=True)
+                    (MASHUP_DIR / f"{m['id']}.json").write_text(json.dumps(m, indent=2))
+                    log(f"imported '{m['id']}'")
+                return self.send(200, {"ok": True, "id": m["id"]})
+            except (ValueError, RuntimeError, json.JSONDecodeError, zipfile.BadZipFile, UnicodeDecodeError) as e:
+                return self.send(400, {"error": f"couldn't import that: {e}"})
+            finally:
+                os.unlink(tf.name)
         if n > 1_000_000:
             return self.send(413, {"error": "too big"})
         try:
             body = json.loads(self.rfile.read(n) or b"{}")
         except json.JSONDecodeError:
             return self.send(400, {"error": "bad json"})
-        parts = urllib.parse.urlparse(self.path).path.strip("/").split("/")
         try:
+            if len(parts) == 3 and parts[:2] == ["api", "export"]:
+                mid = urllib.parse.unquote(parts[2])
+                out = do_export(mid, bool(body.get("bundle")))
+                return self.send(200, {"ok": True, "path": str(out)})
             if len(parts) == 3 and parts[:2] in (["api", "play"], ["api", "uninstall"]):
                 mid = urllib.parse.unquote(parts[2])
                 get(mid)
@@ -1114,6 +1298,9 @@ main{max-width:1180px;margin:auto;padding:12px 28px 120px}
 .ghost{border:1px solid #ffffff22;background:none;color:var(--dim);border-radius:12px;padding:10px 12px;cursor:pointer;font:inherit}
 .ghost:hover{color:var(--ink);border-color:#ffffff55}
 .err-msg{color:var(--bad);font-size:13px}
+.expmenu{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.expmenu .ghost{text-align:left;font-size:13px;padding:8px 10px}
+.expmenu small{color:var(--dim);display:block;font-size:12px}
 .note{background:#b6ff3b14;border:1px solid #b6ff3b40;border-radius:10px;padding:8px 10px;font-size:13px;color:var(--ink)}
 .note code{display:block;margin:6px 0;font-size:12px;word-break:break-all;color:var(--goo)}
 .mix{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:22px 0 8px}
@@ -1194,7 +1381,9 @@ textarea{min-height:90px;font-family:ui-monospace,monospace;font-size:13px}
         <div class="row"><button class="play" id="c-save">Create mashup</button></div>
       </div>
       <div class="panel">
-        <h2>Build it with your AI</h2><p>Copy the instructions, paste them into Claude (or any AI) with your idea, then paste back the JSON it gives you.</p>
+        <h2>Import a mashup</h2><p>Got a .json or .gloop file from someone? Drop it in.</p>
+        <div class="row"><label class="ghost" style="margin:0;cursor:pointer">Choose file…<input type="file" id="c-file" accept=".json,.gloop,application/json,application/zip" hidden></label></div>
+        <h2 style="margin-top:22px">Build it with your AI</h2><p>Copy the instructions, paste them into Claude (or any AI) with your idea, then paste back the JSON it gives you.</p>
         <div class="row"><button class="ghost" id="c-copy">Copy AI instructions</button></div>
         <label>Paste the JSON here</label><textarea id="c-json" style="min-height:220px" placeholder='{"id": "...", ...}'></textarea>
         <div class="row"><button class="play" id="c-import">Import mashup</button></div>
@@ -1206,7 +1395,7 @@ textarea{min-height:90px;font-family:ui-monospace,monospace;font-size:13px}
 <div id="toast"></div>
 <script>
 const TOKEN="__TOKEN__";
-let tab="discover",data=[],logNext=0,games=[],pick=[null,null];
+let tab="discover",data=[],logNext=0,games=[],pick=[null,null];const openExport=new Set();
 const $=s=>document.querySelector(s);
 const LABEL={idle:"▶ Play",installing:"Installing…",starting:"Starting…",launched:"✓ Launched — play again",removing:"Removing…",error:"Retry"};
 function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("show"),2600)}
@@ -1227,12 +1416,22 @@ function card(m){
   if(["installing","starting","removing"].includes(st))p.disabled=true;
   p.onclick=()=>act(m.id,"play");row.append(p);
   if(m.installed){const u=mk("button","ghost","Uninstall");u.onclick=()=>{if(confirm(`Uninstall ${m.name}? Every file goes back how it was.`))act(m.id,"uninstall")};row.append(u)}
-  body.append(row);
+  const ex=mk("button","ghost","⤓");ex.title="Export";ex.setAttribute("aria-label","Export");row.append(ex);
+  const menu=mk("div","expmenu");menu.hidden=!openExport.has(m.id);
+  ex.onclick=()=>{menu.hidden=!menu.hidden;menu.hidden?openExport.delete(m.id):openExport.add(m.id)};
+  [["Export recipe (.json)","Small. Mods download fresh on their PC.",false],["Export bundle (.gloop)","Mods packed inside. Bigger, but exact.",true]].forEach(([t,d,b])=>{
+    const o=mk("button","ghost",t);o.append(mk("small",null,d));o.onclick=()=>exportMashup(m.id,b,o);menu.append(o)});
+  body.append(row,menu);
   if(st==="error"&&m.job.msg)body.append(mk("div","err-msg",m.job.msg));
   if(st==="launched"&&m.job.msg){const n=mk("div","note",m.job.msg);
     if(m.job.copy){n.append(mk("code",null,m.job.copy));const cb=mk("button","ghost","Copy");cb.onclick=()=>copy(m.job.copy);n.append(cb)}
     body.append(n)}
   c.append(cv,body);return c}
+async function exportMashup(id,bundle,btn){btn.disabled=true;toast(bundle?"Packing the bundle… 📦":"Saving…");
+  try{const j=await post(`/api/export/${encodeURIComponent(id)}`,{bundle});toast(`Saved to ${j.path} ✅`)}catch(e){toast(e.message)}btn.disabled=false}
+async function importFile(file){if(!file)return;toast(`Importing ${file.name}…`);
+  try{const r=await fetch("/api/import",{method:"POST",headers:{"X-Gloop-Token":TOKEN},body:file});const j=await r.json();if(!r.ok)throw new Error(j.error);
+    toast(`Added ${j.id} ✨`);await load();loadGames();document.querySelector('nav button[data-tab="discover"]').click()}catch(e){toast(e.message)}}
 async function copy(t){try{await navigator.clipboard.writeText(t);toast("Copied 📋")}catch(e){prompt("Copy this:",t)}}
 function matches(m){const g=m.games.map(x=>x.toLowerCase());return pick.every(p=>!p||g.includes(p.name.toLowerCase()))}
 function renderMix(){
@@ -1282,6 +1481,9 @@ $("#c-save").onclick=()=>{
 $("#c-copy").onclick=async()=>{const t=await agentText();try{await navigator.clipboard.writeText(t);toast("Copied — paste it into your AI 📋")}catch(e){$("#c-json").value=t;toast("Couldn't copy, it's in the box")}};
 $("#c-import").onclick=()=>{let m;try{m=JSON.parse($("#c-json").value.replace(/^```(json)?|```$/gm,""))}catch(e){return toast("that JSON is busted")}create(m)};
 $("#c-type").onchange({target:$("#c-type")});
+$("#c-file").onchange=e=>{importFile(e.target.files[0]);e.target.value=""};
+document.addEventListener("dragover",e=>e.preventDefault());
+document.addEventListener("drop",e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f&&/\.(json|gloop)$/i.test(f.name))importFile(f)});
 load();loadGames();logs();setInterval(load,1500);setInterval(logs,1500);
 </script></body></html>
 """
@@ -1302,6 +1504,10 @@ def main(argv=None):
     for name in ("play", "install", "uninstall"):
         sub.add_parser(name).add_argument("id")
     sub.add_parser("add").add_argument("source")
+    ex = sub.add_parser("export", help="save a mashup as a .json recipe, or --bundle for a .gloop with the mods inside")
+    ex.add_argument("id")
+    ex.add_argument("--bundle", action="store_true")
+    ex.add_argument("-o", "--output")
     a = p.parse_args(argv)
 
     try:
@@ -1314,7 +1520,10 @@ def main(argv=None):
         if a.cmd == "list":
             return do_list()
         if a.cmd == "add":
-            return do_add(a.source)
+            do_add(a.source)
+            return None
+        if a.cmd == "export":
+            return do_export(a.id, a.bundle, a.output) and None
         {"play": do_play, "install": do_install, "uninstall": do_uninstall}[a.cmd](a.id)
     except (RuntimeError, ValueError, OSError, urllib.error.URLError) as e:
         log(f"error: {e}")

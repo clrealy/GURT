@@ -1,7 +1,7 @@
 # Gloop: one-click game mashups + mods for linux (melty.gg-style)
 # native app window (GTK WebKit / Qt WebEngine), falls back to a browser window
 pkgname=gloop
-pkgver=0.3.0
+pkgver=0.4.0
 pkgrel=1
 pkgdesc="Mix any game with any game. One-click mashups for Minecraft, Thunderstore and Steam games"
 aliases=(gloop-mashups)
@@ -13,7 +13,7 @@ arch=(any)
 depends=(python3 gui-webview)
 makedepends=()
 source=("gloop.py" "gloop.png")
-sha256sums=("08fe856ac52c984f4b438d80fa3025c4901743ed78e64cae4a13f2615d65a638"
+sha256sums=("6977b6a7dda5f67787895971d0e65cb55e9f3e69a3ca539b75e3271486484c5c"
             "31eb053546865fd9d1b4ce5dc750f37afeda54d50140f7d9e35d3191268ac08c")
 
 package() {

@@ -1,5 +1,5 @@
 pkgname = gloop
-pkgver = 0.3.0
+pkgver = 0.4.0
 pkgrel = 1
 pkgdesc = Mix any game with any game. One-click mashups for Minecraft, Thunderstore and Steam games
 url = https://github.com/clrealy/GURT
