@@ -1,0 +1,16 @@
+pkgname = geode-patcher
+pkgver = 1.0.0
+pkgrel = 1
+pkgdesc = GUI-Patch Geometry Dash with the Geode mod loader on Linux
+url = https://github.com/clrealy/GURT
+license = MIT
+maintainer = clrealy
+category = gaming
+arch = any
+depends = python3
+depends = python3-tk
+source = geode-patcher.py
+source = geode-patcher.png
+alias = geode
+alias = gd-geode
+alias = geode-gd
