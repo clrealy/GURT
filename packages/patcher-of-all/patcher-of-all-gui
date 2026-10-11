@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """patcher-of-all GUI — patch anything*. A Tk front end for the patcher-of-all CLI."""
+import codecs
 import json
 import os
 import queue
+import re
 import shutil
 import subprocess
 import sys
@@ -47,7 +49,7 @@ LOG_BG, LOG_FG = "#16181d", "#d8dbe2"
 STATUS = {  # status -> (dot color, label)
     "patched":   ("#1f9d55", "patched"),
     "outdated":  ("#0f4bc8", "update due"),
-    "broken":    ("#d64545", "broken, an update undid it"),
+    "broken":    ("#d64545", "broken"),
     "unpatched": ("#c98a0b", "not patched"),
     "missing":   ("#9aa1ad", "app not installed"),
 }
@@ -234,6 +236,11 @@ class App(tk.Tk):
         st.pack(anchor="w", **pad)
         tk.Label(st, text="●", fg=color, bg=BG, font=self.f_sans).pack(side="left")
         tk.Label(st, text=label, fg=SOFT, bg=BG, font=self.f_mono_s).pack(side="left", padx=4)
+        hint = {"broken": "it was patched, then something undid it (usually an app update). hit fix it to put it back",
+                "outdated": "still patched, just due for an update"}.get(r["status"])
+        if hint:
+            tk.Label(self.side, text=hint, fg=color, bg=BG, font=self.f_mono_s, wraplength=300,
+                     justify="left").pack(anchor="w", pady=(2, 0), **pad)
         tk.Label(self.side, text=r["desc"], font=self.f_sans, bg=BG, fg=TEXT, wraplength=300,
                  justify="left").pack(anchor="w", pady=(8, 4), **pad)
         if r.get("url"):
@@ -364,7 +371,30 @@ class App(tk.Tk):
     # ------------------------------------------------------------ running the CLI
     def _log(self, text, tag=None):
         self.log.configure(state="normal")
-        self.log.insert("end", text, tag)
+        self.log.insert("end-1c", text, tag)
+        if text.endswith("\n"):
+            self.log.mark_set("linestart", "end-1c")
+            self.log.mark_gravity("linestart", "left")
+        self.log.see("end")
+        self.log.configure(state="disabled")
+
+    # streamed CLI output: "\r" redraws the current line (curl progress bars), "\n" ends it
+    def _stream(self, kind, text=""):
+        self.log.configure(state="normal")
+        if "linestart" not in self.log.mark_names():
+            self.log.mark_set("linestart", "end-1c")
+            self.log.mark_gravity("linestart", "left")
+        if kind == "cr":
+            self.log.delete("linestart", "end-1c")
+        elif kind == "nl":
+            line = self.log.get("linestart", "end-1c")
+            tag = "good" if line.startswith("✔") else "bad" if line.startswith(("✘", "!")) else None
+            if tag:
+                self.log.tag_add(tag, "linestart", "end-1c")
+            self.log.insert("end-1c", "\n")
+            self.log.mark_set("linestart", "end-1c")
+        else:
+            self.log.insert("end-1c", text)
         self.log.see("end")
         self.log.configure(state="disabled")
 
@@ -385,9 +415,23 @@ class App(tk.Tk):
         def work():
             try:
                 p = subprocess.Popen([CLI] + args, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                                     stderr=subprocess.STDOUT, text=True, bufsize=1, env=env or os.environ.copy())
-                for line in p.stdout:
-                    self.q.put(("line", line))
+                                     stderr=subprocess.STDOUT, bufsize=0, env=env or os.environ.copy())
+                # raw bytes, not text mode: text mode turns "\r" into "\n" and every
+                # progress bar update would land on its own line
+                dec = codecs.getincrementaldecoder("utf-8")("replace")
+                fd = p.stdout.fileno()
+                while True:
+                    chunk = os.read(fd, 4096)
+                    text = dec.decode(chunk, final=not chunk)
+                    for piece in re.split(r"(\r\n|\r|\n)", text):
+                        if piece in ("\n", "\r\n"):
+                            self.q.put(("nl", ""))
+                        elif piece == "\r":
+                            self.q.put(("cr", ""))
+                        elif piece:
+                            self.q.put(("text", piece))
+                    if not chunk:
+                        break
                 rc = p.wait()
             except OSError as e:
                 self.q.put(("line", f"couldn't run it: {e}\n"))
@@ -414,10 +458,13 @@ class App(tk.Tk):
         try:
             while True:
                 kind, data = self.q.get_nowait()
-                if kind == "line":
-                    tag = "good" if data.startswith("✔") else "bad" if data.startswith(("✘", "!")) else None
-                    self._log(data, tag)
+                if kind in ("text", "cr", "nl"):
+                    self._stream(kind, data)
+                elif kind == "line":
+                    self._log(data)
                 elif kind == "done":
+                    if self.log.get("linestart", "end-1c") if "linestart" in self.log.mark_names() else "":
+                        self._stream("nl")  # output that didn't end with a newline
                     self._log(("done ✔" if data == 0 else f"failed (exit {data})") + "\n\n", "good" if data == 0 else "bad")
                     self._set_busy(False)
                     self.refresh()
