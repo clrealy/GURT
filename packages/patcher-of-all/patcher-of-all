@@ -171,10 +171,12 @@ is_marked() { grep -qxF "$1" "$STATE_FILE"; }
 mark()      { is_marked "$1" || echo "$1" >> "$STATE_FILE"; }
 unmark()    { local t; t="$(grep -vxF "$1" "$STATE_FILE" || true)"; printf '%s\n' "$t" | sed '/^$/d' > "$STATE_FILE"; }
 
-status_of() { # prints: missing | patched | broken | unpatched
-  local n="$1"
-  if ! run_hook "$n" poa_detect >/dev/null 2>&1; then echo missing
-  elif run_hook "$n" poa_check >/dev/null 2>&1; then echo patched
+status_of() { # prints: missing | patched | outdated | broken | unpatched
+  local n="$1" rc
+  if ! run_hook "$n" poa_detect >/dev/null 2>&1; then echo missing; return; fi
+  run_hook "$n" poa_check >/dev/null 2>&1; rc=$?
+  if [[ $rc -eq 0 ]]; then echo patched
+  elif is_marked "$n" && [[ $rc -eq 2 ]]; then echo outdated   # poa_check returns 2 = "applied, but due for an update"
   elif is_marked "$n"; then echo broken
   else echo unpatched; fi
 }
@@ -182,6 +184,7 @@ status_of() { # prints: missing | patched | broken | unpatched
 badge() {
   case "$1" in
     patched)   printf '%s' "${G}✅ patched${N}" ;;
+    outdated)  printf '%s' "${C}🔄 update due${N}" ;;
     broken)    printf '%s' "${R}❌ broken (update nuked it?)${N}" ;;
     unpatched) printf '%s' "${Y}⬜ not patched${N}" ;;
     missing)   printf '%s' "${D}➖ app not installed${N}" ;;
@@ -270,7 +273,8 @@ cmd_repatch() {
     find_recipe "$n" >/dev/null || { warn "$n: recipe is gone, forgetting it"; unmark "$n"; continue; }
     s="$(status_of "$n")"
     case "$s" in
-      broken)  say "$n got un-patched, fixing..."; cmd_apply "$n" && fixed=$((fixed + 1)) ;;
+      broken)   say "$n got un-patched, fixing..."; cmd_apply "$n" && fixed=$((fixed + 1)) ;;
+      outdated) say "$n is due for an update, updating..."; cmd_apply "$n" && fixed=$((fixed + 1)) ;;
       missing) warn "$n: app isn't installed anymore" ;;
       *)       [[ "${QUIET:-0}" == 1 ]] || ok "$n still patched" ;;
     esac
@@ -314,7 +318,7 @@ poa_detect() {
   command -v some-app >/dev/null
 }
 
-# return 0 if the patch is currently applied
+# return 0 if the patch is currently applied (2 = applied, but due for an update)
 poa_check() {
   false
 }
