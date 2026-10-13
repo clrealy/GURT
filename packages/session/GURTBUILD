@@ -1,6 +1,6 @@
 # Private messenger that doesn't need a phone number (official AppImage)
 pkgname=session
-pkgver=1.18.1
+pkgver=1.18.2
 pkgrel=1
 pkgdesc="Private messenger that doesn't need a phone number"
 url="https://github.com/session-foundation/session-desktop"
@@ -11,7 +11,7 @@ arch=(x86_64)
 _tag=v${pkgver}
 # the official AppImage, kept as an AppImage
 source=("session.AppImage::https://github.com/session-foundation/session-desktop/releases/download/${_tag}/session-desktop-linux-x86_64-${pkgver}.AppImage")
-sha256sums=(994c112d90e8e7a46fa61e0dac08be69e5c06aa75fb271b2474419063420fc21)
+sha256sums=('bb7630e9cacb07dbe5dafe5a2300c2eb14a0eb94c0f3abc1c12f9ab8ceac75dd')
 
 package() {
   local dir="$prefix/lib/gurt-apps/$pkgname" d icon="" ic
