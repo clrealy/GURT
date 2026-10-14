@@ -1,6 +1,6 @@
 # Privacy-first personal knowledge manager (official AppImage)
 pkgname=siyuan
-pkgver=3.8.6
+pkgver=3.8.7
 pkgrel=1
 pkgdesc="Privacy-first personal knowledge manager"
 url="https://github.com/siyuan-note/siyuan"
@@ -11,7 +11,7 @@ arch=(x86_64)
 _tag=v${pkgver}
 # the official AppImage, kept as an AppImage
 source=("siyuan.AppImage::https://github.com/siyuan-note/siyuan/releases/download/${_tag}/siyuan-${pkgver}-linux.AppImage")
-sha256sums=(7f6896fc07c037323f1abbf8527f14fe4b361fb2e8907fca4e4dbf177422b570)
+sha256sums=('f74b9673d7eb6aa105452cfb228c31d4c269831cea759728b3aa5310032b609a')
 
 package() {
   local dir="$prefix/lib/gurt-apps/$pkgname" d icon="" ic
