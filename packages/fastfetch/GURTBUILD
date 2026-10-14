@@ -1,6 +1,6 @@
 pkgname=fastfetch
-pkgver=2.69.0
-pkgrel=2
+pkgver=2.70.0
+pkgrel=1
 pkgdesc="Shows your system info next to your distro's logo, like neofetch but way faster"
 url="https://github.com/fastfetch-cli/fastfetch"
 license="MIT"
