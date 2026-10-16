@@ -257,6 +257,113 @@ def recipe_trust(info):   # how a Main GURT app gets onto your computer → the 
     return "gurt"
 
 
+# ── apps you got without gurt (zypper / apt / dnf…, flatpak, snap, a downloaded AppImage, /opt) still count ──
+SYS_PKGS = {"key": None, "names": set()}
+PM_LIST = {   # pm → (list every installed package's name, the package database to watch for changes)
+    "zypper": (["rpm", "-qa", "--qf", "%{NAME}\n"], ("/usr/lib/sysimage/rpm", "/var/lib/rpm")),
+    "dnf": (["rpm", "-qa", "--qf", "%{NAME}\n"], ("/usr/lib/sysimage/rpm", "/var/lib/rpm")),
+    "yum": (["rpm", "-qa", "--qf", "%{NAME}\n"], ("/var/lib/rpm",)),
+    "apt": (["dpkg-query", "-W", "-f=${Package}\n"], ("/var/lib/dpkg/status",)),
+    "pacman": (["pacman", "-Qq"], ("/var/lib/pacman/local",)),
+    "apk": (["apk", "info"], ("/lib/apk/db/installed",)),
+    "xbps": (["xbps-query", "-l"], ("/var/db/xbps",)),
+    "eopkg": (["eopkg", "li"], ("/var/lib/eopkg",)),
+}
+
+
+def native_pkgs(pm):
+    """every package your distro's package manager installed (cached until its database changes)"""
+    cmd, dbs = PM_LIST.get(pm, (None, ()))
+    if not cmd or not shutil.which(cmd[0]):
+        return set()
+    key = (pm, tuple(os.path.getmtime(d) for d in dbs if os.path.exists(d)))
+    if SYS_PKGS["key"] == key:
+        return SYS_PKGS["names"]
+    try:
+        out = subprocess.run(cmd, capture_output=True, text=True, timeout=30).stdout
+    except Exception:
+        return SYS_PKGS["names"]
+    names = set()
+    for line in out.splitlines():
+        w = line.split()
+        if not w:
+            continue
+        n = w[1] if pm == "xbps" and len(w) > 1 else w[0]
+        if pm in ("xbps", "apk"):
+            n = re.sub(r"-[0-9][^-]*(_[0-9]+)?$", "", n) if pm == "xbps" else n
+        names.add(n.lower())
+    SYS_PKGS.update(key=key, names=names)
+    return names
+
+
+def owned_by_pm(pm, path):
+    """did your package manager put this file there? (so zypper's libreoffice says zypper, not just 'on your PATH')"""
+    cmd = {"apt": ["dpkg", "-S"], "zypper": ["rpm", "-qf"], "dnf": ["rpm", "-qf"], "yum": ["rpm", "-qf"],
+           "pacman": ["pacman", "-Qo"], "apk": ["apk", "info", "--who-owns"], "xbps": ["xbps-query", "-o"]}.get(pm)
+    if not cmd or not shutil.which(cmd[0]):
+        return False
+    for f in dict.fromkeys((path, os.path.realpath(path))):
+        try:
+            if subprocess.run(cmd + [f], capture_output=True, timeout=10).returncode == 0:
+                return True
+        except Exception:
+            pass
+    return False
+
+
+def outside_apps(main, pm, flatpaks):
+    """Main GURT apps that are on this computer but not from gurt → {name: how}"""
+    native = native_pkgs(pm)
+    snaps = set()
+    if shutil.which("snap"):
+        try:
+            snaps = {l.split()[0].lower() for l in subprocess.run(["snap", "list"], capture_output=True, text=True, timeout=15).stdout.splitlines()[1:] if l.split()}
+        except Exception:
+            pass
+    onpath = set()
+    for d in os.environ.get("PATH", "").split(":"):
+        try:
+            onpath.update(f.lower() for f in os.listdir(d))
+        except OSError:
+            pass
+    home = os.path.expanduser("~")
+    images = []   # AppImages you downloaded yourself
+    for d in ("Applications", "Apps", ".local/bin", "bin", "Downloads", "Desktop", "AppImages"):
+        try:
+            # Obsidian-1.6.7.AppImage → obsidian (the name before the version / arch)
+            images += [re.sub(r"[^a-z0-9]", "", re.split(r"[-_ .](?=v?\d|x86|amd64|aarch64|arm64|linux)", f.lower()[:-9])[0])
+                       for f in os.listdir(os.path.join(home, d)) if f.lower().endswith(".appimage")]
+        except OSError:
+            pass
+    try:
+        opt = {f.lower() for f in os.listdir("/opt")}
+    except OSError:
+        opt = set()
+    fl = set(flatpaks)
+    out = {}
+    for a in main:
+        names = [a["name"].lower()] + [x.lower() for x in a.get("alias", []) if x]
+        vp = (a.get("vpkg") or "").lower()
+        if a.get("flatpak") and a["flatpak"] in fl:
+            out[a["name"]] = "flatpak"
+        elif a.get("vtype") == "snap" and vp in snaps:
+            out[a["name"]] = "snap"
+        elif (vp and a.get("vtype") == "repo" and vp in native) or any(n in native for n in names):
+            out[a["name"]] = pm
+        elif any(n in snaps for n in names):
+            out[a["name"]] = "snap"
+        elif any(n in onpath for n in names):
+            exe = next(shutil.which(n) for n in names if n in onpath)
+            out[a["name"]] = pm if exe and owned_by_pm(pm, exe) else "on your PATH"
+        elif any(n in opt for n in names):
+            out[a["name"]] = "/opt"
+        else:
+            squashed = {re.sub(r"[^a-z0-9]", "", n) for n in names}
+            if squashed & set(images):
+                out[a["name"]] = "AppImage"
+    return out
+
+
 def state():
     p = paths()
     repo, db = p.get("repo", ""), p.get("db", "")
@@ -270,7 +377,7 @@ def state():
             vt, vp, vr = info.get("via_type", ""), info.get("via_pkg", ""), info.get("via_repo", "")
             # where it lands once installed: Flathub/snap/official-repo recipes are kept under that source
             ikey = f"{vt}:{vp}" if vt in ("flatpak", "snap") else f"{vr}:{vp or name}" if vr else name
-            main.append({"ikey": ikey, "flatpak": vp if vt == "flatpak" else "", "name": info.get("pkgname", name), "ver": "latest" if info.get("via_repo") else f"{info.get('pkgver','')}-{info.get('pkgrel','')}",
+            main.append({"ikey": ikey, "flatpak": vp if vt == "flatpak" else "", "vpkg": vp, "vtype": vt or ("repo" if vr else ""), "name": info.get("pkgname", name), "ver": "latest" if info.get("via_repo") else f"{info.get('pkgver','')}-{info.get('pkgrel','')}",
                          "desc": info.get("pkgdesc", ""), "alias": info.get("alias", []), "maintainer": info.get("maintainer", ""),
                          "official": bool(info.get("via_repo")), "category": info.get("category", ""), "trust": recipe_trust(info),
                          "license": info.get("license", ""), "url": info.get("url", "")})
@@ -309,7 +416,10 @@ def state():
                                       text=True, timeout=15).stdout.split()
         except Exception:
             pass
-    return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks, "wsl": p.get("wsl") == "yes", "audio": audio_ok(),
+    gurt_keys = {i["key"] for i in installed} | {i["name"] for i in installed if i["src"] == "gurt"}
+    outside = {n: how for n, how in outside_apps(main, p.get("pm", ""), flatpaks).items()
+               if n not in gurt_keys and not any(a["name"] == n and a["ikey"] in gurt_keys for a in main)}
+    return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks, "outside": outside, "wsl": p.get("wsl") == "yes", "audio": audio_ok(),
             "main": main, "dirtpkgs": dirt, "installed": installed, "vibes": vibes(repo), "notify": notify_on(), "dev": p.get("dev", "no")}
 
 
@@ -1475,8 +1585,11 @@ async function load(){ S = await api("/api/state"); $("#ver").textContent = `v${
 const inst = spec => {
   const m = S.main.find(p => p.name === spec);
   return S.installed.find(i => i.spec === spec || i.key === spec || (m && i.key === m.ikey) || (i.src === "gurt" && i.name === spec))
-    || (m && m.flatpak && (S.flatpaks || []).includes(m.flatpak) ? {external: true} : null);
+    || (m && (S.outside || {})[m.name] ? {external: true, how: S.outside[m.name]} : null);   // got it without gurt (zypper, flatpak, an AppImage…)
 };
+const HOW = {zypper: "zypper", dnf: "dnf", yum: "yum", apt: "apt", pacman: "pacman", apk: "apk", xbps: "xbps", eopkg: "eopkg",
+  flatpak: "flatpak", snap: "snap", AppImage: "an AppImage you downloaded", "on your PATH": "something on your PATH", "/opt": "a folder in /opt"};
+const howLabel = h => HOW[h] || h;
 
 // where an app comes from, and how much that's worth: 🟢 signed/checked by someone accountable · 🟡 checksum-pinned · 🟠 anyone can upload
 const TRUST = {
@@ -1493,15 +1606,15 @@ const TRUST = {
   file: ["lo", "your file", "a file you installed yourself"], dirt: ["lo", "DIRT 🔞", "from the DIRT repo"],
 };
 const trustChip = k => { const t = TRUST[k]; return t ? `<span class="chip trust t-${t[0]}" title="${esc(t[2])}">${t[1]}</span>` : ""; };
-function card({name, src="gurt", ver, desc, extra="", actions="", trust}){
+function card({name, src="gurt", ver, desc, extra="", chips="", actions="", trust}){   // chips: more chips, in the same row as the trust chip
   const tc = trustChip(trust || src);
   return `<div class="card"><div class="top"><span class="name">${esc(name)}</span><span class="src">${esc(src)}/</span><span class="v">${esc(ver||"")}</span></div>
-    <div class="desc">${esc(desc||"")}</div>${tc ? `<div class="row">${tc}</div>` : ""}${extra}<div class="row">${actions}</div></div>`;
+    <div class="desc">${esc(desc||"")}</div>${tc || chips ? `<div class="row">${tc}${chips}</div>` : ""}${extra}<div class="row">${actions}</div></div>`;
 }
 const actBtn = (label, cmd, arg, cls="") => `<button class="btn small ${cls}" data-cmd="${cmd}" data-arg="${esc(arg)}">${label}</button>`;
 function installBtns(spec){
   const i = inst(spec);
-  if (i && i.external) return `<span class="chip ok" title="installed with flatpak, outside gurt">installed ✓ (flatpak)</span>`;
+  if (i && i.external) return `<span class="chip ok" title="installed with ${esc(howLabel(i.how))}, not with gurt">installed ✓ (${esc(i.how)})</span>`;
   return i ? `<span class="chip ok">installed ✓</span>${actBtn("remove","remove",spec,"ghost")}` : actBtn("install","install",spec);
 }
 // 🧪 dev builds: ✏️ edit / 🗑️ delete any recipe, straight on GitHub (GitHub still checks you can push to the repo)
@@ -1523,15 +1636,27 @@ function renderMain(){
   $("#direct").hidden = !direct; if (direct) $("#directbtn").textContent = `install ${$("#q").value.trim()}`;
 }
 let SIZES = null, BYSIZE = false;
+// where an installed app really came from: a Main GURT recipe that installed a Flathub app is a flatpak, one that built
+// from source says so (not just "Main GURT")
+function origin(i){
+  if (i.via) { const s = i.via.split("/")[0]; return {src: s, trust: s === "flatpak" ? "flatpak" : s === "snap" ? "snap" : TRUST[s] ? s : "official"}; }
+  const m = i.src === "gurt" && S.main.find(p => p.name === i.name);
+  return {src: i.src, trust: m ? m.trust : i.src};
+}
 function renderInstalled(){
   const q = $("#iq").value.trim().toLowerCase();
   let list = S.installed.filter(i => !q || (i.spec+" "+i.desc).toLowerCase().includes(q));
   if (BYSIZE && SIZES) list = [...list].sort((a, b) => (SIZES[b.key] || 0) - (SIZES[a.key] || 0));
-  $("#igrid").innerHTML = list.length ? list.map(i => card({name:i.name, src:i.src, ver:i.ver, desc:i.desc,
-      extra:`<div class="row">${i.via?`<span class="chip" title="${esc(i.via)}">from GURT 🦆 · via ${esc(i.via.split("/")[0])}</span>`:""}${i.reason==="dep"?'<span class="chip">dependency</span>':""}${i.held?'<span class="chip">held 📌</span>':""}${SIZES && SIZES[i.key] != null ? `<span class="chip" title="space it takes on your disk">🐷 ${fmtSize(SIZES[i.key])}</span>` : ""}</div>`,
+  const others = Object.entries(S.outside || {}).map(([n, how]) => [S.main.find(p => p.name === n), how])
+    .filter(([m]) => m && (!q || (m.name + " " + m.desc).toLowerCase().includes(q)));
+  $("#igrid").innerHTML = (list.length ? list.map(i => { const o = origin(i); return card({name:i.name, src:o.src, ver:i.ver, desc:i.desc, trust:o.trust,
+      chips:`${i.via || i.src === "gurt" ? `<span class="chip" title="${esc(i.via ? "Main GURT recipe → " + i.via : "Main GURT recipe")}">🦆 Main GURT recipe</span>` : ""}${i.reason==="dep"?'<span class="chip">dependency</span>':""}${i.held?'<span class="chip">held 📌</span>':""}${SIZES && SIZES[i.key] != null ? `<span class="chip" title="space it takes on your disk">🐷 ${fmtSize(SIZES[i.key])}</span>` : ""}`,
       actions: actBtn("remove","remove",i.spec,"danger") + actBtn("rollback","rollback",i.spec,"ghost") +
-        (i.held ? actBtn("unhold","unhold",i.spec,"ghost") : actBtn("hold","hold",i.spec,"ghost"))})).join("")
-    : `<div class="empty">${S.installed.length ? "nothing matched" : "nothing installed with gurt yet 👀"}</div>`;
+        (i.held ? actBtn("unhold","unhold",i.spec,"ghost") : actBtn("hold","hold",i.spec,"ghost"))}); }).join("")
+    : `<div class="empty">${S.installed.length ? "nothing matched" : "nothing installed with gurt yet 👀"}</div>`)
+    + (others.length ? `<div class="vibehead">on your computer, not from gurt (${others.length})</div>` + others.map(([m, how]) =>
+        card({name:m.name, src:how === "on your PATH" || how === "/opt" ? "system" : how, ver:"", desc:m.desc, trust:"-",
+          actions:`<span class="chip ok" title="installed with ${esc(howLabel(how))}, not with gurt">installed ✓ (${esc(how)})</span>`})).join("") : "");
 }
 
 // ── running gurt ──
