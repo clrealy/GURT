@@ -375,7 +375,7 @@ load_recipe() {
   RECIPE=$f
   pkgname="" pkgbase="" pkgver="" pkgrel=1 epoch="" pkgdesc="" url="" license="" maintainer="" install=""
   via_repo="" via_type="" via_url="" via_suite="" via_components="" via_key="" via_fingerprint="" via_pkg=""
-  aliases=() hidden="" desktop_icon="" secret="" category=""
+  aliases=() hidden="" desktop_icon="" secret="" category="" icon=""
   arch=() depends=() makedepends=() checkdepends=() source=() noextract=() sums=() SUMALGO=sha256
   local a v fn
   for a in $SUM_ALGOS; do unset "${a}sums" "${a}sums_$CARCH"; done
@@ -440,6 +440,7 @@ print_srcinfo() {
   [[ -n $license ]]    && printf 'license = %s\n' "$license"
   [[ -n $maintainer ]] && printf 'maintainer = %s\n' "$maintainer"
   [[ -n $category ]]   && printf 'category = %s\n' "$category"
+  [[ $icon == https://* ]] && printf 'icon = %s\n' "$icon"   # the app's logo (Flathub apps get theirs automatically)
   for x in "${arch[@]}";        do printf 'arch = %s\n' "$x"; done
   for x in "${depends[@]}";     do printf 'depends = %s\n' "$x"; done
   for x in "${makedepends[@]}"; do printf 'makedepends = %s\n' "$x"; done

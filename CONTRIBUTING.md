@@ -26,6 +26,7 @@ sha256sums=("abc123...")  # gurt checksum my-app
 category="cli"            # browsers chat media creative office dev cli gaming internet system security fun — groups it on the site + the app
 aliases=(my-app-cli ma)   # optional: other names that install this (gurt install ma)
 hidden=true               # optional: keep it out of the store/search — still installable by exact name
+icon="https://example.com/my-app.png"   # optional: its logo (https, square, 64px+). Flathub apps get Flathub's icon by themselves
 
 prepare() { ...; }        # optional: patches
 build()   { ...; }        # optional: compile

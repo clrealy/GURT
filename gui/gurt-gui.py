@@ -257,6 +257,76 @@ def recipe_trust(info):   # how a Main GURT app gets onto your computer → the 
     return "gurt"
 
 
+# ── 🖼 app logos: Flathub's icon or the recipe's icon= (the page loads those); else the app's own desktop icon on this
+#    computer (from its .desktop file + your icon theme), served by /appicon/<name>; else the page shows a letter ──
+FLATHUB_ICON = "https://dl.flathub.org/repo/appstream/x86_64/icons/128x128/{}.png"   # also in tools/gen-index.py
+APP_INDEX = {}    # name → (flatpak id, aliases), filled by state()
+ICON_CACHE = {}   # name → (path or None, when)
+HOME_DIR = os.path.expanduser("~")
+DESKTOP_DIRS = [f"{HOME_DIR}/.local/share/applications", "/usr/local/share/applications", "/usr/share/applications",
+                f"{HOME_DIR}/.local/share/flatpak/exports/share/applications", "/var/lib/flatpak/exports/share/applications",
+                "/var/lib/snapd/desktop/applications"]
+ICON_BASES = [f"{HOME_DIR}/.local/share/icons", f"{HOME_DIR}/.icons", "/usr/local/share/icons", "/usr/share/icons",
+              f"{HOME_DIR}/.local/share/flatpak/exports/share/icons", "/var/lib/flatpak/exports/share/icons"]
+ICON_SIZES = ("scalable", "256x256", "128x128", "96x96", "64x64", "48x48", "512x512", "32x32")
+
+
+def theme_icon(name):
+    """an icon name (Icon=firefox) → the best file for it in any installed icon theme, or pixmaps"""
+    if os.path.isabs(name):
+        return name if os.path.isfile(name) and name.lower().endswith((".png", ".svg")) else None
+    for base in ICON_BASES:
+        try:
+            themes = ["hicolor"] + sorted(t for t in os.listdir(base) if t != "hicolor")
+        except OSError:
+            continue
+        for t in themes:
+            for size in ICON_SIZES:
+                for ext in ("svg", "png") if size == "scalable" else ("png", "svg"):
+                    f = os.path.join(base, t, size, "apps", f"{name}.{ext}")
+                    if os.path.isfile(f):
+                        return f
+    for ext in ("png", "svg"):
+        f = f"/usr/share/pixmaps/{name}.{ext}"
+        if os.path.isfile(f):
+            return f
+    return None
+
+
+def desktop_icon(name):
+    """the icon of the app called name, from its .desktop file (or an icon that's simply called that)"""
+    hit = ICON_CACHE.get(name)
+    if hit and (hit[0] or time.time() - hit[1] < 60):
+        return hit[0]
+    fid, aliases = APP_INDEX.get(name, ("", []))
+    want = [w.lower() for w in [fid, name] + list(aliases) if w]
+    found = None
+    for d in DESKTOP_DIRS:
+        try:
+            files = [f for f in os.listdir(d) if f.endswith(".desktop")]
+        except OSError:
+            continue
+        for f in files:
+            stem = f[:-8].lower()
+            if stem in want or any(stem.endswith("." + w) or stem.endswith("_" + w) for w in want):
+                try:
+                    icon = re.search(r"^Icon=(.+)$", open(os.path.join(d, f), errors="replace").read(), re.M)
+                except OSError:
+                    icon = None
+                found = icon and theme_icon(icon.group(1).strip())
+                if found:
+                    break
+        if found:
+            break
+    if not found:
+        for w in want:
+            found = theme_icon(w)
+            if found:
+                break
+    ICON_CACHE[name] = (found, time.time())
+    return found
+
+
 # ── apps you got without gurt (zypper / apt / dnf…, flatpak, snap, a downloaded AppImage, /opt) still count ──
 SYS_PKGS = {"key": None, "names": set()}
 PM_LIST = {   # pm → (list every installed package's name, the package database to watch for changes)
@@ -377,7 +447,8 @@ def state():
             vt, vp, vr = info.get("via_type", ""), info.get("via_pkg", ""), info.get("via_repo", "")
             # where it lands once installed: Flathub/snap/official-repo recipes are kept under that source
             ikey = f"{vt}:{vp}" if vt in ("flatpak", "snap") else f"{vr}:{vp or name}" if vr else name
-            main.append({"ikey": ikey, "flatpak": vp if vt == "flatpak" else "", "vpkg": vp, "vtype": vt or ("repo" if vr else ""), "name": info.get("pkgname", name), "ver": "latest" if info.get("via_repo") else f"{info.get('pkgver','')}-{info.get('pkgrel','')}",
+            icon = info.get("icon", "") or (FLATHUB_ICON.format(vp) if vt == "flatpak" and vp else "")
+            main.append({"ikey": ikey, "flatpak": vp if vt == "flatpak" else "", "vpkg": vp, "icon": icon, "vtype": vt or ("repo" if vr else ""), "name": info.get("pkgname", name), "ver": "latest" if info.get("via_repo") else f"{info.get('pkgver','')}-{info.get('pkgrel','')}",
                          "desc": info.get("pkgdesc", ""), "alias": info.get("alias", []), "maintainer": info.get("maintainer", ""),
                          "official": bool(info.get("via_repo")), "category": info.get("category", ""), "trust": recipe_trust(info),
                          "license": info.get("license", ""), "url": info.get("url", "")})
@@ -416,6 +487,7 @@ def state():
                                       text=True, timeout=15).stdout.split()
         except Exception:
             pass
+    APP_INDEX.update({a["name"]: (a.get("flatpak", ""), a.get("alias", [])) for a in main})
     gurt_keys = {i["key"] for i in installed} | {i["name"] for i in installed if i["src"] == "gurt"}
     outside = {n: how for n, how in outside_apps(main, p.get("pm", ""), flatpaks).items()
                if n not in gurt_keys and not any(a["name"] == n and a["ikey"] in gurt_keys for a in main)}
@@ -494,6 +566,16 @@ class H(BaseHTTPRequestHandler):
                 if os.path.isfile(f):
                     return self._send(200, open(f, "rb").read(), "image/png")
             return self._send(404, b"", "image/png")
+        if u.path.startswith("/appicon/"):   # an app's desktop icon from this computer (for the page's logos)
+            if not self._host_ok() or not secrets.compare_digest((q.get("t") or [""])[0], TOKEN):
+                return self._send(403, b"", "image/png")
+            f = desktop_icon(unquote(u.path[9:]))
+            if not f:
+                return self._send(404, b"", "image/png")
+            try:
+                return self._send(200, open(f, "rb").read(), "image/svg+xml" if f.endswith(".svg") else "image/png")
+            except OSError:
+                return self._send(404, b"", "image/png")
         if not self._auth():
             return self._send(403, {"error": "bad token"})
         if u.path == "/api/state":
@@ -1130,7 +1212,10 @@ main{flex:1;overflow:auto;padding:12px 14px 24px}
 .grid{display:flex;flex-direction:column;border:1px solid var(--edge);border-radius:var(--r);background:var(--panel)}
 .card{background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);padding:6px 10px;display:grid;grid-template-columns:minmax(150px,22%) minmax(0,1fr) auto auto;column-gap:14px;row-gap:3px;align-items:center}
 .card>*{grid-column:2;min-width:0}
-.card>.top{grid-column:1;grid-row:1;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.card>.top{grid-column:1;grid-row:1;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ico{width:20px;height:20px;flex:none;display:inline-grid;place-items:center;border-radius:var(--r);overflow:hidden}
+.ico img{width:100%;height:100%;object-fit:contain;display:block}
+.ico.letter{background:var(--tag);border:1px solid var(--edge);font:700 11px/1 var(--mono);color:var(--muted)}
 .card>.row{grid-column:3;grid-row:1;justify-content:flex-end}
 .card>.row:last-child{grid-column:4;grid-row:1;flex-wrap:nowrap}
 .card>.desc{grid-row:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -1312,7 +1397,6 @@ dialog .row{justify-content:flex-end}
 :root[data-skin=gurt] nav button.on{box-shadow:inset 0 -2px 0 var(--accent-ink)}
 :root[data-skin=gurt] .lottobtn,:root[data-skin=gurt] #t-setup .btn.big{box-shadow:none;border-bottom:0;
   background:var(--panel) linear-gradient(90deg,var(--c-red) 0 25%,var(--accent) 25% 50%,var(--c-green) 50% 75%,var(--c-blue) 75%) bottom/100% 3px no-repeat}
-:root[data-skin=gurt] .grid>.card .name::before{content:"▸ ";color:var(--muted);font-weight:400}
 
 /* ── Windows 11: Segoe everywhere, 4px corners, Fluent accent underline on the active tab, quiet list rows ── */
 :root[data-skin=win11]{--r:4px;--mono:"Cascadia Mono","Cascadia Code",Consolas,ui-monospace,monospace;--sans:"Segoe UI Variable","Segoe UI",system-ui,sans-serif;
@@ -1576,7 +1660,7 @@ function devGate(){
   $("#devgo").onclick = go; $("#devpw").onkeydown = e => { if (e.key === "Enter") go(); };
   return true;
 }
-async function load(){ S = await api("/api/state"); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · Windows" : ""}`;
+async function load(){ S = await api("/api/state"); ICONMAP = new Map(S.main.map(p => [p.name, p.icon])); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · Windows" : ""}`;
   document.querySelector('nav button[data-tab="desktops"]').hidden = S.wsl;
   fitNav();
   if (S.audio === false && !soundDismissed) $("#soundbar").hidden = false;   /* no Linux desktops on Windows */ renderMain(); renderInstalled(); renderNotify(); renderCmp(); if (!$("#t-setup").hidden) renderBuilder(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt();
@@ -1605,9 +1689,18 @@ const TRUST = {
   file: ["lo", "your file", "a file you installed yourself"], dirt: ["lo", "DIRT", "from the DIRT repo"],
 };
 const trustChip = k => { const t = TRUST[k]; return t ? `<span class="chip trust t-${t[0]}" title="${esc(t[2])}">${t[1]}</span>` : ""; };
+// app logos: Flathub's / the recipe's icon → this computer's desktop icon for it → its first letter
+let ICONMAP = new Map();
+const appIcon = (name, url) => `<span class="ico" data-n="${esc(name)}"><img alt="" loading="lazy" data-step="${url ? "remote" : "local"}" src="${esc(url || `/appicon/${encodeURIComponent(name)}?t=${T}`)}"></span>`;
+document.addEventListener("error", e => {
+  const im = e.target; if (!(im instanceof HTMLImageElement) || !im.parentElement || !im.parentElement.classList.contains("ico")) return;
+  const box = im.parentElement, n = box.dataset.n || "?";
+  if (im.dataset.step === "remote") { im.dataset.step = "local"; im.src = `/appicon/${encodeURIComponent(n)}?t=${T}`; }
+  else { box.classList.add("letter"); box.textContent = n[0].toUpperCase(); }
+}, true);
 function card({name, src="gurt", ver, desc, extra="", chips="", actions="", trust}){   // chips: more chips, in the same row as the trust chip
   const tc = trustChip(trust || src);
-  return `<div class="card"><div class="top"><span class="name">${esc(name)}</span><span class="src">${esc(src)}/</span><span class="v">${esc(ver||"")}</span></div>
+  return `<div class="card"><div class="top">${appIcon(name, ICONMAP.get(name))}<span class="name">${esc(name)}</span><span class="src">${esc(src)}/</span><span class="v">${esc(ver||"")}</span></div>
     <div class="desc">${esc(noEmoji(desc||""))}</div>${tc || chips ? `<div class="row">${tc}${chips}</div>` : ""}${extra}<div class="row">${actions}</div></div>`;
 }
 const actBtn = (label, cmd, arg, cls="") => `<button class="btn small ${cls}" data-cmd="${cmd}" data-arg="${esc(arg)}">${label}</button>`;

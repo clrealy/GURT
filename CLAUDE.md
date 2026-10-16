@@ -30,7 +30,7 @@ GURT is a dense, utility-first package tool. It must not look like a generic Saa
 **Type and density**
 - Prose in the system sans. Data in monospace (`--mono`): package names, versions, sources, commands, chips, nav, buttons and field labels. Headings are sentence case at a readable size. No eyebrows: no small uppercase letter-spaced labels above or instead of headings.
 - Dense: tight padding (about 6–10px), small gaps. Package lists are left-aligned rows (name | description | actions), not airy symmetric card grids.
-- No emojis as icons anywhere in the app or the site: tabs, buttons, chips, headings, cards and dialogs are text. A control that needs a symbol uses a typographic one (✓ ✗ → ×), never an emoji. Text that comes from gurt or recipes goes through `noEmoji()` before it's shown. (The `gurt` CLI's own output can keep its emojis.)
+- No emojis as icons anywhere in the app or the site: tabs, buttons, chips, headings, cards and dialogs are text. A control that needs a symbol uses a typographic one (✓ ✗ → ×), never an emoji. Text that comes from gurt or recipes goes through `noEmoji()` before it's shown. App logos are images, not emoji: Flathub's icon (or a recipe's `icon=`), then the app's desktop icon from the user's system (`/appicon/<name>` in the app), then a letter tile. (The `gurt` CLI's own output can keep its emojis.)
 
 **Layout**
 - Asymmetric and left-heavy: the list or main content on the left, controls and parameters in a narrow column or on the right.
