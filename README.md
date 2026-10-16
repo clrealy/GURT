@@ -202,6 +202,18 @@ gurt runs on Windows through **WSL** (the Linux that's built into Windows). Run 
 - Want a different distro than your default? set `GURT_WSL_DISTRO=Debian` in your environment before running the wizard.
 - Linux desktops (`gurt de`) don't make sense on Windows, so they're turned off there. Snaps need systemd switched on in WSL; gurt tells you how.
 
+### Linux From Scratch 🐧
+
+LFS has no package manager on purpose, so gurt fills in: it spots LFS (`/etc/lfs-release`) and handles deps itself.
+
+- **Deps with a Main GURT recipe** get built from source right there (`gurt install btop` builds btop like any recipe).
+- **Python modules** (`python3-yaml`…) go through pip, the way BLFS does it.
+- **Anything else** gurt can't build, it names and points you at its BLFS page. Build it, then run the same command again (or `--nodeps` if you know you have it).
+- **"Is it installed?"** has no package database to ask, so gurt looks for the program, the library (`ldconfig`), a pkg-config module or the python module. The LFS book's own base (kernel headers, glibc, gcc) always counts.
+- **`gurt sysup`** points you at the LFS + BLFS advisories, since LFS updates by rebuilding. Everything gurt installed still updates with `gurt upgrade`.
+
+Before you start, build `git`, `curl` (or `wget`) and `sudo` from BLFS. Then download [install.sh](https://gurtproject.org/install.sh) and run `sh install.sh`.
+
 ## Update your whole system 🐧
 
 gurt isn't just an installer: `gurt upgrade` updates **everything**. First your system, using your distro's own package manager the right way, then everything gurt installed, then flatpaks + snaps.

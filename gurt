@@ -109,6 +109,8 @@ detect_pm() {
       case $pm in apt-get) echo apt ;; xbps-install) echo xbps ;; *) echo "$pm" ;; esac; return
     fi
   done
+  # Linux From Scratch: no package manager on purpose. gurt builds deps itself (see lfs_install)
+  if [[ -f /etc/lfs-release || " $id " == *" lfs "* ]]; then echo lfs; return; fi
   echo none
 }
 PM=${GURT_PM:-$(detect_pm)}   # GURT_PM overrides detection (testing)
@@ -122,8 +124,58 @@ pm_has() {
     xbps)           xbps-query "$1" >/dev/null 2>&1 ;;
     emerge)         portageq has_version / "$1" >/dev/null 2>&1 ;;
     eopkg)          eopkg li 2>/dev/null | awk '{print $1}' | grep -qxF "$1" ;;
+    lfs)            lfs_has "$1" ;;
     *)              return 1 ;;
   esac
+}
+
+# ── 🐧 Linux From Scratch: no package manager, so "is it installed?" means "is it on the system?" ──
+LFS_BLFS="https://www.linuxfromscratch.org/blfs/view/stable"
+lfs_py() { # dep → "module pip-name" for python deps (python3-yaml → yaml pyyaml), nothing for the rest
+  local m=${1#python3-}; [[ $m == "$1" ]] && m=${1#py3-}; [[ $m == "$1" ]] && m=${1#python-}; [[ $m == "$1" ]] && return 1
+  case ${m,,} in
+    yaml|pyyaml) echo "yaml pyyaml" ;;  tk|tkinter) echo "tkinter -" ;;  gi|gobject|pygobject) echo "gi -" ;;
+    pil|pillow) echo "PIL pillow" ;;  dbus) echo "dbus dbus-python" ;;  cairo) echo "cairo pycairo" ;;
+    *) echo "${m//-/_} ${m,,}" ;;
+  esac
+}
+lfs_has() { # a generic dep name: built by gurt, a program, a library, a pkg-config module or a python module
+  local d=${1%%[<>=]*} py b
+  [[ -n $d ]] || return 0
+  is_installed "$d" && return 0
+  case $d in   # the LFS book itself builds these (chapters 5-8)
+    linux-headers|linux-api-headers|kernel-headers|linux-libc-dev) [[ -f /usr/include/linux/version.h ]]; return ;;
+    glibc|libc|libc6|libc6-dev|glibc-devel|libc-dev) return 0 ;;
+    build-essential|base-devel|gcc-c++|g++) command -v g++ >/dev/null && command -v make >/dev/null; return ;;
+  esac
+  if py=$(lfs_py "$d"); then python3 -c "import ${py%% *}" >/dev/null 2>&1; return; fi
+  command -v "$d" >/dev/null && return 0
+  b=${d#lib}; b=${b%-dev}; b=${b%-devel}
+  command -v "$b" >/dev/null && return 0
+  command -v pkg-config >/dev/null && { pkg-config --exists "$d" 2>/dev/null || pkg-config --exists "$b" 2>/dev/null; } && return 0
+  ldconfig -p 2>/dev/null | grep -q "lib${b}\.so" && return 0
+  return 1
+}
+lfs_install() { # generic dep names → Main GURT builds them, pip gets python modules, the rest is yours (BLFS)
+  local d py todo=() self; self=$(readlink -f "$0")
+  (( ${GURT_LFS_DEPTH:-0} < 6 )) || die "deps go too deep — build the rest from BLFS: $LFS_BLFS/longindex.html"
+  for d; do
+    d=${d%%[<>=]*}; [[ -n $d ]] || continue
+    lfs_has "$d" && continue
+    if is_gurt_pkg "$d" || alias_lookup "$d" >/dev/null; then
+      msg2 "🐧 LFS: building $d from its Main GURT recipe"
+      GURT_LFS_DEPTH=$(( ${GURT_LFS_DEPTH:-0} + 1 )) "$self" -y install "$d" && continue
+    elif py=$(lfs_py "$d") && [[ ${py#* } != - ]] && python3 -m pip --version >/dev/null 2>&1; then
+      msg2 "🐧 LFS: python module ${py#* } with pip (like BLFS does)"
+      asroot python3 -m pip install --root-user-action=ignore "${py#* }" && continue
+    fi
+    todo+=("$d")
+  done
+  (( ${#todo[@]} )) || return 0
+  warn "🐧 Linux From Scratch: build these yourself first (gurt has no recipe for them): ${todo[*]}"
+  local t; for t in "${todo[@]}"; do msg2 "$t → $LFS_BLFS/longindex.html (find \"$t\")"; done
+  msg2 "then run the same gurt command again — or add --nodeps if you know you have them"
+  return 1
 }
 
 # ───────────────────────── pretty progress for big installs ─────────────────────────
@@ -223,6 +275,7 @@ pm_install() {
     xbps)   asroot xbps-install -Sy "$@" ;;
     emerge) asroot emerge --noreplace "$@" ;;
     eopkg)  asroot eopkg install -y "$@" ;;
+    lfs)    lfs_install "$@" ;;
     *)      die "couldn't find a package manager I know. install these yourself then rerun with --nodeps: $*" ;;
   esac
 }
@@ -4298,6 +4351,9 @@ system_upgrade() {
     emerge)
       msg "🐧 updating your system (emerge --sync + @world — grab a snack 🍿)"
       asroot emerge --sync && asroot emerge --ask="$($NOCONFIRM && echo n || echo y)" --update --deep --newuse @world ;;
+    lfs) msg "🐧 Linux From Scratch updates by rebuilding: check the LFS + BLFS errata and security advisories"
+         msg2 "https://www.linuxfromscratch.org/lfs/advisories/ · https://www.linuxfromscratch.org/blfs/advisories/"
+         msg2 "(gurt still updates everything it installed)"; return 0 ;;
     *) warn "don't know how to update this distro's own packages ($PM) — skipping that part"; return 0 ;;
   esac || { warn "the system update had problems (scroll up) — carrying on with gurt's own stuff"; return 0; }
   msg "system updated ✅"
@@ -5083,6 +5139,7 @@ cmd_doctor() {
   tar --version 2>/dev/null | grep -q GNU || { warn "gurt needs GNU tar (Alpine: apk add tar)"; ok=1; }
   command -v sudo >/dev/null || command -v doas >/dev/null || (( EUID == 0 )) || warn "no sudo/doas found"
   [[ $PM == none ]] && warn "no known package manager — you'll have to install deps yourself (--nodeps)"
+  [[ $PM == lfs ]] && msg2 "🐧 Linux From Scratch: deps come from Main GURT recipes (built here) and pip; the rest, BLFS tells you how"
   printf '\n%sutilities apps need%s%s\n' "$B" "$R0" "$(is_donk && echo ' (Donk OS 🫏 gurt keeps these installed)')"
   cmd_utils list
 
