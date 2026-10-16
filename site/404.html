@@ -46,7 +46,7 @@ main{flex:1;width:100%;max-width:880px;margin:0 auto;padding:36px 16px 48px}
 h1{font:700 22px/1.25 var(--sans);margin:10px 0 6px}
 p.sub{color:var(--muted);margin:0 0 18px;max-width:60ch}
 .term{border:1px solid var(--edge);border-radius:var(--r);background:var(--code);font:13px/1.6 var(--mono);margin:0 0 18px;overflow:hidden}
-.term .bar{display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--edge);background:var(--panel);font:700 11px var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.term .bar{display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--edge);background:var(--panel);font:700 12px var(--mono);color:var(--muted)}
 .term pre{margin:0;padding:10px 12px;white-space:pre-wrap;overflow-wrap:anywhere}
 .term .p{color:var(--good)}.term .e{color:var(--bad)}.term .m{color:var(--muted)}
 .links{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));border:1px solid var(--edge);border-radius:var(--r);background:var(--panel)}
@@ -60,11 +60,11 @@ footer .in{max-width:880px;margin:0 auto;padding:14px 16px}
 </style>
 </head>
 <body>
-<nav><div class="in"><a class="home" href="/">🦆 GURT</a><span class="sp"></span><a href="/#packages">packages</a><a href="/#get">download</a><a class="gh" href="https://github.com/clrealy/GURT">github</a></div></nav>
+<nav><div class="in"><a class="home" href="/">GURT</a><span class="sp"></span><a href="/#packages">packages</a><a href="/#get">download</a><a class="gh" href="https://github.com/clrealy/GURT">github</a></div></nav>
 <div class="stripe" aria-hidden="true"></div>
 <main>
   <p class="code" aria-hidden="true">4<span>0</span>4</p>
-  <h1 id="title">this page got yeeted 🦆</h1>
+  <h1 id="title">this page got yeeted</h1>
   <p class="sub" id="sub">nothing lives at this address. it might have moved, or the link has a typo.</p>
   <div class="term" aria-label="what gurt says">
     <div class="bar">terminal</div>
@@ -83,7 +83,7 @@ footer .in{max-width:880px;margin:0 auto;padding:14px 16px}
 const path = decodeURIComponent(location.pathname).replace(/^\/+|\/+$/g, "") || "?";
 const name = (path.split("/").pop() || path).slice(0, 60);
 const PAGES = [
-  ["this page got yeeted 🦆", "nothing lives at this address. it might have moved, or the link has a typo.",
+  ["this page got yeeted", "nothing lives at this address. it might have moved, or the link has a typo.",
     [["p", `$ gurt install ${name}`], ["e", `==> nah: target not found: ${name}`], ["m", "    checked: gurt, flathub, the AUR, apt, dnf, zypper, pacman"]]],
   ["page not found in any repo", "we looked everywhere. this address isn't a page on gurtproject.org.",
     [["p", `$ gurt search ${name}`], ["m", "==> searching 7 sources…"], ["e", "==> 0 results. womp womp"]]],
