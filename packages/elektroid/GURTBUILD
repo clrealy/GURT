@@ -1,0 +1,15 @@
+# Sample and MIDI device manager (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=elektroid
+pkgver=flathub
+pkgrel=1
+pkgdesc="Sample and MIDI device manager"
+url="https://flathub.org/apps/io.github.dagargo.Elektroid"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.dagargo.Elektroid

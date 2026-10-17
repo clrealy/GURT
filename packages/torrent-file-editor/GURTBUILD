@@ -1,0 +1,15 @@
+# Edit and create torrent files (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=torrent-file-editor
+pkgver=flathub
+pkgrel=1
+pkgdesc="Edit and create torrent files"
+url="https://flathub.org/apps/io.github.torrent_file_editor.Torrent-file-editor"
+license="GPL-3.0-or-later AND BSD-2-Clause"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.torrent_file_editor.Torrent-file-editor

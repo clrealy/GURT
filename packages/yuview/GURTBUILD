@@ -1,0 +1,15 @@
+# QT based, cross-platform YUV player with an advanced analytic toolset (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=yuview
+pkgver=flathub
+pkgrel=1
+pkgdesc="QT based, cross-platform YUV player with an advanced analytic toolset"
+url="https://flathub.org/apps/de.rwth_aachen.ient.YUView"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=de.rwth_aachen.ient.YUView

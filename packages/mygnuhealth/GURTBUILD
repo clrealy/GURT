@@ -1,0 +1,15 @@
+# GNU Health Personal Health Record (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=mygnuhealth
+pkgver=flathub
+pkgrel=1
+pkgdesc="GNU Health Personal Health Record"
+url="https://flathub.org/apps/org.gnuhealth.mygnuhealth"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gnuhealth.mygnuhealth

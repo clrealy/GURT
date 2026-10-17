@@ -1,0 +1,15 @@
+# A map editor for the Pokémon generation 3 decompilation projects (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=porymap
+pkgver=flathub
+pkgrel=1
+pkgdesc="A map editor for the Pokémon generation 3 decompilation projects"
+url="https://flathub.org/apps/io.github.huderlem.porymap"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.huderlem.porymap

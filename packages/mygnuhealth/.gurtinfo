@@ -1,0 +1,13 @@
+pkgname = mygnuhealth
+pkgver = flathub
+pkgrel = 1
+pkgdesc = GNU Health Personal Health Record
+url = https://flathub.org/apps/org.gnuhealth.mygnuhealth
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.gnuhealth.mygnuhealth

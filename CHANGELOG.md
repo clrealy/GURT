@@ -1,5 +1,24 @@
 # GURT changelog 🦆
 
+## Not released yet
+
+### New
+- **GURTd**, gurt's background daemon (`gurt gurtd on`, `gurt gurtd config`, or Updates → GURTd in the app). It keeps package lists fresh, checks for updates (and auto-updates if you want), asks to install new .deb/.rpm/AppImage downloads, and makes the app open instantly. Saver mode waits on battery or metered data; quiet hours hold its popups.
+- **`gurt undo`** takes back the last thing gurt did (installs, removes, upgrades, all as one step). Run it again to redo. In the app: **undo last** in the history dialog.
+- **The disk hog finder.** `gurt hogs all` shows everything on your disk, not just gurt's apps. `gurt hogs junk` lists caches, trash, old logs and package downloads, and `gurt hogs clean` tosses them. In the app: **free up space** on the Installed tab.
+- **Linux From Scratch support.** gurt detects LFS and builds what it needs from Main GURT recipes.
+- **Apps you got without gurt count as installed** (flatpak, snap, your distro, /opt, AppImages), and badges say where each one came from.
+- **Real app logos** instead of emoji, with your system's own icon as the fallback.
+- **Android apps through Waydroid**: `gurt install android/<app>` installs from F-Droid (the only store, so it's all free software). A closed-source .apk you bring still installs, after a heads-up. gurt sets Waydroid up the first time (plain Android, no Google apps). `gurt android` for the rest, or Setup → Android apps in the app.
+- **Mostly free software.** Closed-source apps are labeled, come after the free ones, and `gurt install` suggests free apps like them. `gurt foss on` (or **FOSS only** in the app and on the site) hides and blocks them. The setup wizard's starter apps are free software, except Steam.
+
+### Site
+- **Compare** up to 4 apps side by side, and share the comparison with a link.
+- Flathub apps were labeled "official repo" on their cards; now they say Flathub.
+
+### For maintainers
+- The bump bot now covers recipes with per-arch sources and `_tag=v$pkgver` helpers: 274 recipes instead of 58.
+
 ## 1.0.0+hotfix1: the stuff 1.0 should've had 🩹
 
 Same GURT 1.0, plus everything that landed right after it.

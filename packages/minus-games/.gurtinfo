@@ -1,0 +1,13 @@
+pkgname = minus-games
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Download, sync and run games
+url = https://flathub.org/apps/io.github.accessory.minus_games_gui
+license = MIT
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.accessory.minus_games_gui

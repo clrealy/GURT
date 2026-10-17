@@ -15,7 +15,7 @@ pkgver=1.2.3              # upstream version (no dashes)
 pkgrel=1                  # bump this when you change the recipe but not the version
 pkgdesc="one line about it"
 url="https://github.com/someone/my-app"
-license="MIT"
+license="MIT"             # an SPDX id. GURT is mostly free software: proprietary ones are labeled "closed source"
 maintainer="your-handle"
 arch=(x86_64 aarch64)     # or (any) for scripts/themes/fonts
 depends=(ncurses)         # runtime deps, GENERIC names
@@ -26,6 +26,7 @@ sha256sums=("abc123...")  # gurt checksum my-app
 category="cli"            # browsers chat media creative office dev cli gaming internet system security fun — groups it on the site + the app
 aliases=(my-app-cli ma)   # optional: other names that install this (gurt install ma)
 hidden=true               # optional: keep it out of the store/search — still installable by exact name
+icon="https://example.com/my-app.png"   # optional: its logo (https, square, 64px+). Flathub apps get Flathub's icon by themselves
 
 prepare() { ...; }        # optional: patches
 build()   { ...; }        # optional: compile

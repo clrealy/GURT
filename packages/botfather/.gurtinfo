@@ -1,0 +1,13 @@
+pkgname = botfather
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Universal automation framework
+url = https://flathub.org/apps/io.botfather.Botfather
+license = MIT
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.botfather.Botfather

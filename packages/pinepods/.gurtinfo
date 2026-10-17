@@ -1,0 +1,13 @@
+pkgname = pinepods
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A complete, self-hosted podcast management system
+url = https://flathub.org/apps/com.gooseberrydevelopment.pinepods
+license = GPL-3.0-only
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = com.gooseberrydevelopment.pinepods

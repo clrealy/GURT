@@ -1,0 +1,15 @@
+# Piano for mere mortals (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=pianocheetah
+pkgver=flathub
+pkgrel=1
+pkgdesc="Piano for mere mortals"
+url="https://flathub.org/apps/app.shaz.pianocheetah"
+license="MIT"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=app.shaz.pianocheetah

@@ -1,0 +1,15 @@
+# Create beautiful film credits without the pain (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=cinecred
+pkgver=flathub
+pkgrel=1
+pkgdesc="Create beautiful film credits without the pain"
+url="https://flathub.org/apps/com.cinecred.cinecred"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.cinecred.cinecred

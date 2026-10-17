@@ -1,0 +1,15 @@
+# Chromatography Data System (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=openchrom
+pkgver=flathub
+pkgrel=1
+pkgdesc="Chromatography Data System"
+url="https://flathub.org/apps/com.lablicate.OpenChrom"
+license="EPL-2.0"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.lablicate.OpenChrom

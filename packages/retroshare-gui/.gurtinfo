@@ -1,0 +1,13 @@
+pkgname = retroshare-gui
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Secure communication for everyone
+url = https://flathub.org/apps/cc.retroshare.retroshare-gui
+license = AGPL-3.0-only and LGPL-3.0-or-later and GPL-3.0-or-later
+maintainer = clrealy
+category = chat
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = cc.retroshare.retroshare-gui

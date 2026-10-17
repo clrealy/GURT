@@ -1,0 +1,15 @@
+# Monomer Flatpak Example Application (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=monomer-flatpak-example
+pkgver=flathub
+pkgrel=1
+pkgdesc="Monomer Flatpak Example Application"
+url="https://flathub.org/apps/io.github.Dretch.MonomerFlatpakExample"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.Dretch.MonomerFlatpakExample

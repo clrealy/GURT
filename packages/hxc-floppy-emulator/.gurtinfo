@@ -1,0 +1,13 @@
+pkgname = hxc-floppy-emulator
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Software and hardware solution to replace the old floppy disk
+url = https://flathub.org/apps/fr.free.hxc2001.HxCFloppyEmulator
+license = GPL-2.0
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = fr.free.hxc2001.HxCFloppyEmulator

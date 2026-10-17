@@ -1,0 +1,15 @@
+# Jigsaw puzzle with tetromino pieces (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=tetzle
+pkgver=flathub
+pkgrel=1
+pkgdesc="Jigsaw puzzle with tetromino pieces"
+url="https://flathub.org/apps/org.gottcode.Tetzle"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gottcode.Tetzle

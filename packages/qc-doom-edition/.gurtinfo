@@ -1,0 +1,13 @@
+pkgname = qc-doom-edition
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A Doom II mod with weapons and mechanics inspired by Quake Champions
+url = https://flathub.org/apps/net.qcde.QCDE
+license = BSD-3-Clause
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.qcde.QCDE

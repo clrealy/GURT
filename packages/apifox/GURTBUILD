@@ -5,7 +5,7 @@ pkgver=flathub
 pkgrel=1
 pkgdesc="Apifox = Postman + Swagger + Mock + JMeter"
 url="https://flathub.org/apps/com.apifox.Apifox"
-license="see Flathub"
+license="LicenseRef-proprietary"
 maintainer="clrealy"
 category="system"
 arch=(x86_64 aarch64)

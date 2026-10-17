@@ -1,0 +1,13 @@
+pkgname = gottet
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Clear the board of falling blocks
+url = https://flathub.org/apps/org.gottcode.Gottet
+license = GPL-3.0+
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.gottcode.Gottet

@@ -1,0 +1,15 @@
+# Personal wiki and outliner (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=outwiker
+pkgver=flathub
+pkgrel=1
+pkgdesc="Personal wiki and outliner"
+url="https://flathub.org/apps/net.jenyay.Outwiker"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.jenyay.Outwiker

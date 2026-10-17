@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Add Flathub's most popular apps to Main GURT as recipes (skips ones GURT already has).
 
-usage: tools/gen-flathub.py <how-many-new>     (needs internet: it reads flathub.org's API)
+usage: tools/gen-flathub.py <how-many-new>     (needs internet: it reads flathub.org's API) free software only;
+                                               add --all to take closed-source apps too
        tools/gen-flathub.py recategorize       (re-sort the categories of recipes this tool made)
+       tools/gen-flathub.py licenses           (fill in license="see Flathub" from Flathub's data)
 Writes packages/<name>/GURTBUILD; run `gurt srcinfo` after to refresh .gurtinfo (the workflow does).
 """
 import json, os, re, sys, urllib.request
@@ -14,6 +16,21 @@ PKGS = os.path.join(ROOT, "packages")
 # Flathub's search index sends these in lowercase, its appstream data capitalized: compare lowercase
 CATS = {"audiovideo": "media", "audio": "media", "video": "media", "development": "dev", "education": "office", "game": "gaming",
         "graphics": "creative", "network": "internet", "office": "office", "science": "office", "system": "system", "utility": "system"}
+
+
+# same rule as gurt's foss_class (Main GURT is mostly free software)
+CLOSED_RE = re.compile(r"proprietary|^custom$|licenseref-(?!kde-accepted)|sspl|(^|[- ])n[cd]([- ]|$)|sul-1|freeware|shareware", re.I)
+
+
+def norm_license(raw):
+    """Flathub's project_license → something a recipe can hold: LicenseRef-proprietary=https://… loses its url"""
+    lic = clean(re.sub(r"=\S*", "", str(raw or "")), 80)
+    return lic if re.fullmatch(r"[A-Za-z0-9.+\- (),]+", lic or "") else ""
+
+
+def is_foss(lic, free=None):
+    l = (lic or "").strip().lower()
+    return free is not False and bool(l) and not l.startswith("see ") and not CLOSED_RE.search(l)
 
 
 def category(hit):
@@ -94,7 +111,8 @@ def slug(s):
 
 
 def main():
-    want = int(sys.argv[1]) if len(sys.argv) > 1 else 100
+    want = int(next((a for a in sys.argv[1:] if a.isdigit()), 100))
+    foss_only = "--all" not in sys.argv
     names, ids = existing()
     made = 0
     seen = set()
@@ -105,7 +123,7 @@ def main():
         if not app_id or app_id in ids or app_id in seen or re.search(r"\.(BaseApp|Platform|Sdk|Extension|Locale|Debug)\b", app_id):
             continue
         seen.add(app_id)
-        if "name" not in hit or "summary" not in hit:
+        if "name" not in hit or "summary" not in hit or (foss_only and not hit.get("project_license")):
             try:
                 hit = {**get(f"/appstream/{app_id}"), "app_id": app_id}
             except Exception:
@@ -120,9 +138,10 @@ def main():
         # so skip it rather than adding a "name-appid" copy
         if not pkg or not re.match(r"^[a-z0-9]", pkg) or pkg in names or len(pkg) > 60:
             continue
+        if foss_only and not is_foss(hit.get("project_license"), hit.get("is_free_license")):
+            continue   # closed source (or no license at all): Main GURT is mostly free software
         cat = category(hit)
-        lic = clean(hit.get("project_license") or "", 80)
-        lic = lic if re.fullmatch(r"[A-Za-z0-9.+\- ()]+", lic or "") else "see Flathub"
+        lic = norm_license(hit.get("project_license")) or "see Flathub"
         d = os.path.join(PKGS, pkg)
         os.makedirs(d, exist_ok=True)
         with open(os.path.join(d, "GURTBUILD"), "w", encoding="utf-8") as f:
@@ -146,7 +165,33 @@ via_pkg={app_id}
         ids.add(app_id)
         made += 1
         print(f"+ {pkg:32} {app_id}")
-    print(f"added {made} Flathub apps")
+    print(f"added {made} {'free software ' if foss_only else ''}Flathub apps")
+
+
+def licenses():
+    """recipes this tool made before it saved licenses say license="see Flathub": ask Flathub"""
+    fixed = left = 0
+    for n in sorted(os.listdir(PKGS)):
+        f = os.path.join(PKGS, n, "GURTBUILD")
+        if not os.path.isfile(f):
+            continue
+        s = open(f, encoding="utf-8").read()
+        m = re.search(r"^via_pkg=(\S+)", s, re.M)
+        if not m or not re.search(r'^license="see Flathub"', s, re.M):
+            continue
+        try:
+            raw = get(f"/appstream/{m.group(1)}").get("project_license")
+        except Exception as e:
+            raw = f"(error: {e})"
+        lic = norm_license(raw)
+        if not lic and left < 15:
+            print(f"  ? {n}: {raw!r}")   # what Flathub said, for the log
+        if lic:
+            open(f, "w", encoding="utf-8").write(re.sub(r'^license="see Flathub"', f'license="{lic}"', s, count=1, flags=re.M))
+            fixed += 1
+        else:
+            left += 1
+    print(f"filled in {fixed} licenses ({left} Flathub doesn't list)")
 
 
 def recategorize():
@@ -181,4 +226,4 @@ def recategorize():
 
 
 if __name__ == "__main__":
-    recategorize() if sys.argv[1:] == ["recategorize"] else main()
+    recategorize() if sys.argv[1:] == ["recategorize"] else licenses() if sys.argv[1:] == ["licenses"] else main()

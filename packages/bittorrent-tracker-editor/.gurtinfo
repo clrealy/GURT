@@ -1,0 +1,13 @@
+pkgname = bittorrent-tracker-editor
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Add or remove tracker from torrent files
+url = https://flathub.org/apps/io.github.gerryferdinandus.bittorrent-tracker-editor
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.gerryferdinandus.bittorrent-tracker-editor

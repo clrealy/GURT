@@ -3,6 +3,7 @@
 import json, pathlib, subprocess, time
 root = pathlib.Path(__file__).resolve().parent.parent
 LIST = {"arch", "depends", "makedepends", "source", "alias"}
+FLATHUB_ICON = "https://dl.flathub.org/repo/appstream/x86_64/icons/128x128/{}.png"   # also in gui/gurt-gui.py
 def collect(tree):
     pkgs = []
     for info in sorted(root.glob(f"{tree}/*/.gurtinfo")):
@@ -20,6 +21,8 @@ def collect(tree):
             p["updated"] = int(time.time())
         if p.get("hidden") == "true":
             continue   # hidden = installable by name, but not listed in the store
+        if not p.get("icon") and p.get("via_type") == "flatpak" and p.get("via_pkg"):   # Flathub apps: Flathub's own icon
+            p["icon"] = FLATHUB_ICON.format(p["via_pkg"])
         pkgs.append(p)
     return pkgs
 

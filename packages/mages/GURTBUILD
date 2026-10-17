@@ -1,0 +1,15 @@
+# Encrypted chat client for Matrix (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=mages
+pkgver=flathub
+pkgrel=1
+pkgdesc="Encrypted chat client for Matrix"
+url="https://flathub.org/apps/io.github.mlm_games.mages"
+license="AGPL-3.0-only"
+maintainer="clrealy"
+category="chat"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.mlm_games.mages

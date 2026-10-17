@@ -1,0 +1,15 @@
+# Powerful and simple to use screenshot software (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=hotshots
+pkgver=flathub
+pkgrel=1
+pkgdesc="Powerful and simple to use screenshot software"
+url="https://flathub.org/apps/io.github.obiwankennedy.HotShots"
+license="GPL-2.0"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.obiwankennedy.HotShots

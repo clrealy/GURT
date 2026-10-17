@@ -1,0 +1,13 @@
+pkgname = squey
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Explore your data
+url = https://flathub.org/apps/org.squey.Squey
+license = MIT
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.squey.Squey

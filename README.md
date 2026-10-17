@@ -202,6 +202,18 @@ gurt runs on Windows through **WSL** (the Linux that's built into Windows). Run 
 - Want a different distro than your default? set `GURT_WSL_DISTRO=Debian` in your environment before running the wizard.
 - Linux desktops (`gurt de`) don't make sense on Windows, so they're turned off there. Snaps need systemd switched on in WSL; gurt tells you how.
 
+### Linux From Scratch 🐧
+
+LFS has no package manager on purpose, so gurt fills in: it spots LFS (`/etc/lfs-release`) and handles deps itself.
+
+- **Deps with a Main GURT recipe** get built from source right there (`gurt install btop` builds btop like any recipe).
+- **Python modules** (`python3-yaml`…) go through pip, the way BLFS does it.
+- **Anything else** gurt can't build, it names and points you at its BLFS page. Build it, then run the same command again (or `--nodeps` if you know you have it).
+- **"Is it installed?"** has no package database to ask, so gurt looks for the program, the library (`ldconfig`), a pkg-config module or the python module. The LFS book's own base (kernel headers, glibc, gcc) always counts.
+- **`gurt sysup`** points you at the LFS + BLFS advisories, since LFS updates by rebuilding. Everything gurt installed still updates with `gurt upgrade`.
+
+Before you start, build `git`, `curl` (or `wget`) and `sudo` from BLFS. Then download [install.sh](https://gurtproject.org/install.sh) and run `sh install.sh`.
+
 ## Update your whole system 🐧
 
 gurt isn't just an installer: `gurt upgrade` updates **everything**. First your system, using your distro's own package manager the right way, then everything gurt installed, then flatpaks + snaps.
@@ -227,6 +239,47 @@ gurt sysup               # only the system
 ```
 
 In the app, the Updates tab shows a 🐧 "your system" card with how many distro updates are waiting.
+
+## GURTd: the background daemon 🐧
+
+`gurt gurtd on` starts it (a systemd user service, or an autostart entry without systemd), and `gurt gurtd config` opens a little menu to change what it does. The app has the same settings: Updates → **GURTd**. Its log starts with "Linus sees you. Starting GURTd btw".
+
+- **Keeps package lists fresh** every 3 hours, so searches and update checks are instant (`gurt update` skips the refresh when it just happened; `--force` refreshes anyway).
+- **Checks for updates** every 6 hours and sends a notification. It replaces the old 6-hour alert timer.
+- **Auto-update** (off unless you turn it on): updates your GURT apps by itself when that needs no password; flatpaks always can. Apps that need your password, and your system's own packages, wait for you, with a notification.
+- **Watches Downloads**: a new .deb, .rpm, AppImage… gets an "Install with GURT?" notification.
+- **GURT opens instantly**: the app's server stays running, so `gurt gui` just opens a window onto it. A tray icon too, where your desktop has AppIndicator.
+- **Saver** (on by default): no update checks or auto-updates while you're on battery or a metered connection (a phone hotspot). They run as soon as you're plugged in or back on normal Wi-Fi.
+- **Quiet hours** (`gurt gurtd quiet 22-8`): GURTd still checks and auto-updates, but its popups wait until quiet hours end. "Install with GURT?" for a fresh download still pops up, since you're clearly awake.
+
+`gurt gurtd status` · `gurt gurtd log` · `gurt gurtd autoupdate|watch|fresh|saver on|off` · `gurt gurtd quiet 22-8|off` · `gurt gurtd off`
+
+## Android apps: Waydroid 🤖
+
+GURT runs Android apps in [Waydroid](https://waydro.id), a full Android in a container that shows its apps as normal windows. The store is [F-Droid](https://f-droid.org) only, so everything you install by name is free software, and Android itself is the plain LineageOS image without Google's apps. A closed-source .apk you got somewhere else still installs, after a heads-up and a "you sure?" (`gurt foss on` says no to those).
+
+```sh
+gurt search android/firefox          # search F-Droid (fdroid/ and waydroid/ work too)
+gurt install android/fennec          # install by name or by package id (org.mozilla.fennec_fdroid)
+gurt install ./NewPipe.apk           # a .apk you brought: on F-Droid = free software; not on it = closed source, gurt asks first
+gurt android setup                   # just set up Waydroid (install it, download Android, start it)
+gurt android fdroid                  # the F-Droid store app itself, inside Android
+gurt android list · open · stop      # what's in Android · its full screen · stop it
+gurt remove android/<package.id>     # gurt undo works on these too
+```
+
+The first time, gurt installs Waydroid from your distro (Debian/Ubuntu without it get Waydroid's own repo, Arch the AUR), downloads Android (about 1 GB, once) and starts it. Downloads from F-Droid are checked against F-Droid's sha256. A .apk file and Alpine's `.apk` packages share an extension; gurt tells them apart by what's inside. In the app: Setup → **Android apps**, or drop a .apk on the window. Waydroid needs a Wayland session.
+
+## Mostly free software 🔓
+
+Main GURT is mostly FOSS. An app's license decides: closed-source apps (proprietary, source-available like SSPL, or non-commercial-only) still install, but they're labeled **closed source**, come after the free ones in search, Discover and Build your setup, and `gurt install` tells you which free apps are like it:
+
+```
+$ gurt install discord
+==> heads up: discord is closed source 🔒 · free ones like it: vesktop webcord
+```
+
+`gurt foss on` turns on FOSS-only mode: closed-source apps (and Android apps F-Droid doesn't have) are hidden and won't install. `gurt foss off` turns it back off. In the app it's **FOSS only** in the look menu, and on gurtproject.org there's a **FOSS only** box next to the search. The setup wizard's starter apps are free software (Steam's the one exception), and new Flathub apps only join Main GURT if they're free software.
 
 ## Utilities apps need: `gurt utils` 🔧
 
@@ -408,7 +461,10 @@ It handles `.deb`, `.rpm` and `.pkg.tar.zst` files: apt and rpm indexes, plus a 
 gurt search "like photoshop"   # apps like it: gimp krita pinta darktable…  (vibes.map)
 gurt compare gimp krita pinta  # side by side: where it comes from, version, license, size
 gurt why libfoo                # who wanted this? you, or which app needs it
-gurt hogs                      # the apps eating the most disk
+gurt hogs                      # the apps gurt installed that eat the most disk
+gurt hogs all                  # everything on your disk: distro packages, flatpaks, snaps, AppImages
+gurt hogs junk                 # caches, trash, old logs, crash dumps + package downloads you can toss
+gurt hogs clean                # toss them (asks about each) · gurt hogs clean trash pm-cache: just those
 gurt profile save gaming       # your apps + gurt settings + the app's look, under a name
 gurt profile load gaming       # …on any computer (copy the file over)
 gurt notify on                 # a desktop notification when updates are waiting (every 6 hours)
@@ -418,7 +474,9 @@ gurt cache                     # how much space gurt's downloads use · gurt cac
 gurt install fierfox           # typo? gurt asks "did you mean: firefox?"
 ```
 
-In the app: type "like discord" in the search, hit ⚖️ on up to 4 cards to compare them, 🐷 on the Installed tab sorts by size, 🔔 on the Updates tab turns alerts on, and `/` jumps to the search box. The everyday stuff stays up front; the rest lives under **⋯ more** (install a file, convert, the app lottery on Discover; export/import, history, achievements on Installed). The Updates tab checks by itself when the app opens and shows how many are waiting.
+In the app: type "like discord" in the search, hit **compare** on up to 4 cards to see them side by side, **biggest first** on the Installed tab sorts by size and **free up space** shows the junk with a toss button for each, **alert me** on the Updates tab turns alerts on, and `/` jumps to the search box.
+
+On gurtproject.org: **compare** on an app's card adds it to the compare tray (up to 4), and **copy link** shares that comparison (`gurtproject.org/?compare=gimp,krita,pinta`). Rows where the apps differ get the accent edge. The everyday stuff stays up front; the rest lives under **⋯ more** (install a file, convert, the app lottery on Discover; export/import, history, achievements on Installed). The Updates tab checks by itself when the app opens and shows how many are waiting.
 
 ## Fun 🎮
 
@@ -427,11 +485,13 @@ In the app: type "like discord" in the search, hit ⚖️ on up to 4 cards to co
 - **Skins + music:** 🌴 Vaporwave and 💻 Hacker skins join GURT, Windows 11, XP and 95, each with its own sound effects. The 🎵 picker next to them has 4 tracks (🛍️ shop, 🌧️ lofi, 👾 chiptune, 🌆 synthwave), or auto, which matches the skin. Every track is synthesized live, no audio files.
 - **Cursed Congurter™:** feed it a `.dmg`, or ask it to turn a `.deb` into a `.deb`, and it shakes, smokes and glitches out 💀 An `.exe` still converts, but it'll let you know it's cursed.
 
-## Oops buttons: rollback, hold, export/import ⏪
+## Oops buttons: undo, rollback, hold, export/import ⏪
 
 In the app, the **Installed** tab has 📤 export my list (saves `gurt-list-<date>.txt` to your Downloads) and 📥 import a list.
 
 ```sh
+gurt undo                 # take back the last thing gurt did: an install, a remove, an upgrade (all of it, as one step)
+gurt undo                 # …again = redo
 gurt rollback btop        # update broke it? go back to the version before (and hold it there)
 gurt hold btop            # upgrade skips it
 gurt unhold btop          # back to getting updates
@@ -439,7 +499,7 @@ gurt export gurt-list.txt # everything you installed on purpose
 gurt import gurt-list.txt # …reinstalled on a new PC in one go
 ```
 
-gurt keeps the last 3 versions of each package it installs in `~/.cache/gurt/rollback/` (change with `GURT_ROLLBACK_KEEP`).
+gurt keeps the last 3 versions of each package it installs in `~/.cache/gurt/rollback/` (change with `GURT_ROLLBACK_KEEP`). Undo uses those too, and your history: every gurt command gets an id, so the deps an install pulled in come off with it. In the app it's **undo last** in the history dialog. Your system's own packages aren't gurt's to undo; for those, gurt takes a snapshot before system upgrades (`gurt snapshots`).
 
 ## Tab completion ⌨️
 
@@ -447,7 +507,7 @@ bash and fish set themselves up the first time you run gurt; open a new terminal
 
 ## Bump bot 🤖
 
-Every day `.github/workflows/bump.yml` runs `tools/bump.py`, which checks every recipe with a GitHub source that uses `$pkgver`. When upstream has a newer release, it opens a PR with the new pkgver, pkgrel reset to 1, and fresh checksums + `.gurtinfo`. Add `nobump=true` to a recipe to opt out. Run it yourself with `python3 tools/bump.py` (dry run) or `--write`.
+Every day `.github/workflows/bump.yml` runs `tools/bump.py`, which checks every recipe with a GitHub source that uses `$pkgver`, also through a helper like `_tag=v$pkgver` and in per-arch `source_x86_64=()` arrays. When upstream has a newer release, it opens a PR with the new pkgver, pkgrel reset to 1, and fresh checksums (every `sha256sums_<arch>` too) + `.gurtinfo`. At most 15 PRs per run (`GURT_BUMP_MAX`); the rest come the next day. Add `nobump=true` to a recipe to opt out. Run it yourself with `python3 tools/bump.py` (dry run) or `--write`.
 
 ## Desktop shortcuts 🖥️
 

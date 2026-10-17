@@ -1,0 +1,15 @@
+# Tell a story (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=story
+pkgver=flathub
+pkgrel=1
+pkgdesc="Tell a story"
+url="https://flathub.org/apps/org.sugarlabs.StoryActivity"
+license="GPL-3.0-or-later AND GPL-2.0-or-later AND MIT"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.sugarlabs.StoryActivity

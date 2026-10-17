@@ -46,8 +46,8 @@ NOSIGN=false NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false A
 
 # ───────────────────────── pretty output ─────────────────────────
 if [[ -t 2 && -z ${NO_COLOR:-} ]]; then
-  B=$'\e[1m' R0=$'\e[0m' RED=$'\e[31m' GRN=$'\e[32m' YLW=$'\e[33m' BLU=$'\e[34m' MAG=$'\e[35m'
-else B='' R0='' RED='' GRN='' YLW='' BLU='' MAG=''; fi
+  B=$'\e[1m' R0=$'\e[0m' RED=$'\e[31m' GRN=$'\e[32m' YLW=$'\e[33m' BLU=$'\e[34m' MAG=$'\e[35m' DIM=$'\e[2m'
+else B='' R0='' RED='' GRN='' YLW='' BLU='' MAG='' DIM=''; fi
 msg()  { printf '%s==>%s %s%s%s\n' "$GRN" "$R0" "$B" "$*" "$R0" >&2; }
 msg2() { printf '  %s->%s %s\n' "$BLU" "$R0" "$*" >&2; }
 warn() { printf '%s==> heads up:%s %s\n' "$YLW" "$R0" "$*" >&2; }
@@ -109,6 +109,8 @@ detect_pm() {
       case $pm in apt-get) echo apt ;; xbps-install) echo xbps ;; *) echo "$pm" ;; esac; return
     fi
   done
+  # Linux From Scratch: no package manager on purpose. gurt builds deps itself (see lfs_install)
+  if [[ -f /etc/lfs-release || " $id " == *" lfs "* ]]; then echo lfs; return; fi
   echo none
 }
 PM=${GURT_PM:-$(detect_pm)}   # GURT_PM overrides detection (testing)
@@ -122,8 +124,58 @@ pm_has() {
     xbps)           xbps-query "$1" >/dev/null 2>&1 ;;
     emerge)         portageq has_version / "$1" >/dev/null 2>&1 ;;
     eopkg)          eopkg li 2>/dev/null | awk '{print $1}' | grep -qxF "$1" ;;
+    lfs)            lfs_has "$1" ;;
     *)              return 1 ;;
   esac
+}
+
+# ── 🐧 Linux From Scratch: no package manager, so "is it installed?" means "is it on the system?" ──
+LFS_BLFS="https://www.linuxfromscratch.org/blfs/view/stable"
+lfs_py() { # dep → "module pip-name" for python deps (python3-yaml → yaml pyyaml), nothing for the rest
+  local m=${1#python3-}; [[ $m == "$1" ]] && m=${1#py3-}; [[ $m == "$1" ]] && m=${1#python-}; [[ $m == "$1" ]] && return 1
+  case ${m,,} in
+    yaml|pyyaml) echo "yaml pyyaml" ;;  tk|tkinter) echo "tkinter -" ;;  gi|gobject|pygobject) echo "gi -" ;;
+    pil|pillow) echo "PIL pillow" ;;  dbus) echo "dbus dbus-python" ;;  cairo) echo "cairo pycairo" ;;
+    *) echo "${m//-/_} ${m,,}" ;;
+  esac
+}
+lfs_has() { # a generic dep name: built by gurt, a program, a library, a pkg-config module or a python module
+  local d=${1%%[<>=]*} py b
+  [[ -n $d ]] || return 0
+  is_installed "$d" && return 0
+  case $d in   # the LFS book itself builds these (chapters 5-8)
+    linux-headers|linux-api-headers|kernel-headers|linux-libc-dev) [[ -f /usr/include/linux/version.h ]]; return ;;
+    glibc|libc|libc6|libc6-dev|glibc-devel|libc-dev) return 0 ;;
+    build-essential|base-devel|gcc-c++|g++) command -v g++ >/dev/null && command -v make >/dev/null; return ;;
+  esac
+  if py=$(lfs_py "$d"); then python3 -c "import ${py%% *}" >/dev/null 2>&1; return; fi
+  command -v "$d" >/dev/null && return 0
+  b=${d#lib}; b=${b%-dev}; b=${b%-devel}
+  command -v "$b" >/dev/null && return 0
+  command -v pkg-config >/dev/null && { pkg-config --exists "$d" 2>/dev/null || pkg-config --exists "$b" 2>/dev/null; } && return 0
+  ldconfig -p 2>/dev/null | grep -q "lib${b}\.so" && return 0
+  return 1
+}
+lfs_install() { # generic dep names → Main GURT builds them, pip gets python modules, the rest is yours (BLFS)
+  local d py todo=() self; self=$(readlink -f "$0")
+  (( ${GURT_LFS_DEPTH:-0} < 6 )) || die "deps go too deep — build the rest from BLFS: $LFS_BLFS/longindex.html"
+  for d; do
+    d=${d%%[<>=]*}; [[ -n $d ]] || continue
+    lfs_has "$d" && continue
+    if is_gurt_pkg "$d" || alias_lookup "$d" >/dev/null; then
+      msg2 "🐧 LFS: building $d from its Main GURT recipe"
+      GURT_LFS_DEPTH=$(( ${GURT_LFS_DEPTH:-0} + 1 )) "$self" -y install "$d" && continue
+    elif py=$(lfs_py "$d") && [[ ${py#* } != - ]] && python3 -m pip --version >/dev/null 2>&1; then
+      msg2 "🐧 LFS: python module ${py#* } with pip (like BLFS does)"
+      asroot python3 -m pip install --root-user-action=ignore "${py#* }" && continue
+    fi
+    todo+=("$d")
+  done
+  (( ${#todo[@]} )) || return 0
+  warn "🐧 Linux From Scratch: build these yourself first (gurt has no recipe for them): ${todo[*]}"
+  local t; for t in "${todo[@]}"; do msg2 "$t → $LFS_BLFS/longindex.html (find \"$t\")"; done
+  msg2 "then run the same gurt command again — or add --nodeps if you know you have them"
+  return 1
 }
 
 # ───────────────────────── pretty progress for big installs ─────────────────────────
@@ -223,6 +275,7 @@ pm_install() {
     xbps)   asroot xbps-install -Sy "$@" ;;
     emerge) asroot emerge --noreplace "$@" ;;
     eopkg)  asroot eopkg install -y "$@" ;;
+    lfs)    lfs_install "$@" ;;
     *)      die "couldn't find a package manager I know. install these yourself then rerun with --nodeps: $*" ;;
   esac
 }
@@ -322,7 +375,7 @@ load_recipe() {
   RECIPE=$f
   pkgname="" pkgbase="" pkgver="" pkgrel=1 epoch="" pkgdesc="" url="" license="" maintainer="" install=""
   via_repo="" via_type="" via_url="" via_suite="" via_components="" via_key="" via_fingerprint="" via_pkg=""
-  aliases=() hidden="" desktop_icon="" secret="" category=""
+  aliases=() hidden="" desktop_icon="" secret="" category="" icon=""
   arch=() depends=() makedepends=() checkdepends=() source=() noextract=() sums=() SUMALGO=sha256
   local a v fn
   for a in $SUM_ALGOS; do unset "${a}sums" "${a}sums_$CARCH"; done
@@ -387,6 +440,7 @@ print_srcinfo() {
   [[ -n $license ]]    && printf 'license = %s\n' "$license"
   [[ -n $maintainer ]] && printf 'maintainer = %s\n' "$maintainer"
   [[ -n $category ]]   && printf 'category = %s\n' "$category"
+  [[ $icon == https://* ]] && printf 'icon = %s\n' "$icon"   # the app's logo (Flathub apps get theirs automatically)
   for x in "${arch[@]}";        do printf 'arch = %s\n' "$x"; done
   for x in "${depends[@]}";     do printf 'depends = %s\n' "$x"; done
   for x in "${makedepends[@]}"; do printf 'makedepends = %s\n' "$x"; done
@@ -588,6 +642,7 @@ install_file() { # file.gurt [reason]
   [[ -n $name ]] || die "package has no name??"
   if grep -qE '(^|/)\.\.(/|$)|^/' "$tmp/.FILES" "$tmp/.DIRS"; then die "package has sketchy paths (.. or absolute) — refusing"; fi
   key=$(pkey "$src" "$name"); dbd="$DB/$key"
+  local was=""; is_installed "$key" && was=$(inst_ver "$key")
   [[ $reason == dep && -f $dbd/reason ]] && reason=$(cat "$dbd/reason")
 
   # 1) anything your distro owns is off limits — no exceptions, no --force
@@ -647,7 +702,7 @@ install_file() { # file.gurt [reason]
   asroot cp "$tmp/pkgfile"  "$dbd/pkgfile"
   rm -rf "$tmp"
   post_install "$key"
-  log_hist install "$key"
+  log_hist install "$key" "$was"
   msg "$(pretty "$key") installed ✅"
 }
 
@@ -813,8 +868,13 @@ cmd_autoremove() {
 
 # ── 📜 gurt history: what you installed + removed, and when ──
 HIST_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/gurt/history"
-log_hist() { # install|remove key
-  { mkdir -p "${HIST_FILE%/*}" && printf '%s\t%s\t%s\t%s\n' "$(date '+%F %H:%M')" "$1" "$(pretty "$2")" "$( [[ $1 == install ]] && inst_ver "$2" 2>/dev/null)" >> "$HIST_FILE"; } 2>/dev/null || true
+# one id per gurt command (gurt calling gurt keeps it), so gurt undo knows what went together
+export GURT_TXN=${GURT_TXN:-$(date +%s).$$}
+log_hist() { # install key [version it replaced] | remove key [version removed]
+  # → date \t install|remove \t app \t version \t txn \t replaced version
+  local v=${3:-} was=""
+  [[ $1 == install ]] && { was=$v; v=$(inst_ver "$2" 2>/dev/null) || v=""; }
+  { mkdir -p "${HIST_FILE%/*}" && printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$(date '+%F %H:%M')" "$1" "$(pretty "$2")" "$v" "$GURT_TXN" "$was" >> "$HIST_FILE"; } 2>/dev/null || true
 }
 cmd_history() { # [n | <app>]
   [[ -s $HIST_FILE ]] || { msg "no history yet — it starts with your next install"; return 0; }
@@ -824,15 +884,16 @@ cmd_history() { # [n | <app>]
       printf "  %s  %s%-7s%s %s %s\n", $1, ($2 == "install" ? g : r), ($2 == "install" ? "+ add" : "- yeet"), z, $3, $4 }' "$HIST_FILE" | tail -n "$n"
 }
 remove_pkg() {
-  local key name o
+  local key name o v
   key=$(resolve_key "$1") || die "$1 isn't installed"
-  name=${key#*:}
+  name=${key#*:}; v=$(inst_ver "$key" 2>/dev/null) || v=""
   case $key in
     flatpak:*) msg "removing $(pretty "$key")"; flatpak uninstall --user -y --noninteractive "$name" || warn "flatpak couldn't remove it (already gone?)"
-               asroot rm -rf -- "$DB/$key"; log_hist remove "$key"; msg "$(pretty "$key") removed 🗑️"; return ;;
+               asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
     snap:*)    msg "removing $(pretty "$key")"; asroot snap remove "$name" || warn "snap couldn't remove it (already gone?)"
-               asroot rm -rf -- "$DB/$key"; log_hist remove "$key"; msg "$(pretty "$key") removed 🗑️"; return ;;
+               asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
     box-*:*)   box_remove "$key"; return ;;
+    android:*) android_remove "$key"; asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
   esac
   local dbd="$DB/$key" rdeps=()
   mapfile -t rdeps < <(rdeps_of "$key")
@@ -850,7 +911,7 @@ remove_pkg() {
     [[ -n $rel ]] && asroot rmdir -- "$R/$rel" 2>/dev/null || true
   done
   asroot rm -rf -- "$dbd"
-  log_hist remove "$key"
+  log_hist remove "$key" "$v"
   msg "$(pretty "$key") removed 🗑️"
 }
 
@@ -880,6 +941,41 @@ no_such_pkg() { # name
   die "no package '$1' in main GURT${s:+ — did you mean: ${s// /, }?} (or try: gurt search $1, gurt search -a $1 for every source)"
 }
 # ── main GURT repo ──
+# ── FOSS first: gurt is mostly free software. closed-source apps get labeled and a heads-up (with free ones like it),
+#    search lists them last, and gurt foss on blocks them ──
+FOSS_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/foss"
+foss_class() { # license → foss | closed | unknown
+  local l=${1,,} re='proprietary|^custom$|licenseref-|sspl|(^|[- ])n[cd]([- ]|$)|sul-1|freeware|shareware'
+  case $l in ""|"see "*|unknown|other) echo unknown; return ;; esac
+  if [[ $l =~ $re && $l != *licenseref-kde-accepted* ]]; then echo closed; else echo foss; fi
+}
+foss_strict() { [[ ${GURT_FOSS:-$(cat "$FOSS_CONF" 2>/dev/null)} == on ]]; }
+foss_alts() { # name → free apps like it (from vibes.map)
+  local a f
+  vibe_apps "$1" 2>/dev/null | while IFS= read -r a; do
+    [[ $a == "$1" ]] && continue; f=$(repo_info "$a")
+    if [[ -f $f && $(foss_class "$(info_get "$f" license)") == foss ]]; then echo "$a"; fi
+  done | head -n 4 | paste -sd' ' -
+}
+foss_gate() { # name info-file reason → a heads-up when you ask for a closed-source app (gurt foss on: a no)
+  [[ ${3:-explicit} == explicit ]] || return 0
+  local c alts; c=$(foss_class "$(info_get "$2" license)")
+  case $c in
+    closed)  alts=$(foss_alts "$1")
+             foss_strict && die "$1 is closed source, and FOSS-only mode is on 🔒${alts:+ free ones like it: $alts} (gurt foss off allows it)"
+             warn "$1 is closed source 🔒${alts:+ · free ones like it: $alts}" ;;
+    unknown) foss_strict && die "gurt can't tell whether $1 is free software, and FOSS-only mode is on (gurt foss off allows it)" ;;
+  esac
+  return 0
+}
+cmd_foss() { # on | off | status
+  case ${1:-status} in
+    on)  mkdir -p "${FOSS_CONF%/*}"; echo on > "$FOSS_CONF"; msg "FOSS-only mode on 🔓 gurt won't install closed-source apps or Android apps F-Droid doesn't have (gurt foss off undoes it)" ;;
+    off) rm -f "$FOSS_CONF"; msg "FOSS-only mode off: closed-source apps install again, with a heads-up" ;;
+    status) if foss_strict; then echo "FOSS-only mode: on"; else echo "FOSS-only mode: off (closed-source apps get a heads-up)"; fi ;;
+    *) die "usage: gurt foss [on | off | status]" ;;
+  esac
+}
 resolve_and_install() { # name reason
   local name=$1 reason=${2:-dep} real
   if ! is_gurt_pkg "$name" && real=$(alias_lookup "$name"); then msg2 "$name is an alias → $real"; name=$real
@@ -894,6 +990,7 @@ resolve_and_install() { # name reason
   if [[ ! -f $info ]]; then
     no_such_pkg "$name"
   fi
+  foss_gate "$name" "$info" "$reason"
 
   # official-repo recipe → add the vendor's repo (key fingerprint pinned by the recipe), install from it
   local via; via=$(info_get "$info" via_repo)
@@ -967,6 +1064,7 @@ install_any() { # spec reason
     file) die "file/ packages come from a file: gurt install ./$name.deb (or .rpm / .pkg.tar.zst)" ;;
     flatpak) flatpak_install "$name" "$reason" ;;
     snap)    snap_install "$name" "$reason" ;;
+    android) android_install "$name" "$reason" ;;
     *) is_binary_src "$src" || die "unknown source '$src' — pick one of: gurt $(all_sources) (or add one: gurt repo add)"
        foreign_install "$src" "$name" "$reason" ;;
   esac
@@ -995,6 +1093,7 @@ norm_src() {
     aur)                            echo aur ;;
     flatpak|flathub)                echo flatpak ;;
     snap|snapcraft|snapd)           echo snap ;;
+    android|waydroid|fdroid|f-droid) echo android ;;
     *)                              echo "$1" ;;
   esac
 }
@@ -1648,7 +1747,7 @@ pkgfile_install() { # file-or-url reason
   local f=$1 reason=${2:-explicit} fam row name ver deps desc prov arch key
   f=$(fetch_arg "$f")
   fam=$(pkgfile_fam "$f")
-  if [[ $fam == apk ]] && ! tar -tzf "$f" .PKGINFO >/dev/null 2>&1; then die "${f##*/} is an Android app 🤖, not an Alpine package — try Waydroid for those"; fi
+  if [[ $fam == apk ]] && is_android_apk "$f"; then android_install_file "$f" "$reason"; return; fi   # an Android app, not Alpine
   command -v python3 >/dev/null && sig_gate "$f"   # signed (inside or next to it)? check it. not signed? nothing to say
   row=$(pkgfile_meta "$f")
   local F; tsv "$row"; name=${F[0]:-}; ver=${F[1]:-}; deps=${F[2]:-}; desc=${F[3]:-}; prov=${F[4]:-}; arch=${F[5]:-}
@@ -1774,7 +1873,7 @@ conv_unpack() { # file tree scratch
   nv=$(file_namever "$f"); CV_NAME=${nv%%$'\t'*}; CV_VER=${nv#*$'\t'}; CV_DEPS=""; CV_DESC=""; CV_ARCH=""; CV_FAM=none
   case $l in
     *.deb|*.rpm|*.pkg.tar|*.pkg.tar.*|*.apk|*.xbps|*.eopkg)
-      if [[ $l == *.apk ]] && ! tar -tzf "$f" .PKGINFO >/dev/null 2>&1; then die "${f##*/} is an Android app 🤖, not an Alpine package — gurt can't convert those"; fi
+      if [[ $l == *.apk ]] && ! tar -tzf "$f" .PKGINFO >/dev/null 2>&1; then die "${f##*/} is an Android app 🤖, not an Alpine package — gurt can't convert those, but it can install them: gurt install ./${f##*/} (runs in Waydroid)"; fi
       row=$(pkgfile_meta "$f"); local F; tsv "$row"
       CV_NAME=${F[0]:-$CV_NAME}; CV_VER=${F[1]:-$CV_VER}; CV_DEPS=${F[2]:-}; CV_DESC=${F[3]:-}; CV_ARCH=${F[5]:-}; CV_FAM=$(pkgfile_fam "$f")
       pkgfile_unpack "$f" "$tree" "$x" ;;
@@ -2618,9 +2717,189 @@ archive_install() { # file name ver reason
   rm -rf "$work"
 }
 
+# ── 🤖 Android apps, through Waydroid: gurt install android/<app> (from F-Droid) · gurt install ./app.apk · gurt android ──
+# the store is F-Droid only (free software), and Android itself is the plain image (no Google apps). a .apk you bring
+# can be closed source: it gets a heads-up and a "you sure?" (gurt foss on: a no)
+FDROID_URL=${GURT_FDROID_URL:-https://f-droid.org/repo}
+is_android_apk() { [[ ${1,,} == *.apk && -f $1 && $(head -c2 -- "$1") == PK ]]; }   # Android = a zip; Alpine's .apk is gzip
+waydroid_ready() { command -v waydroid >/dev/null && [[ -f /var/lib/waydroid/waydroid.cfg ]]; }
+waydroid_running() { waydroid status 2>/dev/null | grep -qE '^Session:[[:space:]]+RUNNING'; }
+waydroid_get() { # install Waydroid itself, from your distro (or Waydroid's own apt repo, or the AUR)
+  command -v waydroid >/dev/null && return 0
+  $NODEPS && die "Waydroid isn't installed (and --nodeps is on)"
+  msg "Android apps run in Waydroid 🤖 (a full Android in a container), and it isn't installed yet"
+  ask "install Waydroid?" || die "no Waydroid, no Android apps"
+  if ( install_native waydroid ) && command -v waydroid >/dev/null; then return 0; fi
+  case $PM in
+    apt)   local code tmp; code=$( . /etc/os-release 2>/dev/null; echo "${UBUNTU_CODENAME:-${VERSION_CODENAME:-}}")
+           [[ -n $code ]] || die "couldn't tell which release you're on, so no Waydroid repo: https://docs.waydro.id/usage/install-on-desktops"
+           msg2 "your distro doesn't ship it: adding Waydroid's own repo (repo.waydro.id, $code)"
+           tmp=$(mktemp); fetch_quiet https://repo.waydro.id/waydroid.gpg "$tmp" || { rm -f "$tmp"; die "couldn't download Waydroid's signing key"; }
+           asroot install -m 644 "$tmp" /usr/share/keyrings/waydroid.gpg; rm -f "$tmp"
+           echo "deb [signed-by=/usr/share/keyrings/waydroid.gpg] https://repo.waydro.id/ $code main" | asroot tee /etc/apt/sources.list.d/waydroid.list >/dev/null
+           asroot apt-get update -q >/dev/null || warn "apt update had problems"
+           asroot apt-get install -y waydroid || die "couldn't install Waydroid (is $code supported? https://repo.waydro.id)" ;;
+    pacman) aur_install waydroid dep ;;
+    *)     die "couldn't install Waydroid from your distro — here's how for yours: https://docs.waydro.id/usage/install-on-desktops" ;;
+  esac
+  command -v waydroid >/dev/null || die "Waydroid still isn't there 😔"
+}
+ensure_waydroid() { # Waydroid installed, Android downloaded, the container + your session running
+  waydroid_get
+  if [[ ! -f /var/lib/waydroid/waydroid.cfg ]]; then
+    msg "downloading Android for Waydroid (LineageOS without Google's apps, about 1 GB, just once) ⏳"
+    asroot waydroid init -s VANILLA || die "waydroid init failed — your kernel may lack binder (most distro kernels have it; on Ubuntu: sudo apt install linux-modules-extra-\$(uname -r))"
+  fi
+  if command -v systemctl >/dev/null && ! systemctl is-active --quiet waydroid-container 2>/dev/null; then
+    asroot systemctl enable --now waydroid-container >/dev/null 2>&1 || warn "couldn't start waydroid-container (sudo systemctl start waydroid-container)"
+  fi
+  waydroid_running && return 0
+  [[ -n ${WAYLAND_DISPLAY:-} ]] || warn "Waydroid shows its windows on Wayland. You're on X11, so log into a Wayland session (or run it inside cage or weston) to see your Android apps"
+  msg2 "starting the Android session"
+  ( setsid waydroid session start >/dev/null 2>&1 < /dev/null & )
+  local i; for (( i = 0; i < 90; i++ )); do waydroid_running && return 0; sleep 1; done
+  die "the Android session didn't start (try: waydroid session start, and look at what it says)"
+}
+apk_package() { # Android .apk → its package id (read out of the binary AndroidManifest.xml)
+  python3 - "$1" <<'PY'
+import struct, sys, zipfile
+b = zipfile.ZipFile(sys.argv[1]).read("AndroidManifest.xml")
+u16 = lambda o: struct.unpack_from("<H", b, o)[0]
+u32 = lambda o: struct.unpack_from("<I", b, o)[0]
+strings, o = [], u16(2)                      # skip the file header to the first chunk
+while o < len(b):
+    typ, hsz, size = u16(o), u16(o + 2), u32(o + 4)
+    if typ == 0x0001:                        # the string pool
+        n, flags, start = u32(o + 8), u32(o + 16), u32(o + 20)
+        for i in range(n):
+            p = o + start + u32(o + hsz + 4 * i)
+            if flags & 0x100:                # utf-8: char count, byte count, bytes
+                p += 2 if b[p] & 0x80 else 1
+                ln = b[p] & 0x7f; ln = (ln << 8 | b[p + 1]) if b[p] & 0x80 else ln; p += 2 if b[p] & 0x80 else 1
+                strings.append(b[p:p + ln].decode("utf-8", "replace"))
+            else:                            # utf-16
+                ln = u16(p); p += 2
+                if ln & 0x8000: ln = (ln & 0x7fff) << 16 | u16(p); p += 2
+                strings.append(b[p:p + 2 * ln].decode("utf-16-le", "replace"))
+    elif typ == 0x0102:                      # the first element = <manifest package="…">
+        astart, asz, cnt = u16(o + 24), u16(o + 26), u16(o + 28)
+        for i in range(cnt):
+            a = o + 16 + astart + i * asz
+            if strings[u32(a + 4)] == "package":
+                print(strings[u32(a + 8)]); sys.exit()
+        sys.exit(1)
+    o += size
+sys.exit(1)
+PY
+}
+waydroid_apps() { waydroid app list 2>/dev/null | awk -F': *' '/^Name:/ { n = $2 } /^packageName:/ { print $2 "\t" n }'; }
+android_install_file() { # apk reason [package id] [version] [description]
+  local f=$1 reason=${2:-explicit} id=${3:-} ver=${4:-} desc=${5:-} before after row name
+  is_android_apk "$f" || die "${f##*/} isn't an Android app"
+  if [[ -z $id ]]; then   # a file you brought: on F-Droid = free software. not on it = closed source, as far as gurt can tell
+    need_tool python3 "reading Android apps"
+    id=$(apk_package "$f") || die "couldn't read the package name out of ${f##*/} — is it a real Android app?"
+    row=$(android_find "$id")
+    if [[ ${row%%$'\t'*} == "$id" ]]; then
+      local F; tsv "$row"; desc=${F[5]}; ver=""
+      msg2 "$id is on F-Droid: ${desc%% — *} ✅ free software"
+      [[ $reason == explicit ]] && { ask "install ${f##*/} into Waydroid?" || die "aborted, no cap"; }
+    else
+      foss_strict && die "$id isn't on F-Droid, so it's closed source as far as gurt can tell, and FOSS-only mode is on 🔒 (gurt foss off allows it)"
+      warn "$id isn't on F-Droid, so it's closed source as far as gurt can tell 🔒 nobody checked what's in it, so only install it if you trust where you got it"
+      desc="$id (Android app, closed source)"
+      [[ $reason == explicit ]] && { ask "install ${f##*/} into Waydroid anyway?" || die "aborted, no cap"; }
+    fi
+  fi
+  ensure_waydroid
+  before=$(waydroid_apps | cut -f1 | sort)
+  msg "installing ${f##*/} into Android 🤖"
+  waydroid app install "$f" || die "Waydroid couldn't install it"
+  local i; for (( i = 0; i < 20; i++ )); do   # Android takes a moment to list a new app
+    after=$(waydroid_apps); row=$(awk -F'\t' -v id="$id" 'id != "" && $1 == id' <<<"$after")
+    if [[ -z $row ]]; then local newid; newid=$(comm -13 <(printf '%s\n' "$before") <(cut -f1 <<<"$after" | sort) | head -n1)
+      [[ -n $newid ]] && row=$(awk -F'\t' -v id="$newid" '$1 == id' <<<"$after"); fi
+    [[ -n $row ]] && break; sleep 1
+  done
+  if [[ -z $row ]]; then
+    [[ -n $id ]] || { msg "installed ✅ (it's in your app menu; gurt couldn't tell its name, so gurt remove won't know it — use: waydroid app remove <package>)"; return 0; }
+    row="$id"$'\t'"$id"
+  fi
+  id=${row%%$'\t'*}; name=${row#*$'\t'}
+  record_meta "android:$id" "$id" "${ver:-installed}" "${desc:-$name (Android app)}" "$reason" android
+  log_hist install "android:$id"
+  msg "$name installed ✅ (android/$id) — it's in your app menu, or: waydroid app launch $id"
+}
+# F-Droid's index → one TSV like the other sources: id \t version \t apk file \t sha256 \t (no deps) \t name — summary
+fdroid_sync() {
+  local f; f=$(idx_file android); mkdir -p "$IDX_DIR"
+  [[ -s $f && -n $(find "$f" -mmin -1440 2>/dev/null) ]] && return 0
+  need_tool python3 "reading F-Droid's index"
+  msg2 "getting F-Droid's app list 📥"
+  download "$FDROID_URL/index-v1.jar" "$f.jar" || { rm -f "$f.jar"; die "couldn't reach F-Droid"; }
+  python3 - "$f.jar" "$CARCH" > "$f.part" <<'PY' || { rm -f "$f.jar" "$f.part"; die "couldn't read F-Droid's index"; }
+import json, sys, zipfile
+idx = json.loads(zipfile.ZipFile(sys.argv[1]).read("index-v1.json"))
+abi = {"x86_64": "x86_64", "aarch64": "arm64-v8a", "i686": "x86", "armv7l": "armeabi-v7a"}.get(sys.argv[2], "x86_64")
+clean = lambda t: " ".join(str(t or "").split())
+for app in idx.get("apps", []):
+    pid = app.get("packageName"); vs = idx.get("packages", {}).get(pid) or []
+    if not pid or not vs: continue
+    sug = int(app.get("suggestedVersionCode") or 0)
+    ok = [v for v in vs if not v.get("nativecode") or abi in v["nativecode"]] or vs   # one that runs on this cpu, if there is one
+    ok = [v for v in ok if not sug or v.get("versionCode", 0) <= sug] or ok
+    v = max(ok, key=lambda v: v.get("versionCode", 0))
+    loc = app.get("localized") or {}; en = loc.get("en-US") or loc.get("en") or next(iter(loc.values()), {})
+    name, summ = clean(en.get("name") or app.get("name") or pid), clean(en.get("summary") or app.get("summary"))
+    print("\t".join([pid, clean(v.get("versionName")) or str(v.get("versionCode", "")), v.get("apkName", ""), v.get("hash", ""), "", name + (" — " + summ if summ else "")]))
+PY
+  mv -f "$f.part" "$f"; rm -f "$f.jar"
+}
+android_find() { # name or package id → its index row
+  fdroid_sync >/dev/null
+  awk -F'\t' -v q="${1,,}" '
+    tolower($1) == q { print; found = 1; exit }
+    { n = tolower($6); sub(/ — .*/, "", n) }
+    n == q && byname == "" { byname = $0 }
+    END { if (!found && byname != "") print byname }' "$(idx_file android)"
+}
+android_install() { # name-or-id reason
+  local row F id ver apk sum desc f
+  row=$(android_find "$1")
+  [[ -n $row ]] || die "nothing on F-Droid called '$1' (gurt search android/$1)"
+  tsv "$row"; id=${F[0]}; ver=${F[1]}; apk=${F[2]}; sum=${F[3]}; desc=${F[5]}
+  if is_installed "android:$id" && ! $FORCE; then msg "android/$id is already installed 👍"; return 0; fi
+  [[ ${2:-explicit} == explicit ]] && { ask "install ${desc%% — *} $ver (android/$id) from F-Droid into Waydroid?" || die "aborted, no cap"; }
+  f="$GURT_CACHE/downloads/$apk"; mkdir -p "${f%/*}"
+  [[ -f $f ]] && verify "$f" "$sum" || download "$FDROID_URL/$apk" "$f" || die "couldn't download $apk"
+  verify "$f" "$sum" || { rm -f "$f"; die "🚩 $apk doesn't match F-Droid's checksum — not installing it"; }
+  android_install_file "$f" "${2:-explicit}" "$id" "$ver" "$desc"
+}
+android_remove() { # key
+  local id=${1#android:}
+  msg "removing android/$id"
+  waydroid app remove "$id" 2>/dev/null || warn "Waydroid couldn't remove it (already gone?)"
+}
+cmd_android() { # setup | list | remove <app> | open | stop | status
+  case ${1:-status} in
+    setup|init) ensure_waydroid; msg "Android is ready 🤖 install apps: gurt install android/<app> (from F-Droid) or gurt install ./app.apk" ;;
+    list|ls)    waydroid_ready || die "Waydroid isn't set up (gurt android setup)"; waydroid_running || ensure_waydroid
+                waydroid_apps | while IFS=$'\t' read -r id n; do printf '  %-40s %s%s\n' "$id" "$n" "$(is_installed "android:$id" && echo " ${GRN}[gurt]${R0}")"; done ;;
+    remove|rm)  [[ -n ${2:-} ]] || die "usage: gurt android remove <package.id>"; remove_pkg "android/${2#android/}" ;;
+    open|show)  ensure_waydroid; ( setsid waydroid show-full-ui >/dev/null 2>&1 < /dev/null & ); msg "opening Android 🤖" ;;
+    stop)       waydroid session stop 2>/dev/null; msg "Android stopped (gurt android open starts it again)" ;;
+    fdroid|store) android_install org.fdroid.fdroid explicit ;;
+    status)     if ! command -v waydroid >/dev/null; then echo "Waydroid: not installed (gurt android setup)"
+                elif ! waydroid_ready; then echo "Waydroid: installed, Android not downloaded yet (gurt android setup)"
+                else waydroid status 2>/dev/null || true; fi ;;
+    *) die "usage: gurt android [setup | list | remove <package> | open | stop | fdroid | status]" ;;
+  esac
+}
+
 outsource_file() { # file-or-url reason
   local f reason=${2:-explicit} l nv name ver
   f=$(fetch_arg "$1"); l=${f,,}
+  is_android_apk "$f" && { android_install_file "$f" "$reason"; return; }
   nv=$(file_namever "$f"); name=${nv%%$'\t'*}; ver=${nv#*$'\t'}
   case $l in
     *.deb|*.rpm|*.pkg.tar|*.pkg.tar.*|*.apk|*.xbps|*.eopkg) pkgfile_install "$f" "$reason" ;;
@@ -2855,7 +3134,7 @@ box_install() { # src pkg reason
   msg "$(pretty "$key") installed ✅ (it runs inside $n, so it can't touch your real system's files)"
 }
 box_remove() { # key
-  local key=$1 src pkg n e
+  local key=$1 src pkg n e v; v=$(inst_ver "$key" 2>/dev/null) || v=""
   src=${key%%:*}; src=${src#box-}; pkg=${key#*:}; n=$(box_name "$src")
   msg "removing $(pretty "$key")"
   if command -v distrobox >/dev/null; then
@@ -2868,7 +3147,7 @@ box_remove() { # key
     distrobox enter "$n" -- sh -c "$(box_cmd "$src" remove "$pkg")" || warn "couldn't uninstall it inside $n"
   fi
   asroot rm -rf -- "$DB/$key"
-  log_hist remove "$key"
+  log_hist remove "$key" "$v"
   msg "$(pretty "$key") removed 🗑️ (the $n box itself stays — delete it with: distrobox rm $n)"
 }
 
@@ -3379,6 +3658,71 @@ cmd_rollback() {
   echo held | asroot tee "$DB/$k/held" >/dev/null
   msg2 "held at $v so gurt upgrade won't undo it 📌 (gurt unhold $(pretty "$k") when you want updates again)"
 }
+older() { [[ $1 != "$2" && $(printf '%s\n' "$1" "$2" | sort -V | head -n1) == "$1" ]]; }   # is version $1 older than $2
+stash_find() { # key version → the saved .gurt of that version (from gurt's rollback copies)
+  local f v
+  # shellcheck disable=SC2012
+  while IFS= read -r f; do
+    v=$(tar -xzOf "$f" .PKGINFO 2>/dev/null | awk -F' = ' '$1=="pkgver"{v=$2} $1=="pkgrel"{r=$2} END{print v (r ? "-" r : "")}')
+    [[ $v == "$2" ]] && { echo "$f"; return 0; }
+  done < <(ls -1t "$GURT_CACHE/rollback/${1//\//_}"/*.gurt 2>/dev/null)
+  return 1
+}
+# ── gurt undo: take back the last thing gurt did. gurt undo again = redo. gurt undo <app> rolls one app back ──
+cmd_undo() {
+  (( $# )) && { cmd_rollback "$@"; return; }
+  [[ -s $HIST_FILE ]] || die "nothing to undo yet — gurt starts keeping track with your next install"
+  local rows=() tx plan=() r what app ver was key i
+  tx=$(tail -n1 "$HIST_FILE" | awk -F'\t' '{print $5}')
+  if [[ -n $tx ]]; then mapfile -t rows < <(awk -F'\t' -v t="$tx" '$5 == t' "$HIST_FILE")
+  else mapfile -t rows < <(tail -n1 "$HIST_FILE"); fi   # from before gurt kept ids: just the last line
+  # what to do for each, newest first (the app comes off before the deps it pulled in)
+  for (( i = ${#rows[@]} - 1; i >= 0; i-- )); do
+    IFS=$'\t' read -r _ what app ver _ was <<<"${rows[i]}"
+    key=$app; [[ $app == */* ]] && key="${app%%/*}:${app#*/}"
+    if [[ $what == install ]]; then
+      # a line from before gurt kept ids doesn't say what it replaced: the app's line before it does
+      [[ -n $tx ]] || was=$(awk -F'\t' -v a="$app" -v n="$(wc -l < "$HIST_FILE")" 'NR < n && $3 == a { w = ($2 == "install") ? $4 : "" } END { print w }' "$HIST_FILE")
+      if [[ -z $was ]]; then plan+=("remove"$'\t'"$key"$'\t'"$ver")
+      elif [[ $was != "$ver" ]]; then plan+=("back"$'\t'"$key"$'\t'"$ver"$'\t'"$was")
+      fi   # same version = a reinstall, nothing to take back
+    else plan+=("restore"$'\t'"$key"$'\t'"$ver"); fi
+  done
+  (( ${#plan[@]} )) || die "the last thing gurt did was a reinstall, nothing to take back"
+  msg "undo $(tail -n1 "$HIST_FILE" | cut -f1) 👇"
+  for r in "${plan[@]}"; do
+    IFS=$'\t' read -r what key ver was <<<"$r"
+    case $what in
+      remove)  msg2 "remove $(pretty "$key") $ver" ;;
+      back)    if older "$was" "$ver"; then msg2 "roll $(pretty "$key") back $ver -> $was"; else msg2 "bring $(pretty "$key") back up $ver -> $was"; fi ;;
+      restore) msg2 "put $(pretty "$key")${ver:+ $ver} back" ;;
+    esac
+  done
+  ask "do it?" || die "aborted, nothing changed"
+  local who=() f self; self=$(readlink -f "$0")
+  for r in "${plan[@]}"; do
+    IFS=$'\t' read -r what key ver was <<<"$r"
+    case $what in
+      remove)
+        is_installed "$key" || { msg2 "$(pretty "$key") is already gone"; continue; }
+        mapfile -t who < <(rdeps_of "$key")
+        if (( ${#who[@]} )); then warn "kept $(pretty "$key"): ${who[*]} needs it"; continue; fi
+        remove_pkg "$(pretty "$key")" ;;
+      back)
+        f=$(stash_find "$key" "$was") || { warn "no saved copy of $(pretty "$key") $was, so it stays at $ver"; continue; }
+        install_file "$f" "$(cat "$DB/$key/reason" 2>/dev/null || echo explicit)"
+        if older "$was" "$ver"; then
+          echo held | asroot tee "$DB/$key/held" >/dev/null
+          msg2 "held at $was so gurt upgrade won't redo it 📌 (gurt unhold $(pretty "$key") for updates again)"
+        else asroot rm -f "$DB/$key/held"; fi ;;
+      restore)
+        is_installed "$key" && { msg2 "$(pretty "$key") is already back"; continue; }
+        if [[ -n $ver ]] && f=$(stash_find "$key" "$ver"); then install_file "$f" explicit
+        else "$self" -y install "$(pretty "$key")" || warn "couldn't put $(pretty "$key") back (gurt install $(pretty "$key"))"; fi ;;
+    esac
+  done
+  msg "undone ✅ (changed your mind? gurt undo again puts it back)"
+}
 cmd_hold() { local k; for p in "$@"; do k=$(resolve_key "$p") || die "$p isn't installed"; echo held | asroot tee "$DB/$k/held" >/dev/null; msg "$(pretty "$k") held 📌 — upgrade will skip it"; done; }
 cmd_unhold() { local k; for p in "$@"; do k=$(resolve_key "$p") || die "$p isn't installed"; asroot rm -f "$DB/$k/held"; msg "$(pretty "$k") unheld — back to getting updates"; done; }
 is_held() { [[ -f $DB/$1/held ]]; }
@@ -3400,9 +3744,15 @@ vibe_apps() { # term → the apps people use instead (one per line), nothing if 
 vibe_print() { # term apps…
   local term=$1 a f; shift
   msg "apps like $(vibe_term "$term") 👇"
-  for a; do
-    f="$GURT_REPO_DIR/packages/$a/.gurtinfo"; [[ -f $f ]] || continue
-    printf '%sgurt/%s%s%s%s %s\n    %s\n' "$MAG" "$R0" "$B" "$a" "$R0" "$(is_installed "$a" && echo "${GRN}[installed]${R0}")" "$(info_get "$f" pkgdesc)"
+  local pass closed
+  for pass in foss closed; do   # free software first (closed = foss|closed)
+    for a; do
+      f="$GURT_REPO_DIR/packages/$a/.gurtinfo"; [[ -f $f ]] || continue
+      closed=foss; [[ $(foss_class "$(info_get "$f" license)") == closed ]] && closed=closed
+      [[ $closed == "$pass" ]] || continue
+      [[ $closed == closed ]] && foss_strict && continue
+      printf '%sgurt/%s%s%s%s %s%s\n    %s\n' "$MAG" "$R0" "$B" "$a" "$R0" "$(is_installed "$a" && echo "${GRN}[installed]${R0} ")" "$([[ $closed == closed ]] && echo "${YLW}[closed source]${R0}")" "$(info_get "$f" pkgdesc)"
+    done
   done
 }
 
@@ -3466,20 +3816,110 @@ print("%d\t%s" % (t, k))' "$d/files" "$k"
   fi
 }
 hsize() { awk -v b="$1" 'BEGIN { if (b >= 1073741824) printf "%.1f GB", b/1073741824; else if (b >= 1048576) printf "%.0f MB", b/1048576; else printf "%.0f KB", b/1024 }'; }
-cmd_hogs() { # [--tsv] [n]
-  local tsv=false n=15 total=0 b k i=0
-  [[ ${1:-} == --tsv ]] && { tsv=true; shift; }
+# ── gurt hogs --all: everything on your computer, not just what gurt installed ──
+native_sizes() { # → "bytes<TAB>pm/name" for what your distro's package manager installed
+  case $PM in
+    dnf|zypper) command -v rpm >/dev/null && rpm -qa --qf '%{SIZE}\t%{NAME}\n' 2>/dev/null | awk -F'\t' -v p="$PM" '$1 ~ /^[0-9]+$/ { printf "%d\t%s/%s\n", $1, p, $2 }' ;;
+    apt) dpkg-query -W -f='${Installed-Size}\t${Package}\n' 2>/dev/null | awk -F'\t' '$1 ~ /^[0-9]+$/ { printf "%d\tapt/%s\n", $1 * 1024, $2 }' ;;
+    pacman) LC_ALL=C pacman -Qi 2>/dev/null | awk -F': *' '/^Name / { n = $2 } /^Installed Size/ { split($2, a, " ")
+              m = a[2] ~ /^G/ ? 1073741824 : a[2] ~ /^M/ ? 1048576 : a[2] ~ /^K/ ? 1024 : 1; printf "%d\tpacman/%s\n", a[1] * m, n }' ;;
+  esac
+  return 0
+}
+outside_sizes() { # flatpaks, snaps + AppImages gurt didn't install → "bytes<TAB>where/name"
+  local id sz f
+  if command -v flatpak >/dev/null; then
+    flatpak list --app --columns=application,size 2>/dev/null | while IFS=$'\t' read -r id sz; do
+      [[ -n $id && ! -d $DB/flatpak:$id ]] || continue
+      awk -v s="$sz" -v k="flatpak/$id" 'BEGIN { n = s + 0; u = s; gsub(/[0-9., ]/, "", u)
+        m = (u ~ /^G/) ? 1073741824 : (u ~ /^M/) ? 1048576 : (u ~ /^k/) ? 1024 : 1; printf "%d\t%s\n", n * m, k }'
+    done
+  fi
+  for f in /var/lib/snapd/snaps/*.snap; do if [[ -f $f ]]; then printf '%s\tsnap/%s\n' "$(stat -c %s "$f")" "$(basename "${f%_*}")"; fi; done |
+    awk -F'\t' '{ s[$2] += $1 } END { for (k in s) printf "%d\t%s\n", s[k], k }'
+  for f in "$HOME"/Applications/*.[Aa]pp[Ii]mage "$HOME"/.local/bin/*.[Aa]pp[Ii]mage "$HOME"/Downloads/*.[Aa]pp[Ii]mage; do
+    if [[ -f $f ]]; then printf '%s\tAppImage/%s\n' "$(stat -c %s "$f")" "$(basename "$f")"; fi
+  done
+  return 0
+}
+cmd_hogs() { # [--all|all] [--tsv] [n] | junk [--tsv] | clean [what…]
+  case ${1:-} in junk|leftovers) shift; junk_show "$@"; return ;; clean|toss) shift; junk_clean "$@"; return ;; esac
+  local tsv=false all=$ALLSRC n=15 total=0 b k i=0   # gurt -a / --all is parsed up front, like for search
+  while [[ ${1:-} == --tsv || ${1:-} == all ]]; do case $1 in --tsv) tsv=true ;; all) all=true ;; esac; shift; done
   [[ ${1:-} =~ ^[0-9]+$ ]] && n=$1
   need_tool python3 "measuring apps"
-  local rows; rows=$(pkg_sizes | sort -t$'\t' -k1,1nr)
+  local rows
+  if $all; then rows=$( { pkg_sizes | while IFS=$'\t' read -r b k; do printf '%s\t%s\n' "$b" "$(pretty "$k")"; done; native_sizes; outside_sizes; } | sort -t$'\t' -k1,1nr)
+  else rows=$(pkg_sizes | sort -t$'\t' -k1,1nr); fi
   $tsv && { printf '%s\n' "$rows"; return 0; }
-  [[ -n $rows ]] || { msg "gurt hasn't installed anything yet"; return 0; }
-  msg "biggest apps gurt installed 🐷"
+  [[ -n $rows ]] || { msg "gurt hasn't installed anything yet (gurt hogs --all shows everything on your computer)"; return 0; }
+  if $all; then msg "biggest things on your computer 🐷"; else msg "biggest apps gurt installed 🐷"; fi
   while IFS=$'\t' read -r b k; do
     total=$((total + b)); i=$((i + 1)); (( i > n )) && continue
     printf '  %9s  %s\n' "$(hsize "$b")" "$(pretty "$k")"
   done <<<"$rows"
-  msg2 "all together: $(hsize "$total") · free some up: gurt remove <app> · gurt autoremove"
+  msg2 "all together: $(hsize "$total") · free some up: gurt remove <app> · gurt autoremove · junk you can toss: gurt hogs junk"
+}
+
+# ── gurt hogs junk: caches, trash + leftovers that are safe to toss · gurt hogs clean [what…] tosses them ──
+dir_bytes() { du -sb -- "$@" 2>/dev/null | awk '{ s += $1 } END { printf "%d\n", s }'; }
+pm_cache_dirs() { case $PM in zypper) echo /var/cache/zypp/packages ;; apt) echo /var/cache/apt/archives ;; pacman) echo /var/cache/pacman/pkg ;; dnf) echo /var/cache/dnf /var/cache/libdnf5 ;; esac; }
+junk_items() { # → what<TAB>bytes<TAB>description<TAB>needs root (1|0)
+  local b d trash="${XDG_DATA_HOME:-$HOME/.local/share}/Trash" dirs=()
+  b=0; for d in $CACHE_JUNK; do [[ -d $GURT_CACHE/$d ]] && b=$((b + $(dir_bytes "$GURT_CACHE/$d"))); done
+  printf 'gurt-cache\t%s\tgurt'"'"'s downloads + build leftovers (they come back by themselves)\t0\n' "$b"
+  [[ -d $GURT_CACHE/rollback ]] && printf 'gurt-rollback\t%s\told versions gurt keeps for undo + rollback\t0\n' "$(dir_bytes "$GURT_CACHE/rollback")"
+  [[ -d $trash ]] && printf 'trash\t%s\tyour trash\t0\n' "$(dir_bytes "$trash")"
+  for d in "${XDG_CACHE_HOME:-$HOME/.cache}"/*/; do   # other apps' caches, the big ones
+    d=${d%/}; [[ $d -ef $GURT_CACHE ]] && continue
+    b=$(dir_bytes "$d"); (( b >= 52428800 )) && printf 'cache:%s\t%s\t%s'"'"'s cache (~/.cache/%s, it refills as you use it)\t0\n' "${d##*/}" "$b" "${d##*/}" "${d##*/}"
+  done
+  read -ra dirs <<<"$(pm_cache_dirs)"
+  (( ${#dirs[@]} )) && printf 'pm-cache\t%s\tpackages %s downloaded for updates (already installed)\t1\n' "$(dir_bytes "${dirs[@]}")" "$PM"
+  if command -v journalctl >/dev/null; then
+    b=$(journalctl --disk-usage 2>/dev/null | grep -oE '[0-9.]+[KMGT]?B?' | tail -n1 | sed 's/B$//')
+    [[ -n $b ]] && b=$(numfmt --from=iec "$b" 2>/dev/null) && (( b > 209715200 )) &&
+      printf 'journal\t%s\tsystem logs (keeps the newest 200 MB)\t1\n' "$((b - 209715200))"
+  fi
+  [[ -d /var/lib/systemd/coredump ]] && printf 'coredumps\t%s\tcrash dumps from apps that crashed\t1\n' "$(dir_bytes /var/lib/systemd/coredump)"
+  return 0
+}
+junk_show() { # [--tsv]
+  local rows w b d r tot=0
+  rows=$(junk_items | awk -F'\t' '$2 >= 1048576' | sort -t$'\t' -k2,2nr)
+  [[ ${1:-} == --tsv ]] && { [[ -n $rows ]] && printf '%s\n' "$rows"; return 0; }
+  [[ -n $rows ]] || { msg "no junk worth tossing ✨"; return 0; }
+  msg "junk you can toss 🧹"
+  while IFS=$'\t' read -r w b d r; do
+    tot=$((tot + b)); printf '  %9s  %-22s %s%s\n' "$(hsize "$b")" "$w" "$d" "$( (( r )) && echo ' (asks for your password)')"
+  done <<<"$rows"
+  msg2 "$(hsize "$tot") in total · toss one: gurt hogs clean <what> · all of it: gurt hogs clean"
+}
+junk_clean() { # [what…]
+  local want=("$@") rows w b d r freed=0 trash="${XDG_DATA_HOME:-$HOME/.local/share}/Trash" c
+  rows=$(junk_items | awk -F'\t' '$2 >= 1048576' | sort -t$'\t' -k2,2nr)
+  [[ -n $rows ]] || { msg "no junk worth tossing ✨"; return 0; }
+  if (( ${#want[@]} )); then
+    for w in "${want[@]}"; do awk -F'\t' -v w="$w" '$1 == w { f = 1 } END { exit !f }' <<<"$rows" || die "no junk called $w (gurt hogs junk shows what's there)"; done
+  fi
+  while IFS=$'\t' read -r -u 3 w b d r; do   # fd 3: ask reads stdin when there's no terminal
+    if (( ${#want[@]} )); then [[ " ${want[*]} " == *" $w "* ]] || continue
+    else ask "toss $d? ($(hsize "$b"))" || continue; fi
+    case $w in
+      gurt-cache)    for c in $CACHE_JUNK; do rm -rf -- "${GURT_CACHE:?}/$c"; done ;;
+      gurt-rollback) rm -rf -- "${GURT_CACHE:?}/rollback"; msg2 "gurt undo + rollback can't go back further than what's installed now" ;;
+      trash)         rm -rf -- "$trash/files" "$trash/info" "$trash/expunged"; mkdir -p "$trash/files" "$trash/info" ;;
+      cache:*)       c=${w#cache:}; [[ $c != */* && $c != .* && -n $c ]] || die "nope"; rm -rf -- "${XDG_CACHE_HOME:-$HOME/.cache}/$c" ;;
+      pm-cache)      case $PM in
+                       zypper) asroot zypper --non-interactive clean --all ;; apt) asroot apt-get clean ;;
+                       pacman) asroot pacman -Sc --noconfirm ;; dnf) asroot dnf clean packages ;;
+                     esac >/dev/null || { warn "$PM couldn't clean its cache"; continue; } ;;
+      journal)       asroot journalctl --vacuum-size=200M >/dev/null 2>&1 || { warn "couldn't shrink the logs"; continue; } ;;
+      coredumps)     asroot find /var/lib/systemd/coredump -type f -delete || { warn "couldn't delete the crash dumps"; continue; } ;;
+    esac
+    freed=$((freed + b)); msg2 "tossed $w ($(hsize "$b"))"
+  done 3<<<"$rows"
+  msg "freed $(hsize "$freed") 🧹"
 }
 
 # ── gurt compare a b c: side by side ──
@@ -3539,7 +3979,7 @@ for i, lab in enumerate(labels):
 }
 
 # ── 🧙 gurt setup: the GURT Setup Wizard. its own app on a desktop; gurt setup --terminal (or no desktop) asks here ──
-SETUP_PICKS="firefox brave librewolf discord vesktop telegram signal vlc spotify obs-studio gimp krita libreoffice obsidian vscodium vscode neovim btop steam heroic prismlauncher"
+SETUP_PICKS="firefox brave librewolf vesktop telegram signal vlc spotube obs-studio gimp krita libreoffice joplin vscodium neovim btop steam heroic prismlauncher"   # mostly free software
 cmd_setup() {
   if [[ ${1:-} != --terminal && ${1:-} != --cli ]] && has_display && ! $NOCONFIRM; then
     msg "opening the GURT Setup Wizard 🧙 (gurt setup --terminal does it right here instead)"
@@ -3629,6 +4069,101 @@ cmd_profile() { # save|load|list|show|rm [name|file]
 }
 
 # ── gurt notify: a desktop notification when updates are waiting (gurt notify on → checks every 6 hours) ──
+# ── GURTd: gurt's background daemon. fresh package lists, update checks (+ auto-update if you want), "install it with
+#    GURT?" for new downloads, and GURT opens instantly. gurt gurtd config = a little menu for all of it ──
+GURTD_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/daemon.conf"
+GURTD_URL="${XDG_RUNTIME_DIR:-$HOME/.cache/gurt}/gurt-gui.url"
+gurtd_get() { local v; v=$(sed -n "s/^$1=//p" "$GURTD_CONF" 2>/dev/null | tail -n1); [[ $v == on || $v == off ]] && echo "$v" || echo "$2"; }
+gurtd_quiet() { local v; v=$(sed -n "s/^quiet=//p" "$GURTD_CONF" 2>/dev/null | tail -n1); [[ $v =~ ^([01]?[0-9]|2[0-3])-([01]?[0-9]|2[0-3])$ ]] && echo "$v" || echo off; }
+gurtd_set() { # key on|off (quiet: 22-8|off)
+  mkdir -p "${GURTD_CONF%/*}"
+  { grep -v "^$1=" "$GURTD_CONF" 2>/dev/null || true; echo "$1=$2"; } > "$GURTD_CONF.new" && mv -f "$GURTD_CONF.new" "$GURTD_CONF"
+}
+gurtd_running() {
+  systemctl --user is-active --quiet gurtd 2>/dev/null && return 0
+  [[ -f $GURTD_URL ]] && command -v curl >/dev/null && curl -fs -o /dev/null --max-time 2 "$(head -n1 "$GURTD_URL")"
+}
+gurtd_onoff() { if [[ $1 == on ]]; then printf '%son%s' "$GRN" "$R0"; else printf '%soff%s' "$DIM" "$R0"; fi; }
+gurtd_row() { printf '  %s  %-22s %s%s  %s%s%s\n' "$1" "$2" "$(gurtd_onoff "$3")" "$([[ $3 == on ]] && echo ' ')" "$DIM" "$4" "$R0"; }
+gurtd_tui() {
+  local k run
+  while :; do
+    gurtd_running && run=on || run=off
+    printf '\033[H\033[2J'
+    printf '%sGURTd%s  gurt'"'"'s background daemon\n\n' "$B" "$R0"
+    gurtd_row 1 "running" "$run" "in the background while you're logged in"
+    gurtd_row 2 "auto-update my apps" "$(gurtd_get autoupdate off)" "apps that need your password get a notification instead"
+    gurtd_row 3 "keep lists fresh" "$(gurtd_get fresh on)" "every 3 hours, so searches + update checks are instant"
+    gurtd_row 4 "watch Downloads" "$(gurtd_get watch on)" "a new .deb / .rpm / AppImage asks to install it with GURT"
+    gurtd_row 5 "saver" "$(gurtd_get saver on)" "no update checks on battery or metered data (they wait till you're plugged in)"
+    local q; q=$(gurtd_quiet)
+    printf '  6  %-22s %s  %sno popups then: they wait till morning%s\n' "quiet hours" "$( [[ $q == off ]] && gurtd_onoff off || printf '%s%s%s' "$GRN" "$q" "$R0")" "$DIM" "$R0"
+    printf '  7  show the log\n\n  q  done\n\n  press a number: '
+    IFS= read -rsn1 k </dev/tty || break
+    case $k in
+      1) echo; if [[ $run == on ]]; then cmd_gurtd off; else cmd_gurtd on; fi; sleep 1 ;;
+      2) [[ $(gurtd_get autoupdate off) == on ]] && gurtd_set autoupdate off || gurtd_set autoupdate on ;;
+      3) [[ $(gurtd_get fresh on) == on ]] && gurtd_set fresh off || gurtd_set fresh on ;;
+      4) [[ $(gurtd_get watch on) == on ]] && gurtd_set watch off || gurtd_set watch on ;;
+      5) [[ $(gurtd_get saver on) == on ]] && gurtd_set saver off || gurtd_set saver on ;;
+      6) printf '\n\n  quiet hours, like 22-8 (10pm to 8am), or off: '; IFS= read -r q </dev/tty || q=""
+         [[ -n $q ]] && { cmd_gurtd quiet "$q" >/dev/null 2>&1 || { printf '  that'"'"'s not like 22-8, kept it'; sleep 1; }; } ;;
+      7) echo; echo; cmd_gurtd log; printf '\n  any key to go back '; IFS= read -rsn1 k </dev/tty || true ;;
+      q|Q|$'\e'|'') echo; break ;;
+    esac
+  done
+}
+cmd_gurtd() { # config|on|off|status|log|run|autoupdate|watch|fresh|saver [on|off] | quiet 22-8|off
+  local unit_dir="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user" self py
+  self=$(readlink -f "$0")
+  case ${1:-config} in
+    config|menu|tui)
+      if [[ -t 0 && -t 1 ]]; then gurtd_tui; else cmd_gurtd status; fi ;;
+    on|enable|start)
+      py=$(gui_script) || { sync_main >/dev/null; py=$(gui_script) || die "couldn't find gurt-gui.py (try: gurt sync)"; }
+      command -v python3 >/dev/null || die "GURTd needs python3"
+      if command -v systemctl >/dev/null && systemctl --user show-environment >/dev/null 2>&1; then
+        mkdir -p "$unit_dir"
+        printf '%s\n' "[Unit]" "Description=GURTd btw (Linus sees you)" "After=graphical-session.target" "" \
+          "[Service]" "ExecStart=$(command -v python3) $py --gurt $self --daemon" "Restart=on-failure" "RestartSec=10" "Nice=5" "" \
+          "[Install]" "WantedBy=default.target" > "$unit_dir/gurtd.service"
+        systemctl --user daemon-reload && systemctl --user enable --now gurtd.service >/dev/null 2>&1 || die "systemd wouldn't start GURTd"
+      else   # no systemd user session: start it now + at every login
+        mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/autostart"
+        printf '%s\n' "[Desktop Entry]" "Type=Application" "Name=GURTd" "Exec=$self gurtd run" "NoDisplay=true" "X-GNOME-Autostart-enabled=true" \
+          > "${XDG_CONFIG_HOME:-$HOME/.config}/autostart/gurtd.desktop"
+        gurtd_running || { setsid "$self" gurtd run >/dev/null 2>&1 < /dev/null & }
+      fi
+      # GURTd does the update checks now, so the old 6-hour alert timer can go
+      systemctl --user disable --now gurt-notify.timer >/dev/null 2>&1 || true
+      msg "GURTd is on 🐧 Linus sees you. (gurt gurtd config to change what it does)" ;;
+    off|disable|stop)
+      systemctl --user disable --now gurtd.service >/dev/null 2>&1 || true
+      rm -f "$unit_dir/gurtd.service" "${XDG_CONFIG_HOME:-$HOME/.config}/autostart/gurtd.desktop"
+      if [[ -f $GURTD_URL ]]; then pkill -f -- "gurt-gui.py .*--daemon" 2>/dev/null || true; rm -f "$GURTD_URL"; fi
+      msg "GURTd is off" ;;
+    status)
+      if gurtd_running; then echo "running: on"; else echo "running: off"; fi
+      echo "autoupdate: $(gurtd_get autoupdate off)"; echo "fresh: $(gurtd_get fresh on)"; echo "watch: $(gurtd_get watch on)"
+      echo "saver: $(gurtd_get saver on)"; echo "quiet: $(gurtd_quiet)" ;;
+    log)
+      if [[ -f $HOME/.cache/gurt/gurtd.log ]]; then tail -n "${2:-30}" "$HOME/.cache/gurt/gurtd.log"; else echo "GURTd hasn't run yet"; fi ;;
+    run)
+      py=$(gui_script) || { sync_main >/dev/null; py=$(gui_script) || die "couldn't find gurt-gui.py (try: gurt sync)"; }
+      exec python3 "$py" --gurt "$self" --daemon ;;
+    quiet)
+      local q=${2:-}; q=${q//:00/}; q=${q// /}
+      [[ $q == off || $q =~ ^([01]?[0-9]|2[0-3])-([01]?[0-9]|2[0-3])$ ]] || die "usage: gurt gurtd quiet 22-8 (hours, 24h clock) | off"
+      gurtd_set quiet "$q"
+      if [[ $q == off ]]; then msg "GURTd quiet hours: off"; else msg "GURTd quiet hours: ${q%-*}:00 to ${q#*-}:00 🤫 (it still checks, the popups wait)"; fi ;;
+    autoupdate|auto-update|watch|fresh|saver)
+      local key=${1/auto-update/autoupdate}
+      [[ ${2:-} == on || ${2:-} == off ]] || die "usage: gurt gurtd $key on|off"
+      gurtd_set "$key" "$2"; msg "GURTd $key: $2" ;;
+    *) die "usage: gurt gurtd [config|on|off|status|log|autoupdate on|off|watch on|off|fresh on|off|saver on|off|quiet 22-8|off]" ;;
+  esac
+}
+
 cmd_notify() { # [on|off|now]
   local unit_dir="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user" self; self=$(readlink -f "$0")
   case ${1:-now} in
@@ -3754,7 +4289,7 @@ cmd_complete() {
     available) for f in "$GURT_REPO_DIR"/packages/*/.gurtinfo; do [[ -f $f ]] || continue
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
     commands)  printf '%s\n' sync search info install update upgrade self-update uninstall remove autoremove list files owns lottery sysup \
-                 build add srcinfo checksum new repo dirt gui de outsource rollback hold unhold export import completions doctor version help yo \
+                 build add srcinfo checksum new repo dirt gui de outsource undo rollback hold unhold export import completions doctor version help yo \
                  convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman flatpak snap dirt ;;
   esac
@@ -3766,7 +4301,7 @@ cmd_complete() {
 gui_script() {
   local self d f
   self=$(readlink -f "$0"); d=$(dirname "$self")
-  for f in "$d/../share/gurt/gurt-gui.py" /usr/local/share/gurt/gurt-gui.py /usr/share/gurt/gurt-gui.py "$GURT_REPO_DIR/gui/gurt-gui.py"; do
+  for f in "$d/../share/gurt/gurt-gui.py" /usr/local/share/gurt/gurt-gui.py /usr/share/gurt/gurt-gui.py "$d/gui/gurt-gui.py" "$GURT_REPO_DIR/gui/gurt-gui.py"; do
     [[ -f $f ]] && { echo "$f"; return 0; }
   done
   return 1
@@ -3857,8 +4392,12 @@ cmd_gui() {
     # shellcheck disable=SC2046
     install_native $(map_dep python3) || die "couldn't install python3 — install it yourself, then run gurt gui again"
   fi
+  local py
+  if (( $# == 0 )) && [[ -f $GURTD_URL ]] && gurtd_running && py=$(gui_script); then   # GURTd keeps GURT ready: instant
+    exec python3 "$py" --attach
+  fi
   [[ -d $GURT_REPO_DIR/.git ]] || sync_main >/dev/null
-  local py; py=$(gui_script) || { sync_main >/dev/null; py=$(gui_script) || die "couldn't find gurt-gui.py (try: gurt sync)"; }
+  py=$(gui_script) || { sync_main >/dev/null; py=$(gui_script) || die "couldn't find gurt-gui.py (try: gurt sync)"; }
   gui_desktop_entry
   if [[ ${1:-} == --setup ]]; then gui_setup "$py"; return; fi
   # step 2: the app window. first time from a terminal → just install it. from the app menu → the app offers a button
@@ -4039,9 +4578,9 @@ cmd_sync() { # [source...|all]
 }
 
 search_main() {
-  local term=$1 f name desc ver tag found=0
+  local term=$1 f name desc ver tag found=0 later=""
   ensure_repo
-  local aka
+  local aka line
   for f in "$GURT_REPO_DIR/$PKG_TREE"/*/.gurtinfo; do
     name=$(info_get "$f" pkgname); desc=$(info_get "$f" pkgdesc)
     aka=$(info_get "$f" alias | paste -sd, - | sed 's/,/, /g')
@@ -4052,10 +4591,15 @@ search_main() {
       [[ -n $aka ]] && desc+="  (aka $aka)"
       [[ -n $(info_get "$f" via_repo) ]] && ver="official repo 🔏"
       is_installed "$(pkey "$TREE_SRC" "$name")" && tag=" ${GRN}[installed]${R0}"
-      printf '%s%s/%s%s%s%s %s%s%s%s\n    %s\n' "$MAG" "$TREE_SRC" "$R0" "$B" "$name" "$R0" "$GRN" "$ver" "$R0" "$tag" "$desc"
+      line=$(printf '%s%s/%s%s%s%s %s%s%s%s' "$MAG" "$TREE_SRC" "$R0" "$B" "$name" "$R0" "$GRN" "$ver" "$R0" "$tag")
+      if [[ $(foss_class "$(info_get "$f" license)") == closed ]]; then   # free software first, closed-source after
+        foss_strict && continue
+        later+="$line ${YLW}[closed source]${R0}"$'\n'"    $desc"$'\n'
+      else printf '%s\n    %s\n' "$line" "$desc"; fi
       found=1
     fi
   done
+  [[ -n $later ]] && printf '%s' "$later"
   (( found ))
 }
 search_foreign() { # src term
@@ -4064,6 +4608,10 @@ search_foreign() { # src term
     rows=$(flatpak_search "$term") || { warn "couldn't search Flathub"; return 1; }
   elif [[ $src == snap ]]; then
     rows=$(snap_search "$term") || { warn "couldn't search the Snap Store"; return 1; }
+  elif [[ $src == android ]]; then
+    fdroid_sync
+    rows=$(awk -F'\t' -v t="${term,,}" 'index(tolower($1 "\t" $6), t) { n = tolower($6); sub(/ — .*/, "", n)
+             print (n == t ? 0 : index(n, t) == 1 ? 1 : index(n, t) ? 2 : 3) "\t" $0 }' "$(idx_file android)" | sort -t$'\t' -k1,1n | cut -f2- | head -n 40)
   elif [[ $src == aur ]]; then
     (( ${#term} >= 2 )) || die "aur search needs at least 2 characters"
     rows=$(aur_search "$term") || { warn "couldn't reach the AUR"; return 1; }
@@ -4217,12 +4765,19 @@ used_sources() {
 }
 
 refresh_all() {
-  local s
+  local s stamp="$GURT_CACHE/refreshed" max=30 age
+  # refreshed a moment ago (GURTd does it every 3 hours)? then the lists are fresh: skip the slow part
+  [[ -f ${XDG_RUNTIME_DIR:-$HOME/.cache/gurt}/gurt-gui.url ]] && max=200
+  if [[ -z ${GURT_REFRESH:-} ]] && ! $FORCE && [[ -f $stamp ]]; then
+    age=$(( $(date +%s) - $(stat -c %Y "$stamp" 2>/dev/null || echo 0) ))
+    if (( age < max * 60 )); then msg2 "package lists are fresh (refreshed $(( age / 60 )) min ago)"; return 0; fi
+  fi
   sync_main
   for s in $(used_sources); do
     [[ $s == aur || $s == flatpak || $s == snap || $s == git || $s == dirt || $s == file || $s == box-* ]] && continue
     ( sync_source "$s" ) || warn "couldn't refresh $s, skipping"
   done
+  mkdir -p "$GURT_CACHE" && touch "$stamp"
 }
 
 # is there a newer gurt in the main repo?
@@ -4298,6 +4853,9 @@ system_upgrade() {
     emerge)
       msg "🐧 updating your system (emerge --sync + @world — grab a snack 🍿)"
       asroot emerge --sync && asroot emerge --ask="$($NOCONFIRM && echo n || echo y)" --update --deep --newuse @world ;;
+    lfs) msg "🐧 Linux From Scratch updates by rebuilding: check the LFS + BLFS errata and security advisories"
+         msg2 "https://www.linuxfromscratch.org/lfs/advisories/ · https://www.linuxfromscratch.org/blfs/advisories/"
+         msg2 "(gurt still updates everything it installed)"; return 0 ;;
     *) warn "don't know how to update this distro's own packages ($PM) — skipping that part"; return 0 ;;
   esac || { warn "the system update had problems (scroll up) — carrying on with gurt's own stuff"; return 0; }
   msg "system updated ✅"
@@ -5083,6 +5641,7 @@ cmd_doctor() {
   tar --version 2>/dev/null | grep -q GNU || { warn "gurt needs GNU tar (Alpine: apk add tar)"; ok=1; }
   command -v sudo >/dev/null || command -v doas >/dev/null || (( EUID == 0 )) || warn "no sudo/doas found"
   [[ $PM == none ]] && warn "no known package manager — you'll have to install deps yourself (--nodeps)"
+  [[ $PM == lfs ]] && msg2 "🐧 Linux From Scratch: deps come from Main GURT recipes (built here) and pip; the rest, BLFS tells you how"
   printf '\n%sutilities apps need%s%s\n' "$B" "$R0" "$(is_donk && echo ' (Donk OS 🫏 gurt keeps these installed)')"
   cmd_utils list
 
@@ -5233,6 +5792,7 @@ ${B}misc${R0}
   de list              desktop environments you can install (kde, gnome, xfce, hyprland, niri…)
   de install <name>    install a desktop from YOUR distro's repos (then offers to delete your old one)
   de remove <name>     delete a desktop (never the one you're logged into, keeps your login screen)
+  undo                 take back the last thing gurt did (an install, remove or upgrade). again = redo ↩️
   rollback <pkg>       go back to the version before (gurt keeps the last 3) + hold it there
   hold / unhold <pkg>  stop / resume upgrades for a package
   export [file]        save the list of stuff you installed
@@ -5241,6 +5801,9 @@ ${B}misc${R0}
   setup [--terminal]   the GURT Setup Wizard 🧙 its own app: system check, sources, starter apps, extras
   profile save|load|list <name>   your apps + gurt settings + the app's look, under a name (gaming, work…) 📁
   notify on|off|now    a desktop notification when updates are waiting (checks every 6 hours) 🔔
+  gurtd [config]       GURTd, the background daemon: auto-updates, fresh lists, downloads → install, instant app 🐧
+  android [setup|list|open|remove <app>|fdroid]   Android apps through Waydroid 🤖 (gurt install android/<app> = F-Droid)
+  foss on|off          FOSS-only mode: no closed-source apps at all (off: they install with a heads-up) 🔓
   snapshots            the snapshots gurt took before system upgrades (btrfs: snapper/timeshift/plain) 📸
   achievements         🏆 trophies for doing gurt things
   completions <shell>  print tab completion for bash/zsh/fish (bash+fish set themselves up)
@@ -5342,6 +5905,9 @@ main() {
     profile|profiles)  cmd_profile "$@" ;;
     setup|wizard)      cmd_setup "$@" ;;
     notify|alerts)     cmd_notify "$@" ;;
+    gurtd|daemon)      cmd_gurtd "$@" ;;
+    android|waydroid)  cmd_android "$@" ;;
+    foss)              cmd_foss "$@" ;;
     snapshots|snaps)   cmd_snapshots ;;
     self-update|selfupdate) cmd_self_update ;;
     uninstall)         if (( $# )); then for p; do remove_pkg "$p"; done; play_scream; achieve yeet   # gurt uninstall <app> = gurt remove <app>
@@ -5362,7 +5928,8 @@ main() {
     repo|repos)        cmd_repo "$@" ;;
     dirt)              cmd_dirt "$@" ;;
     de|desktop|desktops) cmd_de "$@" ;;
-    rollback|undo)     cmd_rollback "$@" && achieve rollback ;;
+    rollback)          cmd_rollback "$@" && achieve rollback ;;
+    undo)              cmd_undo "$@" && achieve rollback ;;
     hold|pin)          (( $# )) || die "hold what tho"; cmd_hold "$@" ;;
     unhold|unpin)      (( $# )) || die "unhold what tho"; cmd_unhold "$@" ;;
     export)            cmd_export "$@" ;;
