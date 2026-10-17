@@ -11,6 +11,7 @@
 /packages/86box/  @clrealy
 /packages/99managers-futsal/  @clrealy
 /packages/a-photo-tool-libre/  @clrealy
+/packages/aaaaxy/  @clrealy
 /packages/abacus/  @clrealy
 /packages/abcalc-plus/  @clrealy
 /packages/abe-re/  @clrealy
@@ -24,8 +25,10 @@
 /packages/actionlint/  @clrealy
 /packages/actual-budget/  @clrealy
 /packages/add-water/  @clrealy
+/packages/addiction-tracker/  @clrealy
 /packages/adobe-flash-player/  @clrealy
 /packages/adobe-reader/  @clrealy
+/packages/adventure-editor/  @clrealy
 /packages/adwsteamgtk/  @clrealy
 /packages/aegisub/  @clrealy
 /packages/aerion/  @clrealy
@@ -43,6 +46,7 @@
 /packages/akregator/  @clrealy
 /packages/al-quran-tafsir-by-word/  @clrealy
 /packages/albion-online/  @clrealy
+/packages/alexandria/  @clrealy
 /packages/alien-arena/  @clrealy
 /packages/aliens-eradication-tc/  @clrealy
 /packages/aliza-ms/  @clrealy
@@ -69,6 +73,7 @@
 /packages/anki/  @clrealy
 /packages/antares-sql/  @clrealy
 /packages/antimicrox/  @clrealy
+/packages/antware/  @clrealy
 /packages/anydesk/  @clrealy
 /packages/anytype/  @clrealy
 /packages/aonsoku/  @clrealy
@@ -94,6 +99,8 @@
 /packages/art/  @clrealy
 /packages/artemis/  @clrealy
 /packages/artha/  @clrealy
+/packages/artikulate/  @clrealy
+/packages/arx/  @clrealy
 /packages/ascii-draw/  @clrealy
 /packages/asciinema/  @clrealy
 /packages/assaultcube-reloaded/  @clrealy
@@ -153,8 +160,10 @@
 /packages/battle-for-wesnoth/  @clrealy
 /packages/battle-tanks/  @clrealy
 /packages/bazaar/  @clrealy
+/packages/bazecor/  @clrealy
 /packages/bazelisk/  @clrealy
 /packages/beagleboard-imager/  @clrealy
+/packages/beat-and-match-to-pass/  @clrealy
 /packages/beaver-notes/  @clrealy
 /packages/beekeeper-studio/  @clrealy
 /packages/beeref/  @clrealy
@@ -182,6 +191,7 @@
 /packages/bisq/  @clrealy
 /packages/bitcoin-core/  @clrealy
 /packages/bitfighter/  @clrealy
+/packages/bittorrent-tracker-editor/  @clrealy
 /packages/bitwarden/  @clrealy
 /packages/bitwig-studio/  @clrealy
 /packages/black-box/  @clrealy
@@ -218,12 +228,14 @@
 /packages/bookup/  @clrealy
 /packages/bootqt/  @clrealy
 /packages/bore/  @clrealy
+/packages/botfather/  @clrealy
 /packages/bottles/  @clrealy
 /packages/bottom/  @clrealy
 /packages/bouncer/  @clrealy
 /packages/bovo/  @clrealy
 /packages/boxbuddy/  @clrealy
 /packages/boxflat/  @clrealy
+/packages/boxi/  @clrealy
 /packages/boxy-svg/  @clrealy
 /packages/bpm-detect/  @clrealy
 /packages/brasero/  @clrealy
@@ -238,6 +250,7 @@
 /packages/bruno/  @clrealy
 /packages/bsnes/  @clrealy
 /packages/btop/  @clrealy
+/packages/bubbles/  @clrealy
 /packages/budslink/  @clrealy
 /packages/buf/  @clrealy
 /packages/buffer/  @clrealy
@@ -263,8 +276,10 @@
 /packages/cambalache/  @clrealy
 /packages/camera/  @clrealy
 /packages/cameractrls/  @clrealy
+/packages/candy-wrapper/  @clrealy
 /packages/cantata/  @clrealy
 /packages/cantor/  @clrealy
+/packages/cap-pirate-battleship/  @clrealy
 /packages/caprine/  @clrealy
 /packages/carabiner/  @clrealy
 /packages/carapace/  @clrealy
@@ -275,6 +290,7 @@
 /packages/cassette/  @clrealy
 /packages/cataclysm-bn/  @clrealy
 /packages/cataclysm-dark-days-ahead/  @clrealy
+/packages/catalyst/  @clrealy
 /packages/cauldron/  @clrealy
 /packages/cavasik/  @clrealy
 /packages/cave-story-nx/  @clrealy
@@ -286,6 +302,7 @@
 /packages/cemu/  @clrealy
 /packages/censor/  @clrealy
 /packages/cfait/  @clrealy
+/packages/chance/  @clrealy
 /packages/chapterize/  @clrealy
 /packages/characters/  @clrealy
 /packages/chaski/  @clrealy
@@ -298,6 +315,7 @@
 /packages/cherry-studio/  @clrealy
 /packages/cherrypick/  @clrealy
 /packages/cherrytree/  @clrealy
+/packages/chess-clock/  @clrealy
 /packages/chess-comp-stomp-with-hacks/  @clrealy
 /packages/chessmd/  @clrealy
 /packages/chessx/  @clrealy
@@ -315,6 +333,7 @@
 /packages/ciano/  @clrealy
 /packages/cider/  @clrealy
 /packages/cine/  @clrealy
+/packages/cinecred/  @clrealy
 /packages/cinema/  @clrealy
 /packages/cinny/  @clrealy
 /packages/circuitsim/  @clrealy
@@ -389,6 +408,7 @@
 /packages/coreshot/  @clrealy
 /packages/corex-hw-monitor/  @clrealy
 /packages/corsixth/  @clrealy
+/packages/cortex-command-community-project/  @clrealy
 /packages/cosign/  @clrealy
 /packages/cosmic-calculator/  @clrealy
 /packages/cosmic-camera/  @clrealy
@@ -403,6 +423,7 @@
 /packages/cpod/  @clrealy
 /packages/cpu-info/  @clrealy
 /packages/cpu-x/  @clrealy
+/packages/craftos-pc-accelerated/  @clrealy
 /packages/craftos-pc/  @clrealy
 /packages/crane/  @clrealy
 /packages/crispy-doom/  @clrealy
@@ -422,6 +443,7 @@
 /packages/ctop/  @clrealy
 /packages/cubiomes-viewer/  @clrealy
 /packages/cudatext/  @clrealy
+/packages/cuneo/  @clrealy
 /packages/cura/  @clrealy
 /packages/curlie/  @clrealy
 /packages/curo-calculator/  @clrealy
@@ -435,6 +457,7 @@
 /packages/damask/  @clrealy
 /packages/dankcalendar/  @clrealy
 /packages/daphne/  @clrealy
+/packages/darkly/  @clrealy
 /packages/darktable/  @clrealy
 /packages/dasel/  @clrealy
 /packages/datcord/  @clrealy
@@ -451,6 +474,7 @@
 /packages/ddrescueview/  @clrealy
 /packages/decoder/  @clrealy
 /packages/deep-dive/  @clrealy
+/packages/deepqt/  @clrealy
 /packages/deezer/  @clrealy
 /packages/defuse/  @clrealy
 /packages/deja-dup/  @clrealy
@@ -522,9 +546,11 @@
 /packages/drawpile/  @clrealy
 /packages/drawy/  @clrealy
 /packages/drift/  @clrealy
+/packages/drizzle/  @clrealy
 /packages/dropbox/  @clrealy
 /packages/dropzone/  @clrealy
 /packages/drum-machine/  @clrealy
+/packages/drumstick-metronome/  @clrealy
 /packages/drumstick-midi-monitor/  @clrealy
 /packages/dstask/  @clrealy
 /packages/dsview/  @clrealy
@@ -556,6 +582,7 @@
 /packages/easytag/  @clrealy
 /packages/echo/  @clrealy
 /packages/eclipse-ide-for-java-developers/  @clrealy
+/packages/ecode/  @clrealy
 /packages/ecosia-browser/  @clrealy
 /packages/ecotubehq/  @clrealy
 /packages/edb/  @clrealy
@@ -567,6 +594,7 @@
 /packages/electron-sample-app/  @clrealy
 /packages/electronmail/  @clrealy
 /packages/electrum/  @clrealy
+/packages/elektroid/  @clrealy
 /packages/element/  @clrealy
 /packages/elisa/  @clrealy
 /packages/elmer/  @clrealy
@@ -576,9 +604,11 @@
 /packages/emblem/  @clrealy
 /packages/emby-server/  @clrealy
 /packages/emby-theater/  @clrealy
+/packages/emergency-alerts/  @clrealy
 /packages/emojify/  @clrealy
 /packages/emote/  @clrealy
 /packages/emulicious/  @clrealy
+/packages/encoding-explorer/  @clrealy
 /packages/endeavour/  @clrealy
 /packages/endless-key/  @clrealy
 /packages/endless-sky/  @clrealy
@@ -603,7 +633,9 @@
 /packages/et-legacy/  @clrealy
 /packages/eternal-lands/  @clrealy
 /packages/euphonica/  @clrealy
+/packages/eve-preview-manager/  @clrealy
 /packages/eventix/  @clrealy
+/packages/events/  @clrealy
 /packages/evince/  @clrealy
 /packages/evolution/  @clrealy
 /packages/ex-falso/  @clrealy
@@ -620,6 +652,7 @@
 /packages/eye-of-gnome/  @clrealy
 /packages/eyedropper/  @clrealy
 /packages/eza/  @clrealy
+/packages/ezquake/  @clrealy
 /packages/f3d/  @clrealy
 /packages/fablemaker/  @clrealy
 /packages/facetracker/  @clrealy
@@ -635,7 +668,9 @@
 /packages/fcitx-5/  @clrealy
 /packages/fd/  @clrealy
 /packages/fdme-ffhandball/  @clrealy
+/packages/feeddeck/  @clrealy
 /packages/feedflow/  @clrealy
+/packages/feeel/  @clrealy
 /packages/feishin/  @clrealy
 /packages/feishu/  @clrealy
 /packages/ferdium/  @clrealy
@@ -691,6 +726,7 @@
 /packages/flux/  @clrealy
 /packages/fluxer/  @clrealy
 /packages/flycast/  @clrealy
+/packages/fmit/  @clrealy
 /packages/fnm/  @clrealy
 /packages/focal/  @clrealy
 /packages/focus-timer/  @clrealy
@@ -712,6 +748,7 @@
 /packages/forkgram/  @clrealy
 /packages/formatfactory/  @clrealy
 /packages/formatlab/  @clrealy
+/packages/formiko/  @clrealy
 /packages/fotema/  @clrealy
 /packages/four-in-a-row/  @clrealy
 /packages/fractal/  @clrealy
@@ -748,12 +785,15 @@
 /packages/fsearch/  @clrealy
 /packages/fstl-e/  @clrealy
 /packages/ftb-electron-app/  @clrealy
+/packages/full-steam-ahead/  @clrealy
 /packages/furmark/  @clrealy
 /packages/furnace/  @clrealy
+/packages/furtherance/  @clrealy
 /packages/fuse/  @clrealy
 /packages/fwbackups/  @clrealy
 /packages/fx/  @clrealy
 /packages/fzf/  @clrealy
+/packages/gabtag/  @clrealy
 /packages/gabut-download-manager/  @clrealy
 /packages/gai/  @clrealy
 /packages/gaia-sky/  @clrealy
@@ -769,6 +809,7 @@
 /packages/gaupol/  @clrealy
 /packages/gb-enhanced+/  @clrealy
 /packages/gb-studio/  @clrealy
+/packages/gcompris-teachers/  @clrealy
 /packages/gcompris/  @clrealy
 /packages/gcstar/  @clrealy
 /packages/gdevelop/  @clrealy
@@ -819,6 +860,7 @@
 /packages/gittyup/  @clrealy
 /packages/gitu/  @clrealy
 /packages/gitui/  @clrealy
+/packages/gity/  @clrealy
 /packages/give-me-lyrics/  @clrealy
 /packages/glabels/  @clrealy
 /packages/glate/  @clrealy
@@ -874,12 +916,15 @@
 /packages/gost/  @clrealy
 /packages/gotestsum/  @clrealy
 /packages/gotify/  @clrealy
+/packages/gottet/  @clrealy
 /packages/goverlay/  @clrealy
 /packages/goxel/  @clrealy
 /packages/gpg-frontend/  @clrealy
 /packages/gping/  @clrealy
+/packages/gplaces/  @clrealy
 /packages/gpodder/  @clrealy
 /packages/gpredict/  @clrealy
+/packages/gpro/  @clrealy
 /packages/gpt4all/  @clrealy
 /packages/gpu-screen-recorder/  @clrealy
 /packages/gpu-viewer/  @clrealy
@@ -891,6 +936,7 @@
 /packages/grafx2/  @clrealy
 /packages/gramps/  @clrealy
 /packages/granatier/  @clrealy
+/packages/grandorgue/  @clrealy
 /packages/graphs/  @clrealy
 /packages/grayjay/  @clrealy
 /packages/greenfoot/  @clrealy
@@ -903,6 +949,7 @@
 /packages/gromit-mpx/  @clrealy
 /packages/grpcurl/  @clrealy
 /packages/grype/  @clrealy
+/packages/gstpipelinestudio/  @clrealy
 /packages/gthumb-image-viewer/  @clrealy
 /packages/gtk-meteo/  @clrealy
 /packages/gtkhash/  @clrealy
@@ -910,6 +957,7 @@
 /packages/gtkwave/  @clrealy
 /packages/guitarix/  @clrealy
 /packages/gum/  @clrealy
+/packages/gummi/  @clrealy
 /packages/gupt/  @clrealy
 /packages/gwenview/  @clrealy
 /packages/gx52/  @clrealy
@@ -926,6 +974,7 @@
 /packages/hatari/  @clrealy
 /packages/haven/  @clrealy
 /packages/hcloud/  @clrealy
+/packages/hdfview/  @clrealy
 /packages/hdos/  @clrealy
 /packages/headlamp/  @clrealy
 /packages/headscale/  @clrealy
@@ -941,6 +990,7 @@
 /packages/heroic/  @clrealy
 /packages/hetairos-ai/  @clrealy
 /packages/hex-colordle/  @clrealy
+/packages/hexen-ii-hammer-of-thyrion/  @clrealy
 /packages/hexgl/  @clrealy
 /packages/hexyl/  @clrealy
 /packages/heynote/  @clrealy
@@ -953,7 +1003,9 @@
 /packages/honkers-launcher/  @clrealy
 /packages/hopsan/  @clrealy
 /packages/hoptodesk/  @clrealy
+/packages/horizon-eda/  @clrealy
 /packages/hosty/  @clrealy
+/packages/hotshots/  @clrealy
 /packages/hpa2/  @clrealy
 /packages/htmlq/  @clrealy
 /packages/httpie/  @clrealy
@@ -963,8 +1015,10 @@
 /packages/hunt/  @clrealy
 /packages/hurl/  @clrealy
 /packages/hurry-curry/  @clrealy
+/packages/hxc-floppy-emulator/  @clrealy
 /packages/hydrapaper/  @clrealy
 /packages/hydrogen/  @clrealy
+/packages/hydrus/  @clrealy
 /packages/hyper/  @clrealy
 /packages/hyperfine/  @clrealy
 /packages/hyperplay/  @clrealy
@@ -1010,6 +1064,7 @@
 /packages/ioquake3/  @clrealy
 /packages/iotas/  @clrealy
 /packages/ip-lookup/  @clrealy
+/packages/iptux/  @clrealy
 /packages/iqpuzzle/  @clrealy
 /packages/ireal-pro/  @clrealy
 /packages/iris/  @clrealy
@@ -1029,10 +1084,13 @@
 /packages/jasmine/  @clrealy
 /packages/jasp/  @clrealy
 /packages/jazz-resurrection/  @clrealy
+/packages/jchempaint/  @clrealy
 /packages/jd-gui/  @clrealy
+/packages/jddesktopentryedit/  @clrealy
 /packages/jdflatpaksnapshot/  @clrealy
 /packages/jdmacroplayer/  @clrealy
 /packages/jdminecraftlauncher/  @clrealy
+/packages/jdmrpackinstaller/  @clrealy
 /packages/jdnbtexplorer/  @clrealy
 /packages/jdownloader/  @clrealy
 /packages/jdpixelupscaler/  @clrealy
@@ -1055,10 +1113,12 @@
 /packages/joshuto/  @clrealy
 /packages/josm/  @clrealy
 /packages/jottr/  @clrealy
+/packages/journald-browser/  @clrealy
 /packages/jpdf-tweak/  @clrealy
 /packages/jpeg2pdf/  @clrealy
 /packages/jpexs-free-flash-decompiler/  @clrealy
 /packages/jq/  @clrealy
+/packages/jrommanager/  @clrealy
 /packages/js8call/  @clrealy
 /packages/jsignpdf/  @clrealy
 /packages/jujutsu/  @clrealy
@@ -1082,7 +1142,9 @@
 /packages/kana/  @clrealy
 /packages/kanagram/  @clrealy
 /packages/kando/  @clrealy
+/packages/kaori/  @clrealy
 /packages/kapman/  @clrealy
+/packages/kapow-punch-clock/  @clrealy
 /packages/karaoke-mugen/  @clrealy
 /packages/karere/  @clrealy
 /packages/kasasa/  @clrealy
@@ -1113,6 +1175,9 @@
 /packages/keepsecret/  @clrealy
 /packages/keet/  @clrealy
 /packages/kega-fusion/  @clrealy
+/packages/kepublicity/  @clrealy
+/packages/ketchup/  @clrealy
+/packages/key-cutter/  @clrealy
 /packages/key-rack/  @clrealy
 /packages/keyguard/  @clrealy
 /packages/keymaker/  @clrealy
@@ -1122,6 +1187,7 @@
 /packages/kfind/  @clrealy
 /packages/kfourinline/  @clrealy
 /packages/kgeography/  @clrealy
+/packages/kgeotag/  @clrealy
 /packages/kget/  @clrealy
 /packages/kgoldrunner/  @clrealy
 /packages/khangman/  @clrealy
@@ -1143,6 +1209,7 @@
 /packages/klayout/  @clrealy
 /packages/kleaner/  @clrealy
 /packages/kleopatra/  @clrealy
+/packages/klettres/  @clrealy
 /packages/klevernotes/  @clrealy
 /packages/klia-kompress/  @clrealy
 /packages/klia-store/  @clrealy
@@ -1155,9 +1222,11 @@
 /packages/kmymoney/  @clrealy
 /packages/knetwalk/  @clrealy
 /packages/knights/  @clrealy
+/packages/kodaskanna/  @clrealy
 /packages/kodi/  @clrealy
 /packages/kolf/  @clrealy
 /packages/kolibri/  @clrealy
+/packages/kollision/  @clrealy
 /packages/kolourpaint/  @clrealy
 /packages/komikku/  @clrealy
 /packages/kommit/  @clrealy
@@ -1197,6 +1266,7 @@
 /packages/ktimetracker/  @clrealy
 /packages/ktorrent/  @clrealy
 /packages/ktouch/  @clrealy
+/packages/ktrip/  @clrealy
 /packages/ktuberling/  @clrealy
 /packages/kturtle/  @clrealy
 /packages/kubecolor/  @clrealy
@@ -1235,6 +1305,7 @@
 /packages/letters/  @clrealy
 /packages/lf/  @clrealy
 /packages/lfy/  @clrealy
+/packages/lgeneral/  @clrealy
 /packages/libellus/  @clrealy
 /packages/libre-trainsim/  @clrealy
 /packages/librecad/  @clrealy
@@ -1244,8 +1315,10 @@
 /packages/librequake/  @clrealy
 /packages/libresprite/  @clrealy
 /packages/librewolf/  @clrealy
+/packages/lifeograph/  @clrealy
 /packages/liferea/  @clrealy
 /packages/light-video/  @clrealy
+/packages/lightning/  @clrealy
 /packages/lights-off/  @clrealy
 /packages/lightzone/  @clrealy
 /packages/limo/  @clrealy
@@ -1258,6 +1331,7 @@
 /packages/linuxdc++/  @clrealy
 /packages/linwood-butterfly/  @clrealy
 /packages/lipi/  @clrealy
+/packages/listen-moe/  @clrealy
 /packages/lite-xl/  @clrealy
 /packages/live-captions/  @clrealy
 /packages/lix/  @clrealy
@@ -1306,6 +1380,7 @@
 /packages/macchina/  @clrealy
 /packages/madamiru/  @clrealy
 /packages/maelstrom/  @clrealy
+/packages/mages/  @clrealy
 /packages/magicseteditor/  @clrealy
 /packages/mahjongg/  @clrealy
 /packages/mailspring/  @clrealy
@@ -1337,6 +1412,7 @@
 /packages/mcfly/  @clrealy
 /packages/mcomix/  @clrealy
 /packages/mdbook/  @clrealy
+/packages/measure/  @clrealy
 /packages/mecalin/  @clrealy
 /packages/media-downloader/  @clrealy
 /packages/mediaharbor/  @clrealy
@@ -1401,6 +1477,7 @@
 /packages/minion/  @clrealy
 /packages/miniserve/  @clrealy
 /packages/minuet/  @clrealy
+/packages/minus-games/  @clrealy
 /packages/mirror-hall/  @clrealy
 /packages/mise/  @clrealy
 /packages/missile-math/  @clrealy
@@ -1410,15 +1487,18 @@
 /packages/mixxx/  @clrealy
 /packages/mkcert/  @clrealy
 /packages/mkvtoolnix/  @clrealy
+/packages/mldonkey-next/  @clrealy
 /packages/mmex-money-manager/  @clrealy
 /packages/mockoon/  @clrealy
 /packages/mocktail/  @clrealy
+/packages/modloader64/  @clrealy
 /packages/modrinth-app/  @clrealy
 /packages/mods/  @clrealy
 /packages/mold/  @clrealy
 /packages/monero-gui/  @clrealy
 /packages/mongodb-compass/  @clrealy
 /packages/monitorets/  @clrealy
+/packages/monomer-flatpak-example/  @clrealy
 /packages/moonlight-installer/  @clrealy
 /packages/moonlight/  @clrealy
 /packages/moose/  @clrealy
@@ -1435,11 +1515,13 @@
 /packages/mpz-music-player/  @clrealy
 /packages/mqtt-x/  @clrealy
 /packages/mqtt5-explorer/  @clrealy
+/packages/mqtty/  @clrealy
 /packages/mr-rescue/  @clrealy
 /packages/mslicer/  @clrealy
 /packages/mtoc/  @clrealy
 /packages/mullvad-browser/  @clrealy
 /packages/multiplex/  @clrealy
+/packages/multiplication-puzzle/  @clrealy
 /packages/multivnc/  @clrealy
 /packages/mumble/  @clrealy
 /packages/munadi/  @clrealy
@@ -1457,9 +1539,11 @@
 /packages/musicfetch/  @clrealy
 /packages/musicpod/  @clrealy
 /packages/musik/  @clrealy
+/packages/mygnuhealth/  @clrealy
 /packages/mypaint/  @clrealy
 /packages/n-track-studio/  @clrealy
 /packages/naev/  @clrealy
+/packages/nanonote/  @clrealy
 /packages/nanosaur-2-hatchling/  @clrealy
 /packages/nanosaur/  @clrealy
 /packages/natron/  @clrealy
@@ -1495,6 +1579,7 @@
 /packages/nibbles/  @clrealy
 /packages/nicotine-plus/  @clrealy
 /packages/niimprintx/  @clrealy
+/packages/nis-one-click-backup/  @clrealy
 /packages/nitrokey-app2/  @clrealy
 /packages/nixwriter/  @clrealy
 /packages/nnn/  @clrealy
@@ -1518,9 +1603,11 @@
 /packages/notes-app/  @clrealy
 /packages/notes/  @clrealy
 /packages/notesnook/  @clrealy
+/packages/notify/  @clrealy
 /packages/noutube/  @clrealy
 /packages/nova-music/  @clrealy
 /packages/ntag-audio-file-tag-editor/  @clrealy
+/packages/ntfy-desktop/  @clrealy
 /packages/ntfy/  @clrealy
 /packages/ntfyr/  @clrealy
 /packages/nuclear/  @clrealy
@@ -1545,14 +1632,17 @@
 /packages/oh-my-svg/  @clrealy
 /packages/oha/  @clrealy
 /packages/okteta/  @clrealy
+/packages/oku/  @clrealy
 /packages/okular-mobile/  @clrealy
 /packages/okular/  @clrealy
 /packages/olive/  @clrealy
 /packages/ollama/  @clrealy
 /packages/olympus/  @clrealy
+/packages/omegat/  @clrealy
 /packages/omnidev/  @clrealy
 /packages/onefetch/  @clrealy
 /packages/onekeepass/  @clrealy
+/packages/onekey/  @clrealy
 /packages/oneko/  @clrealy
 /packages/oneware/  @clrealy
 /packages/onionmedia-x/  @clrealy
@@ -1566,15 +1656,20 @@
 /packages/openboard/  @clrealy
 /packages/openbubbles/  @clrealy
 /packages/openbve/  @clrealy
+/packages/openchrom/  @clrealy
+/packages/openclonk/  @clrealy
 /packages/opencode/  @clrealy
 /packages/opencomic/  @clrealy
 /packages/opencpn/  @clrealy
 /packages/opendeck/  @clrealy
+/packages/openfodder/  @clrealy
 /packages/openfreebuds/  @clrealy
 /packages/openhabittracker/  @clrealy
 /packages/openhantek6022/  @clrealy
 /packages/openhv/  @clrealy
+/packages/openjkdf2/  @clrealy
 /packages/openkj/  @clrealy
+/packages/openlierox/  @clrealy
 /packages/openmsx/  @clrealy
 /packages/openmw/  @clrealy
 /packages/opennox/  @clrealy
@@ -1604,6 +1699,7 @@
 /packages/organic-maps/  @clrealy
 /packages/orion-torrent-client/  @clrealy
 /packages/oscar/  @clrealy
+/packages/osm-scout-server/  @clrealy
 /packages/osmo/  @clrealy
 /packages/osu/  @clrealy
 /packages/osv-scanner/  @clrealy
@@ -1613,9 +1709,11 @@
 /packages/outer-wilds-mod-manager/  @clrealy
 /packages/outlet/  @clrealy
 /packages/outline/  @clrealy
+/packages/outwiker/  @clrealy
 /packages/overlayed/  @clrealy
 /packages/oversteer/  @clrealy
 /packages/oxipng/  @clrealy
+/packages/pac-gal/  @clrealy
 /packages/packet/  @clrealy
 /packages/paint/  @clrealy
 /packages/palapeli/  @clrealy
@@ -1663,8 +1761,10 @@
 /packages/pekka-kana-2/  @clrealy
 /packages/pencil2d/  @clrealy
 /packages/penpot-desktop/  @clrealy
+/packages/pentobi/  @clrealy
 /packages/peruse/  @clrealy
 /packages/pgadmin-4/  @clrealy
+/packages/phantom-overload/  @clrealy
 /packages/phoenicis-playonlinux/  @clrealy
 /packages/photobooth/  @clrealy
 /packages/photocollage/  @clrealy
@@ -1674,6 +1774,7 @@
 /packages/photos/  @clrealy
 /packages/phpstorm/  @clrealy
 /packages/physics/  @clrealy
+/packages/pianocheetah/  @clrealy
 /packages/piccolo/  @clrealy
 /packages/picker/  @clrealy
 /packages/picocrypt-ng/  @clrealy
@@ -1690,6 +1791,7 @@
 /packages/pineapple-pictures/  @clrealy
 /packages/pineapple-steam-recording-exporter/  @clrealy
 /packages/pinegrow/  @clrealy
+/packages/pinepods/  @clrealy
 /packages/ping-monitor/  @clrealy
 /packages/pins/  @clrealy
 /packages/pinta/  @clrealy
@@ -1723,6 +1825,7 @@
 /packages/pmim/  @clrealy
 /packages/pnpm/  @clrealy
 /packages/pocket-casts/  @clrealy
+/packages/pocket-sync/  @clrealy
 /packages/pocketbase/  @clrealy
 /packages/podman-desktop/  @clrealy
 /packages/pods/  @clrealy
@@ -1747,6 +1850,7 @@
 /packages/portfolio/  @clrealy
 /packages/portproton/  @clrealy
 /packages/porydrive/  @clrealy
+/packages/porymap/  @clrealy
 /packages/postman/  @clrealy
 /packages/pot/  @clrealy
 /packages/power-tab-editor/  @clrealy
@@ -1762,6 +1866,7 @@
 /packages/processing-ide/  @clrealy
 /packages/procs/  @clrealy
 /packages/progress/  @clrealy
+/packages/project-starfighter/  @clrealy
 /packages/projectm/  @clrealy
 /packages/proton-mail-bridge/  @clrealy
 /packages/proton-mail/  @clrealy
@@ -1784,18 +1889,22 @@
 /packages/pure-data-pd/  @clrealy
 /packages/pure-maps/  @clrealy
 /packages/putty/  @clrealy
+/packages/puzzled/  @clrealy
 /packages/pwall/  @clrealy
 /packages/pwvucontrol/  @clrealy
 /packages/pycharm-professional/  @clrealy
+/packages/pydpainter/  @clrealy
 /packages/pyfa/  @clrealy
 /packages/pylux/  @clrealy
 /packages/pysolfc/  @clrealy
 /packages/python-molecular-graphics/  @clrealy
 /packages/pyzo/  @clrealy
+/packages/q3rally/  @clrealy
 /packages/q4wine/  @clrealy
 /packages/qalculate-gtk-ui/  @clrealy
 /packages/qalculate-qt-ui/  @clrealy
 /packages/qbittorrent/  @clrealy
+/packages/qc-doom-edition/  @clrealy
 /packages/qcanvas/  @clrealy
 /packages/qdirstat/  @clrealy
 /packages/qelectrotech/  @clrealy
@@ -1857,11 +1966,13 @@
 /packages/raspberry-pi-imager/  @clrealy
 /packages/rathole/  @clrealy
 /packages/ratic/  @clrealy
+/packages/ratio/  @clrealy
 /packages/rawtherapee/  @clrealy
 /packages/rayforge/  @clrealy
 /packages/raze/  @clrealy
 /packages/razergenie/  @clrealy
 /packages/rbdoom-3-bfg/  @clrealy
+/packages/rbdoom3bfg-opengl/  @clrealy
 /packages/rclone-manager/  @clrealy
 /packages/rclone-shuttle/  @clrealy
 /packages/rclone-ui/  @clrealy
@@ -1906,6 +2017,8 @@
 /packages/retroarch/  @clrealy
 /packages/retrodeck/  @clrealy
 /packages/retrom/  @clrealy
+/packages/retroshare-gui/  @clrealy
+/packages/return-to-the-roots/  @clrealy
 /packages/retux/  @clrealy
 /packages/reversi/  @clrealy
 /packages/revolt/  @clrealy
@@ -1916,6 +2029,7 @@
 /packages/riff/  @clrealy
 /packages/rio/  @clrealy
 /packages/ripgrep/  @clrealy
+/packages/risc-v-adventure/  @clrealy
 /packages/ristretto/  @clrealy
 /packages/rmpc/  @clrealy
 /packages/rnote/  @clrealy
@@ -1926,6 +2040,7 @@
 /packages/rosalie-s-mupen-gui/  @clrealy
 /packages/rosary/  @clrealy
 /packages/rosegarden/  @clrealy
+/packages/roster/  @clrealy
 /packages/rota-bend-gravity/  @clrealy
 /packages/rpcs3/  @clrealy
 /packages/rpn-calculator/  @clrealy
@@ -1935,14 +2050,17 @@
 /packages/ruff/  @clrealy
 /packages/ruffle/  @clrealy
 /packages/rufin/  @clrealy
+/packages/rune/  @clrealy
 /packages/runelite/  @clrealy
 /packages/runemaster/  @clrealy
 /packages/runescape/  @clrealy
+/packages/rust4diva/  @clrealy
 /packages/rustconn/  @clrealy
 /packages/rustdesk/  @clrealy
 /packages/rustdiff/  @clrealy
 /packages/rustic/  @clrealy
 /packages/rustrover/  @clrealy
+/packages/rymdport/  @clrealy
 /packages/ryujinx-ryubing/  @clrealy
 /packages/s3drive/  @clrealy
 /packages/s5cmd/  @clrealy
@@ -1950,6 +2068,7 @@
 /packages/sable/  @clrealy
 /packages/sabnzbd/  @clrealy
 /packages/safe-eyes/  @clrealy
+/packages/samaya/  @clrealy
 /packages/sameboy/  @clrealy
 /packages/sandbox/  @clrealy
 /packages/sasm/  @clrealy
@@ -1970,11 +2089,13 @@
 /packages/scidcommunity/  @clrealy
 /packages/scidvspc/  @clrealy
 /packages/scilab/  @clrealy
+/packages/scite/  @clrealy
 /packages/scopebuddy-gui/  @clrealy
 /packages/scramble/  @clrealy
 /packages/scratch/  @clrealy
 /packages/scratchmark/  @clrealy
 /packages/screenshot/  @clrealy
+/packages/screentoppm/  @clrealy
 /packages/scribus/  @clrealy
 /packages/scriptorium/  @clrealy
 /packages/scrivano-for-handwritten-notes/  @clrealy
@@ -2007,12 +2128,14 @@
 /packages/setzer/  @clrealy
 /packages/seven-kingdoms-ancient-adversaries/  @clrealy
 /packages/sgdboop/  @clrealy
+/packages/shadowcast-electron/  @clrealy
 /packages/shadps4/  @clrealy
 /packages/share-preview/  @clrealy
 /packages/share/  @clrealy
 /packages/shattered-pixel-dungeon/  @clrealy
 /packages/shellcheck/  @clrealy
 /packages/shfmt/  @clrealy
+/packages/shimelinux/  @clrealy
 /packages/shizumu/  @clrealy
 /packages/shortcut/  @clrealy
 /packages/shortwave/  @clrealy
@@ -2053,6 +2176,7 @@
 /packages/smart-video-processor/  @clrealy
 /packages/smartgit/  @clrealy
 /packages/smartsynchronize/  @clrealy
+/packages/smashed-pumpkin/  @clrealy
 /packages/smile/  @clrealy
 /packages/smplayer/  @clrealy
 /packages/snek-studio/  @clrealy
@@ -2063,8 +2187,10 @@
 /packages/soft-serve/  @clrealy
 /packages/solaar/  @clrealy
 /packages/solanum/  @clrealy
+/packages/solar-system/  @clrealy
 /packages/solitaire/  @clrealy
 /packages/solvespace/  @clrealy
+/packages/sonar/  @clrealy
 /packages/sone/  @clrealy
 /packages/songrec/  @clrealy
 /packages/sonic-3-a-i-r/  @clrealy
@@ -2097,7 +2223,9 @@
 /packages/spekter/  @clrealy
 /packages/spelling-bee/  @clrealy
 /packages/sphereview/  @clrealy
+/packages/spice-up/  @clrealy
 /packages/spider/  @clrealy
+/packages/spivak/  @clrealy
 /packages/splash/  @clrealy
 /packages/spotify-player/  @clrealy
 /packages/spotify/  @clrealy
@@ -2106,6 +2234,7 @@
 /packages/spruce/  @clrealy
 /packages/spyder/  @clrealy
 /packages/sqlc/  @clrealy
+/packages/squey/  @clrealy
 /packages/srb2-reveries/  @clrealy
 /packages/ssh-pilot/  @clrealy
 /packages/ssh-studio/  @clrealy
@@ -2129,6 +2258,7 @@
 /packages/stm32cubemx/  @clrealy
 /packages/stone-kingdoms/  @clrealy
 /packages/story-architect-starc/  @clrealy
+/packages/story/  @clrealy
 /packages/strawberry/  @clrealy
 /packages/stream-overlay/  @clrealy
 /packages/streamcontroller/  @clrealy
@@ -2143,9 +2273,11 @@
 /packages/sublime-text/  @clrealy
 /packages/subsound/  @clrealy
 /packages/subtitle-composer/  @clrealy
+/packages/sudoku-solver/  @clrealy
 /packages/sudoku/  @clrealy
 /packages/sugar-chess/  @clrealy
 /packages/suika3/  @clrealy
+/packages/sumo/  @clrealy
 /packages/sunshine/  @clrealy
 /packages/supabase/  @clrealy
 /packages/super-nonogram/  @clrealy
@@ -2177,6 +2309,7 @@
 /packages/syncthing/  @clrealy
 /packages/syncthingy/  @clrealy
 /packages/synfig/  @clrealy
+/packages/syng/  @clrealy
 /packages/synology-assistant/  @clrealy
 /packages/synology-drive/  @clrealy
 /packages/synology-note-station/  @clrealy
@@ -2224,6 +2357,7 @@
 /packages/tesseract/  @clrealy
 /packages/test-center/  @clrealy
 /packages/tetravex/  @clrealy
+/packages/tetzle/  @clrealy
 /packages/texmacs/  @clrealy
 /packages/texmaker/  @clrealy
 /packages/texstudio/  @clrealy
@@ -2249,6 +2383,7 @@
 /packages/this-note/  @clrealy
 /packages/thonny/  @clrealy
 /packages/thoughts/  @clrealy
+/packages/threadbare/  @clrealy
 /packages/threema/  @clrealy
 /packages/thrive/  @clrealy
 /packages/thunder/  @clrealy
@@ -2275,11 +2410,13 @@
 /packages/topgrade/  @clrealy
 /packages/torbrowser/  @clrealy
 /packages/torcs/  @clrealy
+/packages/torrent-file-editor/  @clrealy
 /packages/torrents-digger/  @clrealy
 /packages/torrhunt/  @clrealy
 /packages/total-chaos-retro-edition/  @clrealy
 /packages/total-chaos/  @clrealy
 /packages/touch/  @clrealy
+/packages/tradesim/  @clrealy
 /packages/tradingview/  @clrealy
 /packages/traefik/  @clrealy
 /packages/transcribe/  @clrealy
@@ -2315,6 +2452,7 @@
 /packages/turbowarp/  @clrealy
 /packages/turn-on/  @clrealy
 /packages/turntable/  @clrealy
+/packages/turtle/  @clrealy
 /packages/tuta-experimental/  @clrealy
 /packages/tux-fishing/  @clrealy
 /packages/tux-football/  @clrealy
@@ -2323,6 +2461,7 @@
 /packages/tux-planet-speedrun-any/  @clrealy
 /packages/tux-typing+/  @clrealy
 /packages/tux-typing/  @clrealy
+/packages/tux-vs-dragon/  @clrealy
 /packages/tuxcuts/  @clrealy
 /packages/tuxguitar/  @clrealy
 /packages/tuxocide/  @clrealy
@@ -2336,6 +2475,7 @@
 /packages/twintail-launcher/  @clrealy
 /packages/typesetter/  @clrealy
 /packages/typhoon/  @clrealy
+/packages/typing-turtle/  @clrealy
 /packages/typingtutor/  @clrealy
 /packages/typora/  @clrealy
 /packages/typos/  @clrealy
@@ -2380,6 +2520,7 @@
 /packages/vaults/  @clrealy
 /packages/vcard-studio/  @clrealy
 /packages/vcmi/  @clrealy
+/packages/vcmusic/  @clrealy
 /packages/vegeta/  @clrealy
 /packages/veloren/  @clrealy
 /packages/ventoy/  @clrealy
@@ -2432,6 +2573,7 @@
 /packages/vscode/  @clrealy
 /packages/vscodium-insiders/  @clrealy
 /packages/vscodium/  @clrealy
+/packages/vserver/  @clrealy
 /packages/vuescan/  @clrealy
 /packages/vvave/  @clrealy
 /packages/vym/  @clrealy
@@ -2449,7 +2591,9 @@
 /packages/wasmtime/  @clrealy
 /packages/watchexec/  @clrealy
 /packages/waterfox/  @clrealy
+/packages/watermark/  @clrealy
 /packages/wattage/  @clrealy
+/packages/wavbreaker/  @clrealy
 /packages/wavebox/  @clrealy
 /packages/waycheck/  @clrealy
 /packages/waylyrics/  @clrealy
@@ -2462,6 +2606,7 @@
 /packages/web-apps/  @clrealy
 /packages/web-archive/  @clrealy
 /packages/web-video-downloader/  @clrealy
+/packages/webarchives/  @clrealy
 /packages/webcamcontrol/  @clrealy
 /packages/webcamoid/  @clrealy
 /packages/webcord/  @clrealy
@@ -2477,6 +2622,7 @@
 /packages/weylus-community-edition/  @clrealy
 /packages/wezterm/  @clrealy
 /packages/wger/  @clrealy
+/packages/whalebird/  @clrealy
 /packages/whaler/  @clrealy
 /packages/what-ip/  @clrealy
 /packages/whatsie/  @clrealy
@@ -2503,10 +2649,12 @@
 /packages/wolfenstein-blade-of-agony/  @clrealy
 /packages/wonderpen/  @clrealy
 /packages/wonderwall/  @clrealy
+/packages/word-sys-s-pdf-editor/  @clrealy
 /packages/wordbook/  @clrealy
 /packages/wordquiz/  @clrealy
 /packages/words/  @clrealy
 /packages/workbench/  @clrealy
+/packages/workouts/  @clrealy
 /packages/world-of-padman/  @clrealy
 /packages/wps-365/  @clrealy
 /packages/wps-office/  @clrealy
@@ -2549,6 +2697,7 @@
 /packages/yandex-browser/  @clrealy
 /packages/yayap/  @clrealy
 /packages/yazi/  @clrealy
+/packages/yesplaymusic/  @clrealy
 /packages/yet-another-framework-interface/  @clrealy
 /packages/ymir/  @clrealy
 /packages/yoga-image-optimizer/  @clrealy
@@ -2561,6 +2710,7 @@
 /packages/ytdownloader/  @clrealy
 /packages/ytmdesktop/  @clrealy
 /packages/yubico-authenticator/  @clrealy
+/packages/yuview/  @clrealy
 /packages/zandronum/  @clrealy
 /packages/zap/  @clrealy
 /packages/zapzap/  @clrealy
