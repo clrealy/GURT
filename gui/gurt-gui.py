@@ -794,6 +794,11 @@ class H(BaseHTTPRequestHandler):
                     return self._send(400, {"error": "not allowed"})
                 job = start_job([GURT, "gurtd"] + ok[arg])
                 return self._send(200, {"job": job.id})
+            if cmd == "android":   # Android apps through Waydroid (gurt android setup|fdroid|open)
+                if arg not in ("setup", "fdroid", "open"):
+                    return self._send(400, {"error": "not allowed"})
+                job = start_job([GURT, "-y", "android", arg])
+                return self._send(200, {"job": job.id})
             if cmd == "toss":   # free up space: gurt hogs clean <what>
                 if not TOSS_RE.match(arg):
                     return self._send(400, {"error": "not allowed"})
@@ -1608,6 +1613,8 @@ dialog .row{justify-content:flex-end}
 .lottobtn,#t-setup .btn.big{background:var(--panel);color:var(--ink);border-color:var(--edge);box-shadow:inset 0 -3px 0 var(--accent)}
 .lottobtn:hover:not(:disabled),#t-setup .btn.big:hover:not(:disabled){background:var(--tag)}
 .btn.big{font-size:14px;padding:9px 16px}
+.droidbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border:1px solid var(--edge);border-radius:var(--r);padding:7px 10px;margin:0 0 10px}
+.droidbar>span{flex:1 1 260px;min-width:0}.droidbar b{display:block;font:700 13px var(--mono)}.droidbar small{display:block;color:var(--muted)}
 .setuphead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
 .setuphead h2{margin:0}
 .bcats{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 8px}
@@ -1949,6 +1956,8 @@ dialog .row{justify-content:flex-end}
     <div class="setuphead"><div><h2>Build your setup</h2><p class="blurb">tick everything you want, hit install once. works the same on every distro.</p></div>
       <button class="btn big" id="lotto2">spin the app lottery</button></div>
     <div id="lottowin2" hidden></div>
+    <div class="droidbar"><span><b>Android apps</b><small>free software from F-Droid, running in Waydroid. gurt sets it up, and a .apk you drop in has to be on F-Droid too</small></span>
+      <button class="btn ghost small" data-cmd="android" data-arg="setup">set up Android</button><button class="btn ghost small" data-cmd="android" data-arg="fdroid">get F-Droid</button><button class="btn ghost small" data-cmd="android" data-arg="open">open Android</button></div>
     <div class="bcats" id="bcats"></div>
     <div id="bgroups"></div>
     <div id="cartbar" hidden><span id="cartcount"></span><span class="spacer"></span><button class="btn ghost small" id="cartclear">clear</button><button class="btn" id="cartgo">install them</button></div>
@@ -1960,7 +1969,7 @@ dialog .row{justify-content:flex-end}
 </main>
 <div id="console"><div class="bar"><span class="dot" id="cdot"></span><b id="ctitle">activity</b><span class="spacer"></span><button class="btn ghost small" id="cstop" hidden>stop</button><button class="btn ghost small" id="chide">hide</button></div><pre id="cout"></pre></div>
 
-<div id="dropzone" hidden><div>drop it to install<small>.deb · .rpm · .pkg.tar.zst · AppImage · .tar.gz · .zip · .flatpak · .exe · .dmg — any distro, no box</small></div></div>
+<div id="dropzone" hidden><div>drop it to install<small>.deb · .rpm · .pkg.tar.zst · AppImage · .tar.gz · .zip · .flatpak · .exe · .dmg · Android .apk — any distro, no box</small></div></div>
 <div id="toast" hidden></div>
 <dialog id="v1dlg"><div class="v1hero">1.0</div><h3>GURT 1.0 is here</h3>
   <p>no more 0.something. what's new since you last looked:</p>

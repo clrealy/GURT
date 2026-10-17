@@ -9,6 +9,7 @@
 - **Linux From Scratch support.** gurt detects LFS and builds what it needs from Main GURT recipes.
 - **Apps you got without gurt count as installed** (flatpak, snap, your distro, /opt, AppImages), and badges say where each one came from.
 - **Real app logos** instead of emoji, with your system's own icon as the fallback.
+- **Android apps through Waydroid**, FOSS only: `gurt install android/<app>` installs from F-Droid, and a .apk you bring has to be an app F-Droid has. gurt sets Waydroid up the first time (plain Android, no Google apps). `gurt android` for the rest, or Setup → Android apps in the app.
 
 ### Site
 - **Compare** up to 4 apps side by side, and share the comparison with a link.

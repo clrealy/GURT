@@ -254,6 +254,22 @@ In the app, the Updates tab shows a 🐧 "your system" card with how many distro
 
 `gurt gurtd status` · `gurt gurtd log` · `gurt gurtd autoupdate|watch|fresh|saver on|off` · `gurt gurtd quiet 22-8|off` · `gurt gurtd off`
 
+## Android apps: Waydroid 🤖
+
+GURT runs Android apps in [Waydroid](https://waydro.id), a full Android in a container that shows its apps as normal windows. FOSS only: apps come from [F-Droid](https://f-droid.org), and Android itself is the plain LineageOS image without Google's apps.
+
+```sh
+gurt search android/firefox          # search F-Droid (fdroid/ and waydroid/ work too)
+gurt install android/fennec          # install by name or by package id (org.mozilla.fennec_fdroid)
+gurt install ./NewPipe.apk           # a .apk you brought: it has to be an app F-Droid has, or gurt says no
+gurt android setup                   # just set up Waydroid (install it, download Android, start it)
+gurt android fdroid                  # the F-Droid store app itself, inside Android
+gurt android list · open · stop      # what's in Android · its full screen · stop it
+gurt remove android/<package.id>     # gurt undo works on these too
+```
+
+The first time, gurt installs Waydroid from your distro (Debian/Ubuntu without it get Waydroid's own repo, Arch the AUR), downloads Android (about 1 GB, once) and starts it. Downloads from F-Droid are checked against F-Droid's sha256. A .apk file and Alpine's `.apk` packages share an extension; gurt tells them apart by what's inside. In the app: Setup → **Android apps**, or drop a .apk on the window. Waydroid needs a Wayland session.
+
 ## Utilities apps need: `gurt utils` 🔧
 
 Most apps need a few tools to install: flatpak for Flathub apps, `ar`/bsdtar/zstd/7zip/rpm2cpio to unpack `.deb`, `.rpm`, `.pkg.tar.zst`, `.dmg` and `.exe` files, git + a compiler + make + pkg-config for source builds, plus curl, unzip, gnupg, patchelf and xdg-utils. One command grabs all of them from your distro and sets up Flathub:

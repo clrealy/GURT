@@ -893,6 +893,7 @@ remove_pkg() {
     snap:*)    msg "removing $(pretty "$key")"; asroot snap remove "$name" || warn "snap couldn't remove it (already gone?)"
                asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
     box-*:*)   box_remove "$key"; return ;;
+    android:*) android_remove "$key"; asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
   esac
   local dbd="$DB/$key" rdeps=()
   mapfile -t rdeps < <(rdeps_of "$key")
@@ -1027,6 +1028,7 @@ install_any() { # spec reason
     file) die "file/ packages come from a file: gurt install ./$name.deb (or .rpm / .pkg.tar.zst)" ;;
     flatpak) flatpak_install "$name" "$reason" ;;
     snap)    snap_install "$name" "$reason" ;;
+    android) android_install "$name" "$reason" ;;
     *) is_binary_src "$src" || die "unknown source '$src' — pick one of: gurt $(all_sources) (or add one: gurt repo add)"
        foreign_install "$src" "$name" "$reason" ;;
   esac
@@ -1055,6 +1057,7 @@ norm_src() {
     aur)                            echo aur ;;
     flatpak|flathub)                echo flatpak ;;
     snap|snapcraft|snapd)           echo snap ;;
+    android|waydroid|fdroid|f-droid) echo android ;;
     *)                              echo "$1" ;;
   esac
 }
@@ -1708,7 +1711,7 @@ pkgfile_install() { # file-or-url reason
   local f=$1 reason=${2:-explicit} fam row name ver deps desc prov arch key
   f=$(fetch_arg "$f")
   fam=$(pkgfile_fam "$f")
-  if [[ $fam == apk ]] && ! tar -tzf "$f" .PKGINFO >/dev/null 2>&1; then die "${f##*/} is an Android app 🤖, not an Alpine package — try Waydroid for those"; fi
+  if [[ $fam == apk ]] && is_android_apk "$f"; then android_install_file "$f" "$reason"; return; fi   # an Android app, not Alpine
   command -v python3 >/dev/null && sig_gate "$f"   # signed (inside or next to it)? check it. not signed? nothing to say
   row=$(pkgfile_meta "$f")
   local F; tsv "$row"; name=${F[0]:-}; ver=${F[1]:-}; deps=${F[2]:-}; desc=${F[3]:-}; prov=${F[4]:-}; arch=${F[5]:-}
@@ -1834,7 +1837,7 @@ conv_unpack() { # file tree scratch
   nv=$(file_namever "$f"); CV_NAME=${nv%%$'\t'*}; CV_VER=${nv#*$'\t'}; CV_DEPS=""; CV_DESC=""; CV_ARCH=""; CV_FAM=none
   case $l in
     *.deb|*.rpm|*.pkg.tar|*.pkg.tar.*|*.apk|*.xbps|*.eopkg)
-      if [[ $l == *.apk ]] && ! tar -tzf "$f" .PKGINFO >/dev/null 2>&1; then die "${f##*/} is an Android app 🤖, not an Alpine package — gurt can't convert those"; fi
+      if [[ $l == *.apk ]] && ! tar -tzf "$f" .PKGINFO >/dev/null 2>&1; then die "${f##*/} is an Android app 🤖, not an Alpine package — gurt can't convert those, but it can install them: gurt install ./${f##*/} (runs in Waydroid)"; fi
       row=$(pkgfile_meta "$f"); local F; tsv "$row"
       CV_NAME=${F[0]:-$CV_NAME}; CV_VER=${F[1]:-$CV_VER}; CV_DEPS=${F[2]:-}; CV_DESC=${F[3]:-}; CV_ARCH=${F[5]:-}; CV_FAM=$(pkgfile_fam "$f")
       pkgfile_unpack "$f" "$tree" "$x" ;;
@@ -2678,9 +2681,183 @@ archive_install() { # file name ver reason
   rm -rf "$work"
 }
 
+# ── 🤖 Android apps, through Waydroid: gurt install android/<app> (from F-Droid) · gurt install ./app.apk · gurt android ──
+# FOSS only: apps come from F-Droid, a .apk you bring has to be an app F-Droid has, and Android itself is the plain
+# (no Google apps) image
+FDROID_URL=${GURT_FDROID_URL:-https://f-droid.org/repo}
+is_android_apk() { [[ ${1,,} == *.apk && -f $1 && $(head -c2 -- "$1") == PK ]]; }   # Android = a zip; Alpine's .apk is gzip
+waydroid_ready() { command -v waydroid >/dev/null && [[ -f /var/lib/waydroid/waydroid.cfg ]]; }
+waydroid_running() { waydroid status 2>/dev/null | grep -qE '^Session:[[:space:]]+RUNNING'; }
+waydroid_get() { # install Waydroid itself, from your distro (or Waydroid's own apt repo, or the AUR)
+  command -v waydroid >/dev/null && return 0
+  $NODEPS && die "Waydroid isn't installed (and --nodeps is on)"
+  msg "Android apps run in Waydroid 🤖 (a full Android in a container), and it isn't installed yet"
+  ask "install Waydroid?" || die "no Waydroid, no Android apps"
+  if ( install_native waydroid ) && command -v waydroid >/dev/null; then return 0; fi
+  case $PM in
+    apt)   local code tmp; code=$( . /etc/os-release 2>/dev/null; echo "${UBUNTU_CODENAME:-${VERSION_CODENAME:-}}")
+           [[ -n $code ]] || die "couldn't tell which release you're on, so no Waydroid repo: https://docs.waydro.id/usage/install-on-desktops"
+           msg2 "your distro doesn't ship it: adding Waydroid's own repo (repo.waydro.id, $code)"
+           tmp=$(mktemp); fetch_quiet https://repo.waydro.id/waydroid.gpg "$tmp" || { rm -f "$tmp"; die "couldn't download Waydroid's signing key"; }
+           asroot install -m 644 "$tmp" /usr/share/keyrings/waydroid.gpg; rm -f "$tmp"
+           echo "deb [signed-by=/usr/share/keyrings/waydroid.gpg] https://repo.waydro.id/ $code main" | asroot tee /etc/apt/sources.list.d/waydroid.list >/dev/null
+           asroot apt-get update -q >/dev/null || warn "apt update had problems"
+           asroot apt-get install -y waydroid || die "couldn't install Waydroid (is $code supported? https://repo.waydro.id)" ;;
+    pacman) aur_install waydroid dep ;;
+    *)     die "couldn't install Waydroid from your distro — here's how for yours: https://docs.waydro.id/usage/install-on-desktops" ;;
+  esac
+  command -v waydroid >/dev/null || die "Waydroid still isn't there 😔"
+}
+ensure_waydroid() { # Waydroid installed, Android downloaded, the container + your session running
+  waydroid_get
+  if [[ ! -f /var/lib/waydroid/waydroid.cfg ]]; then
+    msg "downloading Android for Waydroid (LineageOS without Google's apps, about 1 GB, just once) ⏳"
+    asroot waydroid init -s VANILLA || die "waydroid init failed — your kernel may lack binder (most distro kernels have it; on Ubuntu: sudo apt install linux-modules-extra-\$(uname -r))"
+  fi
+  if command -v systemctl >/dev/null && ! systemctl is-active --quiet waydroid-container 2>/dev/null; then
+    asroot systemctl enable --now waydroid-container >/dev/null 2>&1 || warn "couldn't start waydroid-container (sudo systemctl start waydroid-container)"
+  fi
+  waydroid_running && return 0
+  [[ -n ${WAYLAND_DISPLAY:-} ]] || warn "Waydroid shows its windows on Wayland. You're on X11, so log into a Wayland session (or run it inside cage or weston) to see your Android apps"
+  msg2 "starting the Android session"
+  ( setsid waydroid session start >/dev/null 2>&1 < /dev/null & )
+  local i; for (( i = 0; i < 90; i++ )); do waydroid_running && return 0; sleep 1; done
+  die "the Android session didn't start (try: waydroid session start, and look at what it says)"
+}
+apk_package() { # Android .apk → its package id (read out of the binary AndroidManifest.xml)
+  python3 - "$1" <<'PY'
+import struct, sys, zipfile
+b = zipfile.ZipFile(sys.argv[1]).read("AndroidManifest.xml")
+u16 = lambda o: struct.unpack_from("<H", b, o)[0]
+u32 = lambda o: struct.unpack_from("<I", b, o)[0]
+strings, o = [], u16(2)                      # skip the file header to the first chunk
+while o < len(b):
+    typ, hsz, size = u16(o), u16(o + 2), u32(o + 4)
+    if typ == 0x0001:                        # the string pool
+        n, flags, start = u32(o + 8), u32(o + 16), u32(o + 20)
+        for i in range(n):
+            p = o + start + u32(o + hsz + 4 * i)
+            if flags & 0x100:                # utf-8: char count, byte count, bytes
+                p += 2 if b[p] & 0x80 else 1
+                ln = b[p] & 0x7f; ln = (ln << 8 | b[p + 1]) if b[p] & 0x80 else ln; p += 2 if b[p] & 0x80 else 1
+                strings.append(b[p:p + ln].decode("utf-8", "replace"))
+            else:                            # utf-16
+                ln = u16(p); p += 2
+                if ln & 0x8000: ln = (ln & 0x7fff) << 16 | u16(p); p += 2
+                strings.append(b[p:p + 2 * ln].decode("utf-16-le", "replace"))
+    elif typ == 0x0102:                      # the first element = <manifest package="…">
+        astart, asz, cnt = u16(o + 24), u16(o + 26), u16(o + 28)
+        for i in range(cnt):
+            a = o + 16 + astart + i * asz
+            if strings[u32(a + 4)] == "package":
+                print(strings[u32(a + 8)]); sys.exit()
+        sys.exit(1)
+    o += size
+sys.exit(1)
+PY
+}
+waydroid_apps() { waydroid app list 2>/dev/null | awk -F': *' '/^Name:/ { n = $2 } /^packageName:/ { print $2 "\t" n }'; }
+android_install_file() { # apk reason [package id] [version] [description]
+  local f=$1 reason=${2:-explicit} id=${3:-} ver=${4:-} desc=${5:-} before after row name
+  is_android_apk "$f" || die "${f##*/} isn't an Android app"
+  if [[ -z $id ]]; then   # a file you brought: FOSS only, so it has to be an app F-Droid has
+    need_tool python3 "reading Android apps"
+    id=$(apk_package "$f") || die "couldn't read the package name out of ${f##*/} — is it a real Android app?"
+    row=$(android_find "$id"); [[ ${row%%$'\t'*} == "$id" ]] ||
+      die "$id isn't on F-Droid, so gurt can't tell it's free software 🔒 GURT only installs FOSS Android apps (gurt search android/<name> for one that is)"
+    local F; tsv "$row"; desc=${F[5]}; ver=""
+    msg2 "$id is on F-Droid: ${desc%% — *} ✅ free software"
+    [[ $reason == explicit ]] && { ask "install ${f##*/} into Waydroid?" || die "aborted, no cap"; }
+  fi
+  ensure_waydroid
+  before=$(waydroid_apps | cut -f1 | sort)
+  msg "installing ${f##*/} into Android 🤖"
+  waydroid app install "$f" || die "Waydroid couldn't install it"
+  local i; for (( i = 0; i < 20; i++ )); do   # Android takes a moment to list a new app
+    after=$(waydroid_apps); row=$(awk -F'\t' -v id="$id" 'id != "" && $1 == id' <<<"$after")
+    if [[ -z $row ]]; then local newid; newid=$(comm -13 <(printf '%s\n' "$before") <(cut -f1 <<<"$after" | sort) | head -n1)
+      [[ -n $newid ]] && row=$(awk -F'\t' -v id="$newid" '$1 == id' <<<"$after"); fi
+    [[ -n $row ]] && break; sleep 1
+  done
+  if [[ -z $row ]]; then
+    [[ -n $id ]] || { msg "installed ✅ (it's in your app menu; gurt couldn't tell its name, so gurt remove won't know it — use: waydroid app remove <package>)"; return 0; }
+    row="$id"$'\t'"$id"
+  fi
+  id=${row%%$'\t'*}; name=${row#*$'\t'}
+  record_meta "android:$id" "$id" "${ver:-installed}" "${desc:-$name (Android app)}" "$reason" android
+  log_hist install "android:$id"
+  msg "$name installed ✅ (android/$id) — it's in your app menu, or: waydroid app launch $id"
+}
+# F-Droid's index → one TSV like the other sources: id \t version \t apk file \t sha256 \t (no deps) \t name — summary
+fdroid_sync() {
+  local f; f=$(idx_file android); mkdir -p "$IDX_DIR"
+  [[ -s $f && -n $(find "$f" -mmin -1440 2>/dev/null) ]] && return 0
+  need_tool python3 "reading F-Droid's index"
+  msg2 "getting F-Droid's app list 📥"
+  download "$FDROID_URL/index-v1.jar" "$f.jar" || { rm -f "$f.jar"; die "couldn't reach F-Droid"; }
+  python3 - "$f.jar" "$CARCH" > "$f.part" <<'PY' || { rm -f "$f.jar" "$f.part"; die "couldn't read F-Droid's index"; }
+import json, sys, zipfile
+idx = json.loads(zipfile.ZipFile(sys.argv[1]).read("index-v1.json"))
+abi = {"x86_64": "x86_64", "aarch64": "arm64-v8a", "i686": "x86", "armv7l": "armeabi-v7a"}.get(sys.argv[2], "x86_64")
+clean = lambda t: " ".join(str(t or "").split())
+for app in idx.get("apps", []):
+    pid = app.get("packageName"); vs = idx.get("packages", {}).get(pid) or []
+    if not pid or not vs: continue
+    sug = int(app.get("suggestedVersionCode") or 0)
+    ok = [v for v in vs if not v.get("nativecode") or abi in v["nativecode"]] or vs   # one that runs on this cpu, if there is one
+    ok = [v for v in ok if not sug or v.get("versionCode", 0) <= sug] or ok
+    v = max(ok, key=lambda v: v.get("versionCode", 0))
+    loc = app.get("localized") or {}; en = loc.get("en-US") or loc.get("en") or next(iter(loc.values()), {})
+    name, summ = clean(en.get("name") or app.get("name") or pid), clean(en.get("summary") or app.get("summary"))
+    print("\t".join([pid, clean(v.get("versionName")) or str(v.get("versionCode", "")), v.get("apkName", ""), v.get("hash", ""), "", name + (" — " + summ if summ else "")]))
+PY
+  mv -f "$f.part" "$f"; rm -f "$f.jar"
+}
+android_find() { # name or package id → its index row
+  fdroid_sync >/dev/null
+  awk -F'\t' -v q="${1,,}" '
+    tolower($1) == q { print; found = 1; exit }
+    { n = tolower($6); sub(/ — .*/, "", n) }
+    n == q && byname == "" { byname = $0 }
+    END { if (!found && byname != "") print byname }' "$(idx_file android)"
+}
+android_install() { # name-or-id reason
+  local row F id ver apk sum desc f
+  row=$(android_find "$1")
+  [[ -n $row ]] || die "nothing on F-Droid called '$1' (gurt search android/$1)"
+  tsv "$row"; id=${F[0]}; ver=${F[1]}; apk=${F[2]}; sum=${F[3]}; desc=${F[5]}
+  if is_installed "android:$id" && ! $FORCE; then msg "android/$id is already installed 👍"; return 0; fi
+  [[ ${2:-explicit} == explicit ]] && { ask "install ${desc%% — *} $ver (android/$id) from F-Droid into Waydroid?" || die "aborted, no cap"; }
+  f="$GURT_CACHE/downloads/$apk"; mkdir -p "${f%/*}"
+  [[ -f $f ]] && verify "$f" "$sum" || download "$FDROID_URL/$apk" "$f" || die "couldn't download $apk"
+  verify "$f" "$sum" || { rm -f "$f"; die "🚩 $apk doesn't match F-Droid's checksum — not installing it"; }
+  android_install_file "$f" "${2:-explicit}" "$id" "$ver" "$desc"
+}
+android_remove() { # key
+  local id=${1#android:}
+  msg "removing android/$id"
+  waydroid app remove "$id" 2>/dev/null || warn "Waydroid couldn't remove it (already gone?)"
+}
+cmd_android() { # setup | list | remove <app> | open | stop | status
+  case ${1:-status} in
+    setup|init) ensure_waydroid; msg "Android is ready 🤖 install apps: gurt install android/<app> (from F-Droid) or gurt install ./app.apk" ;;
+    list|ls)    waydroid_ready || die "Waydroid isn't set up (gurt android setup)"; waydroid_running || ensure_waydroid
+                waydroid_apps | while IFS=$'\t' read -r id n; do printf '  %-40s %s%s\n' "$id" "$n" "$(is_installed "android:$id" && echo " ${GRN}[gurt]${R0}")"; done ;;
+    remove|rm)  [[ -n ${2:-} ]] || die "usage: gurt android remove <package.id>"; remove_pkg "android/${2#android/}" ;;
+    open|show)  ensure_waydroid; ( setsid waydroid show-full-ui >/dev/null 2>&1 < /dev/null & ); msg "opening Android 🤖" ;;
+    stop)       waydroid session stop 2>/dev/null; msg "Android stopped (gurt android open starts it again)" ;;
+    fdroid|store) android_install org.fdroid.fdroid explicit ;;
+    status)     if ! command -v waydroid >/dev/null; then echo "Waydroid: not installed (gurt android setup)"
+                elif ! waydroid_ready; then echo "Waydroid: installed, Android not downloaded yet (gurt android setup)"
+                else waydroid status 2>/dev/null || true; fi ;;
+    *) die "usage: gurt android [setup | list | remove <package> | open | stop | fdroid | status]" ;;
+  esac
+}
+
 outsource_file() { # file-or-url reason
   local f reason=${2:-explicit} l nv name ver
   f=$(fetch_arg "$1"); l=${f,,}
+  is_android_apk "$f" && { android_install_file "$f" "$reason"; return; }
   nv=$(file_namever "$f"); name=${nv%%$'\t'*}; ver=${nv#*$'\t'}
   case $l in
     *.deb|*.rpm|*.pkg.tar|*.pkg.tar.*|*.apk|*.xbps|*.eopkg) pkgfile_install "$f" "$reason" ;;
@@ -4378,6 +4555,10 @@ search_foreign() { # src term
     rows=$(flatpak_search "$term") || { warn "couldn't search Flathub"; return 1; }
   elif [[ $src == snap ]]; then
     rows=$(snap_search "$term") || { warn "couldn't search the Snap Store"; return 1; }
+  elif [[ $src == android ]]; then
+    fdroid_sync
+    rows=$(awk -F'\t' -v t="${term,,}" 'index(tolower($1 "\t" $6), t) { n = tolower($6); sub(/ — .*/, "", n)
+             print (n == t ? 0 : index(n, t) == 1 ? 1 : index(n, t) ? 2 : 3) "\t" $0 }' "$(idx_file android)" | sort -t$'\t' -k1,1n | cut -f2- | head -n 40)
   elif [[ $src == aur ]]; then
     (( ${#term} >= 2 )) || die "aur search needs at least 2 characters"
     rows=$(aur_search "$term") || { warn "couldn't reach the AUR"; return 1; }
@@ -5568,6 +5749,7 @@ ${B}misc${R0}
   profile save|load|list <name>   your apps + gurt settings + the app's look, under a name (gaming, work…) 📁
   notify on|off|now    a desktop notification when updates are waiting (checks every 6 hours) 🔔
   gurtd [config]       GURTd, the background daemon: auto-updates, fresh lists, downloads → install, instant app 🐧
+  android [setup|list|open|remove <app>|fdroid]   Android apps through Waydroid 🤖 (gurt install android/<app> = F-Droid)
   snapshots            the snapshots gurt took before system upgrades (btrfs: snapper/timeshift/plain) 📸
   achievements         🏆 trophies for doing gurt things
   completions <shell>  print tab completion for bash/zsh/fish (bash+fish set themselves up)
@@ -5670,6 +5852,7 @@ main() {
     setup|wizard)      cmd_setup "$@" ;;
     notify|alerts)     cmd_notify "$@" ;;
     gurtd|daemon)      cmd_gurtd "$@" ;;
+    android|waydroid)  cmd_android "$@" ;;
     snapshots|snaps)   cmd_snapshots ;;
     self-update|selfupdate) cmd_self_update ;;
     uninstall)         if (( $# )); then for p; do remove_pkg "$p"; done; play_scream; achieve yeet   # gurt uninstall <app> = gurt remove <app>
