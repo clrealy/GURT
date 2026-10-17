@@ -642,6 +642,7 @@ install_file() { # file.gurt [reason]
   [[ -n $name ]] || die "package has no name??"
   if grep -qE '(^|/)\.\.(/|$)|^/' "$tmp/.FILES" "$tmp/.DIRS"; then die "package has sketchy paths (.. or absolute) — refusing"; fi
   key=$(pkey "$src" "$name"); dbd="$DB/$key"
+  local was=""; is_installed "$key" && was=$(inst_ver "$key")
   [[ $reason == dep && -f $dbd/reason ]] && reason=$(cat "$dbd/reason")
 
   # 1) anything your distro owns is off limits — no exceptions, no --force
@@ -701,7 +702,7 @@ install_file() { # file.gurt [reason]
   asroot cp "$tmp/pkgfile"  "$dbd/pkgfile"
   rm -rf "$tmp"
   post_install "$key"
-  log_hist install "$key"
+  log_hist install "$key" "$was"
   msg "$(pretty "$key") installed ✅"
 }
 
@@ -867,8 +868,13 @@ cmd_autoremove() {
 
 # ── 📜 gurt history: what you installed + removed, and when ──
 HIST_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/gurt/history"
-log_hist() { # install|remove key
-  { mkdir -p "${HIST_FILE%/*}" && printf '%s\t%s\t%s\t%s\n' "$(date '+%F %H:%M')" "$1" "$(pretty "$2")" "$( [[ $1 == install ]] && inst_ver "$2" 2>/dev/null)" >> "$HIST_FILE"; } 2>/dev/null || true
+# one id per gurt command (gurt calling gurt keeps it), so gurt undo knows what went together
+export GURT_TXN=${GURT_TXN:-$(date +%s).$$}
+log_hist() { # install key [version it replaced] | remove key [version removed]
+  # → date \t install|remove \t app \t version \t txn \t replaced version
+  local v=${3:-} was=""
+  [[ $1 == install ]] && { was=$v; v=$(inst_ver "$2" 2>/dev/null) || v=""; }
+  { mkdir -p "${HIST_FILE%/*}" && printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$(date '+%F %H:%M')" "$1" "$(pretty "$2")" "$v" "$GURT_TXN" "$was" >> "$HIST_FILE"; } 2>/dev/null || true
 }
 cmd_history() { # [n | <app>]
   [[ -s $HIST_FILE ]] || { msg "no history yet — it starts with your next install"; return 0; }
@@ -878,14 +884,14 @@ cmd_history() { # [n | <app>]
       printf "  %s  %s%-7s%s %s %s\n", $1, ($2 == "install" ? g : r), ($2 == "install" ? "+ add" : "- yeet"), z, $3, $4 }' "$HIST_FILE" | tail -n "$n"
 }
 remove_pkg() {
-  local key name o
+  local key name o v
   key=$(resolve_key "$1") || die "$1 isn't installed"
-  name=${key#*:}
+  name=${key#*:}; v=$(inst_ver "$key" 2>/dev/null) || v=""
   case $key in
     flatpak:*) msg "removing $(pretty "$key")"; flatpak uninstall --user -y --noninteractive "$name" || warn "flatpak couldn't remove it (already gone?)"
-               asroot rm -rf -- "$DB/$key"; log_hist remove "$key"; msg "$(pretty "$key") removed 🗑️"; return ;;
+               asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
     snap:*)    msg "removing $(pretty "$key")"; asroot snap remove "$name" || warn "snap couldn't remove it (already gone?)"
-               asroot rm -rf -- "$DB/$key"; log_hist remove "$key"; msg "$(pretty "$key") removed 🗑️"; return ;;
+               asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
     box-*:*)   box_remove "$key"; return ;;
   esac
   local dbd="$DB/$key" rdeps=()
@@ -904,7 +910,7 @@ remove_pkg() {
     [[ -n $rel ]] && asroot rmdir -- "$R/$rel" 2>/dev/null || true
   done
   asroot rm -rf -- "$dbd"
-  log_hist remove "$key"
+  log_hist remove "$key" "$v"
   msg "$(pretty "$key") removed 🗑️"
 }
 
@@ -2909,7 +2915,7 @@ box_install() { # src pkg reason
   msg "$(pretty "$key") installed ✅ (it runs inside $n, so it can't touch your real system's files)"
 }
 box_remove() { # key
-  local key=$1 src pkg n e
+  local key=$1 src pkg n e v; v=$(inst_ver "$key" 2>/dev/null) || v=""
   src=${key%%:*}; src=${src#box-}; pkg=${key#*:}; n=$(box_name "$src")
   msg "removing $(pretty "$key")"
   if command -v distrobox >/dev/null; then
@@ -2922,7 +2928,7 @@ box_remove() { # key
     distrobox enter "$n" -- sh -c "$(box_cmd "$src" remove "$pkg")" || warn "couldn't uninstall it inside $n"
   fi
   asroot rm -rf -- "$DB/$key"
-  log_hist remove "$key"
+  log_hist remove "$key" "$v"
   msg "$(pretty "$key") removed 🗑️ (the $n box itself stays — delete it with: distrobox rm $n)"
 }
 
@@ -3433,6 +3439,71 @@ cmd_rollback() {
   echo held | asroot tee "$DB/$k/held" >/dev/null
   msg2 "held at $v so gurt upgrade won't undo it 📌 (gurt unhold $(pretty "$k") when you want updates again)"
 }
+older() { [[ $1 != "$2" && $(printf '%s\n' "$1" "$2" | sort -V | head -n1) == "$1" ]]; }   # is version $1 older than $2
+stash_find() { # key version → the saved .gurt of that version (from gurt's rollback copies)
+  local f v
+  # shellcheck disable=SC2012
+  while IFS= read -r f; do
+    v=$(tar -xzOf "$f" .PKGINFO 2>/dev/null | awk -F' = ' '$1=="pkgver"{v=$2} $1=="pkgrel"{r=$2} END{print v (r ? "-" r : "")}')
+    [[ $v == "$2" ]] && { echo "$f"; return 0; }
+  done < <(ls -1t "$GURT_CACHE/rollback/${1//\//_}"/*.gurt 2>/dev/null)
+  return 1
+}
+# ── gurt undo: take back the last thing gurt did. gurt undo again = redo. gurt undo <app> rolls one app back ──
+cmd_undo() {
+  (( $# )) && { cmd_rollback "$@"; return; }
+  [[ -s $HIST_FILE ]] || die "nothing to undo yet — gurt starts keeping track with your next install"
+  local rows=() tx plan=() r what app ver was key i
+  tx=$(tail -n1 "$HIST_FILE" | awk -F'\t' '{print $5}')
+  if [[ -n $tx ]]; then mapfile -t rows < <(awk -F'\t' -v t="$tx" '$5 == t' "$HIST_FILE")
+  else mapfile -t rows < <(tail -n1 "$HIST_FILE"); fi   # from before gurt kept ids: just the last line
+  # what to do for each, newest first (the app comes off before the deps it pulled in)
+  for (( i = ${#rows[@]} - 1; i >= 0; i-- )); do
+    IFS=$'\t' read -r _ what app ver _ was <<<"${rows[i]}"
+    key=$app; [[ $app == */* ]] && key="${app%%/*}:${app#*/}"
+    if [[ $what == install ]]; then
+      # a line from before gurt kept ids doesn't say what it replaced: the app's line before it does
+      [[ -n $tx ]] || was=$(awk -F'\t' -v a="$app" -v n="$(wc -l < "$HIST_FILE")" 'NR < n && $3 == a { w = ($2 == "install") ? $4 : "" } END { print w }' "$HIST_FILE")
+      if [[ -z $was ]]; then plan+=("remove"$'\t'"$key"$'\t'"$ver")
+      elif [[ $was != "$ver" ]]; then plan+=("back"$'\t'"$key"$'\t'"$ver"$'\t'"$was")
+      fi   # same version = a reinstall, nothing to take back
+    else plan+=("restore"$'\t'"$key"$'\t'"$ver"); fi
+  done
+  (( ${#plan[@]} )) || die "the last thing gurt did was a reinstall, nothing to take back"
+  msg "undo $(tail -n1 "$HIST_FILE" | cut -f1) 👇"
+  for r in "${plan[@]}"; do
+    IFS=$'\t' read -r what key ver was <<<"$r"
+    case $what in
+      remove)  msg2 "remove $(pretty "$key") $ver" ;;
+      back)    if older "$was" "$ver"; then msg2 "roll $(pretty "$key") back $ver -> $was"; else msg2 "bring $(pretty "$key") back up $ver -> $was"; fi ;;
+      restore) msg2 "put $(pretty "$key")${ver:+ $ver} back" ;;
+    esac
+  done
+  ask "do it?" || die "aborted, nothing changed"
+  local who=() f self; self=$(readlink -f "$0")
+  for r in "${plan[@]}"; do
+    IFS=$'\t' read -r what key ver was <<<"$r"
+    case $what in
+      remove)
+        is_installed "$key" || { msg2 "$(pretty "$key") is already gone"; continue; }
+        mapfile -t who < <(rdeps_of "$key")
+        if (( ${#who[@]} )); then warn "kept $(pretty "$key"): ${who[*]} needs it"; continue; fi
+        remove_pkg "$(pretty "$key")" ;;
+      back)
+        f=$(stash_find "$key" "$was") || { warn "no saved copy of $(pretty "$key") $was, so it stays at $ver"; continue; }
+        install_file "$f" "$(cat "$DB/$key/reason" 2>/dev/null || echo explicit)"
+        if older "$was" "$ver"; then
+          echo held | asroot tee "$DB/$key/held" >/dev/null
+          msg2 "held at $was so gurt upgrade won't redo it 📌 (gurt unhold $(pretty "$key") for updates again)"
+        else asroot rm -f "$DB/$key/held"; fi ;;
+      restore)
+        is_installed "$key" && { msg2 "$(pretty "$key") is already back"; continue; }
+        if [[ -n $ver ]] && f=$(stash_find "$key" "$ver"); then install_file "$f" explicit
+        else "$self" -y install "$(pretty "$key")" || warn "couldn't put $(pretty "$key") back (gurt install $(pretty "$key"))"; fi ;;
+    esac
+  done
+  msg "undone ✅ (changed your mind? gurt undo again puts it back)"
+}
 cmd_hold() { local k; for p in "$@"; do k=$(resolve_key "$p") || die "$p isn't installed"; echo held | asroot tee "$DB/$k/held" >/dev/null; msg "$(pretty "$k") held 📌 — upgrade will skip it"; done; }
 cmd_unhold() { local k; for p in "$@"; do k=$(resolve_key "$p") || die "$p isn't installed"; asroot rm -f "$DB/$k/held"; msg "$(pretty "$k") unheld — back to getting updates"; done; }
 is_held() { [[ -f $DB/$1/held ]]; }
@@ -3520,20 +3591,110 @@ print("%d\t%s" % (t, k))' "$d/files" "$k"
   fi
 }
 hsize() { awk -v b="$1" 'BEGIN { if (b >= 1073741824) printf "%.1f GB", b/1073741824; else if (b >= 1048576) printf "%.0f MB", b/1048576; else printf "%.0f KB", b/1024 }'; }
-cmd_hogs() { # [--tsv] [n]
-  local tsv=false n=15 total=0 b k i=0
-  [[ ${1:-} == --tsv ]] && { tsv=true; shift; }
+# ── gurt hogs --all: everything on your computer, not just what gurt installed ──
+native_sizes() { # → "bytes<TAB>pm/name" for what your distro's package manager installed
+  case $PM in
+    dnf|zypper) command -v rpm >/dev/null && rpm -qa --qf '%{SIZE}\t%{NAME}\n' 2>/dev/null | awk -F'\t' -v p="$PM" '$1 ~ /^[0-9]+$/ { printf "%d\t%s/%s\n", $1, p, $2 }' ;;
+    apt) dpkg-query -W -f='${Installed-Size}\t${Package}\n' 2>/dev/null | awk -F'\t' '$1 ~ /^[0-9]+$/ { printf "%d\tapt/%s\n", $1 * 1024, $2 }' ;;
+    pacman) LC_ALL=C pacman -Qi 2>/dev/null | awk -F': *' '/^Name / { n = $2 } /^Installed Size/ { split($2, a, " ")
+              m = a[2] ~ /^G/ ? 1073741824 : a[2] ~ /^M/ ? 1048576 : a[2] ~ /^K/ ? 1024 : 1; printf "%d\tpacman/%s\n", a[1] * m, n }' ;;
+  esac
+  return 0
+}
+outside_sizes() { # flatpaks, snaps + AppImages gurt didn't install → "bytes<TAB>where/name"
+  local id sz f
+  if command -v flatpak >/dev/null; then
+    flatpak list --app --columns=application,size 2>/dev/null | while IFS=$'\t' read -r id sz; do
+      [[ -n $id && ! -d $DB/flatpak:$id ]] || continue
+      awk -v s="$sz" -v k="flatpak/$id" 'BEGIN { n = s + 0; u = s; gsub(/[0-9., ]/, "", u)
+        m = (u ~ /^G/) ? 1073741824 : (u ~ /^M/) ? 1048576 : (u ~ /^k/) ? 1024 : 1; printf "%d\t%s\n", n * m, k }'
+    done
+  fi
+  for f in /var/lib/snapd/snaps/*.snap; do [[ -f $f ]] && printf '%s\tsnap/%s\n' "$(stat -c %s "$f")" "$(basename "${f%_*}")"; done |
+    awk -F'\t' '{ s[$2] += $1 } END { for (k in s) printf "%d\t%s\n", s[k], k }'
+  for f in "$HOME"/Applications/*.[Aa]pp[Ii]mage "$HOME"/.local/bin/*.[Aa]pp[Ii]mage "$HOME"/Downloads/*.[Aa]pp[Ii]mage; do
+    [[ -f $f ]] && printf '%s\tAppImage/%s\n' "$(stat -c %s "$f")" "$(basename "$f")"
+  done
+  return 0
+}
+cmd_hogs() { # [--all|all] [--tsv] [n] | junk [--tsv] | clean [what…]
+  case ${1:-} in junk|leftovers) shift; junk_show "$@"; return ;; clean|toss) shift; junk_clean "$@"; return ;; esac
+  local tsv=false all=$ALLSRC n=15 total=0 b k i=0   # gurt -a / --all is parsed up front, like for search
+  while [[ ${1:-} == --tsv || ${1:-} == all ]]; do case $1 in --tsv) tsv=true ;; all) all=true ;; esac; shift; done
   [[ ${1:-} =~ ^[0-9]+$ ]] && n=$1
   need_tool python3 "measuring apps"
-  local rows; rows=$(pkg_sizes | sort -t$'\t' -k1,1nr)
+  local rows
+  if $all; then rows=$( { pkg_sizes | while IFS=$'\t' read -r b k; do printf '%s\t%s\n' "$b" "$(pretty "$k")"; done; native_sizes; outside_sizes; } | sort -t$'\t' -k1,1nr)
+  else rows=$(pkg_sizes | sort -t$'\t' -k1,1nr); fi
   $tsv && { printf '%s\n' "$rows"; return 0; }
-  [[ -n $rows ]] || { msg "gurt hasn't installed anything yet"; return 0; }
-  msg "biggest apps gurt installed 🐷"
+  [[ -n $rows ]] || { msg "gurt hasn't installed anything yet (gurt hogs --all shows everything on your computer)"; return 0; }
+  if $all; then msg "biggest things on your computer 🐷"; else msg "biggest apps gurt installed 🐷"; fi
   while IFS=$'\t' read -r b k; do
     total=$((total + b)); i=$((i + 1)); (( i > n )) && continue
     printf '  %9s  %s\n' "$(hsize "$b")" "$(pretty "$k")"
   done <<<"$rows"
-  msg2 "all together: $(hsize "$total") · free some up: gurt remove <app> · gurt autoremove"
+  msg2 "all together: $(hsize "$total") · free some up: gurt remove <app> · gurt autoremove · junk you can toss: gurt hogs junk"
+}
+
+# ── gurt hogs junk: caches, trash + leftovers that are safe to toss · gurt hogs clean [what…] tosses them ──
+dir_bytes() { du -sb -- "$@" 2>/dev/null | awk '{ s += $1 } END { printf "%d\n", s }'; }
+pm_cache_dirs() { case $PM in zypper) echo /var/cache/zypp/packages ;; apt) echo /var/cache/apt/archives ;; pacman) echo /var/cache/pacman/pkg ;; dnf) echo /var/cache/dnf /var/cache/libdnf5 ;; esac; }
+junk_items() { # → what<TAB>bytes<TAB>description<TAB>needs root (1|0)
+  local b d trash="${XDG_DATA_HOME:-$HOME/.local/share}/Trash" dirs=()
+  b=0; for d in $CACHE_JUNK; do [[ -d $GURT_CACHE/$d ]] && b=$((b + $(dir_bytes "$GURT_CACHE/$d"))); done
+  printf 'gurt-cache\t%s\tgurt'"'"'s downloads + build leftovers (they come back by themselves)\t0\n' "$b"
+  [[ -d $GURT_CACHE/rollback ]] && printf 'gurt-rollback\t%s\told versions gurt keeps for undo + rollback\t0\n' "$(dir_bytes "$GURT_CACHE/rollback")"
+  [[ -d $trash ]] && printf 'trash\t%s\tyour trash\t0\n' "$(dir_bytes "$trash")"
+  for d in "${XDG_CACHE_HOME:-$HOME/.cache}"/*/; do   # other apps' caches, the big ones
+    d=${d%/}; [[ $d -ef $GURT_CACHE ]] && continue
+    b=$(dir_bytes "$d"); (( b >= 52428800 )) && printf 'cache:%s\t%s\t%s'"'"'s cache (~/.cache/%s, it refills as you use it)\t0\n' "${d##*/}" "$b" "${d##*/}" "${d##*/}"
+  done
+  read -ra dirs <<<"$(pm_cache_dirs)"
+  (( ${#dirs[@]} )) && printf 'pm-cache\t%s\tpackages %s downloaded for updates (already installed)\t1\n' "$(dir_bytes "${dirs[@]}")" "$PM"
+  if command -v journalctl >/dev/null; then
+    b=$(journalctl --disk-usage 2>/dev/null | grep -oE '[0-9.]+[KMGT]?B?' | tail -n1 | sed 's/B$//')
+    [[ -n $b ]] && b=$(numfmt --from=iec "$b" 2>/dev/null) && (( b > 209715200 )) &&
+      printf 'journal\t%s\tsystem logs (keeps the newest 200 MB)\t1\n' "$((b - 209715200))"
+  fi
+  [[ -d /var/lib/systemd/coredump ]] && printf 'coredumps\t%s\tcrash dumps from apps that crashed\t1\n' "$(dir_bytes /var/lib/systemd/coredump)"
+  return 0
+}
+junk_show() { # [--tsv]
+  local rows w b d r tot=0
+  rows=$(junk_items | awk -F'\t' '$2 >= 1048576' | sort -t$'\t' -k2,2nr)
+  [[ ${1:-} == --tsv ]] && { [[ -n $rows ]] && printf '%s\n' "$rows"; return 0; }
+  [[ -n $rows ]] || { msg "no junk worth tossing ✨"; return 0; }
+  msg "junk you can toss 🧹"
+  while IFS=$'\t' read -r w b d r; do
+    tot=$((tot + b)); printf '  %9s  %-22s %s%s\n' "$(hsize "$b")" "$w" "$d" "$( (( r )) && echo ' (asks for your password)')"
+  done <<<"$rows"
+  msg2 "$(hsize "$tot") in total · toss one: gurt hogs clean <what> · all of it: gurt hogs clean"
+}
+junk_clean() { # [what…]
+  local want=("$@") rows w b d r freed=0 trash="${XDG_DATA_HOME:-$HOME/.local/share}/Trash" c
+  rows=$(junk_items | awk -F'\t' '$2 >= 1048576' | sort -t$'\t' -k2,2nr)
+  [[ -n $rows ]] || { msg "no junk worth tossing ✨"; return 0; }
+  if (( ${#want[@]} )); then
+    for w in "${want[@]}"; do awk -F'\t' -v w="$w" '$1 == w { f = 1 } END { exit !f }' <<<"$rows" || die "no junk called $w (gurt hogs junk shows what's there)"; done
+  fi
+  while IFS=$'\t' read -r -u 3 w b d r; do   # fd 3: ask reads stdin when there's no terminal
+    if (( ${#want[@]} )); then [[ " ${want[*]} " == *" $w "* ]] || continue
+    else ask "toss $d? ($(hsize "$b"))" || continue; fi
+    case $w in
+      gurt-cache)    for c in $CACHE_JUNK; do rm -rf -- "${GURT_CACHE:?}/$c"; done ;;
+      gurt-rollback) rm -rf -- "${GURT_CACHE:?}/rollback"; msg2 "gurt undo + rollback can't go back further than what's installed now" ;;
+      trash)         rm -rf -- "$trash/files" "$trash/info" "$trash/expunged"; mkdir -p "$trash/files" "$trash/info" ;;
+      cache:*)       c=${w#cache:}; [[ $c != */* && $c != .* && -n $c ]] || die "nope"; rm -rf -- "${XDG_CACHE_HOME:-$HOME/.cache}/$c" ;;
+      pm-cache)      case $PM in
+                       zypper) asroot zypper --non-interactive clean --all ;; apt) asroot apt-get clean ;;
+                       pacman) asroot pacman -Sc --noconfirm ;; dnf) asroot dnf clean packages ;;
+                     esac >/dev/null || { warn "$PM couldn't clean its cache"; continue; } ;;
+      journal)       asroot journalctl --vacuum-size=200M >/dev/null 2>&1 || { warn "couldn't shrink the logs"; continue; } ;;
+      coredumps)     asroot find /var/lib/systemd/coredump -type f -delete || { warn "couldn't delete the crash dumps"; continue; } ;;
+    esac
+    freed=$((freed + b)); msg2 "tossed $w ($(hsize "$b"))"
+  done 3<<<"$rows"
+  msg "freed $(hsize "$freed") 🧹"
 }
 
 # ── gurt compare a b c: side by side ──
@@ -3688,7 +3849,8 @@ cmd_profile() { # save|load|list|show|rm [name|file]
 GURTD_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/daemon.conf"
 GURTD_URL="${XDG_RUNTIME_DIR:-$HOME/.cache/gurt}/gurt-gui.url"
 gurtd_get() { local v; v=$(sed -n "s/^$1=//p" "$GURTD_CONF" 2>/dev/null | tail -n1); [[ $v == on || $v == off ]] && echo "$v" || echo "$2"; }
-gurtd_set() { # key on|off
+gurtd_quiet() { local v; v=$(sed -n "s/^quiet=//p" "$GURTD_CONF" 2>/dev/null | tail -n1); [[ $v =~ ^([01]?[0-9]|2[0-3])-([01]?[0-9]|2[0-3])$ ]] && echo "$v" || echo off; }
+gurtd_set() { # key on|off (quiet: 22-8|off)
   mkdir -p "${GURTD_CONF%/*}"
   { grep -v "^$1=" "$GURTD_CONF" 2>/dev/null || true; echo "$1=$2"; } > "$GURTD_CONF.new" && mv -f "$GURTD_CONF.new" "$GURTD_CONF"
 }
@@ -3708,19 +3870,25 @@ gurtd_tui() {
     gurtd_row 2 "auto-update my apps" "$(gurtd_get autoupdate off)" "apps that need your password get a notification instead"
     gurtd_row 3 "keep lists fresh" "$(gurtd_get fresh on)" "every 3 hours, so searches + update checks are instant"
     gurtd_row 4 "watch Downloads" "$(gurtd_get watch on)" "a new .deb / .rpm / AppImage asks to install it with GURT"
-    printf '  5  show the log\n\n  q  done\n\n  press a number: '
+    gurtd_row 5 "saver" "$(gurtd_get saver on)" "no update checks on battery or metered data (they wait till you're plugged in)"
+    local q; q=$(gurtd_quiet)
+    printf '  6  %-22s %s  %sno popups then: they wait till morning%s\n' "quiet hours" "$( [[ $q == off ]] && gurtd_onoff off || printf '%s%s%s' "$GRN" "$q" "$R0")" "$DIM" "$R0"
+    printf '  7  show the log\n\n  q  done\n\n  press a number: '
     IFS= read -rsn1 k </dev/tty || break
     case $k in
       1) echo; if [[ $run == on ]]; then cmd_gurtd off; else cmd_gurtd on; fi; sleep 1 ;;
       2) [[ $(gurtd_get autoupdate off) == on ]] && gurtd_set autoupdate off || gurtd_set autoupdate on ;;
       3) [[ $(gurtd_get fresh on) == on ]] && gurtd_set fresh off || gurtd_set fresh on ;;
       4) [[ $(gurtd_get watch on) == on ]] && gurtd_set watch off || gurtd_set watch on ;;
-      5) echo; echo; cmd_gurtd log; printf '\n  any key to go back '; IFS= read -rsn1 k </dev/tty || true ;;
+      5) [[ $(gurtd_get saver on) == on ]] && gurtd_set saver off || gurtd_set saver on ;;
+      6) printf '\n\n  quiet hours, like 22-8 (10pm to 8am), or off: '; IFS= read -r q </dev/tty || q=""
+         [[ -n $q ]] && { cmd_gurtd quiet "$q" >/dev/null 2>&1 || { printf '  that'"'"'s not like 22-8, kept it'; sleep 1; }; } ;;
+      7) echo; echo; cmd_gurtd log; printf '\n  any key to go back '; IFS= read -rsn1 k </dev/tty || true ;;
       q|Q|$'\e'|'') echo; break ;;
     esac
   done
 }
-cmd_gurtd() { # config|on|off|status|log|run|autoupdate|watch|fresh [on|off]
+cmd_gurtd() { # config|on|off|status|log|run|autoupdate|watch|fresh|saver [on|off] | quiet 22-8|off
   local unit_dir="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user" self py
   self=$(readlink -f "$0")
   case ${1:-config} in
@@ -3751,17 +3919,23 @@ cmd_gurtd() { # config|on|off|status|log|run|autoupdate|watch|fresh [on|off]
       msg "GURTd is off" ;;
     status)
       if gurtd_running; then echo "running: on"; else echo "running: off"; fi
-      echo "autoupdate: $(gurtd_get autoupdate off)"; echo "fresh: $(gurtd_get fresh on)"; echo "watch: $(gurtd_get watch on)" ;;
+      echo "autoupdate: $(gurtd_get autoupdate off)"; echo "fresh: $(gurtd_get fresh on)"; echo "watch: $(gurtd_get watch on)"
+      echo "saver: $(gurtd_get saver on)"; echo "quiet: $(gurtd_quiet)" ;;
     log)
       if [[ -f $HOME/.cache/gurt/gurtd.log ]]; then tail -n "${2:-30}" "$HOME/.cache/gurt/gurtd.log"; else echo "GURTd hasn't run yet"; fi ;;
     run)
       py=$(gui_script) || { sync_main >/dev/null; py=$(gui_script) || die "couldn't find gurt-gui.py (try: gurt sync)"; }
       exec python3 "$py" --gurt "$self" --daemon ;;
-    autoupdate|auto-update|watch|fresh)
+    quiet)
+      local q=${2:-}; q=${q//:00/}; q=${q// /}
+      [[ $q == off || $q =~ ^([01]?[0-9]|2[0-3])-([01]?[0-9]|2[0-3])$ ]] || die "usage: gurt gurtd quiet 22-8 (hours, 24h clock) | off"
+      gurtd_set quiet "$q"
+      if [[ $q == off ]]; then msg "GURTd quiet hours: off"; else msg "GURTd quiet hours: ${q%-*}:00 to ${q#*-}:00 🤫 (it still checks, the popups wait)"; fi ;;
+    autoupdate|auto-update|watch|fresh|saver)
       local key=${1/auto-update/autoupdate}
       [[ ${2:-} == on || ${2:-} == off ]] || die "usage: gurt gurtd $key on|off"
       gurtd_set "$key" "$2"; msg "GURTd $key: $2" ;;
-    *) die "usage: gurt gurtd [config|on|off|status|log|autoupdate on|off|watch on|off|fresh on|off]" ;;
+    *) die "usage: gurt gurtd [config|on|off|status|log|autoupdate on|off|watch on|off|fresh on|off|saver on|off|quiet 22-8|off]" ;;
   esac
 }
 
@@ -3890,7 +4064,7 @@ cmd_complete() {
     available) for f in "$GURT_REPO_DIR"/packages/*/.gurtinfo; do [[ -f $f ]] || continue
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
     commands)  printf '%s\n' sync search info install update upgrade self-update uninstall remove autoremove list files owns lottery sysup \
-                 build add srcinfo checksum new repo dirt gui de outsource rollback hold unhold export import completions doctor version help yo \
+                 build add srcinfo checksum new repo dirt gui de outsource undo rollback hold unhold export import completions doctor version help yo \
                  convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman flatpak snap dirt ;;
   esac
@@ -5384,6 +5558,7 @@ ${B}misc${R0}
   de list              desktop environments you can install (kde, gnome, xfce, hyprland, niri…)
   de install <name>    install a desktop from YOUR distro's repos (then offers to delete your old one)
   de remove <name>     delete a desktop (never the one you're logged into, keeps your login screen)
+  undo                 take back the last thing gurt did (an install, remove or upgrade). again = redo ↩️
   rollback <pkg>       go back to the version before (gurt keeps the last 3) + hold it there
   hold / unhold <pkg>  stop / resume upgrades for a package
   export [file]        save the list of stuff you installed
@@ -5515,7 +5690,8 @@ main() {
     repo|repos)        cmd_repo "$@" ;;
     dirt)              cmd_dirt "$@" ;;
     de|desktop|desktops) cmd_de "$@" ;;
-    rollback|undo)     cmd_rollback "$@" && achieve rollback ;;
+    rollback)          cmd_rollback "$@" && achieve rollback ;;
+    undo)              cmd_undo "$@" && achieve rollback ;;
     hold|pin)          (( $# )) || die "hold what tho"; cmd_hold "$@" ;;
     unhold|unpin)      (( $# )) || die "unhold what tho"; cmd_unhold "$@" ;;
     export)            cmd_export "$@" ;;

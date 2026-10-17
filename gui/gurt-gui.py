@@ -91,10 +91,11 @@ def drops_dir():
     return d
 URL_RE = re.compile(r"^(https?://|git@)[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]{3,300}$|^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 ALLOWED = {  # command → (needs a package arg?, extra flags)
-    "install": True, "remove": True, "rollback": True, "hold": True, "unhold": True, "info": True,
+    "install": True, "remove": True, "rollback": True, "undo": False, "hold": True, "unhold": True, "info": True,
     "search": True, "sync": False, "update": False, "upgrade": False, "self-update": False, "outsource": True, "sysup": False,
 }
 ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
+TOSS_RE = re.compile(r"^(gurt-cache|gurt-rollback|trash|pm-cache|journal|coredumps|cache:[A-Za-z0-9][A-Za-z0-9._+-]{0,100})$")
 
 
 # ───────────────────────── jobs ─────────────────────────
@@ -592,7 +593,8 @@ class H(BaseHTTPRequestHandler):
                 log = ""
             c = dconf()
             return self._send(200, {"running": running, "attached": DAEMON[0], "autoupdate": c["autoupdate"] == "on",
-                                    "fresh": c["fresh"] == "on", "watch": c["watch"] == "on", "log": log})
+                                    "fresh": c["fresh"] == "on", "watch": c["watch"] == "on", "saver": c["saver"] == "on",
+                                    "quiet": c["quiet"], "holding": saver_reason(c), "log": log})
         if u.path == "/api/state":
             return self._send(200, state())
         if u.path == "/api/doctor":   # what the setup wizard's system check shows
@@ -609,17 +611,28 @@ class H(BaseHTTPRequestHandler):
             return self._send(200, {"distro": distro, "pm": p.get("pm", "?"), "wsl": p.get("wsl") == "yes", "mode": MODE, "audio": audio_ok(),
                                     "sudo": os.geteuid() == 0 or bool(shutil.which("sudo") or shutil.which("doas")), "utils": utils,
                                     "notify": notify_on(), "version": p.get("version", "?")})
-        if u.path == "/api/history":   # 📜 gurt history: date \t install|remove \t app \t version
+        if u.path == "/api/history":   # gurt history: date \t install|remove \t app \t version [\t txn \t replaced version]
             f = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state"), "gurt", "history")
             try:
                 with open(f, encoding="utf-8", errors="replace") as h: lines = h.read().splitlines()[-300:]
             except OSError: lines = []
-            items = [dict(zip(("when", "what", "app", "ver"), l.split("\t"))) for l in lines if l.count("\t") == 3]
+            items = [dict(zip(("when", "what", "app", "ver", "tx", "was"), l.split("\t"))) for l in lines if l.count("\t") >= 3]
             return self._send(200, {"items": items[::-1]})
         if u.path == "/api/achievements":
             out = subprocess.run([GURT, "achievements", "--tsv"], capture_output=True, text=True, timeout=30, env=dict(os.environ, NO_COLOR="1")).stdout
             items = [dict(zip(("id", "title", "what", "got"), l.split("\t"))) for l in out.splitlines() if l.count("\t") == 3]
             return self._send(200, {"items": items})
+        if u.path == "/api/disk":   # free up space: junk you can toss (gurt hogs junk) + the biggest things on the disk (gurt -a hogs)
+            env = dict(os.environ, NO_COLOR="1")
+            junk = [dict(zip(("what", "bytes", "desc", "root"), l.split("\t"))) for l in
+                    subprocess.run([GURT, "hogs", "junk", "--tsv"], capture_output=True, text=True, timeout=300, env=env).stdout.splitlines() if l.count("\t") == 3]
+            big = [dict(zip(("bytes", "name"), l.split("\t"))) for l in
+                   subprocess.run([GURT, "-a", "hogs", "--tsv"], capture_output=True, text=True, timeout=300, env=env).stdout.splitlines()[:25] if l.count("\t") == 1]
+            for j in junk + big:
+                j["bytes"] = int(j["bytes"]) if j["bytes"].isdigit() else 0
+            for j in junk:
+                j["root"] = j["root"] == "1"
+            return self._send(200, {"junk": junk, "big": big})
         if u.path == "/api/sizes":   # how much disk each installed app uses (gurt hogs)
             out = subprocess.run([GURT, "hogs", "--tsv"], capture_output=True, text=True, timeout=300, env=dict(os.environ, NO_COLOR="1")).stdout
             sizes = {}
@@ -773,10 +786,18 @@ class H(BaseHTTPRequestHandler):
                 job = start_job([GURT, "sync", arg])
                 return self._send(200, {"job": job.id})
             if cmd == "gurtd":   # GURTd's settings (gurt gurtd …)
-                ok = {"on": ["on"], "off": ["off"]} | {f"{k}-{v}": [k, v] for k in ("autoupdate", "watch", "fresh") for v in ("on", "off")}
+                ok = {"on": ["on"], "off": ["off"], "quiet-off": ["quiet", "off"]} | {f"{k}-{v}": [k, v] for k in ("autoupdate", "watch", "fresh", "saver") for v in ("on", "off")}
+                q = re.match(r"^quiet-(\d{1,2}-\d{1,2})$", arg)
+                if q and QUIET_RE.match(q.group(1)):
+                    ok[arg] = ["quiet", q.group(1)]
                 if arg not in ok:
                     return self._send(400, {"error": "not allowed"})
                 job = start_job([GURT, "gurtd"] + ok[arg])
+                return self._send(200, {"job": job.id})
+            if cmd == "toss":   # free up space: gurt hogs clean <what>
+                if not TOSS_RE.match(arg):
+                    return self._send(400, {"error": "not allowed"})
+                job = start_job([GURT, "-y", "hogs", "clean", arg])
                 return self._send(200, {"job": job.id})
             if cmd == "notify":
                 if arg not in ("on", "off"):
@@ -1067,7 +1088,7 @@ def watchdog(server):
 # keeps the package lists fresh, checks for updates (and installs them if you turned auto-update on), offers to
 # install packages that land in ~/Downloads, and keeps this server running so `gurt gui` opens instantly
 CFG_DIR = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"), "gurt")
-DAEMON_CONF = os.path.join(CFG_DIR, "daemon.conf")          # autoupdate=on|off · watch=on|off · fresh=on|off
+DAEMON_CONF = os.path.join(CFG_DIR, "daemon.conf")          # autoupdate= watch= fresh= saver=on|off · quiet=22-8|off
 RUN_DIR = os.environ.get("XDG_RUNTIME_DIR") or os.path.expanduser("~/.cache/gurt")
 URL_FILE = os.path.join(RUN_DIR, "gurt-gui.url")              # where `gurt gui` finds the running server (0600)
 DAEMON_LOG = os.path.expanduser("~/.cache/gurt/gurtd.log")
@@ -1075,16 +1096,68 @@ DAEMON = [False]
 REFRESH_EVERY, CHECK_EVERY = 3 * 3600, 6 * 3600
 
 
+QUIET_RE = re.compile(r"^([01]?\d|2[0-3])-([01]?\d|2[0-3])$")
+
+
 def dconf():
-    c = {"autoupdate": "off", "watch": "on", "fresh": "on"}
+    c = {"autoupdate": "off", "watch": "on", "fresh": "on", "saver": "on", "quiet": "off"}
     try:
         for line in open(DAEMON_CONF):
             k, _, v = line.strip().partition("=")
-            if k in c and v in ("on", "off"):
+            if k in c and (v in ("on", "off") if k != "quiet" else v == "off" or QUIET_RE.match(v)):
                 c[k] = v
     except OSError:
         pass
     return c
+
+
+def in_quiet(c):
+    """quiet hours (quiet=22-8): GURTd still checks, but holds its notifications until they end"""
+    m = QUIET_RE.match(c.get("quiet", ""))
+    if not m:
+        return False
+    a, b, h = int(m.group(1)), int(m.group(2)), time.localtime().tm_hour
+    return a <= h < b if a < b else (h >= a or h < b) if a != b else False
+
+
+def on_battery():
+    """unplugged and running on battery (any charger plugged in = no)"""
+    base, bat = "/sys/class/power_supply", False
+    try:
+        for d in os.listdir(base):
+            r = lambda f: open(os.path.join(base, d, f)).read().strip()
+            try:
+                kind = r("type")
+                if kind in ("Mains", "USB", "USB_C") and r("online") == "1":
+                    return False
+                if kind == "Battery" and r("status") == "Discharging":
+                    try:
+                        if r("scope") == "Device":
+                            continue   # a mouse or headset battery, not this computer's
+                    except OSError:
+                        pass
+                    bat = True
+            except OSError:
+                continue
+    except OSError:
+        pass
+    return bat
+
+
+def metered():
+    """NetworkManager says this connection is metered (a phone hotspot, mobile data)"""
+    try:
+        out = subprocess.run(["busctl", "--system", "get-property", "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager",
+                              "org.freedesktop.NetworkManager", "Metered"], capture_output=True, text=True, timeout=5).stdout.split()
+        return out[:1] == ["u"] and out[1:2] in (["1"], ["3"])   # 1 = yes, 3 = guessed yes
+    except Exception:
+        return False
+
+
+def saver_reason(c):
+    if c["saver"] != "on":
+        return ""
+    return "on battery" if on_battery() else "on a metered connection" if metered() else ""
 
 
 def dlog(msg):
@@ -1150,16 +1223,24 @@ def daemon_updates():
         if nopw:
             rc, out = gurt_quiet(["-y", "--no-system", "upgrade"])
             dlog(f"auto-update: {'done' if rc == 0 else 'had problems'}")
-            desktop_notify("GURT updated your apps" if rc == 0 else "GURT couldn't update everything",
-                           ", ".join(n for n, _ in apps[:6]) + ("…" if len(apps) > 6 else ""))
+            dnotify("updated", "GURT updated your apps" if rc == 0 else "GURT couldn't update everything",
+                    ", ".join(n for n, _ in apps[:6]) + ("…" if len(apps) > 6 else ""))
             return
         if shutil.which("flatpak"):   # flatpaks update without a password
             subprocess.run(["flatpak", "update", "--user", "-y", "--noninteractive"], capture_output=True, timeout=3600)
             dlog("auto-update: flatpaks updated; the rest need your password")
-    n = len(apps) + (1 if sysm else 0)
-    if desktop_notify("Updates are waiting", f"{len(apps)} app update(s)" + (f", {sysm.group(1)} system update(s)" if sysm else ""),
-                      [("open", "Open GURT")]) == "open":
-        subprocess.Popen([GURT, "gui"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    dnotify("updates", "Updates are waiting", f"{len(apps)} app update(s)" + (f", {sysm.group(1)} system update(s)" if sysm else ""), True)
+
+
+HELD = {}   # quiet hours: the newest notification of each kind waits here until they end
+def dnotify(kind, title, body, open_btn=False):
+    if in_quiet(dconf()):
+        HELD[kind] = (title, body, open_btn)
+        return dlog(f"quiet hours: holding \"{title}\" until they end")
+    def go():
+        if desktop_notify(title, body, [("open", "Open GURT")] if open_btn else ()) == "open":
+            subprocess.Popen([GURT, "gui"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    threading.Thread(target=go, daemon=True).start()
 
 
 PKG_FILE = DROP_RE
@@ -1210,12 +1291,23 @@ def watch_downloads():
 
 def daemon_loop():
     last_refresh = last_check = 0
+    waiting = ""   # why the last due check was held off (saver)
     while True:
         now, c = time.time(), dconf()
         try:
+            if HELD and not in_quiet(c):   # quiet hours are over: the notifications that waited
+                for k in list(HELD):
+                    dnotify(k, *HELD.pop(k))
             if now - last_check >= CHECK_EVERY or (c["fresh"] == "on" and now - last_refresh >= REFRESH_EVERY):
-                daemon_updates()   # gurt update refreshes the lists too
-                last_refresh = last_check = now
+                why = saver_reason(c)
+                if why:   # saver: no downloads on battery or metered data. it runs as soon as that's over
+                    if why != waiting:
+                        dlog(f"saver: {why}, holding off on the update check")
+                    waiting = why
+                else:
+                    waiting = ""
+                    daemon_updates()   # gurt update refreshes the lists too
+                    last_refresh = last_check = now
         except Exception as e:
             dlog(f"update check failed: {e}")
         time.sleep(60)
@@ -1634,10 +1726,17 @@ dialog .row{justify-content:flex-end}
 :root[data-app=setup] .wiz-page{max-width:720px}
 .v1hero{font:900 56px/1 var(--mono);letter-spacing:-.04em;display:inline-block;padding:2px 12px;margin-bottom:10px;background:var(--accent);color:var(--accent-ink);border:1px solid var(--edge);border-radius:var(--r)}
 .v1list{margin:0 0 14px;padding-left:20px;display:grid;gap:5px}#v1dlg{max-width:520px}
+#histlist .ach.last{box-shadow:inset 3px 0 var(--accent)}
 #achlist,#histlist{display:grid;gap:0;max-height:60vh;overflow:auto;margin:4px 0 12px;border:1px solid var(--edge);border-radius:var(--r)}
 .dset{display:grid;border:1px solid var(--edge);border-radius:var(--r);margin:0 0 10px}
 .dset>div{display:flex;align-items:center;gap:10px;padding:7px 10px;border-bottom:1px solid var(--line)}.dset>div:last-child{border-bottom:0}
-.dset b{display:block;font:700 13px var(--mono)}.dset small{display:block;color:var(--muted)}.dset .btn{margin-left:auto;min-width:56px}
+.dset b{display:block;font:700 13px var(--mono)}.dset small{display:block;color:var(--muted)}.dset .btn,.dset select{margin-left:auto;min-width:56px;flex:none}
+.diskin{max-height:62vh;overflow:auto}
+.diskin h4{font:700 13px var(--sans);margin:8px 0 6px}
+.dset .sz{font:700 12.5px var(--mono);min-width:64px;flex:none}
+.dset>div>span{min-width:0;overflow-wrap:anywhere}
+#biglist>div{padding:5px 10px}
+#biglist .chip{margin-left:auto}#biglist .chip+.btn{margin-left:0}
 .dlog{margin:0 0 10px;max-height:150px;overflow:auto;padding:6px 8px;font:11.5px/1.45 var(--mono);white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:var(--r);color:var(--muted)}
 #gurtddlg{max-width:520px}
 .ach .mark{font:700 13px var(--mono);width:12px;text-align:center;flex:none}.ach{display:flex;gap:10px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--line)}.ach:last-child{border-bottom:0}.ach.locked{opacity:.45;filter:grayscale(1)}.ach b{display:block;font:700 13px var(--mono)}.ach small{color:var(--muted)}.ach .when{margin-left:auto;font:11px var(--mono);color:var(--muted)}
@@ -1839,7 +1938,7 @@ dialog .row{justify-content:flex-end}
     <p class="cicada">Could prime Wifies solve Cicada 3301?</p>
   </section>
   <section id="t-installed" hidden>
-    <div class="search"><input id="iq" placeholder="filter installed…" autocomplete="off"><button class="btn ghost" id="hogbtn" title="sort by how much disk each app takes">biggest first</button><span class="more"><button class="btn ghost" data-more aria-haspopup="true" aria-expanded="false" title="more">⋯ more</button><span class="morepop" hidden><button class="btn ghost" id="lexport" title="save a list of everything you installed with gurt">export my list</button><button class="btn ghost" id="limport" title="install everything from a list you exported">import a list</button><button class="btn ghost" id="histbtn" title="what you installed + removed, and when">history</button><button class="btn ghost" id="achbtn" title="your gurt achievements">achievements</button></span></span><input type="file" id="limportin" accept=".txt,text/plain" hidden></div>
+    <div class="search"><input id="iq" placeholder="filter installed…" autocomplete="off"><button class="btn ghost" id="hogbtn" title="sort by how much disk each app takes">biggest first</button><button class="btn ghost" id="diskbtn" title="caches, trash + leftovers you can toss, and what's biggest on your disk">free up space</button><span class="more"><button class="btn ghost" data-more aria-haspopup="true" aria-expanded="false" title="more">⋯ more</button><span class="morepop" hidden><button class="btn ghost" id="lexport" title="save a list of everything you installed with gurt">export my list</button><button class="btn ghost" id="limport" title="install everything from a list you exported">import a list</button><button class="btn ghost" id="histbtn" title="what you installed + removed, and when">history</button><button class="btn ghost" id="achbtn" title="your gurt achievements">achievements</button></span></span><input type="file" id="limportin" accept=".txt,text/plain" hidden></div>
     <div class="grid" id="igrid"></div>
   </section>
   <section id="t-updates" hidden>
@@ -1884,7 +1983,8 @@ dialog .row{justify-content:flex-end}
   <div class="dset" id="gurtdset"></div>
   <pre class="dlog" id="gurtdlog"></pre>
   <div class="row"><span class="spacer"></span><button class="btn" id="gurtdclose">done</button></div></dialog>
-<dialog id="histdlg"><h3>history</h3><div id="histlist"></div><div class="row"><span class="spacer"></span><button class="btn" id="histclose">done</button></div></dialog>
+<dialog id="diskdlg"><h3>free up space</h3><div class="diskin"><h4>Junk you can toss</h4><div class="dset" id="junklist"></div><h4>Biggest on your computer</h4><div class="dset" id="biglist"></div></div><div class="row"><span class="spacer"></span><button class="btn" id="diskclose">done</button></div></dialog>
+<dialog id="histdlg"><h3>history</h3><div id="histlist"></div><div class="row"><button class="btn ghost" id="histundo" title="take back the last thing gurt did (gurt undo)" hidden>undo last</button><span class="spacer"></span><button class="btn" id="histclose">done</button></div></dialog>
 <dialog id="achdlg"><h3>achievements</h3><div id="achlist"></div><div class="row"><span class="spacer"></span><button class="btn" id="achclose">nice</button></div></dialog>
 <div id="cmptray" hidden><span id="cmplist"></span><span class="spacer"></span><button class="btn ghost small" id="cmpclear">clear</button><button class="btn small" id="cmpgo">compare</button></div>
 <dialog id="cmpdlg"><h3>side by side</h3><div id="cmptable"></div><div class="row"><span class="spacer"></span><button class="btn" id="cmpclose">done</button></div></dialog>
@@ -2025,7 +2125,7 @@ function renderInstalled(){
 }
 
 // ── running gurt ──
-const VERB = {dropped:"Install", de:"Install the desktop", install:"Install", "install-many":"Install", sysup:"Update your whole system", remove:"Remove", rollback:"Roll back", hold:"Hold", unhold:"Unhold", upgrade:"Update everything (your system + apps)", "self-update":"Update gurt", outsource:"Build + install"};
+const VERB = {dropped:"Install", de:"Install the desktop", install:"Install", "install-many":"Install", sysup:"Update your whole system", remove:"Remove", undo:"Undo the last thing gurt did", rollback:"Roll back", hold:"Hold", unhold:"Unhold", upgrade:"Update everything (your system + apps)", "self-update":"Update gurt", outsource:"Build + install"};
 function ask(title, body){ return new Promise(res => { $("#ctitle2").textContent = title; $("#cbody").textContent = body; const d=$("#confirm");
   const done = v => { d.close(); $("#cyes").onclick = $("#cno").onclick = null; res(v); };
   $("#cyes").onclick = () => done(true); $("#cno").onclick = () => done(false); d.onclose = () => res(false); d.showModal(); }); }
@@ -2079,16 +2179,24 @@ async function achieve(id){ const r = await api("/api/achieve", {id}).catch(() =
 const GURTD_ROWS = [["running", "running", "in the background while you're logged in"],
   ["autoupdate", "auto-update my apps", "apps that need your password get a notification instead"],
   ["fresh", "keep package lists fresh", "every 3 hours, so searches and update checks are instant"],
-  ["watch", "watch Downloads", "a new .deb / .rpm / AppImage asks to install it with GURT"]];
+  ["watch", "watch Downloads", "a new .deb / .rpm / AppImage asks to install it with GURT"],
+  ["saver", "saver", "no update checks on battery or metered data, they wait till you're plugged in"]];
+const QUIET = ["off", "21-7", "22-8", "23-8", "0-9"];
 async function gurtdRender(){
   const d = await api("/api/gurtd").catch(() => null); if (!d) return;
-  $("#gurtdset").innerHTML = GURTD_ROWS.map(([k, t, sub]) => `<div><span><b>${t}</b><small>${sub}</small></span>
-    <button class="btn small ${d[k] ? "" : "ghost"}" data-gd="${k}">${d[k] ? "on" : "off"}</button></div>`).join("");
+  $("#gurtdset").innerHTML = GURTD_ROWS.map(([k, t, sub]) => `<div><span><b>${t}</b><small>${k === "saver" && d.holding && d.saver ? `holding off right now: ${esc(d.holding)}` : sub}</small></span>
+    <button class="btn small ${d[k] ? "" : "ghost"}" data-gd="${k}">${d[k] ? "on" : "off"}</button></div>`).join("") +
+    `<div><span><b>quiet hours</b><small>no popups then, they wait till it's over</small></span>
+    <select data-gq title="quiet hours">${[...new Set([...QUIET, d.quiet || "off"])].map(q => `<option value="${q}"${q === (d.quiet || "off") ? " selected" : ""}>${q === "off" ? "off" : q.replace("-", ":00 – ") + ":00"}</option>`).join("")}</select></div>`;
   $("#gurtdlog").textContent = d.log || "GURTd hasn't run yet";
   $("#gurtdset").dataset.attached = d.attached ? "1" : "";
 }
 $("#gurtdbtn").addEventListener("click", async () => { await gurtdRender(); $("#gurtddlg").showModal(); });
 $("#gurtdclose").addEventListener("click", () => $("#gurtddlg").close());
+$("#gurtdset").addEventListener("change", async e => {
+  const s = e.target.closest("[data-gq]"); if (!s) return;
+  s.disabled = true; await run("gurtd", "quiet-" + s.value, {confirm:false, quiet:true}); setTimeout(gurtdRender, 500);
+});
 $("#gurtdset").addEventListener("click", async e => {
   const b = e.target.closest("[data-gd]"); if (!b) return;
   const k = b.dataset.gd, on = b.textContent.trim() === "on";
@@ -2097,13 +2205,43 @@ $("#gurtdset").addEventListener("click", async e => {
   await run("gurtd", k === "running" ? (on ? "off" : "on") : `${k}-${on ? "off" : "on"}`, {confirm:false, quiet:true});
   setTimeout(gurtdRender, 800);
 });
+let HIST = [];
+const histLast = () => !HIST.length ? [] : HIST[0].tx ? HIST.filter(i => i.tx === HIST[0].tx) : [HIST[0]];   // what gurt undo takes back
+const histWhat = i => i.what !== "install" ? "removed" : i.was && i.was !== i.ver ? `updated · ${esc(i.was)} → ${esc(i.ver)}` : `installed${i.ver ? " · " + esc(i.ver) : ""}`;
 $("#histbtn").addEventListener("click", async () => {
-  const r = await api("/api/history").catch(() => ({items:[]})), items = r.items || [];
-  $("#histlist").innerHTML = items.length ? items.map(i => `<div class="ach"><span class="mark">${i.what === "install" ? "+" : "−"}</span><span><b>${esc(i.app)}</b><small>${i.what === "install" ? "installed" : "removed"}${i.ver ? " · " + esc(i.ver) : ""}</small></span><span class="when">${esc(i.when)}</span></div>`).join("")
+  const r = await api("/api/history").catch(() => ({items:[]})); HIST = r.items || [];
+  const last = new Set(histLast());
+  $("#histlist").innerHTML = HIST.length ? HIST.map(i => `<div class="ach${last.has(i) ? " last" : ""}"><span class="mark">${i.what === "install" ? "+" : "−"}</span><span><b>${esc(i.app)}</b><small>${histWhat(i)}</small></span><span class="when">${esc(i.when)}</span></div>`).join("")
     : `<p>nothing yet, your installs and removals show up here.</p>`;
+  $("#histundo").hidden = !HIST.length;
   $("#histdlg").showModal();
 });
+$("#histundo").addEventListener("click", async () => {
+  const steps = histLast().map(i => i.what !== "install" ? `put ${i.app} back` : i.was && i.was !== i.ver ? `${i.app} back to ${i.was}` : `remove ${i.app}`);
+  $("#histdlg").close();
+  if (!await ask("Undo the last thing gurt did?", steps.join(", ") + ". Undo again puts it back.")) return;
+  run("undo", "", {confirm:false});
+});
 $("#histclose").addEventListener("click", () => $("#histdlg").close());
+// free up space: gurt hogs junk (toss buttons) + gurt -a hogs (the biggest things on the disk, whoever installed them)
+async function diskRender(){
+  $("#junklist").innerHTML = $("#biglist").innerHTML = `<div><span><small>measuring…</small></span></div>`;
+  const d = await api("/api/disk").catch(() => ({junk:[], big:[]}));
+  $("#junklist").innerHTML = (d.junk || []).length ? d.junk.map(j => `<div><span class="sz">${fmtSize(j.bytes)}</span><span><b>${esc(j.what)}</b><small>${esc(noEmoji(j.desc))}${j.root ? ", asks for your password" : ""}</small></span>
+    <button class="btn small danger" data-toss="${esc(j.what)}">toss</button></div>`).join("") : `<div><span><small>nothing worth tossing</small></span></div>`;
+  const keys = new Set((S.installed || []).map(i => i.spec));
+  $("#biglist").innerHTML = (d.big || []).map(b => { const i = b.name.indexOf("/"), from = i > 0 ? b.name.slice(0, i) : "gurt";
+    return `<div><span class="sz">${fmtSize(b.bytes)}</span><span><b>${esc(i > 0 ? b.name.slice(i + 1) : b.name)}</b></span><span class="chip">${esc(from)}</span>${keys.has(b.name) ? actBtn("remove", "remove", b.name, "ghost") : ""}</div>`; }).join("")
+    || `<div><span><small>couldn't measure anything</small></span></div>`;
+}
+$("#diskbtn").addEventListener("click", () => { $("#diskdlg").showModal(); diskRender(); });
+$("#diskclose").addEventListener("click", () => $("#diskdlg").close());
+$("#junklist").addEventListener("click", async e => {
+  const b = e.target.closest("[data-toss]"); if (!b) return;
+  b.disabled = true; $("#diskdlg").close();
+  const r = await run("toss", b.dataset.toss, {confirm:false});
+  if (r) { $("#diskdlg").showModal(); diskRender(); }
+});
 // press / anywhere to jump to the search box (like GitHub + YouTube)
 document.addEventListener("keydown", e => {
   if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey || document.querySelector("dialog[open]")) return;
@@ -2468,7 +2606,7 @@ $("#soundx").addEventListener("click", () => { soundDismissed = true; $("#soundb
 $("#soundfix").addEventListener("click", async () => { const r = await run("gui-setup", "", {confirm:false}); if (r && r.rc === 0) { $("#soundbar").hidden = true; alert("sound's installed close GURT and open it again to hear it"); } });
 // ── drop in foreign files (or pick one): gurt figures out what it is and installs it ──
 const DROPPABLE = /\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|appimage|dmg|exe|msi|snap|flatpak|flatpakref|tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst)$/i;
-const fmtSize = b => b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
+const fmtSize = b => b >= 1073741824 ? (b / 1073741824).toFixed(1) + " GB" : b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
 // what got dropped? a real File (browsers), or a path the app window caught (WebKitGTK only tells the page "a link")
 async function droppedThing(e){
   const f = e.dataTransfer?.files?.[0];
