@@ -240,6 +240,18 @@ gurt sysup               # only the system
 
 In the app, the Updates tab shows a 🐧 "your system" card with how many distro updates are waiting.
 
+## GURTd: the background daemon 🐧
+
+`gurt gurtd on` starts it (a systemd user service, or an autostart entry without systemd), and `gurt gurtd config` opens a little menu to change what it does. The app has the same settings: Updates → **GURTd**. Its log starts with "Linus sees you. Starting GURTd btw".
+
+- **Keeps package lists fresh** every 3 hours, so searches and update checks are instant (`gurt update` skips the refresh when it just happened; `--force` refreshes anyway).
+- **Checks for updates** every 6 hours and sends a notification. It replaces the old 6-hour alert timer.
+- **Auto-update** (off unless you turn it on): updates your GURT apps by itself when that needs no password; flatpaks always can. Apps that need your password, and your system's own packages, wait for you, with a notification.
+- **Watches Downloads**: a new .deb, .rpm, AppImage… gets an "Install with GURT?" notification.
+- **GURT opens instantly**: the app's server stays running, so `gurt gui` just opens a window onto it. A tray icon too, where your desktop has AppIndicator.
+
+`gurt gurtd status` · `gurt gurtd log` · `gurt gurtd autoupdate|watch|fresh on|off` · `gurt gurtd off`
+
 ## Utilities apps need: `gurt utils` 🔧
 
 Most apps need a few tools to install: flatpak for Flathub apps, `ar`/bsdtar/zstd/7zip/rpm2cpio to unpack `.deb`, `.rpm`, `.pkg.tar.zst`, `.dmg` and `.exe` files, git + a compiler + make + pkg-config for source builds, plus curl, unzip, gnupg, patchelf and xdg-utils. One command grabs all of them from your distro and sets up Flathub:

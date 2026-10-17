@@ -46,8 +46,8 @@ NOSIGN=false NOCONFIRM=false FORCE=false NODEPS=false NOCHECK=false KEEP=false A
 
 # ───────────────────────── pretty output ─────────────────────────
 if [[ -t 2 && -z ${NO_COLOR:-} ]]; then
-  B=$'\e[1m' R0=$'\e[0m' RED=$'\e[31m' GRN=$'\e[32m' YLW=$'\e[33m' BLU=$'\e[34m' MAG=$'\e[35m'
-else B='' R0='' RED='' GRN='' YLW='' BLU='' MAG=''; fi
+  B=$'\e[1m' R0=$'\e[0m' RED=$'\e[31m' GRN=$'\e[32m' YLW=$'\e[33m' BLU=$'\e[34m' MAG=$'\e[35m' DIM=$'\e[2m'
+else B='' R0='' RED='' GRN='' YLW='' BLU='' MAG='' DIM=''; fi
 msg()  { printf '%s==>%s %s%s%s\n' "$GRN" "$R0" "$B" "$*" "$R0" >&2; }
 msg2() { printf '  %s->%s %s\n' "$BLU" "$R0" "$*" >&2; }
 warn() { printf '%s==> heads up:%s %s\n' "$YLW" "$R0" "$*" >&2; }
@@ -3683,6 +3683,88 @@ cmd_profile() { # save|load|list|show|rm [name|file]
 }
 
 # ── gurt notify: a desktop notification when updates are waiting (gurt notify on → checks every 6 hours) ──
+# ── GURTd: gurt's background daemon. fresh package lists, update checks (+ auto-update if you want), "install it with
+#    GURT?" for new downloads, and GURT opens instantly. gurt gurtd config = a little menu for all of it ──
+GURTD_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/daemon.conf"
+GURTD_URL="${XDG_RUNTIME_DIR:-$HOME/.cache/gurt}/gurt-gui.url"
+gurtd_get() { local v; v=$(sed -n "s/^$1=//p" "$GURTD_CONF" 2>/dev/null | tail -n1); [[ $v == on || $v == off ]] && echo "$v" || echo "$2"; }
+gurtd_set() { # key on|off
+  mkdir -p "${GURTD_CONF%/*}"
+  { grep -v "^$1=" "$GURTD_CONF" 2>/dev/null || true; echo "$1=$2"; } > "$GURTD_CONF.new" && mv -f "$GURTD_CONF.new" "$GURTD_CONF"
+}
+gurtd_running() {
+  systemctl --user is-active --quiet gurtd 2>/dev/null && return 0
+  [[ -f $GURTD_URL ]] && command -v curl >/dev/null && curl -fs -o /dev/null --max-time 2 "$(head -n1 "$GURTD_URL")"
+}
+gurtd_onoff() { if [[ $1 == on ]]; then printf '%son%s' "$GRN" "$R0"; else printf '%soff%s' "$DIM" "$R0"; fi; }
+gurtd_row() { printf '  %s  %-22s %s%s  %s%s%s\n' "$1" "$2" "$(gurtd_onoff "$3")" "$([[ $3 == on ]] && echo ' ')" "$DIM" "$4" "$R0"; }
+gurtd_tui() {
+  local k run
+  while :; do
+    gurtd_running && run=on || run=off
+    printf '\033[H\033[2J'
+    printf '%sGURTd%s  gurt'"'"'s background daemon\n\n' "$B" "$R0"
+    gurtd_row 1 "running" "$run" "in the background while you're logged in"
+    gurtd_row 2 "auto-update my apps" "$(gurtd_get autoupdate off)" "apps that need your password get a notification instead"
+    gurtd_row 3 "keep lists fresh" "$(gurtd_get fresh on)" "every 3 hours, so searches + update checks are instant"
+    gurtd_row 4 "watch Downloads" "$(gurtd_get watch on)" "a new .deb / .rpm / AppImage asks to install it with GURT"
+    printf '  5  show the log\n\n  q  done\n\n  press a number: '
+    IFS= read -rsn1 k </dev/tty || break
+    case $k in
+      1) echo; if [[ $run == on ]]; then cmd_gurtd off; else cmd_gurtd on; fi; sleep 1 ;;
+      2) [[ $(gurtd_get autoupdate off) == on ]] && gurtd_set autoupdate off || gurtd_set autoupdate on ;;
+      3) [[ $(gurtd_get fresh on) == on ]] && gurtd_set fresh off || gurtd_set fresh on ;;
+      4) [[ $(gurtd_get watch on) == on ]] && gurtd_set watch off || gurtd_set watch on ;;
+      5) echo; echo; cmd_gurtd log; printf '\n  any key to go back '; IFS= read -rsn1 k </dev/tty || true ;;
+      q|Q|$'\e'|'') echo; break ;;
+    esac
+  done
+}
+cmd_gurtd() { # config|on|off|status|log|run|autoupdate|watch|fresh [on|off]
+  local unit_dir="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user" self py
+  self=$(readlink -f "$0")
+  case ${1:-config} in
+    config|menu|tui)
+      if [[ -t 0 && -t 1 ]]; then gurtd_tui; else cmd_gurtd status; fi ;;
+    on|enable|start)
+      py=$(gui_script) || { sync_main >/dev/null; py=$(gui_script) || die "couldn't find gurt-gui.py (try: gurt sync)"; }
+      command -v python3 >/dev/null || die "GURTd needs python3"
+      if command -v systemctl >/dev/null && systemctl --user show-environment >/dev/null 2>&1; then
+        mkdir -p "$unit_dir"
+        printf '%s\n' "[Unit]" "Description=GURTd btw (Linus sees you)" "After=graphical-session.target" "" \
+          "[Service]" "ExecStart=$(command -v python3) $py --gurt $self --daemon" "Restart=on-failure" "RestartSec=10" "Nice=5" "" \
+          "[Install]" "WantedBy=default.target" > "$unit_dir/gurtd.service"
+        systemctl --user daemon-reload && systemctl --user enable --now gurtd.service >/dev/null 2>&1 || die "systemd wouldn't start GURTd"
+      else   # no systemd user session: start it now + at every login
+        mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/autostart"
+        printf '%s\n' "[Desktop Entry]" "Type=Application" "Name=GURTd" "Exec=$self gurtd run" "NoDisplay=true" "X-GNOME-Autostart-enabled=true" \
+          > "${XDG_CONFIG_HOME:-$HOME/.config}/autostart/gurtd.desktop"
+        gurtd_running || { setsid "$self" gurtd run >/dev/null 2>&1 < /dev/null & }
+      fi
+      # GURTd does the update checks now, so the old 6-hour alert timer can go
+      systemctl --user disable --now gurt-notify.timer >/dev/null 2>&1 || true
+      msg "GURTd is on 🐧 Linus sees you. (gurt gurtd config to change what it does)" ;;
+    off|disable|stop)
+      systemctl --user disable --now gurtd.service >/dev/null 2>&1 || true
+      rm -f "$unit_dir/gurtd.service" "${XDG_CONFIG_HOME:-$HOME/.config}/autostart/gurtd.desktop"
+      if [[ -f $GURTD_URL ]]; then pkill -f -- "gurt-gui.py .*--daemon" 2>/dev/null || true; rm -f "$GURTD_URL"; fi
+      msg "GURTd is off" ;;
+    status)
+      if gurtd_running; then echo "running: on"; else echo "running: off"; fi
+      echo "autoupdate: $(gurtd_get autoupdate off)"; echo "fresh: $(gurtd_get fresh on)"; echo "watch: $(gurtd_get watch on)" ;;
+    log)
+      if [[ -f $HOME/.cache/gurt/gurtd.log ]]; then tail -n "${2:-30}" "$HOME/.cache/gurt/gurtd.log"; else echo "GURTd hasn't run yet"; fi ;;
+    run)
+      py=$(gui_script) || { sync_main >/dev/null; py=$(gui_script) || die "couldn't find gurt-gui.py (try: gurt sync)"; }
+      exec python3 "$py" --gurt "$self" --daemon ;;
+    autoupdate|auto-update|watch|fresh)
+      local key=${1/auto-update/autoupdate}
+      [[ ${2:-} == on || ${2:-} == off ]] || die "usage: gurt gurtd $key on|off"
+      gurtd_set "$key" "$2"; msg "GURTd $key: $2" ;;
+    *) die "usage: gurt gurtd [config|on|off|status|log|autoupdate on|off|watch on|off|fresh on|off]" ;;
+  esac
+}
+
 cmd_notify() { # [on|off|now]
   local unit_dir="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user" self; self=$(readlink -f "$0")
   case ${1:-now} in
@@ -3820,7 +3902,7 @@ cmd_complete() {
 gui_script() {
   local self d f
   self=$(readlink -f "$0"); d=$(dirname "$self")
-  for f in "$d/../share/gurt/gurt-gui.py" /usr/local/share/gurt/gurt-gui.py /usr/share/gurt/gurt-gui.py "$GURT_REPO_DIR/gui/gurt-gui.py"; do
+  for f in "$d/../share/gurt/gurt-gui.py" /usr/local/share/gurt/gurt-gui.py /usr/share/gurt/gurt-gui.py "$d/gui/gurt-gui.py" "$GURT_REPO_DIR/gui/gurt-gui.py"; do
     [[ -f $f ]] && { echo "$f"; return 0; }
   done
   return 1
@@ -3911,8 +3993,12 @@ cmd_gui() {
     # shellcheck disable=SC2046
     install_native $(map_dep python3) || die "couldn't install python3 — install it yourself, then run gurt gui again"
   fi
+  local py
+  if (( $# == 0 )) && [[ -f $GURTD_URL ]] && gurtd_running && py=$(gui_script); then   # GURTd keeps GURT ready: instant
+    exec python3 "$py" --attach
+  fi
   [[ -d $GURT_REPO_DIR/.git ]] || sync_main >/dev/null
-  local py; py=$(gui_script) || { sync_main >/dev/null; py=$(gui_script) || die "couldn't find gurt-gui.py (try: gurt sync)"; }
+  py=$(gui_script) || { sync_main >/dev/null; py=$(gui_script) || die "couldn't find gurt-gui.py (try: gurt sync)"; }
   gui_desktop_entry
   if [[ ${1:-} == --setup ]]; then gui_setup "$py"; return; fi
   # step 2: the app window. first time from a terminal → just install it. from the app menu → the app offers a button
@@ -4271,12 +4357,19 @@ used_sources() {
 }
 
 refresh_all() {
-  local s
+  local s stamp="$GURT_CACHE/refreshed" max=30 age
+  # refreshed a moment ago (GURTd does it every 3 hours)? then the lists are fresh: skip the slow part
+  [[ -f ${XDG_RUNTIME_DIR:-$HOME/.cache/gurt}/gurt-gui.url ]] && max=200
+  if [[ -z ${GURT_REFRESH:-} ]] && ! $FORCE && [[ -f $stamp ]]; then
+    age=$(( $(date +%s) - $(stat -c %Y "$stamp" 2>/dev/null || echo 0) ))
+    if (( age < max * 60 )); then msg2 "package lists are fresh (refreshed $(( age / 60 )) min ago)"; return 0; fi
+  fi
   sync_main
   for s in $(used_sources); do
     [[ $s == aur || $s == flatpak || $s == snap || $s == git || $s == dirt || $s == file || $s == box-* ]] && continue
     ( sync_source "$s" ) || warn "couldn't refresh $s, skipping"
   done
+  mkdir -p "$GURT_CACHE" && touch "$stamp"
 }
 
 # is there a newer gurt in the main repo?
@@ -5299,6 +5392,7 @@ ${B}misc${R0}
   setup [--terminal]   the GURT Setup Wizard 🧙 its own app: system check, sources, starter apps, extras
   profile save|load|list <name>   your apps + gurt settings + the app's look, under a name (gaming, work…) 📁
   notify on|off|now    a desktop notification when updates are waiting (checks every 6 hours) 🔔
+  gurtd [config]       GURTd, the background daemon: auto-updates, fresh lists, downloads → install, instant app 🐧
   snapshots            the snapshots gurt took before system upgrades (btrfs: snapper/timeshift/plain) 📸
   achievements         🏆 trophies for doing gurt things
   completions <shell>  print tab completion for bash/zsh/fish (bash+fish set themselves up)
@@ -5400,6 +5494,7 @@ main() {
     profile|profiles)  cmd_profile "$@" ;;
     setup|wizard)      cmd_setup "$@" ;;
     notify|alerts)     cmd_notify "$@" ;;
+    gurtd|daemon)      cmd_gurtd "$@" ;;
     snapshots|snaps)   cmd_snapshots ;;
     self-update|selfupdate) cmd_self_update ;;
     uninstall)         if (( $# )); then for p; do remove_pkg "$p"; done; play_scream; achieve yeet   # gurt uninstall <app> = gurt remove <app>

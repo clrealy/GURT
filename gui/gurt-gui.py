@@ -578,6 +578,21 @@ class H(BaseHTTPRequestHandler):
                 return self._send(404, b"", "image/png")
         if not self._auth():
             return self._send(403, {"error": "bad token"})
+        if u.path == "/api/gurtd":   # GURTd: running? its settings, the end of its log
+            running = DAEMON[0]
+            if not running:
+                try:
+                    running = subprocess.run(["systemctl", "--user", "is-active", "--quiet", "gurtd"], timeout=5).returncode == 0
+                except Exception:
+                    running = False
+                running = running or os.path.exists(URL_FILE)
+            try:
+                log = "".join(open(DAEMON_LOG).readlines()[-12:])
+            except OSError:
+                log = ""
+            c = dconf()
+            return self._send(200, {"running": running, "attached": DAEMON[0], "autoupdate": c["autoupdate"] == "on",
+                                    "fresh": c["fresh"] == "on", "watch": c["watch"] == "on", "log": log})
         if u.path == "/api/state":
             return self._send(200, state())
         if u.path == "/api/doctor":   # what the setup wizard's system check shows
@@ -757,6 +772,12 @@ class H(BaseHTTPRequestHandler):
                     return self._send(400, {"error": "unknown source"})
                 job = start_job([GURT, "sync", arg])
                 return self._send(200, {"job": job.id})
+            if cmd == "gurtd":   # GURTd's settings (gurt gurtd …)
+                ok = {"on": ["on"], "off": ["off"]} | {f"{k}-{v}": [k, v] for k in ("autoupdate", "watch", "fresh") for v in ("on", "off")}
+                if arg not in ok:
+                    return self._send(400, {"error": "not allowed"})
+                job = start_job([GURT, "gurtd"] + ok[arg])
+                return self._send(200, {"job": job.id})
             if cmd == "notify":
                 if arg not in ("on", "off"):
                     return self._send(400, {"error": "not allowed"})
@@ -824,12 +845,14 @@ class H(BaseHTTPRequestHandler):
             if body.get("open"):
                 subprocess.Popen([GURT, "gui"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                  stdin=subprocess.DEVNULL, start_new_session=True)
-            threading.Timer(0.3, close_window).start()
+            if not DAEMON[0]:
+                threading.Timer(0.3, close_window).start()
             return self._send(200, {"ok": True})
         if u.path == "/api/relaunch":   # reopen as a real app window, then this browser copy bows out
             subprocess.Popen([GURT, "gui"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                              stdin=subprocess.DEVNULL, start_new_session=True)
-            threading.Timer(3, lambda: os._exit(0)).start()
+            if not DAEMON[0]:
+                threading.Timer(3, lambda: os._exit(0)).start()
             return self._send(200, {"ok": True})
         m = re.fullmatch(r"/api/job/([0-9a-f]+)/(pass|cancel)", u.path)
         if m:
@@ -1039,6 +1062,232 @@ def watchdog(server):
             return
 
 
+
+# ───────────────────────── GURTd: gurt's background daemon (gurt daemon on) ─────────────────────────
+# keeps the package lists fresh, checks for updates (and installs them if you turned auto-update on), offers to
+# install packages that land in ~/Downloads, and keeps this server running so `gurt gui` opens instantly
+CFG_DIR = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"), "gurt")
+DAEMON_CONF = os.path.join(CFG_DIR, "daemon.conf")          # autoupdate=on|off · watch=on|off · fresh=on|off
+RUN_DIR = os.environ.get("XDG_RUNTIME_DIR") or os.path.expanduser("~/.cache/gurt")
+URL_FILE = os.path.join(RUN_DIR, "gurt-gui.url")              # where `gurt gui` finds the running server (0600)
+DAEMON_LOG = os.path.expanduser("~/.cache/gurt/gurtd.log")
+DAEMON = [False]
+REFRESH_EVERY, CHECK_EVERY = 3 * 3600, 6 * 3600
+
+
+def dconf():
+    c = {"autoupdate": "off", "watch": "on", "fresh": "on"}
+    try:
+        for line in open(DAEMON_CONF):
+            k, _, v = line.strip().partition("=")
+            if k in c and v in ("on", "off"):
+                c[k] = v
+    except OSError:
+        pass
+    return c
+
+
+def dlog(msg):
+    line = time.strftime("%Y-%m-%d %H:%M:%S ") + msg
+    print(line, flush=True)
+    try:
+        os.makedirs(os.path.dirname(DAEMON_LOG), exist_ok=True)
+        with open(DAEMON_LOG, "a") as f:
+            f.write(line + "\n")
+    except OSError:
+        pass
+
+
+def desktop_notify(title, body, actions=()):
+    """a desktop notification; with actions (key, label) it waits and returns the one you clicked (or None)"""
+    if not shutil.which("notify-send"):
+        return None
+    icon = next((f for f in ICONS if os.path.isfile(f)), "")
+    cmd = ["notify-send", "--app-name=GURT"] + (["-i", icon] if icon else [])
+    if actions:
+        try:
+            has_actions = "--action" in subprocess.run(["notify-send", "--help"], capture_output=True, text=True, timeout=5).stdout
+        except Exception:
+            has_actions = False
+        if has_actions:
+            for k, label in actions:
+                cmd += ["-A", f"{k}={label}"]
+            try:
+                r = subprocess.run(cmd + [title, body], capture_output=True, text=True, timeout=600)
+                return r.stdout.strip() or None
+            except Exception:
+                return None
+    try:
+        subprocess.run(cmd + [title, body], capture_output=True, timeout=15)
+    except Exception:
+        pass
+    return None
+
+
+def gurt_quiet(args, timeout=3600, env_extra=None):
+    """run gurt for the daemon (no colours, nicely, never asking anything) → (rc, output)"""
+    env = dict(os.environ, NO_COLOR="1", GURT_PLAIN="1", **(env_extra or {}))
+    try:
+        r = subprocess.run(["nice", "-n", "10", GURT] + args, capture_output=True, text=True, timeout=timeout,
+                           env=env, stdin=subprocess.DEVNULL)
+        return r.returncode, ANSI.sub("", r.stdout + r.stderr)
+    except Exception as e:
+        return 1, str(e)
+
+
+def daemon_updates():
+    """refresh + see what's outdated; auto-update if that's on (only what needs no password), else tell you"""
+    if any(not j.done for j in JOBS.values()):
+        return dlog("you're using GURT right now, checking later")
+    rc, out = gurt_quiet(["update"], env_extra={"GURT_REFRESH": "1"})   # the daemon's own refresh always runs
+    apps = re.findall(r"^\s*->\s*(\S+)\s+\S+ -> (\S+)$", out, re.M)
+    sysm = re.search(r"(\d+) system update\(s\) waiting", out)
+    dlog(f"checked: {len(apps)} app update(s), {sysm.group(1) if sysm else 0} system update(s)")
+    if not apps and not sysm:
+        return
+    if apps and dconf()["autoupdate"] == "on":
+        nopw = os.geteuid() == 0 or subprocess.run(["sudo", "-n", "true"], capture_output=True).returncode == 0
+        if nopw:
+            rc, out = gurt_quiet(["-y", "--no-system", "upgrade"])
+            dlog(f"auto-update: {'done' if rc == 0 else 'had problems'}")
+            desktop_notify("GURT updated your apps" if rc == 0 else "GURT couldn't update everything",
+                           ", ".join(n for n, _ in apps[:6]) + ("…" if len(apps) > 6 else ""))
+            return
+        if shutil.which("flatpak"):   # flatpaks update without a password
+            subprocess.run(["flatpak", "update", "--user", "-y", "--noninteractive"], capture_output=True, timeout=3600)
+            dlog("auto-update: flatpaks updated; the rest need your password")
+    n = len(apps) + (1 if sysm else 0)
+    if desktop_notify("Updates are waiting", f"{len(apps)} app update(s)" + (f", {sysm.group(1)} system update(s)" if sysm else ""),
+                      [("open", "Open GURT")]) == "open":
+        subprocess.Popen([GURT, "gui"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+
+
+PKG_FILE = DROP_RE
+def downloads_dir():
+    try:
+        d = subprocess.run(["xdg-user-dir", "DOWNLOAD"], capture_output=True, text=True, timeout=5).stdout.strip()
+        if d and os.path.isdir(d) and os.path.realpath(d) != os.path.realpath(os.path.expanduser("~")):   # it says $HOME when unset
+            return d
+    except Exception:
+        pass
+    return os.path.expanduser("~/Downloads")
+
+
+def watch_downloads():
+    """a package lands in ~/Downloads → 'Install with GURT?'"""
+    d = downloads_dir()
+    seen, sizes = set(), {}
+    try:
+        seen = set(os.listdir(d))   # only new files count
+    except OSError:
+        pass
+    while True:
+        time.sleep(5)
+        if dconf()["watch"] != "on":
+            continue
+        try:
+            names = os.listdir(d)
+        except OSError:
+            continue
+        for n in names:
+            if n in seen or n.startswith(".") or n.endswith((".part", ".crdownload", ".download")) or not PKG_FILE.search(n):
+                continue
+            f = os.path.join(d, n)
+            try:
+                size = os.path.getsize(f)
+            except OSError:
+                continue
+            if sizes.get(n) != size or size == 0:   # still downloading: wait until it stops growing
+                sizes[n] = size
+                continue
+            seen.add(n)
+            dlog(f"new download: {n}")
+            def ask(f=f, n=n):
+                if desktop_notify("Install it with GURT?", n, [("install", "Install with GURT"), ("no", "Not now")]) == "install":
+                    subprocess.Popen([GURT, "gui", f], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+            threading.Thread(target=ask, daemon=True).start()
+
+
+def daemon_loop():
+    last_refresh = last_check = 0
+    while True:
+        now, c = time.time(), dconf()
+        try:
+            if now - last_check >= CHECK_EVERY or (c["fresh"] == "on" and now - last_refresh >= REFRESH_EVERY):
+                daemon_updates()   # gurt update refreshes the lists too
+                last_refresh = last_check = now
+        except Exception as e:
+            dlog(f"update check failed: {e}")
+        time.sleep(60)
+
+
+def daemon_tray():
+    """a tray icon (needs AyatanaAppIndicator); without one GURTd just runs quietly"""
+    try:
+        import gi
+        gi.require_version("Gtk", "3.0")
+        try:
+            gi.require_version("AyatanaAppIndicator3", "0.1")
+            from gi.repository import AyatanaAppIndicator3 as AI
+        except (ValueError, ImportError):
+            gi.require_version("AppIndicator3", "0.1")
+            from gi.repository import AppIndicator3 as AI
+        from gi.repository import Gtk
+    except Exception:
+        return False
+    if not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+        return False
+    icon = next((f for f in ICONS if os.path.isfile(f)), "gurt")
+    ind = AI.Indicator.new("gurtd", icon, AI.IndicatorCategory.APPLICATION_STATUS)
+    ind.set_status(AI.IndicatorStatus.ACTIVE)
+    menu = Gtk.Menu()
+    def item(label, fn):
+        it = Gtk.MenuItem(label=label); it.connect("activate", lambda *_: fn()); menu.append(it)
+    item("Open GURT", lambda: subprocess.Popen([GURT, "gui"], start_new_session=True))
+    item("Check for updates now", lambda: threading.Thread(target=daemon_updates, daemon=True).start())
+    item("Quit GURTd", Gtk.main_quit)
+    menu.show_all(); ind.set_menu(menu)
+    Gtk.main()
+    return True
+
+
+def run_daemon(server, url):
+    DAEMON[0] = True
+    dlog("Linus sees you. Starting GURTd btw")
+    os.makedirs(RUN_DIR, exist_ok=True)
+    fd = os.open(URL_FILE, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        f.write(url + "\n")
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    threading.Thread(target=daemon_loop, daemon=True).start()
+    threading.Thread(target=watch_downloads, daemon=True).start()
+    try:
+        if not daemon_tray():
+            while True:
+                time.sleep(3600)
+    finally:
+        try:
+            os.remove(URL_FILE)
+        except OSError:
+            pass
+        dlog("GURTd stopped")
+
+
+def attach_window():
+    """gurt gui with GURTd running: just open a window onto its server"""
+    try:
+        url = open(URL_FILE).read().strip()
+    except OSError:
+        return False
+    tk = find_toolkit()
+    if tk:
+        TK[0] = tk
+        native_window(tk, url, next((f for f in ICONS if os.path.isfile(f)), None))
+    else:
+        open_window(url)
+    return True
+
+
 def main():
     global GURT, PORT, ASKPASS, ICONS
     ap = argparse.ArgumentParser()
@@ -1048,7 +1297,9 @@ def main():
     ap.add_argument("--browser", action="store_true", help="use a browser window even if a native one is possible")
     ap.add_argument("--probe", action="store_true", help="exit 0 if a native app window is possible")
     ap.add_argument("--wizard", action="store_true", help="open the GURT Setup Wizard app instead of GURT (the installers use this)")
-    ap.add_argument("--from-app", action="store_true", help=argparse.SUPPRESS)   # GURT opened the wizard (so Finish doesn't open a 2nd GURT)
+    ap.add_argument("--from-app", action="store_true", help=argparse.SUPPRESS)
+    ap.add_argument("--daemon", action="store_true", help="run as GURTd: fresh lists, update checks, downloads watcher, instant GURT")
+    ap.add_argument("--attach", action="store_true", help="open a window onto GURTd's running server")   # GURT opened the wizard (so Finish doesn't open a 2nd GURT)
     ap.add_argument("files", nargs="*", help="a package to open (double-clicking a .gurt file)")
     a = ap.parse_args()
     WIZARD[:] = [a.wizard, a.from_app]
@@ -1068,14 +1319,26 @@ def main():
              os.path.expanduser("~/.local/share/icons/hicolor/256x256/apps/gurt.png")]
     server = ThreadingHTTPServer(("127.0.0.1", a.port), H)
     PORT = server.server_address[1]
+    if a.attach:
+        sys.exit(0 if attach_window() else 1)
     ASKPASS = write_askpass()
-    tk = None if (a.no_window or a.browser) else find_toolkit()
+    tk = None if (a.no_window or a.browser or a.daemon) else find_toolkit()
     global MODE
     MODE = "native" if tk else "browser"
     TK[0] = tk or ""
     url = f"http://127.0.0.1:{PORT}/?t={TOKEN}"
     print(f"GURT is running at {url}" + (f" (app window: {tk})" if tk else ""), flush=True)
     icon = next((f for f in ICONS if os.path.isfile(f)), None)
+    if a.daemon:
+        TK[0] = find_toolkit() or ""   # the windows that attach later are native when they can be
+        MODE = "native" if TK[0] else "browser"
+        try:
+            run_daemon(server, url)
+        except KeyboardInterrupt:
+            pass
+        finally:
+            shutil.rmtree(os.path.dirname(ASKPASS), ignore_errors=True)
+        return
     try:
         if tk:
             # native window: the server runs in the background, the window owns the main thread
@@ -1372,6 +1635,11 @@ dialog .row{justify-content:flex-end}
 .v1hero{font:900 56px/1 var(--mono);letter-spacing:-.04em;display:inline-block;padding:2px 12px;margin-bottom:10px;background:var(--accent);color:var(--accent-ink);border:1px solid var(--edge);border-radius:var(--r)}
 .v1list{margin:0 0 14px;padding-left:20px;display:grid;gap:5px}#v1dlg{max-width:520px}
 #achlist,#histlist{display:grid;gap:0;max-height:60vh;overflow:auto;margin:4px 0 12px;border:1px solid var(--edge);border-radius:var(--r)}
+.dset{display:grid;border:1px solid var(--edge);border-radius:var(--r);margin:0 0 10px}
+.dset>div{display:flex;align-items:center;gap:10px;padding:7px 10px;border-bottom:1px solid var(--line)}.dset>div:last-child{border-bottom:0}
+.dset b{display:block;font:700 13px var(--mono)}.dset small{display:block;color:var(--muted)}.dset .btn{margin-left:auto;min-width:56px}
+.dlog{margin:0 0 10px;max-height:150px;overflow:auto;padding:6px 8px;font:11.5px/1.45 var(--mono);white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:var(--r);color:var(--muted)}
+#gurtddlg{max-width:520px}
 .ach .mark{font:700 13px var(--mono);width:12px;text-align:center;flex:none}.ach{display:flex;gap:10px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--line)}.ach:last-child{border-bottom:0}.ach.locked{opacity:.45;filter:grayscale(1)}.ach b{display:block;font:700 13px var(--mono)}.ach small{color:var(--muted)}.ach .when{margin-left:auto;font:11px var(--mono);color:var(--muted)}
 .rarity{display:inline-block;font:800 11px/1 var(--mono);padding:4px 8px;border:1px solid var(--edge);border-radius:var(--r);margin:0 6px 6px;letter-spacing:.08em}
 .r-common{background:var(--tag)}.r-rare{background:#2f6fde;border-color:#2f6fde;color:#fff}.r-epic{background:#8e3ae0;border-color:#8e3ae0;color:#fff}
@@ -1575,7 +1843,7 @@ dialog .row{justify-content:flex-end}
     <div class="grid" id="igrid"></div>
   </section>
   <section id="t-updates" hidden>
-    <div class="row" style="margin-bottom:14px"><button class="btn ghost" id="checkbtn">check for updates</button><button class="btn" id="upbtn">update everything</button><button class="btn ghost" id="selfbtn">update gurt itself</button><span class="spacer"></span><button class="btn ghost" id="notifybtn" title="a desktop notification when updates are waiting (checks every 6 hours)">alert me</button></div>
+    <div class="row" style="margin-bottom:14px"><button class="btn ghost" id="checkbtn">check for updates</button><button class="btn" id="upbtn">update everything</button><button class="btn ghost" id="selfbtn">update gurt itself</button><span class="spacer"></span><button class="btn ghost" id="notifybtn" title="a desktop notification when updates are waiting (checks every 6 hours)">alert me</button><button class="btn ghost" id="gurtdbtn" title="GURTd, the background daemon: auto-updates, fresh lists, downloads → install, instant GURT">GURTd</button></div>
     <div class="grid" id="ugrid"><div class="empty">hit "check for updates"</div></div>
   </section>
   <section id="t-setup" hidden>
@@ -1611,6 +1879,11 @@ dialog .row{justify-content:flex-end}
 <dialog id="devdlg"><h3>dev build</h3><p>this is a GURT dev build. type the dev password to keep it. a wrong one swaps in the normal GURT and removes the dev build.</p>
   <input type="password" id="devpw" autocomplete="off" placeholder="dev password"><p class="hint" id="devmsg"></p>
   <div class="row"><span class="spacer"></span><button class="btn" id="devgo">unlock</button></div></dialog>
+<dialog id="gurtddlg"><h3>GURTd</h3>
+  <p>gurt's background daemon. Linus sees you. Same settings as <code>gurt gurtd config</code> in a terminal.</p>
+  <div class="dset" id="gurtdset"></div>
+  <pre class="dlog" id="gurtdlog"></pre>
+  <div class="row"><span class="spacer"></span><button class="btn" id="gurtdclose">done</button></div></dialog>
 <dialog id="histdlg"><h3>history</h3><div id="histlist"></div><div class="row"><span class="spacer"></span><button class="btn" id="histclose">done</button></div></dialog>
 <dialog id="achdlg"><h3>achievements</h3><div id="achlist"></div><div class="row"><span class="spacer"></span><button class="btn" id="achclose">nice</button></div></dialog>
 <div id="cmptray" hidden><span id="cmplist"></span><span class="spacer"></span><button class="btn ghost small" id="cmpclear">clear</button><button class="btn small" id="cmpgo">compare</button></div>
@@ -1802,6 +2075,28 @@ function toast(html){ const t = $("#toast"); t.innerHTML = html; t.hidden = fals
 const noEmoji = t => String(t).replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, "").replace(/\s{2,}/g, " ").trim();   // gurt's own text has emoji; the app shows none
 function achLines(lines){ lines.forEach(l => { const m = l.match(/🏆 achievement unlocked: (.+)/); if (m) { toast("achievement unlocked: " + esc(noEmoji(m[1]))); SFX.play("achieve"); } }); }
 async function achieve(id){ const r = await api("/api/achieve", {id}).catch(() => ({})); if (r.line) achLines([r.line]); }
+// GURTd: the background daemon's settings (the same as gurt gurtd config)
+const GURTD_ROWS = [["running", "running", "in the background while you're logged in"],
+  ["autoupdate", "auto-update my apps", "apps that need your password get a notification instead"],
+  ["fresh", "keep package lists fresh", "every 3 hours, so searches and update checks are instant"],
+  ["watch", "watch Downloads", "a new .deb / .rpm / AppImage asks to install it with GURT"]];
+async function gurtdRender(){
+  const d = await api("/api/gurtd").catch(() => null); if (!d) return;
+  $("#gurtdset").innerHTML = GURTD_ROWS.map(([k, t, sub]) => `<div><span><b>${t}</b><small>${sub}</small></span>
+    <button class="btn small ${d[k] ? "" : "ghost"}" data-gd="${k}">${d[k] ? "on" : "off"}</button></div>`).join("");
+  $("#gurtdlog").textContent = d.log || "GURTd hasn't run yet";
+  $("#gurtdset").dataset.attached = d.attached ? "1" : "";
+}
+$("#gurtdbtn").addEventListener("click", async () => { await gurtdRender(); $("#gurtddlg").showModal(); });
+$("#gurtdclose").addEventListener("click", () => $("#gurtddlg").close());
+$("#gurtdset").addEventListener("click", async e => {
+  const b = e.target.closest("[data-gd]"); if (!b) return;
+  const k = b.dataset.gd, on = b.textContent.trim() === "on";
+  if (k === "running" && on && $("#gurtdset").dataset.attached && !await ask("Turn GURTd off?", "this GURT window runs on GURTd, so it closes too. open GURT again after.")) return;
+  b.disabled = true;
+  await run("gurtd", k === "running" ? (on ? "off" : "on") : `${k}-${on ? "off" : "on"}`, {confirm:false, quiet:true});
+  setTimeout(gurtdRender, 800);
+});
 $("#histbtn").addEventListener("click", async () => {
   const r = await api("/api/history").catch(() => ({items:[]})), items = r.items || [];
   $("#histlist").innerHTML = items.length ? items.map(i => `<div class="ach"><span class="mark">${i.what === "install" ? "+" : "−"}</span><span><b>${esc(i.app)}</b><small>${i.what === "install" ? "installed" : "removed"}${i.ver ? " · " + esc(i.ver) : ""}</small></span><span class="when">${esc(i.when)}</span></div>`).join("")
