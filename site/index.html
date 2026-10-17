@@ -120,6 +120,7 @@ table{border-collapse:collapse;width:100%;font-size:13.5px;margin:4px 0 14px}
 td{padding:5px 8px;border:1px solid var(--line);vertical-align:top}
 td:first-child{font:600 12.5px var(--mono);color:var(--muted);width:130px;background:var(--tag)}
 td a{color:inherit}
+#dtable td{overflow-wrap:anywhere}
 pre{background:var(--code);border:1px solid var(--edge);border-radius:var(--r);padding:10px 12px;overflow:auto;font-size:12.5px;max-height:340px;margin:0}
 .cmd{display:flex;gap:6px;align-items:center;margin:10px 0}
 .cmd code{flex:1;background:var(--code);padding:8px 10px;border-radius:var(--r);border:1px solid var(--edge);overflow-x:auto;white-space:nowrap}
@@ -236,6 +237,23 @@ footer a{color:inherit}
 #cart code{flex:1;min-width:0;background:var(--code);padding:8px 10px;border-radius:var(--r);border:1px solid var(--edge);overflow-x:auto;white-space:nowrap;font-size:12.5px}
 #cart label{font:12px var(--mono);color:var(--muted);display:flex;gap:6px;align-items:center}
 body.carted{padding-bottom:74px}
+#cmptray{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--panel);border-top:1px solid var(--edge);padding:6px 16px}
+#cmptray .in{max-width:1080px;margin:0 auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#cmptray .lbl{font:600 12px var(--mono);color:var(--muted)}
+#cmpnames{display:flex;gap:4px;flex-wrap:wrap;flex:1;min-width:0}
+#cmpnames .chip{cursor:pointer;padding:2px 6px}
+#cmpnames .chip:hover{border-color:var(--bad);color:var(--bad)}
+#cmpgo:disabled{opacity:.5;cursor:default}
+#cmpdlg{max-width:980px}
+.cmpwrap{overflow-x:auto;margin:0 0 4px}
+#cmptable{margin:0;table-layout:fixed;min-width:520px}
+#cmptable td{overflow-wrap:anywhere}
+#cmptable td:first-child{width:104px}
+#cmptable tr.hd td{background:var(--tag);font-size:14px}
+#cmptable tr.hd td:first-child{background:var(--tag)}
+#cmptable tr.hd .ico{vertical-align:middle;margin-right:6px}
+#cmptable td.diff{box-shadow:inset 2px 0 var(--accent)}
+#cmptable code{font-size:12px;background:var(--code);padding:1px 4px;border-radius:var(--r);border:1px solid var(--line)}
 .cicada{text-align:center;font:600 14px var(--mono);color:var(--ink);margin:24px 0 0;letter-spacing:.02em}
 /* ── openSUSE-style front page: dark navbar, dark hero with one card per platform, a feature grid, a dark footer with link
    columns. roomy up top, the package browser below stays the dense list. GURT's own colors and logo. ── */
@@ -428,6 +446,19 @@ gurt outsource user/repo   <span class="c"># any git repo: clone + build + insta
   <button class="btn" id="cartcopy">copy</button><button class="btn ghost" id="cartclear">clear</button>
 </div></div>
 
+<div id="cmptray" hidden><div class="in">
+  <span class="lbl">compare</span><span id="cmpnames"></span>
+  <button class="btn" id="cmpgo">compare</button><button class="btn ghost" id="cmpclear">clear</button>
+</div></div>
+
+<dialog id="cmpdlg" aria-labelledby="cmptitle">
+  <div class="dhead"><div><h2 id="cmptitle">Compare</h2><div class="desc">side by side, straight from the recipes</div></div><button class="x" onclick="this.closest('dialog').close()" aria-label="Close">×</button></div>
+  <div class="dbody">
+    <div class="cmpwrap"><table id="cmptable"></table></div>
+    <div class="cmd"><code id="cmpcmd"></code><button class="btn" id="cmpcopy">copy</button><button class="btn ghost" id="cmplink" title="a link that opens this comparison">copy link</button></div>
+  </div>
+</dialog>
+
 <dialog id="gate" aria-labelledby="gtitle">
   <div class="gbody">
     <div class="g18">18+</div>
@@ -440,7 +471,7 @@ gurt outsource user/repo   <span class="c"># any git repo: clone + build + insta
 <dialog id="dlg">
   <div class="dhead"><span id="dicon"></span><div><h2 id="dname"></h2><div class="desc" id="ddesc"></div></div><button class="x" onclick="dlg.close()" aria-label="Close">×</button></div>
   <div class="dbody">
-    <div class="cmd"><code id="dcmd"></code><button class="btn" id="copy">copy</button></div>
+    <div class="cmd"><code id="dcmd"></code><button class="btn" id="copy">copy</button><button class="btn ghost" id="dcmp" title="see it side by side with up to 3 others">compare</button></div>
     <table id="dtable"></table>
     <pre id="dsrc">loading GURTBUILD…</pre>
     <div class="social">
@@ -537,7 +568,7 @@ const card = p => `
       <div class="row">${pkgIcon(p)}<span class="name">${esc(p.pkgname)}</span><span class="ver mono">${p.via_repo?"latest":esc(p.pkgver)+"-"+esc(p.pkgrel)}</span></div>
       <div class="desc">${esc(noEmoji(p.pkgdesc))}${(p.alias||[]).length ? ` <span class="aka">aka ${esc(p.alias.join(", "))}</span>` : ""}</div>
       <div class="chips">${(p.arch||[]).map(a=>`<span class="chip mono">${esc(a)}</span>`).join("")}
-        ${p.via_repo?`<span class="chip">official repo</span>`:p.via_type==="flatpak"?`<span class="chip">Flathub</span>`:""}${p.maintainer?`<span class="chip who${isOwner(p.maintainer) ? " ownerchip" : ""}" data-u="${esc(p.maintainer)}"${isOwner(p.maintainer) ? ` title="runs GURT"` : ""}>${isOwner(p.maintainer) ? "" : ""}by ${esc(p.maintainer)}</span>`:""}<span class="chip">updated ${ago(p.updated)}</span></div>
+        ${p.via_type==="flatpak"?`<span class="chip">Flathub</span>`:p.via_repo?`<span class="chip">official repo</span>`:""}${p.maintainer?`<span class="chip who${isOwner(p.maintainer) ? " ownerchip" : ""}" data-u="${esc(p.maintainer)}"${isOwner(p.maintainer) ? ` title="runs GURT"` : ""}>${isOwner(p.maintainer) ? "" : ""}by ${esc(p.maintainer)}</span>`:""}<span class="chip">updated ${ago(p.updated)}</span></div>
     </button>`;
 
 function render(){
@@ -557,6 +588,7 @@ async function showPkg(name){
   $("#dname").textContent = p.pkgname + (p.via_repo ? "" : " " + p.pkgver + "-" + p.pkgrel);
   $("#ddesc").textContent = noEmoji(p.pkgdesc); $("#dicon").outerHTML = pkgIcon(p).replace('<span class="ico', '<span id="dicon" class="ico');
   $("#dcmd").textContent = "gurt install " + pre + p.pkgname;
+  $("#dcmp").dataset.n = p.pkgname; cmpLabel();
   const row = (k,v) => v && (Array.isArray(v) ? v.length : true) ? `<tr><td>${k}</td><td>${v}</td></tr>` : "";
   $("#dtable").innerHTML =
     row("upstream", p.url ? `<a href="${esc(p.url)}" rel="noopener">${esc(p.url)}</a>` : "") +
@@ -807,7 +839,7 @@ function renderBuilder() {
 }
 function renderCart() {
   const names = [...PICKED].sort();
-  $("#cart").hidden = !names.length; document.body.classList.toggle("carted", names.length > 0);
+  $("#cart").hidden = !names.length; document.body.classList.toggle("carted", names.length > 0); layoutTrays();
   const cmd = `gurt install ${names.join(" ")}`;
   $("#cartcmd").textContent = cmd;
 }
@@ -970,8 +1002,76 @@ $("#bgroups").addEventListener("change", e => { if (e.target.dataset.n) SFX.play
 $("#heyo").addEventListener("click", () => { $("#heyo-found").hidden = false; $("#heyo").style.opacity = 1; });
 // the "Get now on gurt" badge links here: ?app=NAME opens that app's card (install command and all).
 // older badges used ?q=NAME#packages, so an exact name there opens its card too
+// compare: pick up to 4 apps (the compare button on an app's card), then see them side by side. ?compare=a,b shares it
+const CMP = [];
+const findPkg = n => PKGS.find(x => x.pkgname === n) || (DPKGS.loaded ? DPKGS.find(x => x.pkgname === n) : null);
+const inDirt = p => DPKGS.includes(p);
+function layoutTrays(){   // the compare tray sits on top of the Build your setup bar
+  const c = $("#cart"), t = $("#cmptray"), ch = c.hidden ? 0 : c.offsetHeight;
+  t.style.bottom = ch + "px";
+  document.body.style.paddingBottom = t.hidden ? "" : (ch + t.offsetHeight + 12) + "px";
+}
+function cmpLabel(){
+  const b = $("#dcmp"), n = b.dataset.n, on = CMP.includes(n);
+  b.textContent = on ? "comparing ✓" : CMP.length >= 4 ? "compare (4 max)" : "compare";
+  b.disabled = !on && CMP.length >= 4;
+}
+function renderCmp(){
+  $("#cmptray").hidden = !CMP.length;
+  $("#cmpnames").innerHTML = CMP.map(n => `<button class="chip" data-uncmp="${esc(n)}" title="take it out">${esc(n)} ×</button>`).join("");
+  $("#cmpgo").disabled = CMP.length < 2;
+  $("#cmpgo").textContent = CMP.length < 2 ? "pick one more" : `compare ${CMP.length}`;
+  if ($("#dcmp").dataset.n) cmpLabel();
+  layoutTrays();
+}
+function showCmp(){
+  const ps = CMP.map(findPkg).filter(Boolean); if (ps.length < 2) return;
+  const from = p => p.via_type === "flatpak" ? "Flathub" : p.via_type === "snap" ? "Snap Store" : p.via_repo ? "official repo"
+    : (p.source || []).some(x => /^git\+/.test(x)) ? "built from source" : (p.source || []).length ? "official download" : "Main GURT recipe";
+  const rows = [
+    ["", p => `${pkgIcon(p)}<b class="mono">${esc(p.pkgname)}</b>`, false],
+    ["what it is", p => esc(noEmoji(p.pkgdesc)), false],
+    ["version", p => p.via_repo ? "latest" : `<span class="mono">${esc(p.pkgver)}-${esc(p.pkgrel)}</span>`],
+    ["comes from", from],
+    ["category", p => esc(CATS[p.category] || p.category || "–")],
+    ["license", p => esc(p.license || "–")],
+    ["runs on", p => esc((p.arch || []).join(", ") || "–")],
+    ["needs", p => (p.depends || []).length ? esc(p.depends.join(", ")) : "nothing extra"],
+    ["maintainer", p => p.maintainer ? esc(p.maintainer) + ownerBadge(p.maintainer) : "–"],
+    ["recipe updated", p => p.updated ? ago(p.updated) : "–", false],
+    ["website", p => p.url ? `<a href="${esc(p.url)}" rel="noopener">${esc(p.url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, ""))}</a>` : "–", false],
+    ["install", p => `<code>gurt install ${inDirt(p) ? "dirt/" : ""}${esc(p.pkgname)}</code>`, false],
+  ];
+  $("#cmptable").innerHTML = rows.map(([label, f, mark = true], i) => {
+    const cells = ps.map(f), differs = mark && new Set(cells).size > 1;   // rows where they differ get the accent edge
+    return `<tr${i ? "" : ' class="hd"'}><td>${label}</td>${cells.map(c => `<td${differs ? ' class="diff"' : ""}>${c}</td>`).join("")}</tr>`;
+  }).join("");
+  $("#cmpcmd").textContent = "gurt install " + ps.map(p => (inDirt(p) ? "dirt/" : "") + p.pkgname).join(" ");
+  if (dlg.open) dlg.close();
+  if (!$("#cmpdlg").open) $("#cmpdlg").showModal();
+}
+$("#dcmp").addEventListener("click", () => {
+  const n = $("#dcmp").dataset.n, i = CMP.indexOf(n);
+  if (i >= 0) CMP.splice(i, 1); else if (CMP.length < 4) CMP.push(n);
+  renderCmp();
+});
+$("#cmpnames").addEventListener("click", e => { const b = e.target.closest("[data-uncmp]"); if (!b) return; CMP.splice(CMP.indexOf(b.dataset.uncmp), 1); renderCmp(); });
+$("#cmpclear").addEventListener("click", () => { CMP.length = 0; renderCmp(); });
+$("#cmpgo").addEventListener("click", showCmp);
+const flash = (b, t) => { const o = b.textContent; b.textContent = t; setTimeout(() => b.textContent = o, 1200); };
+$("#cmpcopy").addEventListener("click", async () => { try { await navigator.clipboard.writeText($("#cmpcmd").textContent); flash($("#cmpcopy"), "copied ✓"); } catch {} });
+$("#cmplink").addEventListener("click", async () => { try { await navigator.clipboard.writeText(`${location.origin}${location.pathname}?compare=${CMP.map(encodeURIComponent).join(",")}`); flash($("#cmplink"), "copied ✓"); } catch {} });
+addEventListener("resize", layoutTrays);
+if (window.ResizeObserver) new ResizeObserver(layoutTrays).observe($("#cart"));   // the cart's command grows as you pick apps
+
 function openLinkedApp(){
   const sp = new URLSearchParams(location.search), want = (sp.get("app") || (location.hash === "#packages" ? sp.get("q") : "") || "").trim().toLowerCase();
+  const cmp = (sp.get("compare") || "").split(",").map(n => n.trim().toLowerCase()).filter(Boolean);
+  if (cmp.length) {
+    for (const n of cmp) { const p = PKGS.find(x => x.pkgname.toLowerCase() === n); if (p && !CMP.includes(p.pkgname) && CMP.length < 4) CMP.push(p.pkgname); }
+    renderCmp(); if (CMP.length >= 2) { scrollTo(0, 0); showCmp(); }
+    return;
+  }
   if (!want) return;
   const p = PKGS.find(x => x.pkgname.toLowerCase() === want) || PKGS.find(x => (x.alias || []).some(a => a.toLowerCase() === want));
   if (!p) return;

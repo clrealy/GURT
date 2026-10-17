@@ -249,8 +249,10 @@ In the app, the Updates tab shows a 🐧 "your system" card with how many distro
 - **Auto-update** (off unless you turn it on): updates your GURT apps by itself when that needs no password; flatpaks always can. Apps that need your password, and your system's own packages, wait for you, with a notification.
 - **Watches Downloads**: a new .deb, .rpm, AppImage… gets an "Install with GURT?" notification.
 - **GURT opens instantly**: the app's server stays running, so `gurt gui` just opens a window onto it. A tray icon too, where your desktop has AppIndicator.
+- **Saver** (on by default): no update checks or auto-updates while you're on battery or a metered connection (a phone hotspot). They run as soon as you're plugged in or back on normal Wi-Fi.
+- **Quiet hours** (`gurt gurtd quiet 22-8`): GURTd still checks and auto-updates, but its popups wait until quiet hours end. "Install with GURT?" for a fresh download still pops up, since you're clearly awake.
 
-`gurt gurtd status` · `gurt gurtd log` · `gurt gurtd autoupdate|watch|fresh on|off` · `gurt gurtd off`
+`gurt gurtd status` · `gurt gurtd log` · `gurt gurtd autoupdate|watch|fresh|saver on|off` · `gurt gurtd quiet 22-8|off` · `gurt gurtd off`
 
 ## Utilities apps need: `gurt utils` 🔧
 
@@ -432,7 +434,10 @@ It handles `.deb`, `.rpm` and `.pkg.tar.zst` files: apt and rpm indexes, plus a 
 gurt search "like photoshop"   # apps like it: gimp krita pinta darktable…  (vibes.map)
 gurt compare gimp krita pinta  # side by side: where it comes from, version, license, size
 gurt why libfoo                # who wanted this? you, or which app needs it
-gurt hogs                      # the apps eating the most disk
+gurt hogs                      # the apps gurt installed that eat the most disk
+gurt hogs all                  # everything on your disk: distro packages, flatpaks, snaps, AppImages
+gurt hogs junk                 # caches, trash, old logs, crash dumps + package downloads you can toss
+gurt hogs clean                # toss them (asks about each) · gurt hogs clean trash pm-cache: just those
 gurt profile save gaming       # your apps + gurt settings + the app's look, under a name
 gurt profile load gaming       # …on any computer (copy the file over)
 gurt notify on                 # a desktop notification when updates are waiting (every 6 hours)
@@ -442,7 +447,9 @@ gurt cache                     # how much space gurt's downloads use · gurt cac
 gurt install fierfox           # typo? gurt asks "did you mean: firefox?"
 ```
 
-In the app: type "like discord" in the search, hit ⚖️ on up to 4 cards to compare them, 🐷 on the Installed tab sorts by size, 🔔 on the Updates tab turns alerts on, and `/` jumps to the search box. The everyday stuff stays up front; the rest lives under **⋯ more** (install a file, convert, the app lottery on Discover; export/import, history, achievements on Installed). The Updates tab checks by itself when the app opens and shows how many are waiting.
+In the app: type "like discord" in the search, hit **compare** on up to 4 cards to see them side by side, **biggest first** on the Installed tab sorts by size and **free up space** shows the junk with a toss button for each, **alert me** on the Updates tab turns alerts on, and `/` jumps to the search box.
+
+On gurtproject.org: **compare** on an app's card adds it to the compare tray (up to 4), and **copy link** shares that comparison (`gurtproject.org/?compare=gimp,krita,pinta`). Rows where the apps differ get the accent edge. The everyday stuff stays up front; the rest lives under **⋯ more** (install a file, convert, the app lottery on Discover; export/import, history, achievements on Installed). The Updates tab checks by itself when the app opens and shows how many are waiting.
 
 ## Fun 🎮
 
@@ -451,11 +458,13 @@ In the app: type "like discord" in the search, hit ⚖️ on up to 4 cards to co
 - **Skins + music:** 🌴 Vaporwave and 💻 Hacker skins join GURT, Windows 11, XP and 95, each with its own sound effects. The 🎵 picker next to them has 4 tracks (🛍️ shop, 🌧️ lofi, 👾 chiptune, 🌆 synthwave), or auto, which matches the skin. Every track is synthesized live, no audio files.
 - **Cursed Congurter™:** feed it a `.dmg`, or ask it to turn a `.deb` into a `.deb`, and it shakes, smokes and glitches out 💀 An `.exe` still converts, but it'll let you know it's cursed.
 
-## Oops buttons: rollback, hold, export/import ⏪
+## Oops buttons: undo, rollback, hold, export/import ⏪
 
 In the app, the **Installed** tab has 📤 export my list (saves `gurt-list-<date>.txt` to your Downloads) and 📥 import a list.
 
 ```sh
+gurt undo                 # take back the last thing gurt did: an install, a remove, an upgrade (all of it, as one step)
+gurt undo                 # …again = redo
 gurt rollback btop        # update broke it? go back to the version before (and hold it there)
 gurt hold btop            # upgrade skips it
 gurt unhold btop          # back to getting updates
@@ -463,7 +472,7 @@ gurt export gurt-list.txt # everything you installed on purpose
 gurt import gurt-list.txt # …reinstalled on a new PC in one go
 ```
 
-gurt keeps the last 3 versions of each package it installs in `~/.cache/gurt/rollback/` (change with `GURT_ROLLBACK_KEEP`).
+gurt keeps the last 3 versions of each package it installs in `~/.cache/gurt/rollback/` (change with `GURT_ROLLBACK_KEEP`). Undo uses those too, and your history: every gurt command gets an id, so the deps an install pulled in come off with it. In the app it's **undo last** in the history dialog. Your system's own packages aren't gurt's to undo; for those, gurt takes a snapshot before system upgrades (`gurt snapshots`).
 
 ## Tab completion ⌨️
 
@@ -471,7 +480,7 @@ bash and fish set themselves up the first time you run gurt; open a new terminal
 
 ## Bump bot 🤖
 
-Every day `.github/workflows/bump.yml` runs `tools/bump.py`, which checks every recipe with a GitHub source that uses `$pkgver`. When upstream has a newer release, it opens a PR with the new pkgver, pkgrel reset to 1, and fresh checksums + `.gurtinfo`. Add `nobump=true` to a recipe to opt out. Run it yourself with `python3 tools/bump.py` (dry run) or `--write`.
+Every day `.github/workflows/bump.yml` runs `tools/bump.py`, which checks every recipe with a GitHub source that uses `$pkgver`, also through a helper like `_tag=v$pkgver` and in per-arch `source_x86_64=()` arrays. When upstream has a newer release, it opens a PR with the new pkgver, pkgrel reset to 1, and fresh checksums (every `sha256sums_<arch>` too) + `.gurtinfo`. At most 15 PRs per run (`GURT_BUMP_MAX`); the rest come the next day. Add `nobump=true` to a recipe to opt out. Run it yourself with `python3 tools/bump.py` (dry run) or `--write`.
 
 ## Desktop shortcuts 🖥️
 
