@@ -6,13 +6,15 @@
   python3 tools/bump.py --pr       # one branch + pull request per bumped package (CI uses this)
   python3 tools/bump.py --only btop
 
-Only touches recipes that (1) use $pkgver in a source and (2) point at github.com.
+Only touches recipes that (1) use $pkgver in a source (directly, through a helper like _tag=v$pkgver, or in
+per-arch source_x86_64=(...) arrays) and (2) point at github.com.
 Opt a recipe out with a line:  nobump=true
 """
-import json, os, re, subprocess, sys, urllib.request, urllib.error, pathlib
+import hashlib, json, os, re, subprocess, sys, urllib.request, urllib.error, pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 TOKEN = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+MAX_PRS = int(os.environ.get("GURT_BUMP_MAX", "15"))   # per run, so a big first sweep doesn't drop 200 PRs at once
 GH_RE = re.compile(r"github\.com[/:]([\w.-]+)/([\w.-]+?)(?:\.git)?(?=[/#?\"')\s]|$)")
 
 
@@ -68,16 +70,40 @@ def recipes(only):
                 yield f
 
 
+SENTINEL = "0.0.0gurtbump"
+SH = r'''
+set -e; cd "$1"; prefix=/usr/local; CARCH=x86_64
+eval "$(cat)"
+for v in source $(compgen -v | grep -E '^source_[A-Za-z0-9_]+$' || true); do
+  declare -n a=$v; for s in "${a[@]}"; do printf 'SRC\t%s\t%s\n' "$v" "$s"; done; unset -n a
+done
+'''
+
+
+def sources(d, text):
+    """evaluate the recipe in bash → {"source": [...], "source_x86_64": [...], ...} (catches _tag=v$pkgver and friends)"""
+    out = subprocess.run(["bash", "-c", SH, "bump", str(d)], input=text, capture_output=True, text=True, timeout=30)
+    if out.returncode != 0:
+        raise RuntimeError(f"couldn't read the recipe: {out.stderr.strip()[:200]}")
+    srcs = {}
+    for line in out.stdout.splitlines():
+        k, *rest = line.split("\t")
+        if k == "SRC" and len(rest) == 2:
+            srcs.setdefault(rest[0], []).append(rest[1])
+    return srcs
+
+
 def check(f):
     text = f.read_text()
     name, ver = field(text, "pkgname"), field(text, "pkgver")
-    if re.search(r"^(nobump|via_repo)=", text, re.M) or not ver or not re.fullmatch(r"\d[0-9A-Za-z.+~]*", ver):
+    if re.search(r"^(nobump|via_repo|via_type)=", text, re.M) or not ver or not re.fullmatch(r"\d[0-9A-Za-z.+~]*", ver):
         return None
-    srcs = re.search(r"^source=\((.*?)\)", text, re.M | re.S)
-    srcs = srcs.group(1) if srcs else ""
-    if not re.search(r"\$\{?pkgver\}?", srcs):
+    probe = re.sub(r"^pkgver=.*$", f"pkgver={SENTINEL}", text, count=1, flags=re.M)
+    srcs = sources(f.parent, probe)
+    flat = " ".join(s for v in srcs.values() for s in v)
+    if SENTINEL not in flat:
         return None                      # version isn't used by the download → nothing to bump
-    m = GH_RE.search(srcs) or GH_RE.search(field(text, "url") or "")
+    m = GH_RE.search(flat) or GH_RE.search(field(text, "url") or "")
     if not m:
         return None
     new = latest(m.group(1), m.group(2), name)
@@ -86,21 +112,35 @@ def check(f):
     return None
 
 
+def sha256_of(d, src):
+    loc = src.split("::", 1)[1] if "::" in src else src
+    if loc.startswith("git+"):
+        return "SKIP"
+    h = hashlib.sha256()
+    if re.match(r"(https?|ftp)://", loc):
+        req = urllib.request.Request(loc, headers={"User-Agent": "gurt-bump-bot"})
+        with urllib.request.urlopen(req, timeout=120) as r:
+            for chunk in iter(lambda: r.read(1 << 20), b""):
+                h.update(chunk)
+    else:
+        h.update((d / loc).read_bytes())
+    return h.hexdigest()
+
+
 def write(b):
     f = b["dir"] / "GURTBUILD"
     text = f.read_text()
     text = re.sub(r"^pkgver=.*$", f"pkgver={b['new']}", text, count=1, flags=re.M)
     text = re.sub(r"^pkgrel=.*$", "pkgrel=1", text, count=1, flags=re.M)
+    # new checksums for every source array (source → sha256sums, source_aarch64 → sha256sums_aarch64); git stays SKIP
+    for var, srcs in sources(b["dir"], text).items():
+        sums = [sha256_of(b["dir"], s) for s in srcs]
+        key = "sha256sums" + var[len("source"):]
+        arr = f"{key}=(" + " ".join(x if x == "SKIP" else f"'{x}'" for x in sums) + ")"
+        text, n = re.subn(rf"^{key}=\(.*?\)", lambda _: arr, text, count=1, flags=re.M | re.S)
+        if not n:
+            raise RuntimeError(f"no {key}=() line to update")
     f.write_text(text)
-    # new checksums (git sources stay SKIP)
-    out = subprocess.run([str(ROOT / "gurt"), "checksum", str(b["dir"])], capture_output=True, text=True)
-    if out.returncode != 0:
-        raise RuntimeError(f"checksum failed for {b['name']}: {out.stderr.strip()}")
-    sums = [l.split()[0] for l in out.stdout.splitlines() if l.strip()]
-    if sums:
-        arr = "sha256sums=(" + " ".join(s if s == "SKIP" else f"'{s}'" for s in sums) + ")"
-        text = re.sub(r"^sha256sums=\(.*?\)", arr, f.read_text(), count=1, flags=re.M | re.S)
-        f.write_text(text)
     info = subprocess.run([str(ROOT / "gurt"), "srcinfo", str(b["dir"])], capture_output=True, text=True, check=True)
     (b["dir"] / ".gurtinfo").write_text(info.stdout)
 
@@ -149,6 +189,9 @@ def main():
             bumps.append(b)
     if not bumps:
         print("everything's up to date 😎")
+    if mode == "pr" and len(bumps) > MAX_PRS:
+        print(f"opening {MAX_PRS} PRs now, the other {len(bumps) - MAX_PRS} come on the next runs")
+        bumps = bumps[:MAX_PRS]
     for b in bumps:
         try:
             if mode == "write":
