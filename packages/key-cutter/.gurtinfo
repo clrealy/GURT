@@ -1,0 +1,13 @@
+pkgname = key-cutter
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Easily generate passwords
+url = https://flathub.org/apps/io.github.unicornyrainbow.secrets
+license = AGPL-3.0-only
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.unicornyrainbow.secrets

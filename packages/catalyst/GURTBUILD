@@ -1,0 +1,15 @@
+# A minimal, functional, and customizable user-focused FOSS web browser (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=catalyst
+pkgver=flathub
+pkgrel=1
+pkgdesc="A minimal, functional, and customizable user-focused FOSS web browser"
+url="https://flathub.org/apps/org.eu.getcatalyst.Catalyst"
+license="MIT"
+maintainer="clrealy"
+category="internet"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.eu.getcatalyst.Catalyst

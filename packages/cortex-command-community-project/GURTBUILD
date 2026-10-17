@@ -1,0 +1,15 @@
+# 2D shooter/RTS with fully destructible terrain (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=cortex-command-community-project
+pkgver=flathub
+pkgrel=1
+pkgdesc="2D shooter/RTS with fully destructible terrain"
+url="https://flathub.org/apps/io.github.cortex_command_community.Cortex-Command-Community-Project"
+license="AGPL-3.0-only WITH GPL-3.0-linking-exception"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.cortex_command_community.Cortex-Command-Community-Project

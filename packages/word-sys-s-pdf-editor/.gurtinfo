@@ -1,0 +1,13 @@
+pkgname = word-sys-s-pdf-editor
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Edit text content in PDF files
+url = https://flathub.org/apps/io.github.word_sys.word-sys-pdf-editor
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = office
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.word_sys.word-sys-pdf-editor

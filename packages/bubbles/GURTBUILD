@@ -1,0 +1,15 @@
+# Lightweight Linux working environments (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=bubbles
+pkgver=flathub
+pkgrel=1
+pkgdesc="Lightweight Linux working environments"
+url="https://flathub.org/apps/de.gonicus.bubbles"
+license="MIT"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=de.gonicus.bubbles

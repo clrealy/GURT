@@ -1,0 +1,15 @@
+# Photo geotagging program (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=kgeotag
+pkgver=flathub
+pkgrel=1
+pkgdesc="Photo geotagging program"
+url="https://flathub.org/apps/org.kde.kgeotag"
+license="GPL-3.0"
+maintainer="clrealy"
+category="creative"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.kde.kgeotag

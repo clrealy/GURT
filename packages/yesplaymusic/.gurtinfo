@@ -1,0 +1,13 @@
+pkgname = yesplaymusic
+pkgver = flathub
+pkgrel = 1
+pkgdesc = A High Appearance Third-Party Netease CloudMusic Player
+url = https://flathub.org/apps/io.github.qier222.YesPlayMusic
+license = MIT
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.qier222.YesPlayMusic

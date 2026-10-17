@@ -1,0 +1,15 @@
+# A modernized source port of Hexen II (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=hexen-ii-hammer-of-thyrion
+pkgver=flathub
+pkgrel=1
+pkgdesc="A modernized source port of Hexen II"
+url="https://flathub.org/apps/net.sourceforge.uhexen2.uhexen2"
+license="GPL-2.0-only"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.sourceforge.uhexen2.uhexen2

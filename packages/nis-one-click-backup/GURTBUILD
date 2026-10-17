@@ -1,0 +1,15 @@
+# Simple program to backup folders to an external location by copying them (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=nis-one-click-backup
+pkgver=flathub
+pkgrel=1
+pkgdesc="Simple program to backup folders to an external location by copying them"
+url="https://flathub.org/apps/io.gitlab.dev_nis.one-click-backup"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.gitlab.dev_nis.one-click-backup

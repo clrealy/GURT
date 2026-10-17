@@ -1,0 +1,13 @@
+pkgname = wavbreaker
+pkgver = flathub
+pkgrel = 1
+pkgdesc = GUI tool to split WAV, MP2 and MP3 files
+url = https://flathub.org/apps/net.sourceforge.wavbreaker
+license = GPL-2.0+
+maintainer = clrealy
+category = media
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.sourceforge.wavbreaker

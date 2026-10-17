@@ -1,0 +1,13 @@
+pkgname = lightning
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Chat and calls on Matrix
+url = https://flathub.org/apps/org.lightning_matrix.Lightning
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = chat
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.lightning_matrix.Lightning

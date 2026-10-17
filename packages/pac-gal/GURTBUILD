@@ -1,0 +1,15 @@
+# Feminized PAC-MAN remake (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=pac-gal
+pkgver=flathub
+pkgrel=1
+pkgdesc="Feminized PAC-MAN remake"
+url="https://flathub.org/apps/com.voxdsp.PacGal"
+license="MIT"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.voxdsp.PacGal

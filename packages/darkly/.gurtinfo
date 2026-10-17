@@ -1,0 +1,13 @@
+pkgname = darkly
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Forbidden Editor for Artists
+url = https://flathub.org/apps/art.darkly.Darkly
+license = AGPL-3.0-or-later
+maintainer = clrealy
+category = creative
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = art.darkly.Darkly

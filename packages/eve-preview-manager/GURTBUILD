@@ -1,0 +1,15 @@
+# Utility for EVE Online multiboxing with real-time previews and hotkeys (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=eve-preview-manager
+pkgver=flathub
+pkgrel=1
+pkgdesc="Utility for EVE Online multiboxing with real-time previews and hotkeys"
+url="https://flathub.org/apps/com.evepreview.manager"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.evepreview.manager

@@ -1,0 +1,15 @@
+# An audio tagging tool (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=gabtag
+pkgver=flathub
+pkgrel=1
+pkgdesc="An audio tagging tool"
+url="https://flathub.org/apps/com.github.lachhebo.Gabtag"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=com.github.lachhebo.Gabtag

@@ -1,0 +1,15 @@
+# Clear the board of falling blocks (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=gottet
+pkgver=flathub
+pkgrel=1
+pkgdesc="Clear the board of falling blocks"
+url="https://flathub.org/apps/org.gottcode.Gottet"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.gottcode.Gottet

@@ -1,0 +1,13 @@
+pkgname = roster
+pkgver = flathub
+pkgrel = 1
+pkgdesc = HTTP client for API testing
+url = https://flathub.org/apps/cz.bugsy.roster
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = dev
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = cz.bugsy.roster

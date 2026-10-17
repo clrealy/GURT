@@ -1,0 +1,15 @@
+# Oscilloscope program for visualizing microphone input (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=measure
+pkgver=flathub
+pkgrel=1
+pkgdesc="Oscilloscope program for visualizing microphone input"
+url="https://flathub.org/apps/org.sugarlabs.Measure"
+license="GPL-2.0-or-later"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.sugarlabs.Measure

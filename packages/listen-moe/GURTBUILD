@@ -1,0 +1,15 @@
+# J-POP and K-POP radio (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=listen-moe
+pkgver=flathub
+pkgrel=1
+pkgdesc="J-POP and K-POP radio"
+url="https://flathub.org/apps/io.github.noobping.listenmoe"
+license="MIT"
+maintainer="clrealy"
+category="media"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.noobping.listenmoe

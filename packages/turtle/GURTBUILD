@@ -1,0 +1,15 @@
+# Manage your git repositories (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=turtle
+pkgver=flathub
+pkgrel=1
+pkgdesc="Manage your git repositories"
+url="https://flathub.org/apps/de.philippun1.turtle"
+license="GPL-3.0+"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=de.philippun1.turtle

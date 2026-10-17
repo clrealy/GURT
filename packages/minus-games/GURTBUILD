@@ -1,0 +1,15 @@
+# Download, sync and run games (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=minus-games
+pkgver=flathub
+pkgrel=1
+pkgdesc="Download, sync and run games"
+url="https://flathub.org/apps/io.github.accessory.minus_games_gui"
+license="MIT"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.accessory.minus_games_gui

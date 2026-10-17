@@ -1,0 +1,15 @@
+# A cross-platform reimplementation of “Jedi Knight™: Dark Forces II” (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=openjkdf2
+pkgver=flathub
+pkgrel=1
+pkgdesc="A cross-platform reimplementation of “Jedi Knight™: Dark Forces II”"
+url="https://flathub.org/apps/org.openjkdf2.OpenJKDF2"
+license="0BSD"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=org.openjkdf2.OpenJKDF2

@@ -1,0 +1,15 @@
+# Manage your racing team (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=gpro
+pkgver=flathub
+pkgrel=1
+pkgdesc="Manage your racing team"
+url="https://flathub.org/apps/net.gpro.gproapp"
+license="EUPL-1.2"
+maintainer="clrealy"
+category="gaming"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=net.gpro.gproapp

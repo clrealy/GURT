@@ -1,0 +1,13 @@
+pkgname = lgeneral
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Turn based strategy game engine (like Panzer General)
+url = https://flathub.org/apps/net.sourceforge.lgames.LGeneral
+license = GPL-2.0-or-later
+maintainer = clrealy
+category = gaming
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = net.sourceforge.lgames.LGeneral

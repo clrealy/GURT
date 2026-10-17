@@ -1,0 +1,13 @@
+pkgname = mages
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Encrypted chat client for Matrix
+url = https://flathub.org/apps/io.github.mlm_games.mages
+license = AGPL-3.0-only
+maintainer = clrealy
+category = chat
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = io.github.mlm_games.mages

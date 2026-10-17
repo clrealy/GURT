@@ -1,0 +1,13 @@
+pkgname = journald-browser
+pkgver = flathub
+pkgrel = 1
+pkgdesc = Browser for journald databases
+url = https://flathub.org/apps/org.kde.kjournaldbrowser
+license = LGPL-2.1-or-later OR MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+arch = aarch64
+via_repo = flathub
+via_type = flatpak
+via_pkg = org.kde.kjournaldbrowser

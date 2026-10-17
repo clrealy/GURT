@@ -1,0 +1,15 @@
+# ReStructuredText and Markdown editor (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=formiko
+pkgver=flathub
+pkgrel=1
+pkgdesc="ReStructuredText and Markdown editor"
+url="https://flathub.org/apps/cz.zeropage.Formiko"
+license="BSD-3-Clause"
+maintainer="clrealy"
+category="office"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=cz.zeropage.Formiko

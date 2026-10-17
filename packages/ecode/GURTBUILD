@@ -1,0 +1,15 @@
+# Lightweight multi-platform code editor designed for modern hardware with a focus on responsiveness and performance (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=ecode
+pkgver=flathub
+pkgrel=1
+pkgdesc="Lightweight multi-platform code editor designed for modern hardware with a focus on responsiveness and performance"
+url="https://flathub.org/apps/dev.ensoft.ecode"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=dev.ensoft.ecode

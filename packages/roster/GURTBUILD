@@ -1,0 +1,15 @@
+# HTTP client for API testing (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=roster
+pkgver=flathub
+pkgrel=1
+pkgdesc="HTTP client for API testing"
+url="https://flathub.org/apps/cz.bugsy.roster"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="dev"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=cz.bugsy.roster

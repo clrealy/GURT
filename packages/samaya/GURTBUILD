@@ -1,0 +1,15 @@
+# Timekeeper for your tasks (official Flathub app)
+# gurt sets up flatpak + Flathub for you if you don't have them.
+pkgname=samaya
+pkgver=flathub
+pkgrel=1
+pkgdesc="Timekeeper for your tasks"
+url="https://flathub.org/apps/io.github.redddfoxxyy.samaya"
+license="AGPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+
+via_repo=flathub
+via_type=flatpak
+via_pkg=io.github.redddfoxxyy.samaya
