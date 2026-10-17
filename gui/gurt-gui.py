@@ -242,6 +242,22 @@ def lotto_spin():   # the same streak file `gurt lottery` uses, so CLI + app sha
     return {"streak": streak, "best": best, "rarity": rarity, "legendary": LEGENDARY}
 
 
+CLOSED_RE = re.compile(r"proprietary|^custom$|licenseref-(?!kde-accepted)|sspl|(^|[- ])n[cd]([- ]|$)|sul-1|freeware|shareware", re.I)
+def foss_class(lic):   # same rule as gurt's foss_class: foss | closed | unknown
+    l = (lic or "").strip().lower()
+    return "unknown" if not l or l.startswith("see ") or l in ("unknown", "other") else "closed" if CLOSED_RE.search(l) else "foss"
+
+
+def foss_strict():   # gurt foss on
+    v = os.environ.get("GURT_FOSS")
+    if v is None:
+        try:
+            v = open(os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"), "gurt", "foss")).read().strip()
+        except OSError:
+            v = ""
+    return v == "on"
+
+
 def recipe_trust(info):   # how a Main GURT app gets onto your computer → the badge on its card
     if info.get("via_type") == "flatpak":
         return "flathub"
@@ -452,7 +468,9 @@ def state():
             main.append({"ikey": ikey, "flatpak": vp if vt == "flatpak" else "", "vpkg": vp, "icon": icon, "vtype": vt or ("repo" if vr else ""), "name": info.get("pkgname", name), "ver": "latest" if info.get("via_repo") else f"{info.get('pkgver','')}-{info.get('pkgrel','')}",
                          "desc": info.get("pkgdesc", ""), "alias": info.get("alias", []), "maintainer": info.get("maintainer", ""),
                          "official": bool(info.get("via_repo")), "category": info.get("category", ""), "trust": recipe_trust(info),
-                         "license": info.get("license", ""), "url": info.get("url", "")})
+                         "license": info.get("license", ""), "foss": foss_class(info.get("license")), "url": info.get("url", "")})
+    strict = foss_strict()   # mostly free software: closed-source apps come after the free ones, and gurt foss on hides them
+    main = sorted((m for m in main if not (strict and m["foss"] != "foss")), key=lambda m: m["foss"] == "closed")
     dirt = []
     dirtdir = os.path.join(repo, "dirt")
     if os.path.isdir(dirtdir):
@@ -493,7 +511,7 @@ def state():
     outside = {n: how for n, how in outside_apps(main, p.get("pm", ""), flatpaks).items()
                if n not in gurt_keys and not any(a["name"] == n and a["ikey"] in gurt_keys for a in main)}
     return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks, "outside": outside, "wsl": p.get("wsl") == "yes", "audio": audio_ok(),
-            "main": main, "dirtpkgs": dirt, "installed": installed, "vibes": vibes(repo), "notify": notify_on(), "dev": p.get("dev", "no")}
+            "main": main, "fossonly": strict, "dirtpkgs": dirt, "installed": installed, "vibes": vibes(repo), "notify": notify_on(), "dev": p.get("dev", "no")}
 
 
 def vibes(repo):   # vibes.map: "photoshop|photo editor: gimp krita …" → {"photoshop": [...], "photo editor": [...]}
@@ -798,6 +816,11 @@ class H(BaseHTTPRequestHandler):
                 if arg not in ("setup", "fdroid", "open"):
                     return self._send(400, {"error": "not allowed"})
                 job = start_job([GURT, "-y", "android", arg])
+                return self._send(200, {"job": job.id})
+            if cmd == "foss":   # FOSS-only mode (gurt foss on|off)
+                if arg not in ("on", "off"):
+                    return self._send(400, {"error": "not allowed"})
+                job = start_job([GURT, "foss", arg])
                 return self._send(200, {"job": job.id})
             if cmd == "toss":   # free up space: gurt hogs clean <what>
                 if not TOSS_RE.match(arg):
@@ -1526,6 +1549,8 @@ nav .badge{background:var(--bad);color:#fff;border-radius:var(--r);font:700 10.5
 .hdr-actions{display:flex;gap:6px;align-items:center}
 .prefs{position:relative}
 #prefpop,.morepop{position:absolute;right:0;top:calc(100% + 6px);z-index:70;display:grid;gap:8px;min-width:230px;padding:10px;background:var(--panel);color:var(--ink);border:1px solid var(--edge);border-radius:var(--r)}
+.chip.closed{color:var(--muted);border-style:dashed}
+.closedmark{font:600 10.5px var(--mono);font-style:normal;color:var(--muted);border:1px dashed var(--edge);border-radius:var(--r);padding:0 4px;margin-left:4px;vertical-align:1px}
 #prefpop label{display:grid;gap:3px;font:600 12.5px var(--mono);color:var(--muted)}#prefpop select{width:100%}
 .prefrow{display:flex;flex-wrap:wrap;gap:6px}
 @media (max-width:760px){header{grid-template-columns:minmax(0,1fr) auto}nav{grid-column:1/-1;grid-row:2;margin:0 -4px}.logosvg svg{height:34px}}
@@ -1872,6 +1897,7 @@ dialog .row{justify-content:flex-end}
           <option value="gurt">GURT</option><option value="win11">Windows 11</option><option value="xp">Windows XP</option><option value="w95">Windows 95</option><option value="vapor">Vaporwave</option><option value="hacker">Hacker</option>
         </select></label>
         <label>music <select id="tracksel"><option value="auto" title="matches the skin">auto</option><option value="shop">shop</option><option value="lofi">lofi</option><option value="chip">chiptune</option><option value="synth">synthwave</option></select></label>
+        <button class="btn ghost small" id="fossbtn" title="only free software: hides and blocks closed-source apps (gurt foss on)">FOSS only: off</button>
         <button class="btn ghost small" id="wizopen" title="walk through setting GURT up">setup wizard</button>
         <div class="prefrow"><button class="btn ghost small" id="musicbtn" title="background music"></button><button class="btn ghost small" id="sfxbtn" title="sound effects"></button><button class="btn ghost small" id="themebtn" title="light / dark"></button></div>
       </div>
@@ -2042,7 +2068,7 @@ function devGate(){
   $("#devgo").onclick = go; $("#devpw").onkeydown = e => { if (e.key === "Enter") go(); };
   return true;
 }
-async function load(){ S = await api("/api/state"); ICONMAP = new Map(S.main.map(p => [p.name, p.icon])); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · Windows" : ""}`;
+async function load(){ S = await api("/api/state"); ICONMAP = new Map(S.main.map(p => [p.name, p.icon])); $("#fossbtn").textContent = `FOSS only: ${S.fossonly ? "on" : "off"}`; $("#fossbtn").classList.toggle("ghost", !S.fossonly); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · Windows" : ""}`;
   document.querySelector('nav button[data-tab="desktops"]').hidden = S.wsl;
   fitNav();
   if (S.audio === false && !soundDismissed) $("#soundbar").hidden = false;   /* no Linux desktops on Windows */ renderMain(); renderInstalled(); renderNotify(); renderCmp(); if (!$("#t-setup").hidden) renderBuilder(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt();
@@ -2098,12 +2124,14 @@ const devBtns = (name, tree="packages") => isDev() ? `<a class="btn ghost small"
 let CMP = [];
 const cmpBtn = n => `<button class="btn ghost small cmpbtn${CMP.includes(n) ? " on" : ""}" data-cmp="${esc(n)}" title="compare side by side">compare</button>`;
 const vibeKey = q => q.replace(/^(something |apps |an app )?(like |alternatives? to |instead of )?/, "").trim();
+$("#fossbtn").addEventListener("click", () => run("foss", S.fossonly ? "off" : "on", {confirm:false, quiet:true}));   // run() reloads the app list after
+const closedChip = p => p.foss === "closed" ? `<span class="chip closed" title="closed source: nobody outside the company can check what's in it (license: ${esc(p.license)})">closed source</span>` : "";
 function renderMain(){
   const q = $("#q").value.trim().toLowerCase();
   const vk = vibeKey(q), vapps = (S.vibes || {})[vk] || [];
-  const vhits = vapps.map(n => S.main.find(p => p.name === n)).filter(Boolean);
+  const vhits = vapps.map(n => S.main.find(p => p.name === n)).filter(Boolean).sort((a, b) => (a.foss === "closed") - (b.foss === "closed"));   // free ones first
   const hits = S.main.filter(p => !vapps.includes(p.name) && (!q || (p.name+" "+p.desc+" "+p.alias.join(" ")).toLowerCase().includes(q)));
-  const mk = p => card({name:p.name, ver:p.ver, desc:p.desc, trust:p.trust, actions: installBtns(p.name) + cmpBtn(p.name) + devBtns(p.name)});
+  const mk = p => card({name:p.name, ver:p.ver, desc:p.desc, trust:p.trust, chips: closedChip(p), actions: installBtns(p.name) + cmpBtn(p.name) + devBtns(p.name)});
   $("#maingrid").innerHTML = (vhits.length ? `<div class="vibehead">apps like ${esc(vk)}</div>` + vhits.map(mk).join("") + (hits.length ? `<div class="vibehead">everything else that matched</div>` : "") : "")
     + (hits.length ? hits.map(mk).join("") : vhits.length ? "" : `<div class="empty">nothing in Main GURT matched — try "search everywhere" (or "like photoshop")</div>`);
   const direct = /^[a-z0-9-]+\/[A-Za-z0-9._+-]+$/.test($("#q").value.trim()) && !/^(https?:)/.test($("#q").value);
@@ -2308,7 +2336,7 @@ $("#cmpgo").addEventListener("click", async () => {
   const row = (label, f) => `<tr><th>${label}</th>${ps.map(p => `<td>${f(p)}</td>`).join("")}</tr>`;
   const sizeOf = p => { const k = Object.keys(SIZES).find(k => k === p.ikey || k === p.name); return k ? fmtSize(SIZES[k]) : "–"; };
   $("#cmptable").innerHTML = `<table>${row("app", p => `<b>${esc(p.name)}</b>`)}${row("what it is", p => esc(p.desc))}${row("comes from", p => trustChip(p.trust) || "Main GURT")}
-    ${row("version", p => esc(p.ver))}${row("category", p => esc(p.category || "–"))}${row("license", p => esc(p.license || "–"))}
+    ${row("version", p => esc(p.ver))}${row("category", p => esc(p.category || "–"))}${row("license", p => esc(p.license || "–"))}${row("free software", p => ({foss: "yes", closed: "no, closed source", unknown: "unknown"})[p.foss] || "–")}
     ${row("installed", p => inst(p.name) ? "yes" : "no")}${row("size on disk", sizeOf)}${row("website", p => p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.url.replace(/^https?:\/\//, "").slice(0, 40))}</a>` : "–")}
     ${row("", p => installBtns(p.name))}</table>`;
   $("#cmpdlg").showModal();
@@ -2812,7 +2840,7 @@ function renderBuilder(){
   $("#bgroups").innerHTML = have.filter(c => BCAT === "all" || BCAT === c).map(c => `<div class="bgroup"><h3>${CATS[c]}</h3><div class="bgrid">${
     S.main.filter(p => catOf(p) === c).map(p => {
       const done = inst(p.name), on = PICKED.has(p.name), d = (p.desc || "").replace(/\s*\((Flathub|official repo[^)]*)\)\s*$/, "").replace(/^[^—]*—\s*/, "");
-      return `<label class="bapp${on ? " on" : ""}${done ? " done" : ""}" title="${esc(p.desc)}"><input type="checkbox" data-n="${esc(p.name)}"${on || done ? " checked" : ""}${done ? " disabled" : ""}><span><b>${esc(p.name)}</b><small>${done ? "installed ✓" : esc(d)}</small></span></label>`;
+      return `<label class="bapp${on ? " on" : ""}${done ? " done" : ""}" title="${esc(p.desc)}"><input type="checkbox" data-n="${esc(p.name)}"${on || done ? " checked" : ""}${done ? " disabled" : ""}><span><b>${esc(p.name)}${p.foss === "closed" ? ` <i class="closedmark" title="closed source">closed</i>` : ""}</b><small>${done ? "installed ✓" : esc(d)}</small></span></label>`;
     }).join("")}</div></div>`).join("");
   renderCart();
 }
@@ -2935,9 +2963,9 @@ async function wizQuit(open){   // the setup wizard app is done: close its windo
   await api("/api/close", {open: !!open}).catch(() => {});
 }
 const WIZ_STEPS = ["Welcome", "System check", "App sources", "Your look", "Starter apps", "Extras", "Install"];
-const STARTER = {"Browsers": ["firefox", "brave", "librewolf", "zen-browser", "chromium"], "Chat": ["discord", "vesktop", "telegram", "signal", "element"],
-  "Media": ["vlc", "mpv", "spotify", "obs-studio", "kdenlive"], "Creative": ["gimp", "krita", "inkscape", "blender"],
-  "Office": ["libreoffice", "onlyoffice", "obsidian", "thunderbird"], "Dev": ["vscodium", "vscode", "zed", "neovim", "btop"],
+const STARTER = {"Browsers": ["firefox", "brave", "librewolf", "zen-browser", "chromium"], "Chat": ["vesktop", "telegram", "signal", "element"],   // mostly free software (Steam's the one exception)
+  "Media": ["vlc", "mpv", "spotube", "obs-studio", "kdenlive"], "Creative": ["gimp", "krita", "inkscape", "blender"],
+  "Office": ["libreoffice", "onlyoffice", "joplin", "thunderbird"], "Dev": ["vscodium", "zed", "neovim", "btop"],
   "Gaming": ["steam", "heroic", "lutris", "prismlauncher", "bottles"]};
 const WIZ_SRCS = [["flatpak", "Flathub", "sandboxed apps, and where most Main GURT apps come from"], ["aur", "the AUR", "Arch's user repo, built from source on your PC (gurt checks the build scripts for red flags first)"],
   ["apt", "Debian / Ubuntu repos", "apt/ packages on any distro"], ["dnf", "Fedora repos", "dnf/ packages on any distro"],

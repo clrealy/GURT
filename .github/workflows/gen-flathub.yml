@@ -20,8 +20,9 @@ jobs:
       - name: generate recipes
         run: |
           set -o pipefail; : > /tmp/gen.log
-          # the request file holds a number (how many new apps) and/or the word "recategorize"
+          # the request file holds a number (how many new free-software apps) and/or the words "recategorize", "licenses"
           if grep -qs recategorize tools/gen-flathub.request; then python3 tools/gen-flathub.py recategorize | tee -a /tmp/gen.log; fi
+          if grep -qs licenses tools/gen-flathub.request; then python3 tools/gen-flathub.py licenses | tee -a /tmp/gen.log; fi
           n="${{ github.event.inputs.count }}"; [ -n "$n" ] || n=$(tr -dc 0-9 < tools/gen-flathub.request || true)
           if [ -n "$n" ]; then python3 tools/gen-flathub.py "$n" | tee -a /tmp/gen.log; fi
       - name: keep only ids that are really on Flathub
@@ -41,6 +42,6 @@ jobs:
           git rm -q --ignore-unmatch tools/gen-flathub.request
           git add packages
           n=$(git diff --cached --name-only -- packages | grep -c '/GURTBUILD$' || true)
-          msg="bot: $(grep -h 'added .* Flathub apps\|recategorized' /tmp/gen.log | paste -sd ', ' -) 🦆"
+          msg="bot: $(grep -h 'added .* Flathub apps\|recategorized\|filled in .* licenses' /tmp/gen.log | paste -sd ', ' -) 🦆"
           git -c user.name="gurt bot" -c user.email="gurt-bot@users.noreply.github.com" commit -qm "$msg" || exit 0
           git push

@@ -941,6 +941,41 @@ no_such_pkg() { # name
   die "no package '$1' in main GURT${s:+ — did you mean: ${s// /, }?} (or try: gurt search $1, gurt search -a $1 for every source)"
 }
 # ── main GURT repo ──
+# ── FOSS first: gurt is mostly free software. closed-source apps get labeled and a heads-up (with free ones like it),
+#    search lists them last, and gurt foss on blocks them ──
+FOSS_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/foss"
+foss_class() { # license → foss | closed | unknown
+  local l=${1,,} re='proprietary|^custom$|licenseref-|sspl|(^|[- ])n[cd]([- ]|$)|sul-1|freeware|shareware'
+  case $l in ""|"see "*|unknown|other) echo unknown; return ;; esac
+  if [[ $l =~ $re && $l != *licenseref-kde-accepted* ]]; then echo closed; else echo foss; fi
+}
+foss_strict() { [[ ${GURT_FOSS:-$(cat "$FOSS_CONF" 2>/dev/null)} == on ]]; }
+foss_alts() { # name → free apps like it (from vibes.map)
+  local a f
+  vibe_apps "$1" 2>/dev/null | while IFS= read -r a; do
+    [[ $a == "$1" ]] && continue; f=$(repo_info "$a")
+    if [[ -f $f && $(foss_class "$(info_get "$f" license)") == foss ]]; then echo "$a"; fi
+  done | head -n 4 | paste -sd' ' -
+}
+foss_gate() { # name info-file reason → a heads-up when you ask for a closed-source app (gurt foss on: a no)
+  [[ ${3:-explicit} == explicit ]] || return 0
+  local c alts; c=$(foss_class "$(info_get "$2" license)")
+  case $c in
+    closed)  alts=$(foss_alts "$1")
+             foss_strict && die "$1 is closed source, and FOSS-only mode is on 🔒${alts:+ free ones like it: $alts} (gurt foss off allows it)"
+             warn "$1 is closed source 🔒${alts:+ · free ones like it: $alts}" ;;
+    unknown) foss_strict && die "gurt can't tell whether $1 is free software, and FOSS-only mode is on (gurt foss off allows it)" ;;
+  esac
+  return 0
+}
+cmd_foss() { # on | off | status
+  case ${1:-status} in
+    on)  mkdir -p "${FOSS_CONF%/*}"; echo on > "$FOSS_CONF"; msg "FOSS-only mode on 🔓 gurt won't install closed-source apps or Android apps F-Droid doesn't have (gurt foss off undoes it)" ;;
+    off) rm -f "$FOSS_CONF"; msg "FOSS-only mode off: closed-source apps install again, with a heads-up" ;;
+    status) if foss_strict; then echo "FOSS-only mode: on"; else echo "FOSS-only mode: off (closed-source apps get a heads-up)"; fi ;;
+    *) die "usage: gurt foss [on | off | status]" ;;
+  esac
+}
 resolve_and_install() { # name reason
   local name=$1 reason=${2:-dep} real
   if ! is_gurt_pkg "$name" && real=$(alias_lookup "$name"); then msg2 "$name is an alias → $real"; name=$real
@@ -955,6 +990,7 @@ resolve_and_install() { # name reason
   if [[ ! -f $info ]]; then
     no_such_pkg "$name"
   fi
+  foss_gate "$name" "$info" "$reason"
 
   # official-repo recipe → add the vendor's repo (key fingerprint pinned by the recipe), install from it
   local via; via=$(info_get "$info" via_repo)
@@ -2682,8 +2718,8 @@ archive_install() { # file name ver reason
 }
 
 # ── 🤖 Android apps, through Waydroid: gurt install android/<app> (from F-Droid) · gurt install ./app.apk · gurt android ──
-# FOSS only: apps come from F-Droid, a .apk you bring has to be an app F-Droid has, and Android itself is the plain
-# (no Google apps) image
+# the store is F-Droid only (free software), and Android itself is the plain image (no Google apps). a .apk you bring
+# can be closed source: it gets a heads-up and a "you sure?" (gurt foss on: a no)
 FDROID_URL=${GURT_FDROID_URL:-https://f-droid.org/repo}
 is_android_apk() { [[ ${1,,} == *.apk && -f $1 && $(head -c2 -- "$1") == PK ]]; }   # Android = a zip; Alpine's .apk is gzip
 waydroid_ready() { command -v waydroid >/dev/null && [[ -f /var/lib/waydroid/waydroid.cfg ]]; }
@@ -2760,14 +2796,20 @@ waydroid_apps() { waydroid app list 2>/dev/null | awk -F': *' '/^Name:/ { n = $2
 android_install_file() { # apk reason [package id] [version] [description]
   local f=$1 reason=${2:-explicit} id=${3:-} ver=${4:-} desc=${5:-} before after row name
   is_android_apk "$f" || die "${f##*/} isn't an Android app"
-  if [[ -z $id ]]; then   # a file you brought: FOSS only, so it has to be an app F-Droid has
+  if [[ -z $id ]]; then   # a file you brought: on F-Droid = free software. not on it = closed source, as far as gurt can tell
     need_tool python3 "reading Android apps"
     id=$(apk_package "$f") || die "couldn't read the package name out of ${f##*/} — is it a real Android app?"
-    row=$(android_find "$id"); [[ ${row%%$'\t'*} == "$id" ]] ||
-      die "$id isn't on F-Droid, so gurt can't tell it's free software 🔒 GURT only installs FOSS Android apps (gurt search android/<name> for one that is)"
-    local F; tsv "$row"; desc=${F[5]}; ver=""
-    msg2 "$id is on F-Droid: ${desc%% — *} ✅ free software"
-    [[ $reason == explicit ]] && { ask "install ${f##*/} into Waydroid?" || die "aborted, no cap"; }
+    row=$(android_find "$id")
+    if [[ ${row%%$'\t'*} == "$id" ]]; then
+      local F; tsv "$row"; desc=${F[5]}; ver=""
+      msg2 "$id is on F-Droid: ${desc%% — *} ✅ free software"
+      [[ $reason == explicit ]] && { ask "install ${f##*/} into Waydroid?" || die "aborted, no cap"; }
+    else
+      foss_strict && die "$id isn't on F-Droid, so it's closed source as far as gurt can tell, and FOSS-only mode is on 🔒 (gurt foss off allows it)"
+      warn "$id isn't on F-Droid, so it's closed source as far as gurt can tell 🔒 nobody checked what's in it, so only install it if you trust where you got it"
+      desc="$id (Android app, closed source)"
+      [[ $reason == explicit ]] && { ask "install ${f##*/} into Waydroid anyway?" || die "aborted, no cap"; }
+    fi
   fi
   ensure_waydroid
   before=$(waydroid_apps | cut -f1 | sort)
@@ -3702,9 +3744,15 @@ vibe_apps() { # term → the apps people use instead (one per line), nothing if 
 vibe_print() { # term apps…
   local term=$1 a f; shift
   msg "apps like $(vibe_term "$term") 👇"
-  for a; do
-    f="$GURT_REPO_DIR/packages/$a/.gurtinfo"; [[ -f $f ]] || continue
-    printf '%sgurt/%s%s%s%s %s\n    %s\n' "$MAG" "$R0" "$B" "$a" "$R0" "$(is_installed "$a" && echo "${GRN}[installed]${R0}")" "$(info_get "$f" pkgdesc)"
+  local pass closed
+  for pass in foss closed; do   # free software first (closed = foss|closed)
+    for a; do
+      f="$GURT_REPO_DIR/packages/$a/.gurtinfo"; [[ -f $f ]] || continue
+      closed=foss; [[ $(foss_class "$(info_get "$f" license)") == closed ]] && closed=closed
+      [[ $closed == "$pass" ]] || continue
+      [[ $closed == closed ]] && foss_strict && continue
+      printf '%sgurt/%s%s%s%s %s%s\n    %s\n' "$MAG" "$R0" "$B" "$a" "$R0" "$(is_installed "$a" && echo "${GRN}[installed]${R0} ")" "$([[ $closed == closed ]] && echo "${YLW}[closed source]${R0}")" "$(info_get "$f" pkgdesc)"
+    done
   done
 }
 
@@ -3787,10 +3835,10 @@ outside_sizes() { # flatpaks, snaps + AppImages gurt didn't install → "bytes<T
         m = (u ~ /^G/) ? 1073741824 : (u ~ /^M/) ? 1048576 : (u ~ /^k/) ? 1024 : 1; printf "%d\t%s\n", n * m, k }'
     done
   fi
-  for f in /var/lib/snapd/snaps/*.snap; do [[ -f $f ]] && printf '%s\tsnap/%s\n' "$(stat -c %s "$f")" "$(basename "${f%_*}")"; done |
+  for f in /var/lib/snapd/snaps/*.snap; do if [[ -f $f ]]; then printf '%s\tsnap/%s\n' "$(stat -c %s "$f")" "$(basename "${f%_*}")"; fi; done |
     awk -F'\t' '{ s[$2] += $1 } END { for (k in s) printf "%d\t%s\n", s[k], k }'
   for f in "$HOME"/Applications/*.[Aa]pp[Ii]mage "$HOME"/.local/bin/*.[Aa]pp[Ii]mage "$HOME"/Downloads/*.[Aa]pp[Ii]mage; do
-    [[ -f $f ]] && printf '%s\tAppImage/%s\n' "$(stat -c %s "$f")" "$(basename "$f")"
+    if [[ -f $f ]]; then printf '%s\tAppImage/%s\n' "$(stat -c %s "$f")" "$(basename "$f")"; fi
   done
   return 0
 }
@@ -3931,7 +3979,7 @@ for i, lab in enumerate(labels):
 }
 
 # ── 🧙 gurt setup: the GURT Setup Wizard. its own app on a desktop; gurt setup --terminal (or no desktop) asks here ──
-SETUP_PICKS="firefox brave librewolf discord vesktop telegram signal vlc spotify obs-studio gimp krita libreoffice obsidian vscodium vscode neovim btop steam heroic prismlauncher"
+SETUP_PICKS="firefox brave librewolf vesktop telegram signal vlc spotube obs-studio gimp krita libreoffice joplin vscodium neovim btop steam heroic prismlauncher"   # mostly free software
 cmd_setup() {
   if [[ ${1:-} != --terminal && ${1:-} != --cli ]] && has_display && ! $NOCONFIRM; then
     msg "opening the GURT Setup Wizard 🧙 (gurt setup --terminal does it right here instead)"
@@ -4530,9 +4578,9 @@ cmd_sync() { # [source...|all]
 }
 
 search_main() {
-  local term=$1 f name desc ver tag found=0
+  local term=$1 f name desc ver tag found=0 later=""
   ensure_repo
-  local aka
+  local aka line
   for f in "$GURT_REPO_DIR/$PKG_TREE"/*/.gurtinfo; do
     name=$(info_get "$f" pkgname); desc=$(info_get "$f" pkgdesc)
     aka=$(info_get "$f" alias | paste -sd, - | sed 's/,/, /g')
@@ -4543,10 +4591,15 @@ search_main() {
       [[ -n $aka ]] && desc+="  (aka $aka)"
       [[ -n $(info_get "$f" via_repo) ]] && ver="official repo 🔏"
       is_installed "$(pkey "$TREE_SRC" "$name")" && tag=" ${GRN}[installed]${R0}"
-      printf '%s%s/%s%s%s%s %s%s%s%s\n    %s\n' "$MAG" "$TREE_SRC" "$R0" "$B" "$name" "$R0" "$GRN" "$ver" "$R0" "$tag" "$desc"
+      line=$(printf '%s%s/%s%s%s%s %s%s%s%s' "$MAG" "$TREE_SRC" "$R0" "$B" "$name" "$R0" "$GRN" "$ver" "$R0" "$tag")
+      if [[ $(foss_class "$(info_get "$f" license)") == closed ]]; then   # free software first, closed-source after
+        foss_strict && continue
+        later+="$line ${YLW}[closed source]${R0}"$'\n'"    $desc"$'\n'
+      else printf '%s\n    %s\n' "$line" "$desc"; fi
       found=1
     fi
   done
+  [[ -n $later ]] && printf '%s' "$later"
   (( found ))
 }
 search_foreign() { # src term
@@ -5750,6 +5803,7 @@ ${B}misc${R0}
   notify on|off|now    a desktop notification when updates are waiting (checks every 6 hours) 🔔
   gurtd [config]       GURTd, the background daemon: auto-updates, fresh lists, downloads → install, instant app 🐧
   android [setup|list|open|remove <app>|fdroid]   Android apps through Waydroid 🤖 (gurt install android/<app> = F-Droid)
+  foss on|off          FOSS-only mode: no closed-source apps at all (off: they install with a heads-up) 🔓
   snapshots            the snapshots gurt took before system upgrades (btrfs: snapper/timeshift/plain) 📸
   achievements         🏆 trophies for doing gurt things
   completions <shell>  print tab completion for bash/zsh/fish (bash+fish set themselves up)
@@ -5853,6 +5907,7 @@ main() {
     notify|alerts)     cmd_notify "$@" ;;
     gurtd|daemon)      cmd_gurtd "$@" ;;
     android|waydroid)  cmd_android "$@" ;;
+    foss)              cmd_foss "$@" ;;
     snapshots|snaps)   cmd_snapshots ;;
     self-update|selfupdate) cmd_self_update ;;
     uninstall)         if (( $# )); then for p; do remove_pkg "$p"; done; play_scream; achieve yeet   # gurt uninstall <app> = gurt remove <app>

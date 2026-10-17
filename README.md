@@ -256,12 +256,12 @@ In the app, the Updates tab shows a 🐧 "your system" card with how many distro
 
 ## Android apps: Waydroid 🤖
 
-GURT runs Android apps in [Waydroid](https://waydro.id), a full Android in a container that shows its apps as normal windows. FOSS only: apps come from [F-Droid](https://f-droid.org), and Android itself is the plain LineageOS image without Google's apps.
+GURT runs Android apps in [Waydroid](https://waydro.id), a full Android in a container that shows its apps as normal windows. The store is [F-Droid](https://f-droid.org) only, so everything you install by name is free software, and Android itself is the plain LineageOS image without Google's apps. A closed-source .apk you got somewhere else still installs, after a heads-up and a "you sure?" (`gurt foss on` says no to those).
 
 ```sh
 gurt search android/firefox          # search F-Droid (fdroid/ and waydroid/ work too)
 gurt install android/fennec          # install by name or by package id (org.mozilla.fennec_fdroid)
-gurt install ./NewPipe.apk           # a .apk you brought: it has to be an app F-Droid has, or gurt says no
+gurt install ./NewPipe.apk           # a .apk you brought: on F-Droid = free software; not on it = closed source, gurt asks first
 gurt android setup                   # just set up Waydroid (install it, download Android, start it)
 gurt android fdroid                  # the F-Droid store app itself, inside Android
 gurt android list · open · stop      # what's in Android · its full screen · stop it
@@ -269,6 +269,17 @@ gurt remove android/<package.id>     # gurt undo works on these too
 ```
 
 The first time, gurt installs Waydroid from your distro (Debian/Ubuntu without it get Waydroid's own repo, Arch the AUR), downloads Android (about 1 GB, once) and starts it. Downloads from F-Droid are checked against F-Droid's sha256. A .apk file and Alpine's `.apk` packages share an extension; gurt tells them apart by what's inside. In the app: Setup → **Android apps**, or drop a .apk on the window. Waydroid needs a Wayland session.
+
+## Mostly free software 🔓
+
+Main GURT is mostly FOSS. An app's license decides: closed-source apps (proprietary, source-available like SSPL, or non-commercial-only) still install, but they're labeled **closed source**, come after the free ones in search, Discover and Build your setup, and `gurt install` tells you which free apps are like it:
+
+```
+$ gurt install discord
+==> heads up: discord is closed source 🔒 · free ones like it: vesktop webcord
+```
+
+`gurt foss on` turns on FOSS-only mode: closed-source apps (and Android apps F-Droid doesn't have) are hidden and won't install. `gurt foss off` turns it back off. In the app it's **FOSS only** in the look menu, and on gurtproject.org there's a **FOSS only** box next to the search. The setup wizard's starter apps are free software (Steam's the one exception), and new Flathub apps only join Main GURT if they're free software.
 
 ## Utilities apps need: `gurt utils` 🔧
 
