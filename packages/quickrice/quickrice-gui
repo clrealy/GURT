@@ -30,13 +30,27 @@ QPushButton#primary:hover { background: %(accenth)s; }
 QPushButton:disabled { background: %(card)s; color: %(sub)s; }
 QCheckBox { background: transparent; spacing: 8px; }
 QCheckBox::indicator { width: 18px; height: 18px; border-radius: 6px; background: %(btn)s; }
-QCheckBox::indicator:checked { background: %(accent)s; }
+QCheckBox::indicator:checked { background: %(accent)s; image: url(%(check)s); }
+QCheckBox::indicator:unchecked { border: 2px solid %(btnh)s; }
+QCheckBox:disabled { color: %(sub)s; }
 QPlainTextEdit, QListWidget { background: %(log)s; border-radius: 12px; padding: 8px; font-family: monospace; font-size: 12px; }
 """
 
 # black + white until a rice is loaded
 BNW = dict(bg="#121212", fg="#EDEDED", sub="#8A8A8A", title="#FFFFFF", card="#1E1E1E", btn="#2C2C2C", btnh="#3A3A3A",
            accent="#EDEDED", accenth="#FFFFFF", afg="#121212", log="#0B0B0B")
+
+def style_for(pal):
+    """Fill the stylesheet, drawing a checkmark in this palette's colors (Qt stylesheets need a real file)."""
+    import tempfile
+    pal = dict(pal)
+    d = Path(tempfile.gettempdir()) / "quickrice-gui"; d.mkdir(exist_ok=True)
+    f = d / ("check-" + pal["afg"].lstrip("#") + ".svg")
+    if not f.exists():
+        f.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18"><path d="M4 9.5l3.2 3.2L14 5.8" '
+                     'fill="none" stroke="%s" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' % pal["afg"])
+    pal["check"] = str(f)
+    return STYLE_T % pal
 
 def hexc(c): return "#%02X%02X%02X" % tuple(max(0, min(255, int(x))) for x in c)
 def mix(a, b, t): return [a[i] * (1 - t) + b[i] * t for i in range(3)]
@@ -163,7 +177,7 @@ class Main(QWidget):
         pal = None
         try: pal = palette_from_kde(colors) if colors else (palette_from_image(img) if img else None)
         except Exception: pal = None
-        QApplication.instance().setStyleSheet(STYLE_T % (pal or BNW))
+        QApplication.instance().setStyleSheet(style_for(pal or BNW))
         self.drop.hide(); self.card.show(); self.dry.setEnabled(True); self.go.setEnabled(True)
         self.log.clear()
 
@@ -245,7 +259,9 @@ class Main(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv); app.setApplicationName("quickrice"); app.setDesktopFileName("quickrice")
-    app.setStyleSheet(STYLE_T % BNW)
+    # Fusion so buttons look the same whatever app style the system uses (Kvantum, Breeze...)
+    app.setStyle("Fusion")
+    app.setStyleSheet(style_for(BNW))
     local = Path(__file__).resolve().parent / "quickrice.svg"
     app.setWindowIcon(QIcon(str(local)) if local.exists() else QIcon.fromTheme("quickrice"))
     w = Main(sys.argv[1] if len(sys.argv) > 1 else None); w.show()

@@ -6,7 +6,7 @@ A .qrice is a gzipped tarball with a rice.toml manifest at its root.
 import argparse, datetime, json, os, shutil, subprocess, sys, tarfile, tempfile, tomllib
 from pathlib import Path
 
-VERSION = "0.4.0"
+VERSION = "0.4.1"
 HOME = Path.home()
 STATE = Path(os.environ.get("XDG_STATE_HOME", HOME / ".local/state")) / "quickrice"
 BACKUPS = STATE / "backups"
