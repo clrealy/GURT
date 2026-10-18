@@ -61,9 +61,19 @@ ask()  {
 
 # ───────────────────────── paths ─────────────────────────
 R="${GURT_ROOT%/}"                       # "" when root is /
+# ChromeOS itself (developer mode, Brunch…) with Chromebrew: everything but /usr/local is read-only, and /usr/local is
+# yours. so gurt keeps everything there (its database too), relocates packages into it and never needs sudo
+is_cros_native() { [[ ! -e /dev/.cros_milestone ]] && grep -qs '^CHROMEOS_RELEASE_NAME=' /etc/lsb-release; }
+CROS_NATIVE=false; is_cros_native && CROS_NATIVE=true
 DB="$R/var/lib/gurt/local"
+$CROS_NATIVE && [[ -z $R ]] && DB=/usr/local/var/lib/gurt/local
 SELF_DIR=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
 
+# ChromeOS: "Linux development environment" (Crostini) is a Debian container. its apps land in the ChromeOS launcher,
+# ChromeOS's Downloads is /mnt/chromeos/MyFiles/Downloads once you share it, and ChromeOS has its own Android (ARC)
+is_cros() { [[ -e /dev/.cros_milestone || -d /opt/google/cros-containers ]]; }
+cros_milestone() { cat /dev/.cros_milestone 2>/dev/null || true; }
+cros_downloads() { local d=/mnt/chromeos/MyFiles/Downloads; [[ -d $d ]] && echo "$d"; }
 # running inside WSL (gurt on Windows)?
 is_wsl() { [[ -n ${WSL_DISTRO_NAME:-} || -n ${WSL_INTEROP:-} ]] || grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; }
 
@@ -75,7 +85,7 @@ depmap_file() {
 }
 
 asroot() {
-  if (( EUID == 0 )) || { [[ -n $R ]] && [[ -w $R ]]; }; then "$@"
+  if (( EUID == 0 )) || { [[ -n $R ]] && [[ -w $R ]]; } || { $CROS_NATIVE && [[ -z $R && -w /usr/local ]]; }; then "$@"
   elif command -v sudo >/dev/null; then
     if [[ -n ${SUDO_ASKPASS:-} && -n ${GURT_GUI:-} ]]; then sudo -A "$@"; else sudo "$@"; fi
   elif command -v doas >/dev/null; then doas "$@"
@@ -85,6 +95,7 @@ asroot() {
 # ───────────────────────── distro detection ─────────────────────────
 detect_pm() {
   local id="" like=""
+  if $CROS_NATIVE; then if command -v crew >/dev/null; then echo crew; else echo none; fi; return; fi   # Chromebrew
   if [[ -r /etc/os-release ]]; then
     id=$(. /etc/os-release; echo "${ID:-}"); like=$(. /etc/os-release; echo "${ID_LIKE:-}")
   fi
@@ -125,6 +136,7 @@ pm_has() {
     emerge)         portageq has_version / "$1" >/dev/null 2>&1 ;;
     eopkg)          eopkg li 2>/dev/null | awk '{print $1}' | grep -qxF "$1" ;;
     lfs)            lfs_has "$1" ;;
+    crew)           [[ -f /usr/local/etc/crew/meta/$1.filelist ]] ;;
     *)              return 1 ;;
   esac
 }
@@ -276,6 +288,7 @@ pm_install() {
     emerge) asroot emerge --noreplace "$@" ;;
     eopkg)  asroot eopkg install -y "$@" ;;
     lfs)    lfs_install "$@" ;;
+    crew)   crew install "$@" < <(yes) ;;   # Chromebrew runs as you, no sudo
     *)      die "couldn't find a package manager I know. install these yourself then rerun with --nodeps: $*" ;;
   esac
 }
@@ -319,6 +332,7 @@ sys_owned() {
     dnf|yum|zypper) for p in "${paths[@]}"; do rpm -qf -- "$p" >/dev/null 2>&1 && echo "$p"; done ;;
     xbps)   for p in "${paths[@]}"; do xbps-query -o "$p" >/dev/null 2>&1 && echo "$p"; done ;;
     apk)    for p in "${paths[@]}"; do apk info -qW "$p" 2>/dev/null | grep -q . && echo "$p"; done ;;
+    crew)   cat /usr/local/etc/crew/meta/*.filelist 2>/dev/null | grep -Fx -f <(printf '%s\n' "${paths[@]}") ;;
     *)      return 0 ;;
   esac | while IFS= read -r line; do if [[ -n ${back[$line]:-} ]]; then printf '%s' "${back[$line]}"; fi; done | sed '/^$/d' | sort -u; } || true
   return 0
@@ -631,10 +645,46 @@ build_pkg() {
 }
 
 # ───────────────────────── install / remove ─────────────────────────
+# ChromeOS itself: only /usr/local is writable, so a package's /usr, /etc, /opt… files move under /usr/local
+cros_relocate() { # file.gurt → a copy laid out under /usr/local (prints its path), or the same file if it already is
+  local f=$1 out
+  tar -xzOf "$f" .FILES 2>/dev/null | grep -qv '^usr/local\(/\|$\)' || { echo "$f"; return 0; }
+  need_tool python3 "moving the package under /usr/local"
+  out="$GURT_CACHE/cros/${f##*/}"; mkdir -p "${out%/*}"
+  python3 - "$f" "$out" <<'PY' || die "couldn't move ${f##*/} under /usr/local"
+import io, sys, tarfile
+def reloc(p):
+    p = p[2:] if p.startswith("./") else p
+    if p in ("usr/local", "") or p.startswith("usr/local/") or p.startswith("."): return p
+    return "usr/local" if p == "usr" else "usr/local/" + (p[4:] if p.startswith("usr/") else p)
+def reloc_abs(t):   # an absolute link target into the system → the same place under /usr/local
+    return t if not t.startswith("/") or t.startswith("/usr/local/") else "/" + reloc(t[1:])
+with tarfile.open(sys.argv[1]) as t, tarfile.open(sys.argv[2], "w:gz") as o:
+    for m in t.getmembers():
+        name = m.name[2:] if m.name.startswith("./") else m.name
+        if name in (".FILES", ".DIRS"):
+            lines = [reloc(l) for l in t.extractfile(m).read().decode().splitlines() if l]
+            b = "".join(l + "\n" for l in sorted(set(lines) - {"usr/local"})).encode()   # sorted: gurt compares these with comm
+            m.size = len(b); o.addfile(m, io.BytesIO(b)); continue
+        if name == ".PKGINFO" or name in ("", "."):
+            o.addfile(m, t.extractfile(m) if m.isfile() else None); continue
+        m.name = reloc(name)
+        if m.issym(): m.linkname = reloc_abs(m.linkname)
+        elif m.islnk(): m.linkname = reloc(m.linkname)
+        if m.isfile() and name.endswith(".desktop"):   # Exec=/usr/bin/x → /usr/local/bin/x
+            b = t.extractfile(m).read().decode("utf-8", "replace")
+            for a in ("/usr/bin/", "/usr/share/", "/opt/"): b = b.replace("=" + a, "=" + reloc_abs(a))
+            b = b.encode(); m.size = len(b); o.addfile(m, io.BytesIO(b)); continue
+        o.addfile(m, t.extractfile(m) if m.isfile() else None)
+PY
+  msg2 "ChromeOS: moved it under /usr/local (the only place ChromeOS lets you write)" >&2
+  echo "$out"
+}
 install_file() { # file.gurt [reason]
   local f reason=${2:-explicit} tmp name src key dbd
   f=$(readlink -f "$1")
   [[ -f $f.asc || -f $f.sig ]] && sig_gate "$f"
+  if $CROS_NATIVE && [[ -z $R ]]; then f=$(cros_relocate "$f"); fi
   tmp=$(mktemp -d "${TMPDIR:-/tmp}/gurt-inst.XXXXXX")
   tar -xzf "$f" -C "$tmp" .PKGINFO .FILES .DIRS 2>/dev/null || { rm -rf "$tmp"; die "not a gurt package: $1"; }
   name=$(info_get "$tmp/.PKGINFO" pkgname)
@@ -713,6 +763,8 @@ add_desktop_icons() {
   { $NO_DESKTOP || [[ ${GURT_DESKTOP_ICONS:-1} == 0 ]]; } && return 0
   (( EUID == 0 )) && return 0   # root's desktop isn't yours
   is_wsl && return 0            # WSL: apps land in the Windows Start menu (WSLg), there's no Linux desktop
+  is_cros && return 0           # ChromeOS: apps land in the ChromeOS launcher, there's no Linux desktop
+  $CROS_NATIVE && return 0      # ChromeOS itself: no Linux desktop at all
   desk=$(desktop_dir); mkdir -p "$desk" 2>/dev/null || return 0
   while IFS= read -r rel; do
     f="$R/$rel"; out="$desk/${rel##*/}"
@@ -1065,6 +1117,9 @@ install_any() { # spec reason
     flatpak) flatpak_install "$name" "$reason" ;;
     snap)    snap_install "$name" "$reason" ;;
     android) android_install "$name" "$reason" ;;
+    crew)    [[ $PM == crew ]] || die "crew/ is Chromebrew, ChromeOS's package manager: it only works on ChromeOS itself (with Chromebrew installed)"
+             pm_has "$name" && { msg "$name is already installed (crew)"; return 0; }
+             pm_install "$name" || die "crew couldn't install $name" ;;
     *) is_binary_src "$src" || die "unknown source '$src' — pick one of: gurt $(all_sources) (or add one: gurt repo add)"
        foreign_install "$src" "$name" "$reason" ;;
   esac
@@ -1094,6 +1149,7 @@ norm_src() {
     flatpak|flathub)                echo flatpak ;;
     snap|snapcraft|snapd)           echo snap ;;
     android|waydroid|fdroid|f-droid) echo android ;;
+    crew|chromebrew)                echo crew ;;
     *)                              echo "$1" ;;
   esac
 }
@@ -2717,7 +2773,8 @@ archive_install() { # file name ver reason
   rm -rf "$work"
 }
 
-# ── 🤖 Android apps, through Waydroid: gurt install android/<app> (from F-Droid) · gurt install ./app.apk · gurt android ──
+# ── 🤖 Android apps, through Waydroid (on ChromeOS: ChromeOS's own Android): gurt install android/<app> (from F-Droid) ·
+#    gurt install ./app.apk · gurt android ──
 # the store is F-Droid only (free software), and Android itself is the plain image (no Google apps). a .apk you bring
 # can be closed source: it gets a heads-up and a "you sure?" (gurt foss on: a no)
 FDROID_URL=${GURT_FDROID_URL:-https://f-droid.org/repo}
@@ -2792,6 +2849,32 @@ while o < len(b):
 sys.exit(1)
 PY
 }
+# ChromeOS has Android built in (ARC): gurt puts apps there over adb, the way ChromeOS's own "Develop Android apps" does
+ARC_DEV=""
+ensure_arc() {
+  [[ -n $ARC_DEV ]] && return 0
+  if ! command -v adb >/dev/null; then
+    $NODEPS && die "adb isn't installed (and --nodeps is on)"
+    $CROS_NATIVE && die "Android apps go into ChromeOS's own Android through adb, and it isn't here: install it with Chromebrew (gurt search crew/android), or use gurt android from Linux (Crostini)"
+    msg2 "Android apps go into ChromeOS's own Android, through adb: getting it"
+    install_native adb
+  fi
+  adb connect arc >/dev/null 2>&1 || true
+  ARC_DEV=$(adb devices 2>/dev/null | awk '$2 == "device" && $1 ~ /^(arc|100\.115\.92\.2)/ { print $1; exit }')
+  [[ -n $ARC_DEV ]] && return 0
+  if adb devices 2>/dev/null | grep -qE '^(arc|100\.115\.92\.2)[^[:space:]]*[[:space:]]+unauthorized'; then
+    die "ChromeOS asked whether to allow USB debugging: hit Allow (tick \"always\"), then try again"
+  fi
+  die "ChromeOS's Android isn't open to Linux yet 🤖 turn it on once: Settings → About ChromeOS → Developers → Linux development environment → Develop Android apps → Enable ADB debugging (the Chromebook restarts), then try again"
+}
+droid_on_arc() { is_cros || $CROS_NATIVE; }   # ChromeOS (Linux on it, or ChromeOS itself) has its own Android
+droid_ready() { if droid_on_arc; then ensure_arc; else ensure_waydroid; fi; }
+droid_install() { if droid_on_arc; then adb -s "$ARC_DEV" install -r "$1"; else waydroid app install "$1"; fi; }
+droid_remove() { if droid_on_arc; then ensure_arc && adb -s "$ARC_DEV" uninstall "$1" >/dev/null; else waydroid app remove "$1"; fi; }
+droid_apps() { # → id \t name
+  if droid_on_arc; then adb -s "$ARC_DEV" shell pm list packages -3 2>/dev/null | tr -d '\r' | sed -n 's/^package://p' | awk '{ print $0 "\t" $0 }'
+  else waydroid_apps; fi
+}
 waydroid_apps() { waydroid app list 2>/dev/null | awk -F': *' '/^Name:/ { n = $2 } /^packageName:/ { print $2 "\t" n }'; }
 android_install_file() { # apk reason [package id] [version] [description]
   local f=$1 reason=${2:-explicit} id=${3:-} ver=${4:-} desc=${5:-} before after row name
@@ -2811,12 +2894,12 @@ android_install_file() { # apk reason [package id] [version] [description]
       [[ $reason == explicit ]] && { ask "install ${f##*/} into Waydroid anyway?" || die "aborted, no cap"; }
     fi
   fi
-  ensure_waydroid
-  before=$(waydroid_apps | cut -f1 | sort)
+  droid_ready
+  before=$(droid_apps | cut -f1 | sort)
   msg "installing ${f##*/} into Android 🤖"
-  waydroid app install "$f" || die "Waydroid couldn't install it"
+  droid_install "$f" || die "Android couldn't install it"
   local i; for (( i = 0; i < 20; i++ )); do   # Android takes a moment to list a new app
-    after=$(waydroid_apps); row=$(awk -F'\t' -v id="$id" 'id != "" && $1 == id' <<<"$after")
+    after=$(droid_apps); row=$(awk -F'\t' -v id="$id" 'id != "" && $1 == id' <<<"$after")
     if [[ -z $row ]]; then local newid; newid=$(comm -13 <(printf '%s\n' "$before") <(cut -f1 <<<"$after" | sort) | head -n1)
       [[ -n $newid ]] && row=$(awk -F'\t' -v id="$newid" '$1 == id' <<<"$after"); fi
     [[ -n $row ]] && break; sleep 1
@@ -2828,7 +2911,8 @@ android_install_file() { # apk reason [package id] [version] [description]
   id=${row%%$'\t'*}; name=${row#*$'\t'}
   record_meta "android:$id" "$id" "${ver:-installed}" "${desc:-$name (Android app)}" "$reason" android
   log_hist install "android:$id"
-  msg "$name installed ✅ (android/$id) — it's in your app menu, or: waydroid app launch $id"
+  if droid_on_arc; then msg "$name installed ✅ (android/$id) — it's in your ChromeOS launcher"
+  else msg "$name installed ✅ (android/$id) — it's in your app menu, or: waydroid app launch $id"; fi
 }
 # F-Droid's index → one TSV like the other sources: id \t version \t apk file \t sha256 \t (no deps) \t name — summary
 fdroid_sync() {
@@ -2878,18 +2962,21 @@ android_install() { # name-or-id reason
 android_remove() { # key
   local id=${1#android:}
   msg "removing android/$id"
-  waydroid app remove "$id" 2>/dev/null || warn "Waydroid couldn't remove it (already gone?)"
+  droid_remove "$id" 2>/dev/null || warn "Android couldn't remove it (already gone?)"
 }
 cmd_android() { # setup | list | remove <app> | open | stop | status
   case ${1:-status} in
-    setup|init) ensure_waydroid; msg "Android is ready 🤖 install apps: gurt install android/<app> (from F-Droid) or gurt install ./app.apk" ;;
-    list|ls)    waydroid_ready || die "Waydroid isn't set up (gurt android setup)"; waydroid_running || ensure_waydroid
-                waydroid_apps | while IFS=$'\t' read -r id n; do printf '  %-40s %s%s\n' "$id" "$n" "$(is_installed "android:$id" && echo " ${GRN}[gurt]${R0}")"; done ;;
+    setup|init) droid_ready; msg "Android is ready 🤖$(droid_on_arc && echo " (ChromeOS's own)") install apps: gurt install android/<app> (from F-Droid) or gurt install ./app.apk" ;;
+    list|ls)    if droid_on_arc; then ensure_arc; else waydroid_ready || die "Waydroid isn't set up (gurt android setup)"; waydroid_running || ensure_waydroid; fi
+                droid_apps | while IFS=$'\t' read -r id n; do printf '  %-40s %s%s\n' "$id" "$n" "$(is_installed "android:$id" && echo " ${GRN}[gurt]${R0}")"; done ;;
     remove|rm)  [[ -n ${2:-} ]] || die "usage: gurt android remove <package.id>"; remove_pkg "android/${2#android/}" ;;
-    open|show)  ensure_waydroid; ( setsid waydroid show-full-ui >/dev/null 2>&1 < /dev/null & ); msg "opening Android 🤖" ;;
-    stop)       waydroid session stop 2>/dev/null; msg "Android stopped (gurt android open starts it again)" ;;
+    open|show)  droid_on_arc && { msg "ChromeOS's Android is always on: its apps are right in your launcher 💻"; return 0; }
+                ensure_waydroid; ( setsid waydroid show-full-ui >/dev/null 2>&1 < /dev/null & ); msg "opening Android 🤖" ;;
+    stop)       droid_on_arc && { msg "ChromeOS runs its own Android, gurt leaves it alone"; return 0; }
+                waydroid session stop 2>/dev/null; msg "Android stopped (gurt android open starts it again)" ;;
     fdroid|store) android_install org.fdroid.fdroid explicit ;;
-    status)     if ! command -v waydroid >/dev/null; then echo "Waydroid: not installed (gurt android setup)"
+    status)     if droid_on_arc; then echo "Android: ChromeOS's own (ARC), through adb$(adb devices 2>/dev/null | grep -qE '^(arc|100\.115\.92\.2)[^[:space:]]*[[:space:]]+device' && echo ", connected" || echo ", not connected yet (gurt android setup)")"
+                elif ! command -v waydroid >/dev/null; then echo "Waydroid: not installed (gurt android setup)"
                 elif ! waydroid_ready; then echo "Waydroid: installed, Android not downloaded yet (gurt android setup)"
                 else waydroid status 2>/dev/null || true; fi ;;
     *) die "usage: gurt android [setup | list | remove <package> | open | stop | fdroid | status]" ;;
@@ -2929,7 +3016,12 @@ record_meta() { # key name version desc reason source
   rm -rf "$tmp"
 }
 
+cros_native_no() { # what → stop: it needs things ChromeOS itself doesn't have
+  $CROS_NATIVE || return 0
+  die "$1 doesn't run on ChromeOS itself 💻 turn on Linux (Settings → About ChromeOS → Developers → Linux development environment) and use gurt in there for it, or look for it on Chromebrew: gurt search crew/<name>"
+}
 ensure_flatpak() {
+  cros_native_no "flatpak (and Flathub apps)"
   if ! command -v flatpak >/dev/null; then
     $NODEPS && die "flatpak isn't installed (and --nodeps is on)"
     msg "flatpak isn't installed — getting it from your distro"
@@ -2941,6 +3033,13 @@ ensure_flatpak() {
     msg2 "adding Flathub (for your user, no sudo needed)"
     flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || die "couldn't add Flathub"
   fi
+}
+cros_launcher_refresh() { # ChromeOS: garcon puts apps in the launcher, but only sees flatpaks once their folder is on its XDG_DATA_DIRS
+  is_cros || return 0
+  systemctl --user show-environment 2>/dev/null | grep -q 'flatpak/exports' && return 0
+  systemctl --user daemon-reload 2>/dev/null || true   # re-runs flatpak's environment generator
+  if systemctl --user show-environment 2>/dev/null | grep -q 'flatpak/exports' && systemctl --user restart cros-garcon 2>/dev/null; then return 0; fi
+  msg2 "to see flatpak apps in your ChromeOS launcher, restart Linux once (right-click Terminal → Shut down Linux, then open it again)"
 }
 flatpak_resolve() { # "gimp" or "org.gimp.GIMP" → app id
   local q=$1
@@ -2966,10 +3065,12 @@ flatpak_install() { # name reason
   local ver; ver=$(flatpak info --user "$id" 2>/dev/null | awk -F': *' '/^ *Version:/ {print $2; exit}')
   record_meta "$key" "$id" "${ver:-latest}" "Flathub app" "${2:-explicit}" flatpak
   log_hist install "$key"
+  cros_launcher_refresh
   msg "$(pretty "$key") installed ✅  (it's in your app menu, or run: flatpak run $id)"
 }
 
 ensure_snap() {
+  cros_native_no "snap"
   if is_wsl && [[ ! -d /run/systemd/system ]]; then
     die "snaps need systemd, and it's off in your WSL 🪟 turn it on: put [boot] + systemd=true in /etc/wsl.conf, run 'wsl --shutdown' in PowerShell, then try again (or grab the flatpak/ version)"
   fi
@@ -3584,6 +3685,10 @@ cmd_de() {
   if is_wsl; then
     die "you're on Windows (WSL) 🪟 — Linux desktops don't run here. Your Linux apps show up right in the Windows Start menu instead"
   fi
+  if is_cros; then
+    die "you're on ChromeOS 💻 — ChromeOS is your desktop, Linux desktops don't run here. Your Linux apps show up right in the ChromeOS launcher (the Linux apps folder)"
+  fi
+  $CROS_NATIVE && die "you're on ChromeOS itself 💻 — ChromeOS is your desktop, there's no Linux desktop to swap in here"
   case $sub in
     list|ls)
       printf '%sdesktops you can install on %s (%s):%s\n' "$B" "$(. /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-this distro}")" "$PM" "$R0"
@@ -4005,7 +4110,7 @@ cmd_setup() {
   printf '\n%s🧙 GURT Setup Wizard%s — a minute of questions, and you can change all of it later (Ctrl+C stops it)\n' "$B" "$R0"
   printf '\n%s[1/4] system check%s\n' "$B" "$R0"
   d=$( . /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-unknown distro}" )
-  msg2 "$d · package manager: $PM$(is_wsl && echo ' · WSL on Windows')"
+  msg2 "$d · package manager: $PM$(is_wsl && echo ' · WSL on Windows')$(is_cros && echo ' · Linux on ChromeOS')$($CROS_NATIVE && echo ' · ChromeOS itself')"
   if (( EUID == 0 )) || command -v sudo >/dev/null || command -v doas >/dev/null; then msg2 "sudo works ✅"; else warn "no sudo or doas: install one, or run gurt as root"; fi
   miss=$(cmd_utils list 2>&1 | grep -c '✗' || true)
   if (( miss )); then cmd_utils list; ask "install the $miss missing utilities (most apps need them)?" && cmd_utils
@@ -4143,6 +4248,9 @@ cmd_gurtd() { # config|on|off|status|log|run|autoupdate|watch|fresh|saver [on|of
           "[Service]" "ExecStart=$(command -v python3) $py --gurt $self --daemon" "Restart=on-failure" "RestartSec=10" "Nice=5" "" \
           "[Install]" "WantedBy=default.target" > "$unit_dir/gurtd.service"
         systemctl --user daemon-reload && systemctl --user enable --now gurtd.service >/dev/null 2>&1 || die "systemd wouldn't start GURTd"
+      elif $CROS_NATIVE; then   # ChromeOS itself starts nothing of yours at login: start it now
+        gurtd_running || { setsid "$self" gurtd run >/dev/null 2>&1 < /dev/null & }
+        msg2 "ChromeOS doesn't start Linux things when you log in: run gurt gurtd on again after a restart"
       else   # no systemd user session: start it now + at every login
         mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/autostart"
         printf '%s\n' "[Desktop Entry]" "Type=Application" "Name=GURTd" "Exec=$self gurtd run" "NoDisplay=true" "X-GNOME-Autostart-enabled=true" \
@@ -4623,6 +4731,9 @@ search_foreign() { # src term
     rows=$(flatpak_search "$term") || { warn "couldn't search Flathub"; return 1; }
   elif [[ $src == snap ]]; then
     rows=$(snap_search "$term") || { warn "couldn't search the Snap Store"; return 1; }
+  elif [[ $src == crew ]]; then
+    command -v crew >/dev/null || die "crew/ is Chromebrew, ChromeOS's package manager: only on ChromeOS itself"
+    crew search "$term"; return
   elif [[ $src == android ]]; then
     fdroid_sync
     rows=$(awk -F'\t' -v t="${term,,}" 'index(tolower($1 "\t" $6), t) { n = tolower($6); sub(/ — .*/, "", n)
@@ -4868,6 +4979,9 @@ system_upgrade() {
     emerge)
       msg "🐧 updating your system (emerge --sync + @world — grab a snack 🍿)"
       asroot emerge --sync && asroot emerge --ask="$($NOCONFIRM && echo n || echo y)" --update --deep --newuse @world ;;
+    crew)
+      msg "💻 updating Chromebrew (crew update + upgrade). ChromeOS updates itself: Settings → About ChromeOS"
+      crew update && crew upgrade < <(yes) ;;
     lfs) msg "🐧 Linux From Scratch updates by rebuilding: check the LFS + BLFS errata and security advisories"
          msg2 "https://www.linuxfromscratch.org/lfs/advisories/ · https://www.linuxfromscratch.org/blfs/advisories/"
          msg2 "(gurt still updates everything it installed)"; return 0 ;;
@@ -5647,6 +5761,11 @@ cmd_repo() {
 cmd_doctor() {
   local id="unknown"; [[ -r /etc/os-release ]] && id=$(. /etc/os-release; echo "${PRETTY_NAME:-$ID}")
   is_wsl && id="$id (on Windows, WSL ${WSL_DISTRO_NAME:-})"
+  if is_cros; then local cm; cm=$(cros_milestone); id="$id (Linux on ChromeOS${cm:+ $cm})"; fi
+  if $CROS_NATIVE; then
+    local brunch=""; if [[ -e /etc/brunch_version ]] || command -v brunch-version >/dev/null; then brunch=", Brunch"; fi
+    id="$(sed -n 's/^CHROMEOS_RELEASE_DESCRIPTION=//p' /etc/lsb-release 2>/dev/null | head -n1) (ChromeOS itself$brunch)"
+  fi
   printf '%-14s %s\n' gurt "$GURT_VERSION" distro "$id" "pkg manager" "$PM" arch "$CARCH" \
     prefix "$GURT_PREFIX" root "${GURT_ROOT}" "main repo" "$GURT_REPO_URL" cache "$GURT_CACHE" \
     deps.map "$(depmap_file || true)"
@@ -5657,6 +5776,17 @@ cmd_doctor() {
   command -v sudo >/dev/null || command -v doas >/dev/null || (( EUID == 0 )) || warn "no sudo/doas found"
   [[ $PM == none ]] && warn "no known package manager — you'll have to install deps yourself (--nodeps)"
   [[ $PM == lfs ]] && msg2 "🐧 Linux From Scratch: deps come from Main GURT recipes (built here) and pip; the rest, BLFS tells you how"
+  if $CROS_NATIVE; then
+    msg2 "💻 ChromeOS itself: gurt keeps everything in /usr/local (database: $DB), packages from other distros get moved there too, no sudo needed"
+    if command -v crew >/dev/null; then msg2 "Chromebrew ✅ (crew/ packages, and what gurt builds needs from it)"
+    else warn "no Chromebrew: install it (or Tweakium) so gurt can get what apps need"; fi
+    msg2 "flatpak, snap and Waydroid need Linux (Crostini): turn it on in Settings → About ChromeOS → Developers"
+  fi
+  if is_cros; then
+    msg2 "💻 ChromeOS: your apps show up in the launcher's Linux apps folder"
+    if [[ -n $(cros_downloads) ]]; then msg2 "ChromeOS Downloads is shared with Linux ✅ (GURT sees what you download)"
+    else warn "share your Downloads with Linux so GURT sees what you download: Files app → right-click Downloads → Share with Linux"; fi
+  fi
   printf '\n%sutilities apps need%s%s\n' "$B" "$R0" "$(is_donk && echo ' (Donk OS 🫏 gurt keeps these installed)')"
   cmd_utils list
 
@@ -5953,7 +6083,7 @@ main() {
     __complete)        cmd_complete "$@" ;;
     __achieve)         [[ ${1:-} =~ ^[a-z0-9]+$ ]] && achieve "$1" ;;
     __devunlock)       [[ $(dev_state) == locked ]] || exit 0; IFS= read -r p || p=""; dev_check "$p" ;;   # the app sends it on stdin
-    __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\nwsl=%s\ndev=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" "$(is_wsl && echo yes || echo no)" "$(dev_state)" ;;
+    __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\nwsl=%s\ncros=%s\ndev=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" "$(is_wsl && echo yes || echo no)" "$( { is_cros || $CROS_NATIVE; } && echo yes || echo no)" "$(dev_state)" ;;
     gui)               cmd_gui "$@" ;;
     completions)       completion_script "${1:?usage: gurt completions bash|zsh|fish}" ;;
     outsource|os|clone) (( $# )) || die "outsource what tho — gurt outsource https://github.com/user/repo (or a file: gurt outsource ./app.deb)"

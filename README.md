@@ -214,6 +214,25 @@ LFS has no package manager on purpose, so gurt fills in: it spots LFS (`/etc/lfs
 
 Before you start, build `git`, `curl` (or `wget`) and `sudo` from BLFS. Then download [install.sh](https://gurtproject.org/install.sh) and run `sh install.sh`.
 
+### ChromeOS 💻
+
+Two ways, and gurt knows which one it's in.
+
+**In Linux on ChromeOS** (the Linux development environment, Crostini). Turn it on in Settings → About ChromeOS → Developers, download `GURTSetupWizard.deb`, open it in Files and hit **Install with Linux**. It's Debian underneath, so everything works, plus:
+
+- apps land in the ChromeOS launcher (flatpaks too: gurt tells ChromeOS where to find them)
+- Android apps (`gurt install android/<app>`) go into your Chromebook's own Android over adb, not Waydroid. Turn on Settings → Linux → Develop Android apps once
+- GURTd watches ChromeOS's Downloads once you share it with Linux (Files → right-click Downloads → Share with Linux)
+- `gurt de` and the app's Desktops tab sit out: ChromeOS is your desktop
+
+**On ChromeOS itself** (developer mode, or Brunch on a regular PC) with [Chromebrew](https://chromebrew.github.io). Download [install.sh](https://gurtproject.org/install.sh) and run `sh install.sh` in the shell:
+
+- everything lives in `/usr/local`, the one place ChromeOS lets you write: gurt itself, its database (`/usr/local/var/lib/gurt`) and every app. No sudo
+- Chromebrew is the package manager: deps come from `crew`, `gurt install crew/<pkg>` and `gurt search crew/<term>` work, `gurt sysup` runs `crew update` + `crew upgrade`
+- other distros' packages work: `gurt install ./thing.deb` (or .rpm, .pkg.tar.zst…) moves its `/usr`, `/etc` and `/opt` files under `/usr/local` and fixes its menu entry
+- flatpak, snap and Waydroid need a real Linux, so for those gurt points you at Linux on ChromeOS
+- `gurt gui` prints a link to open in Chrome, and `gurt gurtd on` runs until you restart (ChromeOS doesn't start your stuff at login)
+
 ## Update your whole system 🐧
 
 gurt isn't just an installer: `gurt upgrade` updates **everything**. First your system, using your distro's own package manager the right way, then everything gurt installed, then flatpaks + snaps.
