@@ -2,13 +2,14 @@
 # GRUB theme, Plymouth splash, SDDM login screen, KDE colors, Kvantum, GTK, wallpaper, Konsole, fastfetch, sounds, icons, cursor
 pkgname=quickrice
 pkgver=0.4.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Load a whole desktop rice (GRUB, Plymouth, login screen, colors, sounds, terminal and more) from one .qrice file"
 aliases=(qrice)
 url="https://github.com/clrealy/GURT"
 license="MIT"
 maintainer="clrealy"
 category="system"
+icon="https://raw.githubusercontent.com/clrealy/GURT/main/packages/quickrice/quickrice.png"
 arch=(any)
 depends=(python3 python3-pyside6)
 makedepends=()
