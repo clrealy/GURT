@@ -6,7 +6,7 @@ A .qrice is a gzipped tarball with a rice.toml manifest at its root.
 import argparse, datetime, json, os, shutil, subprocess, sys, tarfile, tempfile, tomllib
 from pathlib import Path
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 HOME = Path.home()
 STATE = Path(os.environ.get("XDG_STATE_HOME", HOME / ".local/state")) / "quickrice"
 BACKUPS = STATE / "backups"
@@ -106,6 +106,7 @@ def make_backup(manifest):
     if Path("/etc/default/grub").exists(): shutil.copy2("/etc/default/grub", b / "etc-default-grub")
     if have("plymouth-set-default-theme"):
         info["plymouth"] = subprocess.run(["plymouth-set-default-theme"], text=True, capture_output=True).stdout.strip()
+    info["sddm"] = sddm_current()
     (b / "backup.json").write_text(json.dumps(info, indent=2))
     return b, info
 
@@ -193,7 +194,46 @@ def apply_plymouth(root, sec, rice):
 
 USER_PARTS = [("colors", apply_colors), ("wallpaper", apply_wallpaper), ("konsole", apply_konsole),
               ("fastfetch", apply_fastfetch), ("sounds", apply_sounds), ("icons", apply_icons), ("cursor", apply_cursor)]
-SYSTEM_PARTS = [("grub", apply_grub), ("plymouth", apply_plymouth)]
+SDDM_CONF = "/etc/sddm.conf.d/kde_settings.conf"   # what KDE's Login Screen settings use
+
+def sddm_current():
+    for f in [SDDM_CONF, "/etc/sddm.conf"] + sorted(str(p) for p in Path("/etc/sddm.conf.d").glob("*.conf")):
+        try:
+            sec = None
+            for line in Path(f).read_text().splitlines():
+                line = line.strip()
+                if line.startswith("["): sec = line
+                elif sec == "[Theme]" and line.startswith("Current="): return line.split("=", 1)[1]
+        except OSError: pass
+    return ""
+
+def sddm_set_theme(name):
+    run(["mkdir", "-p", "/etc/sddm.conf.d"], sudo=True)
+    tool = shutil.which("kwriteconfig6") or shutil.which("kwriteconfig5")
+    if tool:
+        run([tool, "--file", SDDM_CONF, "--group", "Theme", "--key", "Current", name], sudo=True)
+    else:
+        run(["sh", "-c", f"printf '[Theme]\\nCurrent={name}\\n' > /etc/sddm.conf.d/zz-quickrice.conf"], sudo=True)
+
+def apply_sddm(root, sec, rice):
+    if not (have("sddm") or Path("/usr/share/sddm").exists()): warn("SDDM not found, skipping login screen"); return
+    src = root / sec["dir"]; name = src.name
+    dst = Path("/usr/share/sddm/themes") / name
+    copy_into(src, dst, sudo=True)
+    user = {}
+    if sec.get("background"):
+        bg = root / sec["background"]
+        run(["cp", str(bg), str(dst / ("quickrice-bg" + bg.suffix))], sudo=True)
+        user["background"] = "quickrice-bg" + bg.suffix
+    for k in ("position", "dim", "blurRadius", "type", "color"):
+        if k in sec: user[k] = str(sec[k])
+    if user:
+        body = "[General]\\n" + "".join(f"{k}={v}\\n" for k, v in user.items())
+        run(["sh", "-c", f"printf '{body}' > {dst}/theme.conf.user"], sudo=True)
+    sddm_set_theme(name)
+    step(f"login screen theme {name} set" + (" (custom background)" if "background" in user else ""))
+
+SYSTEM_PARTS = [("grub", apply_grub), ("plymouth", apply_plymouth), ("sddm", apply_sddm)]
 
 # ---------- commands ----------
 def cmd_info(a):
@@ -264,6 +304,8 @@ def cmd_undo(a):
     if (b / "etc-default-grub").exists() and not a.user_only:
         _, mk = grub_info()
         run(["cp", str(b / "etc-default-grub"), "/etc/default/grub"], sudo=True); run(mk, sudo=True); step("GRUB config restored")
+    if info.get("sddm") and not a.user_only:
+        sddm_set_theme(info["sddm"]); step(f"login screen back to {info['sddm']}")
     if info.get("plymouth") and not a.user_only and have("plymouth-set-default-theme"):
         run(["plymouth-set-default-theme", "-R", info["plymouth"]], sudo=True); step(f"plymouth back to {info['plymouth']}")
     say("done! log out + back in to see it", "g")

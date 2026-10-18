@@ -10,7 +10,8 @@ from PySide6.QtWidgets import (QApplication, QWidget, QLabel, QPushButton, QVBox
 PARTS = [("colors", "🎨", "Color scheme", False), ("wallpaper", "🖼️", "Wallpaper", False),
          ("konsole", "💻", "Konsole theme", False), ("fastfetch", "🧸", "Fastfetch", False),
          ("sounds", "🔔", "Sounds", False), ("icons", "📁", "Icons", False), ("cursor", "🖱️", "Cursor", False),
-         ("grub", "🥾", "GRUB theme", True), ("plymouth", "✨", "Boot splash", True)]
+         ("grub", "🥾", "GRUB theme", True), ("plymouth", "✨", "Boot splash", True),
+         ("sddm", "🔐", "Login screen", True)]
 
 STYLE_T = """
 QWidget { background: %(bg)s; color: %(fg)s; font-size: 14px; }
@@ -172,7 +173,7 @@ class Main(QWidget):
         parts = self.selected()
         if not parts: return
         if not dry and any(s for k, _, _, s in PARTS if s and k in parts):
-            if QMessageBox.question(self, "quickrice", "GRUB / boot splash changes need your password and rebuild boot files.\nKeep going?") != QMessageBox.Yes:
+            if QMessageBox.question(self, "quickrice", "GRUB, boot splash and login screen changes need your password.\nKeep going?") != QMessageBox.Yes:
                 return
         args = ["apply", self.file, "--only", ",".join(parts), "-y"] + (["--dry-run"] if dry else [])
         self.run_cli(args)
