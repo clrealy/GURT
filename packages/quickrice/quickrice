@@ -6,7 +6,12 @@ A .qrice is a gzipped tarball with a rice.toml manifest at its root.
 import argparse, datetime, json, os, shutil, subprocess, sys, tarfile, tempfile, tomllib
 from pathlib import Path
 
-VERSION = "0.4.1"
+VERSION = "0.4.2"
+# openSUSE (and others) keep admin tools like plymouth-set-default-theme and grub2-mkconfig in
+# /usr/sbin, which isn't in a normal user's PATH, so look there too
+for _d in ("/usr/local/sbin", "/usr/sbin", "/sbin"):
+    if _d not in os.environ.get("PATH", "").split(":"):
+        os.environ["PATH"] = os.environ.get("PATH", "") + ":" + _d
 HOME = Path.home()
 STATE = Path(os.environ.get("XDG_STATE_HOME", HOME / ".local/state")) / "quickrice"
 BACKUPS = STATE / "backups"
