@@ -1,6 +1,6 @@
 # Better tooling for Protocol Buffers
 pkgname=buf
-pkgver=1.73.0
+pkgver=1.74.0
 pkgrel=1
 pkgdesc="Better tooling for Protocol Buffers"
 url="https://github.com/bufbuild/buf"
@@ -12,8 +12,8 @@ _tag=v$pkgver
 # official prebuilt release binary
 source_x86_64=("https://github.com/bufbuild/buf/releases/download/${_tag}/buf-Linux-x86_64.tar.gz")
 source_aarch64=("https://github.com/bufbuild/buf/releases/download/${_tag}/buf-Linux-aarch64.tar.gz")
-sha256sums_x86_64=(f8092c1be08d5606a8d22b4ae0e4079dd690154cebb4894dc5e24a5046093aff)
-sha256sums_aarch64=(e928fa64061ddb5144d93df30fe48f3451231b0e77ea5ade684cb7b53037cc66)
+sha256sums_x86_64=('cc482285b2c388c93f8bed0a972330695c1c8dd121d5ece460d25ceed93f21ac')
+sha256sums_aarch64=('54a5d5500992deb3239bfee61c9f0ef7646b6f6b231d2c255fdfc16eeb50564c')
 
 package() {
   local f
