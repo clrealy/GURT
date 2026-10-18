@@ -1,6 +1,6 @@
 # AI coding agent for your terminal
 pkgname=crush
-pkgver=0.97.1
+pkgver=0.98.1
 pkgrel=1
 pkgdesc="AI coding agent for your terminal"
 url="https://github.com/charmbracelet/crush"
@@ -12,8 +12,8 @@ _tag=v$pkgver
 # official prebuilt release binary
 source_x86_64=("https://github.com/charmbracelet/crush/releases/download/${_tag}/crush_${pkgver}_Linux_x86_64.tar.gz")
 source_aarch64=("https://github.com/charmbracelet/crush/releases/download/${_tag}/crush_${pkgver}_Linux_arm64.tar.gz")
-sha256sums_x86_64=(1b7cbe0600a3797538a74dc00dd8c4bac54ac4b8f4455ba5ff2312b29c7bd598)
-sha256sums_aarch64=(16c9477a178d69e02a51bf4babe6174e62051314b2cd7f36b1ec5fea47e25a88)
+sha256sums_x86_64=('d85d913effef350f0152f594a70bd9749ad455bf15af77bb0d2b731036079885')
+sha256sums_aarch64=('098e875c1d9501822d08ef14ab094f24cfc87396385af5402994bf741a673b99')
 
 package() {
   local f
