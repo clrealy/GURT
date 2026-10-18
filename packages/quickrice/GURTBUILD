@@ -1,7 +1,7 @@
 # quickrice: load a whole desktop rice from one .qrice file (it's quick-rice, not q-rice)
-# GRUB theme, Plymouth splash, SDDM login screen, KDE colors, wallpaper, Konsole, fastfetch, sounds, icons, cursor
+# GRUB theme, Plymouth splash, SDDM login screen, KDE colors, Kvantum, GTK, wallpaper, Konsole, fastfetch, sounds, icons, cursor
 pkgname=quickrice
-pkgver=0.3.1
+pkgver=0.4.0
 pkgrel=1
 pkgdesc="Load a whole desktop rice (GRUB, Plymouth, login screen, colors, sounds, terminal and more) from one .qrice file"
 aliases=(qrice)
@@ -13,7 +13,7 @@ arch=(any)
 depends=(python3 python3-pyside6)
 makedepends=()
 source=("quickrice" "quickrice-gui" "quickrice.svg" "quickrice.desktop" "quickrice-mime.xml")
-sha256sums=("d13968bdcc52a239199f694f53ef5a10495dc0e6242f9b8945b031fb82d85654" "b7112b8344a1fe6f4f1cc9f41e8541c0f3e4c412f2a86afe662cae4e8f6b0c77" "5d71cf2efb706b72d5b36713916145f2ed65cd652bc41375b1af8efcd02d7a09" "33a4df672077b2cc41feb9530b1decffd7e4d15a6c16e320460383c0b462e8e7" "7746e53f3a9189c29c444303ecfd6f117a894e8fa43afe1dada15e1baefda498")
+sha256sums=("abca87a7569e4876220b3436edbe5151aaac864d2166d7c0bc68f9c9a34b624c" "7de04657d586f4273357b8d26b364e3ad29daac6d626e18f32d8210f40b24a51" "5d71cf2efb706b72d5b36713916145f2ed65cd652bc41375b1af8efcd02d7a09" "33a4df672077b2cc41feb9530b1decffd7e4d15a6c16e320460383c0b462e8e7" "7746e53f3a9189c29c444303ecfd6f117a894e8fa43afe1dada15e1baefda498")
 
 package() {
   install -Dm755 "$srcdir/quickrice"          "$pkgdir$prefix/bin/quickrice"

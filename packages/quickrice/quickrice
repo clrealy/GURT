@@ -6,7 +6,7 @@ A .qrice is a gzipped tarball with a rice.toml manifest at its root.
 import argparse, datetime, json, os, shutil, subprocess, sys, tarfile, tempfile, tomllib
 from pathlib import Path
 
-VERSION = "0.3.1"
+VERSION = "0.4.0"
 HOME = Path.home()
 STATE = Path(os.environ.get("XDG_STATE_HOME", HOME / ".local/state")) / "quickrice"
 BACKUPS = STATE / "backups"
@@ -107,6 +107,12 @@ def make_backup(manifest):
     if have("plymouth-set-default-theme"):
         info["plymouth"] = subprocess.run(["plymouth-set-default-theme"], text=True, capture_output=True).stdout.strip()
     info["sddm"] = sddm_current()
+    info["widget_style"] = kread("kdeglobals", "KDE", "widgetStyle")
+    kv = HOME / ".config/Kvantum/kvantum.kvconfig"
+    if kv.exists(): shutil.copy2(kv, b / "kvantum.kvconfig")
+    for v in ("gtk-3.0", "gtk-4.0"):
+        g = HOME / ".config" / v / "gtk.css"
+        if g.exists(): (b / v).mkdir(exist_ok=True); shutil.copy2(g, b / v / "gtk.css")
     (b / "backup.json").write_text(json.dumps(info, indent=2))
     return b, info
 
@@ -192,8 +198,24 @@ def apply_plymouth(root, sec, rice):
     run(["plymouth-set-default-theme", "-R", src.name], sudo=True)
     step(f"Plymouth theme {src.name} set")
 
+def apply_kvantum(root, sec, rice):
+    src = root / sec["dir"]; name = src.name
+    copy_into(src, HOME / ".config/Kvantum" / name)
+    if not DRY:
+        (HOME / ".config/Kvantum/kvantum.kvconfig").write_text(f"[General]\ntheme={name}\n")
+    kwrite("kdeglobals", "KDE", "widgetStyle", "kvantum")
+    step(f"Kvantum theme {name} set as app style" + ("" if have("kvantummanager") else " (install kvantum-manager for it to load)"))
+
+def apply_gtk(root, sec, rice):
+    src = root / sec["dir"]; n = 0
+    for v in ("gtk-3.0", "gtk-4.0"):
+        f = src / v / "gtk.css"
+        if f.exists(): copy_into(f, HOME / ".config" / v / "gtk.css"); n += 1
+    step(f"GTK colors installed ({n} versions), reopen GTK apps to see them")
+
 USER_PARTS = [("colors", apply_colors), ("wallpaper", apply_wallpaper), ("konsole", apply_konsole),
-              ("fastfetch", apply_fastfetch), ("sounds", apply_sounds), ("icons", apply_icons), ("cursor", apply_cursor)]
+              ("fastfetch", apply_fastfetch), ("sounds", apply_sounds), ("icons", apply_icons), ("cursor", apply_cursor),
+              ("kvantum", apply_kvantum), ("gtk", apply_gtk)]
 SDDM_CONF = "/etc/sddm.conf.d/kde_settings.conf"   # what KDE's Login Screen settings use
 
 def sddm_current():
@@ -304,6 +326,14 @@ def cmd_undo(a):
     kwrite("kdeglobals", "Sounds", "Theme", info.get("sounds") or "ocean"); step("sounds restored")
     if info.get("konsole_profile"): kwrite("konsolerc", "Desktop Entry", "DefaultProfile", info["konsole_profile"]); step("konsole profile restored")
     if (b / "fastfetch").exists(): copy_into(b / "fastfetch", HOME / ".config/fastfetch"); step("fastfetch restored")
+    kwrite("kdeglobals", "KDE", "widgetStyle", info.get("widget_style") or "Breeze")
+    if (b / "kvantum.kvconfig").exists(): copy_into(b / "kvantum.kvconfig", HOME / ".config/Kvantum/kvantum.kvconfig")
+    step("app style restored")
+    for v in ("gtk-3.0", "gtk-4.0"):
+        dst = HOME / ".config" / v / "gtk.css"
+        if (b / v / "gtk.css").exists(): copy_into(b / v / "gtk.css", dst)
+        elif dst.exists() and not DRY: dst.unlink()
+    step("GTK colors restored")
     if (b / "etc-default-grub").exists() and not a.user_only:
         _, mk = grub_info()
         run(["cp", str(b / "etc-default-grub"), "/etc/default/grub"], sudo=True); run(mk, sudo=True); step("GRUB config restored")

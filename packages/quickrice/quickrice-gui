@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (QApplication, QWidget, QLabel, QPushButton, QVBox
 PARTS = [("colors", "🎨", "Color scheme", False), ("wallpaper", "🖼️", "Wallpaper", False),
          ("konsole", "💻", "Konsole theme", False), ("fastfetch", "🧸", "Fastfetch", False),
          ("sounds", "🔔", "Sounds", False), ("icons", "📁", "Icons", False), ("cursor", "🖱️", "Cursor", False),
+         ("kvantum", "🧩", "App style", False), ("gtk", "🐾", "GTK apps", False),
          ("grub", "🥾", "GRUB theme", True), ("plymouth", "✨", "Boot splash", True),
          ("sddm", "🔐", "Login screen", True)]
 
