@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=quickrice
+GenericName=Rice Loader
+Comment=Apply whole desktop rices from .qrice files
+Exec=quickrice-gui %f
+Icon=quickrice
+Terminal=false
+Categories=Settings;DesktopSettings;Qt;
+MimeType=application/x-qrice;

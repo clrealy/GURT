@@ -1,0 +1,296 @@
+#!/usr/bin/env python3
+"""quickrice - load whole desktop rices from a single .qrice file.
+
+A .qrice is a gzipped tarball with a rice.toml manifest at its root.
+"""
+import argparse, datetime, json, os, shutil, subprocess, sys, tarfile, tempfile, tomllib
+from pathlib import Path
+
+VERSION = "0.2.0"
+HOME = Path.home()
+STATE = Path(os.environ.get("XDG_STATE_HOME", HOME / ".local/state")) / "quickrice"
+BACKUPS = STATE / "backups"
+DRY = False
+
+# ---------- tiny helpers ----------
+C = {"y": "\033[33m", "g": "\033[32m", "r": "\033[31m", "b": "\033[1m", "d": "\033[2m", "x": "\033[0m"}
+def say(msg, c="y"): print(f"{C[c]}{msg}{C['x']}")
+def step(msg): print(f"  {C['g']}✓{C['x']} {msg}")
+def warn(msg): print(f"  {C['y']}!{C['x']} {msg}")
+def fail(msg): print(f"{C['r']}✗ {msg}{C['x']}"); sys.exit(1)
+def have(cmd): return shutil.which(cmd) is not None
+
+def run(cmd, sudo=False, check=True, capture=False):
+    if sudo and os.geteuid() != 0:
+        # -A uses a graphical password prompt when launched from the GUI
+        cmd = (["sudo", "-A"] if os.environ.get("SUDO_ASKPASS") else ["sudo"]) + cmd
+    if DRY:
+        print(f"    {C['d']}$ {' '.join(map(str, cmd))}{C['x']}")
+        return ""
+    r = subprocess.run(cmd, check=check, text=True, capture_output=capture)
+    return r.stdout.strip() if capture else ""
+
+def copy_into(src: Path, dst: Path, sudo=False):
+    """Copy a file or folder to dst, replacing what's there."""
+    if sudo:
+        run(["rm", "-rf", str(dst)], sudo=True)
+        run(["mkdir", "-p", str(dst.parent)], sudo=True)
+        run(["cp", "-r", str(src), str(dst)], sudo=True)
+        return
+    if DRY:
+        print(f"    {C['d']}copy {src} -> {dst}{C['x']}"); return
+    if dst.exists():
+        shutil.rmtree(dst) if dst.is_dir() else dst.unlink()
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(src, dst) if src.is_dir() else shutil.copy2(src, dst)
+
+def kread(file, group, key):
+    tool = "kreadconfig6" if have("kreadconfig6") else "kreadconfig5" if have("kreadconfig5") else None
+    if not tool: return ""
+    return subprocess.run([tool, "--file", file, "--group", group, "--key", key], text=True, capture_output=True).stdout.strip()
+
+def kwrite(file, group, key, value):
+    tool = "kwriteconfig6" if have("kwriteconfig6") else "kwriteconfig5" if have("kwriteconfig5") else None
+    if tool: run([tool, "--file", file, "--group", group, "--key", key, value])
+
+def find_libexec(name):
+    for d in ["/usr/libexec", "/usr/lib/libexec", "/usr/lib64/libexec", "/usr/lib/x86_64-linux-gnu/libexec"]:
+        p = Path(d) / name
+        if p.exists(): return str(p)
+    return shutil.which(name)
+
+# ---------- archive handling ----------
+def safe_extract(archive: Path, dest: Path):
+    with tarfile.open(archive, "r:*") as t:
+        for m in t.getmembers():
+            target = (dest / m.name).resolve()
+            if not str(target).startswith(str(dest.resolve())) or m.issym() or m.islnk() or m.isdev():
+                fail(f"refusing unsafe entry in archive: {m.name}")
+        t.extractall(dest, **({"filter": "data"} if hasattr(tarfile, "data_filter") else {}))
+    roots = [p for p in dest.iterdir()]
+    if (dest / "rice.toml").exists(): return dest
+    if len(roots) == 1 and (roots[0] / "rice.toml").exists(): return roots[0]
+    fail("no rice.toml found in that .qrice")
+
+def load_manifest(root: Path):
+    with open(root / "rice.toml", "rb") as f:
+        m = tomllib.load(f)
+    if "rice" not in m or "name" not in m["rice"]:
+        fail("rice.toml needs a [rice] section with a name")
+    return m
+
+# ---------- environment detection ----------
+def grub_info():
+    if Path("/boot/grub2").exists():
+        mk = "grub2-mkconfig"; return Path("/boot/grub2"), [mk, "-o", "/boot/grub2/grub.cfg"]
+    if have("update-grub"): return Path("/boot/grub"), ["update-grub"]
+    return Path("/boot/grub"), ["grub-mkconfig", "-o", "/boot/grub/grub.cfg"]
+
+def desktop():
+    return (os.environ.get("XDG_CURRENT_DESKTOP") or "").lower()
+
+# ---------- backup / undo ----------
+def make_backup(manifest):
+    stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    b = BACKUPS / stamp
+    info = {"rice": manifest["rice"]["name"], "time": stamp}
+    if DRY: return b, info
+    b.mkdir(parents=True, exist_ok=True)
+    info["colorscheme"] = kread("kdeglobals", "General", "ColorScheme")
+    info["icons"] = kread("kdeglobals", "Icons", "Theme")
+    info["cursor"] = kread("kcminputrc", "Mouse", "cursorTheme")
+    info["sounds"] = kread("kdeglobals", "Sounds", "Theme")
+    info["konsole_profile"] = kread("konsolerc", "Desktop Entry", "DefaultProfile")
+    ff = HOME / ".config/fastfetch"
+    if ff.exists(): shutil.copytree(ff, b / "fastfetch")
+    if Path("/etc/default/grub").exists(): shutil.copy2("/etc/default/grub", b / "etc-default-grub")
+    if have("plymouth-set-default-theme"):
+        info["plymouth"] = subprocess.run(["plymouth-set-default-theme"], text=True, capture_output=True).stdout.strip()
+    (b / "backup.json").write_text(json.dumps(info, indent=2))
+    return b, info
+
+# ---------- component appliers ----------
+def apply_colors(root, sec, rice):
+    dst = HOME / ".local/share/color-schemes"
+    for f in sec.get("files", []):
+        copy_into(root / f, dst / Path(f).name)
+    step(f"installed {len(sec.get('files', []))} color scheme(s)")
+    if sec.get("apply") and have("plasma-apply-colorscheme"):
+        run(["plasma-apply-colorscheme", sec["apply"]], check=False); step(f"applied colors: {sec['apply']}")
+
+def apply_wallpaper(root, sec, rice):
+    src = root / sec["file"]
+    dst = HOME / ".local/share/wallpapers/quickrice" / f"{rice}-{src.name}"
+    copy_into(src, dst)
+    if have("plasma-apply-wallpaperimage"):
+        run(["plasma-apply-wallpaperimage", str(dst)], check=False); step("wallpaper set")
+    else:
+        warn(f"wallpaper saved to {dst}, set it manually")
+
+def apply_konsole(root, sec, rice):
+    src = root / sec["file"]
+    d = HOME / ".local/share/konsole"
+    copy_into(src, d / src.name)
+    scheme = src.stem
+    prof = d / "QuickRice.profile"
+    if not DRY:
+        prof.write_text(f"[Appearance]\nColorScheme={scheme}\n\n[General]\nName=QuickRice\nParent=FALLBACK/\n")
+    kwrite("konsolerc", "Desktop Entry", "DefaultProfile", "QuickRice.profile")
+    step(f"konsole scheme {scheme} set as default profile")
+
+def apply_fastfetch(root, sec, rice):
+    copy_into(root / sec["dir"], HOME / ".config/fastfetch")
+    step("fastfetch config installed")
+
+def apply_sounds(root, sec, rice):
+    src = root / sec["dir"]
+    copy_into(src, HOME / ".local/share/sounds" / src.name)
+    kwrite("kdeglobals", "Sounds", "Theme", src.name)
+    step(f"sound theme {src.name} installed + selected")
+
+def apply_icons(root, sec, rice):
+    theme = sec.get("theme")
+    if sec.get("papirus_folders") and theme and theme.startswith("Papirus"):
+        pf = shutil.which("papirus-folders") or next((str(x) for x in [HOME / "papirus-folders/papirus-folders"] if x.exists()), None)
+        if pf:
+            run([pf, "-C", sec["papirus_folders"], "--theme", theme], sudo=True, check=False)
+            step(f"papirus folders -> {sec['papirus_folders']}")
+        else:
+            warn("papirus-folders not installed, skipping folder color")
+    tool = find_libexec("plasma-changeicons")
+    if theme and tool:
+        run([tool, theme], check=False); step(f"icons: {theme}")
+    elif theme:
+        warn(f"set icon theme {theme} manually (is it installed?)")
+
+def apply_cursor(root, sec, rice):
+    theme = sec.get("theme")
+    if theme and have("plasma-apply-cursortheme"):
+        run(["plasma-apply-cursortheme", theme], check=False); step(f"cursor: {theme} (needs to be installed)")
+
+def apply_grub(root, sec, rice):
+    gdir, mk = grub_info()
+    src = root / sec["dir"]
+    dst = gdir / "themes" / src.name
+    copy_into(src, dst, sudo=True)
+    lines = {"GRUB_THEME": f'"{dst}/theme.txt"'}
+    if sec.get("gfxmode"): lines["GRUB_GFXMODE"] = sec["gfxmode"]; lines["GRUB_GFXPAYLOAD_LINUX"] = "keep"
+    for k, v in lines.items():
+        # replace an existing (even commented) line, otherwise append
+        run(["sed", "-i", "-E", f"/^#?{k}=/d", "/etc/default/grub"], sudo=True)
+        run(["sh", "-c", f"echo '{k}={v}' >> /etc/default/grub"], sudo=True)
+    run(["sed", "-i", "-E", 's/^GRUB_TERMINAL=.*console.*/GRUB_TERMINAL="gfxterm"/', "/etc/default/grub"], sudo=True)
+    run(mk, sudo=True)
+    step(f"GRUB theme {src.name} installed")
+
+def apply_plymouth(root, sec, rice):
+    src = root / sec["dir"]
+    if not have("plymouth-set-default-theme"): warn("plymouth not installed, skipping"); return
+    copy_into(src, Path("/usr/share/plymouth/themes") / src.name, sudo=True)
+    say("  rebuilding initrd for plymouth, this takes a minute...", "d")
+    run(["plymouth-set-default-theme", "-R", src.name], sudo=True)
+    step(f"Plymouth theme {src.name} set")
+
+USER_PARTS = [("colors", apply_colors), ("wallpaper", apply_wallpaper), ("konsole", apply_konsole),
+              ("fastfetch", apply_fastfetch), ("sounds", apply_sounds), ("icons", apply_icons), ("cursor", apply_cursor)]
+SYSTEM_PARTS = [("grub", apply_grub), ("plymouth", apply_plymouth)]
+
+# ---------- commands ----------
+def cmd_info(a):
+    with tempfile.TemporaryDirectory() as td:
+        root = safe_extract(Path(a.file), Path(td)); m = load_manifest(root)
+    r = m["rice"]
+    say(f"🍚 {r.get('display_name', r['name'])} v{r.get('version', '?')}", "b")
+    if r.get("author"): print(f"   by {r['author']}")
+    if r.get("description"): print(f"   {r['description']}")
+    print(f"   desktops: {', '.join(r.get('de', ['any']))}")
+    parts = [k for k, _ in USER_PARTS + SYSTEM_PARTS if k in m]
+    sys_parts = [k for k, _ in SYSTEM_PARTS if k in m]
+    print(f"   includes: {', '.join(parts)}")
+    if sys_parts: print(f"   {C['y']}needs sudo for: {', '.join(sys_parts)}{C['x']}")
+
+def cmd_apply(a):
+    global DRY; DRY = a.dry_run
+    with tempfile.TemporaryDirectory() as td:
+        root = safe_extract(Path(a.file), Path(td)); m = load_manifest(root)
+        r = m["rice"]; name = r["name"]
+        say(f"🍚 quickrice: applying {r.get('display_name', name)}", "b")
+        wanted = set(a.only.split(",")) if a.only else None
+        skip = set(a.skip.split(",")) if a.skip else set()
+        pick = lambda k: k in m and (wanted is None or k in wanted) and k not in skip
+        de = desktop()
+        if r.get("de") and "kde" in r["de"] and "kde" not in de and not DRY:
+            warn(f"this rice targets KDE, you're on '{de or 'unknown'}', some parts may not apply")
+        sys_parts = [(k, f) for k, f in SYSTEM_PARTS if pick(k)]
+        if sys_parts and not a.yes and not DRY:
+            ans = input(f"  this rice changes system stuff ({', '.join(k for k, _ in sys_parts)}) and needs sudo. continue? [y/N] ")
+            if ans.lower() not in ("y", "yes"): sys_parts = []; warn("skipping system parts")
+        b, _ = make_backup(m); step(f"backup saved ({b.name}) — undo with: quickrice undo")
+        if sys_parts and have("snapper") and not a.no_snapshot:
+            run(["snapper", "create", "-d", f"quickrice before {name}"], sudo=True, check=False); step("snapper snapshot taken")
+        for k, f in USER_PARTS:
+            if pick(k): f(root, m[k], name)
+        for k, f in sys_parts: f(root, m[k], name)
+    say(f"\n✨ {r.get('display_name', name)} applied! log out + back in for everything to refresh", "g")
+
+def cmd_pack(a):
+    src = Path(a.folder).resolve()
+    if not (src / "rice.toml").exists(): fail(f"{src} has no rice.toml")
+    m = load_manifest(src)
+    for k, _ in USER_PARTS + SYSTEM_PARTS:
+        sec = m.get(k, {})
+        for key in ("file", "dir"):
+            if key in sec and not (src / sec[key]).exists(): fail(f"[{k}] {key} = {sec[key]} doesn't exist")
+        for f in sec.get("files", []):
+            if not (src / f).exists(): fail(f"[{k}] missing {f}")
+    out = Path(a.output or f"{m['rice']['name']}.qrice")
+    with tarfile.open(out, "w:gz") as t:
+        t.add(src, arcname=m["rice"]["name"])
+    say(f"🍚 packed {out} ({out.stat().st_size // 1024} KB)", "g")
+
+def cmd_undo(a):
+    if not BACKUPS.exists() or not any(BACKUPS.iterdir()): fail("no backups yet")
+    b = sorted(BACKUPS.iterdir())[-1] if not a.backup else BACKUPS / a.backup
+    info = json.loads((b / "backup.json").read_text())
+    say(f"⏪ undoing {info['rice']} (backup {b.name})", "b")
+    if info.get("colorscheme") and have("plasma-apply-colorscheme"):
+        run(["plasma-apply-colorscheme", info["colorscheme"]], check=False); step("colors restored")
+    tool = find_libexec("plasma-changeicons")
+    if info.get("icons") and tool: run([tool, info["icons"]], check=False); step("icons restored")
+    if info.get("cursor") and have("plasma-apply-cursortheme"): run(["plasma-apply-cursortheme", info["cursor"]], check=False); step("cursor restored")
+    kwrite("kdeglobals", "Sounds", "Theme", info.get("sounds") or "ocean"); step("sounds restored")
+    if info.get("konsole_profile"): kwrite("konsolerc", "Desktop Entry", "DefaultProfile", info["konsole_profile"]); step("konsole profile restored")
+    if (b / "fastfetch").exists(): copy_into(b / "fastfetch", HOME / ".config/fastfetch"); step("fastfetch restored")
+    if (b / "etc-default-grub").exists() and not a.user_only:
+        _, mk = grub_info()
+        run(["cp", str(b / "etc-default-grub"), "/etc/default/grub"], sudo=True); run(mk, sudo=True); step("GRUB config restored")
+    if info.get("plymouth") and not a.user_only and have("plymouth-set-default-theme"):
+        run(["plymouth-set-default-theme", "-R", info["plymouth"]], sudo=True); step(f"plymouth back to {info['plymouth']}")
+    say("done! log out + back in to see it", "g")
+
+def cmd_list(a):
+    if not BACKUPS.exists(): print("no backups yet"); return
+    for b in sorted(BACKUPS.iterdir()):
+        try: i = json.loads((b / "backup.json").read_text()); print(f"  {b.name}  (before {i['rice']})")
+        except Exception: pass
+
+def main():
+    p = argparse.ArgumentParser(prog="quickrice", description="🍚 load whole desktop rices from .qrice files")
+    p.add_argument("--version", action="version", version=f"quickrice {VERSION}")
+    s = p.add_subparsers(dest="cmd", required=True)
+    x = s.add_parser("info", help="show what's in a .qrice"); x.add_argument("file"); x.set_defaults(fn=cmd_info)
+    x = s.add_parser("apply", help="apply a .qrice"); x.add_argument("file")
+    x.add_argument("-y", "--yes", action="store_true", help="don't ask before sudo parts")
+    x.add_argument("--only", help="comma list of parts, e.g. colors,konsole")
+    x.add_argument("--skip", help="comma list of parts to skip, e.g. grub,plymouth")
+    x.add_argument("--dry-run", action="store_true", help="print what would happen")
+    x.add_argument("--no-snapshot", action="store_true", help="skip the snapper snapshot")
+    x.set_defaults(fn=cmd_apply)
+    x = s.add_parser("pack", help="pack a rice folder into a .qrice"); x.add_argument("folder"); x.add_argument("-o", "--output"); x.set_defaults(fn=cmd_pack)
+    x = s.add_parser("undo", help="restore the setup from before the last apply"); x.add_argument("backup", nargs="?")
+    x.add_argument("--user-only", action="store_true", help="don't touch GRUB/Plymouth"); x.set_defaults(fn=cmd_undo)
+    x = s.add_parser("backups", help="list backups"); x.set_defaults(fn=cmd_list)
+    a = p.parse_args(); a.fn(a)
+
+if __name__ == "__main__":
+    main()

@@ -41,6 +41,8 @@ python3     pacman=python  emerge=dev-lang/python
 python3-tk  apt=python3-tk  dnf=python3-tkinter  pacman=tk  zypper=python3-tk  apk=py3-tkinter  xbps=python3-tkinter  eopkg=python3-tkinter  emerge=-
 # PyYAML
 python3-yaml  apt=python3-yaml  dnf=python3-pyyaml  pacman=python-yaml  zypper=python3-PyYAML  apk=py3-yaml  xbps=python3-yaml  emerge=dev-python/pyyaml
+# PySide6 (Qt for Python)
+python3-pyside6  apt=python3-pyside6.qtwidgets  dnf=python3-pyside6  pacman=pyside6  zypper=python3-pyside6  apk=py3-pyside6  emerge=dev-python/pyside
 gzip        emerge=app-arch/gzip
 rust        apt=cargo  dnf=cargo  pacman=rust  zypper=cargo  apk=cargo  xbps=cargo  emerge=dev-lang/rust
 go          apt=golang-go  dnf=golang  pacman=go  zypper=go  apk=go  xbps=go  emerge=dev-lang/go

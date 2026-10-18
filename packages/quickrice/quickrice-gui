@@ -1,0 +1,250 @@
+#!/usr/bin/env python3
+"""quickrice-gui - a little window for applying .qrice rices."""
+import json, os, shutil, sys, tarfile, tomllib
+from pathlib import Path
+from PySide6.QtCore import Qt, QProcess, QProcessEnvironment, QSize
+from PySide6.QtGui import QPixmap, QFont, QIcon, QColor, QPalette
+from PySide6.QtWidgets import (QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFileDialog,
+                               QCheckBox, QPlainTextEdit, QFrame, QMessageBox, QTabWidget, QListWidget, QGridLayout, QSizePolicy)
+
+PARTS = [("colors", "🎨", "Color scheme", False), ("wallpaper", "🖼️", "Wallpaper", False),
+         ("konsole", "💻", "Konsole theme", False), ("fastfetch", "🧸", "Fastfetch", False),
+         ("sounds", "🔔", "Sounds", False), ("icons", "📁", "Icons", False), ("cursor", "🖱️", "Cursor", False),
+         ("grub", "🥾", "GRUB theme", True), ("plymouth", "✨", "Boot splash", True)]
+
+STYLE_T = """
+QWidget { background: %(bg)s; color: %(fg)s; font-size: 14px; }
+QTabWidget::pane { border: none; }
+QTabBar::tab { background: transparent; color: %(sub)s; padding: 8px 18px; font-weight: bold; }
+QTabBar::tab:selected { color: %(title)s; border-bottom: 3px solid %(accent)s; }
+QFrame#card { background: %(card)s; border-radius: 18px; }
+QLabel#title { font-size: 26px; font-weight: bold; color: %(title)s; background: transparent; }
+QLabel#sub { color: %(sub)s; background: transparent; }
+QLabel#drop { color: %(sub)s; font-size: 16px; border: 2px dashed %(btnh)s; border-radius: 18px; background: %(card)s; }
+QPushButton { background: %(btn)s; border: none; border-radius: 12px; padding: 10px 18px; font-weight: bold; }
+QPushButton:hover { background: %(btnh)s; }
+QPushButton#primary { background: %(accent)s; color: %(afg)s; }
+QPushButton#primary:hover { background: %(accenth)s; }
+QPushButton:disabled { background: %(card)s; color: %(sub)s; }
+QCheckBox { background: transparent; spacing: 8px; }
+QCheckBox::indicator { width: 18px; height: 18px; border-radius: 6px; background: %(btn)s; }
+QCheckBox::indicator:checked { background: %(accent)s; }
+QPlainTextEdit, QListWidget { background: %(log)s; border-radius: 12px; padding: 8px; font-family: monospace; font-size: 12px; }
+"""
+
+# black + white until a rice is loaded
+BNW = dict(bg="#121212", fg="#EDEDED", sub="#8A8A8A", title="#FFFFFF", card="#1E1E1E", btn="#2C2C2C", btnh="#3A3A3A",
+           accent="#EDEDED", accenth="#FFFFFF", afg="#121212", log="#0B0B0B")
+
+def hexc(c): return "#%02X%02X%02X" % tuple(max(0, min(255, int(x))) for x in c)
+def mix(a, b, t): return [a[i] * (1 - t) + b[i] * t for i in range(3)]
+def lum(c): return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+
+def palette_from_kde(text):
+    """Build a GUI palette from a KDE .colors file."""
+    import configparser
+    cp = configparser.ConfigParser(interpolation=None, strict=False); cp.optionxform = str; cp.read_string(text)
+    g = lambda sec, key, d: [int(x) for x in cp.get(sec, key, fallback=d).split(",")[:3]]
+    bg = g("Colors:Window", "BackgroundNormal", "18,18,18"); fg = g("Colors:Window", "ForegroundNormal", "237,237,237")
+    btn = g("Colors:Button", "BackgroundNormal", ",".join(map(str, mix(bg, fg, .12))))
+    acc = g("Colors:Selection", "BackgroundNormal", "200,200,200"); afg = g("Colors:Selection", "ForegroundNormal", "0,0,0")
+    title = g("Colors:Window", "DecorationHover", ",".join(map(str, acc)))
+    if abs(lum(title) - lum(bg)) < 60: title = fg
+    return dict(bg=hexc(bg), fg=hexc(fg), sub=hexc(g("Colors:Window", "ForegroundInactive", ",".join(map(str, mix(fg, bg, .4))))),
+                title=hexc(title), card=hexc(mix(bg, fg, .06)), btn=hexc(btn), btnh=hexc(mix(btn, fg, .12)),
+                accent=hexc(acc), accenth=hexc(mix(acc, [255, 255, 255], .2)), afg=hexc(afg),
+                log=hexc(g("Colors:View", "BackgroundNormal", ",".join(map(str, mix(bg, [0, 0, 0], .3))))))
+
+def palette_from_image(data):
+    """No color scheme in the rice? pull a dark palette from the preview image."""
+    from PySide6.QtGui import QImage
+    img = QImage(); 
+    if not img.loadFromData(data): return None
+    img = img.scaled(40, 40)
+    px = [QColor(img.pixel(x, y)) for x in range(40) for y in range(40)]
+    acc = max(px, key=lambda c: c.hsvSaturationF() * c.valueF())
+    a = [acc.red(), acc.green(), acc.blue()]
+    bg = mix(a, [0, 0, 0], .85); fg = mix(a, [255, 255, 255], .85)
+    return dict(bg=hexc(bg), fg=hexc(fg), sub=hexc(mix(fg, bg, .45)), title=hexc(mix(a, [255, 255, 255], .3)), card=hexc(mix(bg, fg, .06)),
+                btn=hexc(mix(bg, fg, .12)), btnh=hexc(mix(bg, fg, .2)), accent=hexc(a), accenth=hexc(mix(a, [255, 255, 255], .2)),
+                afg="#111111" if lum(a) > 140 else "#FFFFFF", log=hexc(mix(bg, [0, 0, 0], .35)))
+
+
+def cli_path():
+    here = Path(__file__).resolve().parent / "quickrice"
+    return str(here) if here.exists() else (shutil.which("quickrice") or "quickrice")
+
+def read_qrice(path):
+    """Return (manifest, preview_bytes) without extracting to disk."""
+    with tarfile.open(path, "r:*") as t:
+        names = t.getnames()
+        mpath = next((n for n in names if n == "rice.toml" or n.endswith("/rice.toml") and n.count("/") == 1), None)
+        if not mpath: raise ValueError("no rice.toml in this file")
+        base = mpath[: -len("rice.toml")]
+        m = tomllib.loads(t.extractfile(mpath).read().decode())
+        prev = m.get("rice", {}).get("preview") or m.get("wallpaper", {}).get("file")
+        data = None
+        if prev and (base + prev) in names:
+            data = t.extractfile(base + prev).read()
+        colors = None
+        cs = m.get("colors", {}); files = cs.get("files", [])
+        want = next((f for f in files if Path(f).stem == cs.get("apply")), files[0] if files else None)
+        if want and (base + want) in names:
+            colors = t.extractfile(base + want).read().decode(errors="replace")
+        return m, data, colors
+
+class Main(QWidget):
+    def __init__(self, start_file=None):
+        super().__init__()
+        self.setWindowTitle("quickrice"); self.resize(860, 640); self.setAcceptDrops(True)
+        self.file = None; self.proc = None
+        tabs = QTabWidget(); lay = QVBoxLayout(self); lay.setContentsMargins(16, 12, 16, 16); lay.addWidget(tabs)
+        tabs.addTab(self.build_apply(), "🍚  Apply"); tabs.addTab(self.build_pack(), "📦  Pack"); tabs.addTab(self.build_backups(), "⏪  Backups")
+        if start_file: self.load(start_file)
+
+    # ----- apply tab -----
+    def build_apply(self):
+        w = QWidget(); v = QVBoxLayout(w); v.setSpacing(12)
+        self.drop = QLabel("drop a .qrice here\nor click Open 🍮"); self.drop.setObjectName("drop")
+        self.drop.setAlignment(Qt.AlignCenter); self.drop.setMinimumHeight(150)
+        v.addWidget(self.drop)
+
+        self.card = QFrame(); self.card.setObjectName("card"); self.card.hide()
+        cg = QHBoxLayout(self.card); cg.setContentsMargins(16, 16, 16, 16); cg.setSpacing(16)
+        self.preview = QLabel(); self.preview.setFixedSize(QSize(280, 158)); self.preview.setStyleSheet("border-radius:12px; background:#1C130D;")
+        cg.addWidget(self.preview, 0, Qt.AlignTop)
+        info = QVBoxLayout(); cg.addLayout(info, 1)
+        self.title = QLabel(); self.title.setObjectName("title")
+        self.sub = QLabel(); self.sub.setObjectName("sub"); self.sub.setWordWrap(True)
+        info.addWidget(self.title); info.addWidget(self.sub)
+        grid = QGridLayout(); grid.setHorizontalSpacing(18); info.addLayout(grid)
+        self.checks = {}
+        for i, (key, emo, label, sudo) in enumerate(PARTS):
+            cb = QCheckBox(f"{emo} {label}" + ("  🔒" if sudo else "")); cb.setChecked(True)
+            if sudo: cb.setToolTip("needs your password")
+            self.checks[key] = cb; grid.addWidget(cb, i // 3, i % 3)
+        info.addStretch()
+        v.addWidget(self.card)
+
+        row = QHBoxLayout()
+        b = QPushButton("📂 Open"); b.clicked.connect(self.pick); row.addWidget(b)
+        self.dry = QPushButton("👀 Preview"); self.dry.clicked.connect(lambda: self.apply(dry=True)); row.addWidget(self.dry)
+        row.addStretch()
+        self.go = QPushButton("✨ Apply rice"); self.go.setObjectName("primary"); self.go.clicked.connect(self.apply); row.addWidget(self.go)
+        self.dry.setEnabled(False); self.go.setEnabled(False)
+        v.addLayout(row)
+
+        self.log = QPlainTextEdit(); self.log.setReadOnly(True); self.log.setPlaceholderText("output shows up here")
+        v.addWidget(self.log, 1)
+        return w
+
+    def pick(self):
+        f, _ = QFileDialog.getOpenFileName(self, "Open a rice", str(Path.home() / "Downloads"), "Rices (*.qrice)")
+        if f: self.load(f)
+
+    def load(self, f):
+        try:
+            m, img, colors = read_qrice(f)
+        except Exception as e:
+            QMessageBox.warning(self, "quickrice", f"couldn't read that file:\n{e}"); return
+        self.file = f; r = m["rice"]
+        self.title.setText(r.get("display_name", r["name"]))
+        bits = [f"v{r['version']}" if r.get("version") else "", f"by {r['author']}" if r.get("author") else ""]
+        self.sub.setText(" · ".join(b for b in bits if b) + ("\n" + r["description"] if r.get("description") else ""))
+        for key, cb in self.checks.items():
+            cb.setVisible(key in m); cb.setChecked(key in m)
+        pm = QPixmap()
+        if img and pm.loadFromData(img):
+            self.preview.setPixmap(pm.scaled(self.preview.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation))
+        else:
+            self.preview.setText("🍚"); self.preview.setAlignment(Qt.AlignCenter); self.preview.setFont(QFont("", 48))
+        pal = None
+        try: pal = palette_from_kde(colors) if colors else (palette_from_image(img) if img else None)
+        except Exception: pal = None
+        QApplication.instance().setStyleSheet(STYLE_T % (pal or BNW))
+        self.drop.hide(); self.card.show(); self.dry.setEnabled(True); self.go.setEnabled(True)
+        self.log.clear()
+
+    def selected(self):
+        return [k for k, cb in self.checks.items() if cb.isVisible() and cb.isChecked()]
+
+    def apply(self, dry=False):
+        parts = self.selected()
+        if not parts: return
+        if not dry and any(s for k, _, _, s in PARTS if s and k in parts):
+            if QMessageBox.question(self, "quickrice", "GRUB / boot splash changes need your password and rebuild boot files.\nKeep going?") != QMessageBox.Yes:
+                return
+        args = ["apply", self.file, "--only", ",".join(parts), "-y"] + (["--dry-run"] if dry else [])
+        self.run_cli(args)
+
+    # ----- pack tab -----
+    def build_pack(self):
+        w = QWidget(); v = QVBoxLayout(w)
+        t = QLabel("turn a folder with a rice.toml into a .qrice 📦"); t.setObjectName("sub"); v.addWidget(t)
+        b = QPushButton("📂 Pick rice folder"); b.setObjectName("primary"); b.clicked.connect(self.pack); v.addWidget(b, 0, Qt.AlignLeft)
+        self.packlog = QPlainTextEdit(); self.packlog.setReadOnly(True); v.addWidget(self.packlog, 1)
+        return w
+
+    def pack(self):
+        d = QFileDialog.getExistingDirectory(self, "Rice folder", str(Path.home()))
+        if not d: return
+        out, _ = QFileDialog.getSaveFileName(self, "Save as", str(Path(d).parent / (Path(d).name + ".qrice")), "Rices (*.qrice)")
+        if out: self.run_cli(["pack", d, "-o", out], target=self.packlog)
+
+    # ----- backups tab -----
+    def build_backups(self):
+        w = QWidget(); v = QVBoxLayout(w)
+        self.blist = QListWidget(); v.addWidget(self.blist, 1)
+        row = QHBoxLayout()
+        r = QPushButton("🔄 Refresh"); r.clicked.connect(self.refresh_backups); row.addWidget(r)
+        row.addStretch()
+        self.user_only = QCheckBox("only undo desktop stuff (skip GRUB/boot)"); row.addWidget(self.user_only)
+        u = QPushButton("⏪ Restore selected"); u.setObjectName("primary"); u.clicked.connect(self.undo); row.addWidget(u)
+        v.addLayout(row)
+        self.blog = QPlainTextEdit(); self.blog.setReadOnly(True); self.blog.setMaximumHeight(160); v.addWidget(self.blog)
+        self.refresh_backups()
+        return w
+
+    def refresh_backups(self):
+        self.blist.clear()
+        d = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "quickrice/backups"
+        if not d.exists(): self.blist.addItem("no backups yet"); return
+        for b in sorted(d.iterdir(), reverse=True):
+            try: i = json.loads((b / "backup.json").read_text())
+            except Exception: continue
+            self.blist.addItem(f"{b.name}   ·   before {i['rice']}")
+
+    def undo(self):
+        it = self.blist.currentItem()
+        if not it or "before" not in it.text(): return
+        args = ["undo", it.text().split()[0]] + (["--user-only"] if self.user_only.isChecked() else [])
+        self.run_cli(args, target=self.blog)
+
+    # ----- running the cli -----
+    def run_cli(self, args, target=None):
+        target = target or self.log; target.clear()
+        self.proc = QProcess(self)
+        env = QProcessEnvironment.systemEnvironment()
+        for ask in ("ksshaskpass", "ssh-askpass", "lxqt-openssh-askpass"):
+            p = shutil.which(ask)
+            if p: env.insert("SUDO_ASKPASS", p); break
+        env.insert("NO_COLOR", "1"); self.proc.setProcessEnvironment(env)
+        self.proc.setProcessChannelMode(QProcess.MergedChannels)
+        clean = lambda s: __import__("re").sub(r"\x1b\[[0-9;]*m", "", s)
+        self.proc.readyRead.connect(lambda: target.appendPlainText(clean(bytes(self.proc.readAll()).decode(errors="replace")).rstrip()))
+        self.proc.finished.connect(lambda code, _: (self.refresh_backups(), target.appendPlainText("" if code == 0 else f"\n✗ exited with code {code}")))
+        self.proc.start(sys.executable, [cli_path()] + args)
+
+    # ----- drag and drop -----
+    def dragEnterEvent(self, e):
+        if e.mimeData().hasUrls() and e.mimeData().urls()[0].toLocalFile().endswith(".qrice"): e.acceptProposedAction()
+    def dropEvent(self, e):
+        self.load(e.mimeData().urls()[0].toLocalFile())
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv); app.setApplicationName("quickrice"); app.setDesktopFileName("quickrice")
+    app.setStyleSheet(STYLE_T % BNW)
+    local = Path(__file__).resolve().parent / "quickrice.svg"
+    app.setWindowIcon(QIcon(str(local)) if local.exists() else QIcon.fromTheme("quickrice"))
+    w = Main(sys.argv[1] if len(sys.argv) > 1 else None); w.show()
+    sys.exit(app.exec())

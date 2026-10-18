@@ -1,0 +1,24 @@
+# quickrice: load a whole desktop rice from one .qrice file (it's quick-rice, not q-rice)
+# GRUB theme, Plymouth splash, KDE colors, wallpaper, Konsole, fastfetch, sounds, icons, cursor
+pkgname=quickrice
+pkgver=0.2.0
+pkgrel=1
+pkgdesc="Load a whole desktop rice (GRUB, Plymouth, colors, sounds, terminal and more) from one .qrice file"
+aliases=(qrice)
+url="https://github.com/clrealy/GURT"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(any)
+depends=(python3 python3-pyside6)
+makedepends=()
+source=("quickrice" "quickrice-gui" "quickrice.svg" "quickrice.desktop" "quickrice-mime.xml")
+sha256sums=("5f89c76381538c9646748e3fd3d4d3e05b9906766527ceb8643447f036d52ad7" "d54360bb9658c484f064d2a5fca39c83da567fee5b3b5453214f4002b2fd6af9" "5d71cf2efb706b72d5b36713916145f2ed65cd652bc41375b1af8efcd02d7a09" "33a4df672077b2cc41feb9530b1decffd7e4d15a6c16e320460383c0b462e8e7" "7746e53f3a9189c29c444303ecfd6f117a894e8fa43afe1dada15e1baefda498")
+
+package() {
+  install -Dm755 "$srcdir/quickrice"          "$pkgdir$prefix/bin/quickrice"
+  install -Dm755 "$srcdir/quickrice-gui"      "$pkgdir$prefix/bin/quickrice-gui"
+  install -Dm644 "$srcdir/quickrice.desktop"  "$pkgdir$prefix/share/applications/quickrice.desktop"
+  install -Dm644 "$srcdir/quickrice-mime.xml" "$pkgdir$prefix/share/mime/packages/quickrice.xml"
+  install -Dm644 "$srcdir/quickrice.svg"      "$pkgdir$prefix/share/icons/hicolor/scalable/apps/quickrice.svg"
+}

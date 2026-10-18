@@ -1,0 +1,17 @@
+pkgname = quickrice
+pkgver = 0.2.0
+pkgrel = 1
+pkgdesc = Load a whole desktop rice (GRUB, Plymouth, colors, sounds, terminal and more) from one .qrice file
+url = https://github.com/clrealy/GURT
+license = MIT
+maintainer = clrealy
+category = system
+arch = any
+depends = python3
+depends = python3-pyside6
+source = quickrice
+source = quickrice-gui
+source = quickrice.svg
+source = quickrice.desktop
+source = quickrice-mime.xml
+alias = qrice
