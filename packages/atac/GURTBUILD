@@ -1,6 +1,6 @@
 # API client like Postman, but in your terminal
 pkgname=atac
-pkgver=0.23.1
+pkgver=0.24.0
 pkgrel=1
 pkgdesc="API client like Postman, but in your terminal"
 url="https://github.com/Julien-cpsn/ATAC"
@@ -12,8 +12,8 @@ _tag=v$pkgver
 # official prebuilt release binary
 source_x86_64=("https://github.com/Julien-cpsn/ATAC/releases/download/${_tag}/atac-${_tag}-x86_64-unknown-linux-musl.tar.gz")
 source_aarch64=("https://github.com/Julien-cpsn/ATAC/releases/download/${_tag}/atac-${_tag}-aarch64-unknown-linux-musl.tar.gz")
-sha256sums_x86_64=(dcd61727c3871e3643439dd32d3182995bb5337feeba5bdbbcd3d6432cf00618)
-sha256sums_aarch64=(fea0eb4adb7d3df156b94e95d74c59c7489da6d8c6ad5c0be0ca1e3b910952e4)
+sha256sums_x86_64=('cc9561783c82b317c1e2781c164fd46b65cd65db610cc2e67b39ab63d76014d1')
+sha256sums_aarch64=('b18b23addd2e2bd57a634fe50aac63c9ff324e2cfa39f0fd6bb7fdc27f53b8e7')
 
 package() {
   local f
