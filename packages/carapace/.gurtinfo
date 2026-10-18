@@ -1,5 +1,5 @@
 pkgname = carapace
-pkgver = 1.8.0
+pkgver = 1.8.1
 pkgrel = 1
 pkgdesc = Tab completions for hundreds of commands in any shell
 url = https://github.com/carapace-sh/carapace-bin
@@ -8,4 +8,4 @@ maintainer = clrealy
 category = cli
 arch = x86_64
 arch = aarch64
-source = https://github.com/carapace-sh/carapace-bin/releases/download/v1.8.0/carapace-bin_1.8.0_linux_amd64.tar.gz
+source = https://github.com/carapace-sh/carapace-bin/releases/download/v1.8.1/carapace-bin_1.8.1_linux_amd64.tar.gz
