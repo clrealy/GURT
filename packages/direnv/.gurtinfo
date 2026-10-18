@@ -1,5 +1,5 @@
 pkgname = direnv
-pkgver = 2.37.1
+pkgver = 2.38.2
 pkgrel = 1
 pkgdesc = Load and unload env vars when you cd into a folder
 url = https://github.com/direnv/direnv
@@ -8,4 +8,4 @@ maintainer = clrealy
 category = dev
 arch = x86_64
 arch = aarch64
-source = direnv::https://github.com/direnv/direnv/releases/download/v2.37.1/direnv.linux-amd64
+source = direnv::https://github.com/direnv/direnv/releases/download/v2.38.2/direnv.linux-amd64
