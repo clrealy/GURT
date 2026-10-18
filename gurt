@@ -3484,8 +3484,19 @@ de_available() { # are this DE's packages actually in your repos? (groups/patter
   done
 }
 de_dm() { # which login screen is on (if any)
-  local l; l=$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null || true)
-  if [[ -n $l && -e $l ]]; then basename "$l" .service; fi
+  local l n real=""; l=$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null || true)
+  [[ -n $l && -e $l ]] || return 0
+  n=$(basename "$l" .service)
+  if [[ $n == display-manager || $n == display-manager-legacy ]]; then
+    # openSUSE: that's just a wrapper service, the real one is picked by an alternative or sysconfig
+    l=$(readlink -f /etc/alternatives/default-displaymanager 2>/dev/null || true)
+    [[ -n $l && -e $l ]] && real=$(basename "$l")
+    if [[ -z $real && -r /etc/sysconfig/displaymanager ]]; then
+      real=$(sed -n 's/^DISPLAYMANAGER="\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' /etc/sysconfig/displaymanager | head -n1)
+    fi
+    [[ -n $real ]] && n=$real
+  fi
+  echo "$n"
 }
 de_marker() { # one package that tells us a DE is installed
   case $1 in
@@ -3508,6 +3519,10 @@ dm_pkg() { # the package that owns your login screen, so removing a desktop neve
   unit=$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null) || return 0
   [[ -f $unit ]] || return 0
   bin=$(sed -n 's/^ExecStart=-\{0,1\}\([^ ]*\).*/\1/p' "$unit" | head -n1)
+  case $(basename "$unit" .service) in
+    display-manager|display-manager-legacy) # openSUSE wrapper: keep the real login screen, not just the wrapper
+      local real; real=$(de_dm); [[ -n $real ]] && command -v "$real" >/dev/null && bin=$(command -v "$real") ;;
+  esac
   [[ -n $bin ]] || return 0
   case $PM in
     apt) dpkg -S "$bin" 2>/dev/null | head -n1 | cut -d: -f1 ;;
