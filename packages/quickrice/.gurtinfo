@@ -1,5 +1,5 @@
 pkgname = quickrice
-pkgver = 0.3.0
+pkgver = 0.3.1
 pkgrel = 1
 pkgdesc = Load a whole desktop rice (GRUB, Plymouth, login screen, colors, sounds, terminal and more) from one .qrice file
 url = https://github.com/clrealy/GURT

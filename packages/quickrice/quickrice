@@ -6,7 +6,7 @@ A .qrice is a gzipped tarball with a rice.toml manifest at its root.
 import argparse, datetime, json, os, shutil, subprocess, sys, tarfile, tempfile, tomllib
 from pathlib import Path
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 HOME = Path.home()
 STATE = Path(os.environ.get("XDG_STATE_HOME", HOME / ".local/state")) / "quickrice"
 BACKUPS = STATE / "backups"
@@ -231,6 +231,9 @@ def apply_sddm(root, sec, rice):
         body = "[General]\\n" + "".join(f"{k}={v}\\n" for k, v in user.items())
         run(["sh", "-c", f"printf '{body}' > {dst}/theme.conf.user"], sudo=True)
     sddm_set_theme(name)
+    if not sec.get("keep_virtual_keyboard"):
+        # SDDM's default qtvirtualkeyboard pops up full screen on custom themes; only Breeze hides it
+        run(["sh", "-c", "printf '[General]\\nInputMethod=\\n' > /etc/sddm.conf.d/10-quickrice-no-osk.conf"], sudo=True)
     step(f"login screen theme {name} set" + (" (custom background)" if "background" in user else ""))
 
 SYSTEM_PARTS = [("grub", apply_grub), ("plymouth", apply_plymouth), ("sddm", apply_sddm)]
@@ -306,6 +309,7 @@ def cmd_undo(a):
         run(["cp", str(b / "etc-default-grub"), "/etc/default/grub"], sudo=True); run(mk, sudo=True); step("GRUB config restored")
     if info.get("sddm") and not a.user_only:
         sddm_set_theme(info["sddm"]); step(f"login screen back to {info['sddm']}")
+        run(["rm", "-f", "/etc/sddm.conf.d/10-quickrice-no-osk.conf"], sudo=True)
     if info.get("plymouth") and not a.user_only and have("plymouth-set-default-theme"):
         run(["plymouth-set-default-theme", "-R", info["plymouth"]], sudo=True); step(f"plymouth back to {info['plymouth']}")
     say("done! log out + back in to see it", "g")
