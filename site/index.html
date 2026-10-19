@@ -360,9 +360,8 @@ footer.site .cicada{color:#e7e7ea}
             <p>Apps land in your launcher, Flathub works, and Android apps go into your Chromebook's own Android.</p>
             <div class="dlbtns" id="dl-cros"></div></div>
           <div><h3>On ChromeOS itself</h3>
-            <p>Developer mode or Brunch, with Chromebrew. GURT lives in <code>/usr/local</code>, needs no sudo, uses <code>crew</code> for what apps need and moves other distros' packages into <code>/usr/local</code>. In the shell:</p>
-            <pre class="crosinst mono">curl -fsSLO https://gurtproject.org/install.sh
-sh install.sh</pre></div>
+            <p>Developer mode or Brunch, with Chromebrew. GURT lives in <code>/usr/local</code>, needs no sudo, uses <code>crew</code> for what apps need and moves other distros' packages into <code>/usr/local</code>. ChromeOS won't run a script file from your home folder, so pipe it into bash, in the shell:</p>
+            <pre class="crosinst mono">curl -fsSL https://gurtproject.org/install.sh | bash</pre></div>
         </div>
       </section>
     </div>

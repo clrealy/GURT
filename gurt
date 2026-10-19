@@ -26,6 +26,11 @@ GURT_REPO_URL="${GURT_REPO_URL:-https://github.com/clrealy/GURT.git}"
 GURT_BRANCH="${GURT_BRANCH:-main}"
 GURT_PREFIX="${GURT_PREFIX:-/usr/local}"
 GURT_ROOT="${GURT_ROOT:-/}"
+# ChromeOS itself: your home folder and /tmp are noexec (nothing built or unpacked there can run), /usr/local isn't
+if [[ ! -e /dev/.cros_milestone ]] && grep -qs '^CHROMEOS_RELEASE_NAME=' /etc/lsb-release; then
+  GURT_CACHE="${GURT_CACHE:-/usr/local/var/cache/gurt}"
+  if [[ -z ${TMPDIR:-} || $TMPDIR == /tmp* ]] && mkdir -p /usr/local/tmp/gurt 2>/dev/null; then export TMPDIR=/usr/local/tmp/gurt; fi
+fi
 GURT_CACHE="${GURT_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/gurt}"
 GURT_REPO_DIR="${GURT_REPO_DIR:-$GURT_CACHE/repo}"
 
@@ -4826,7 +4831,17 @@ outsource_install() { # url reason [version]
 
 # ───────────────────────── commands ─────────────────────────
 sync_main() {
-  command -v git >/dev/null || die "need git to sync"
+  if ! command -v git >/dev/null; then   # no git (ChromeOS itself, tiny containers): GitHub's tarball of the branch
+    [[ $GURT_REPO_URL =~ github\.com[/:]([^/]+)/([^/.]+) ]] || die "need git to sync (or a github.com GURT_REPO_URL)"
+    local tb="https://github.com/${BASH_REMATCH[1]}/${BASH_REMATCH[2]}/archive/refs/heads/$GURT_BRANCH.tar.gz" new
+    msg "syncing main GURT repo (no git here, so the tarball)"
+    mkdir -p "$(dirname "$GURT_REPO_DIR")"; new=$(mktemp -d "$(dirname "$GURT_REPO_DIR")/.repo-new.XXXXXX")
+    fetch_quiet "$tb" "$new.tar.gz" || { rm -rf "$new" "$new.tar.gz"; die "couldn't download $tb"; }
+    tar -xzf "$new.tar.gz" -C "$new" --strip-components=1 || { rm -rf "$new" "$new.tar.gz"; die "that download wasn't a tarball"; }
+    rm -rf "$new.tar.gz" "$GURT_REPO_DIR"; mv "$new" "$GURT_REPO_DIR"
+    msg2 "$(find "$GURT_REPO_DIR/packages" -mindepth 1 -maxdepth 1 -type d | wc -l) packages available"
+    return 0
+  fi
   if [[ -d $GURT_REPO_DIR/.git ]]; then
     msg "syncing main GURT repo"
     git -C "$GURT_REPO_DIR" pull -q --ff-only

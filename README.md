@@ -225,9 +225,15 @@ Two ways, and gurt knows which one it's in.
 - GURTd watches ChromeOS's Downloads once you share it with Linux (Files → right-click Downloads → Share with Linux)
 - `gurt de` and the app's Desktops tab sit out: ChromeOS is your desktop
 
-**On ChromeOS itself** (developer mode, or Brunch on a regular PC) with [Chromebrew](https://chromebrew.github.io). Download [install.sh](https://gurtproject.org/install.sh) and run `sh install.sh` in the shell:
+**On ChromeOS itself** (developer mode, or Brunch on a regular PC) with [Chromebrew](https://chromebrew.github.io). ChromeOS won't run a script file from your home folder (`Refusing to exec … from noexec mount`), so pipe it into bash, in the shell:
 
-- everything lives in `/usr/local`, the one place ChromeOS lets you write: gurt itself, its database (`/usr/local/var/lib/gurt`) and every app. No sudo
+```sh
+curl -fsSL https://gurtproject.org/install.sh | bash
+```
+
+No git needed (it grabs a tarball when git's missing). Then:
+
+- everything lives in `/usr/local`, the one place ChromeOS lets you write and run things: gurt itself, its database (`/usr/local/var/lib/gurt`), its cache and temp files (`/usr/local/var/cache/gurt`, `/usr/local/tmp/gurt`) and every app. No sudo
 - Chromebrew is the package manager: deps come from `crew`, `gurt install crew/<pkg>` and `gurt search crew/<term>` work, `gurt sysup` runs `crew update` + `crew upgrade`
 - other distros' packages work: `gurt install ./thing.deb` (or .rpm, .pkg.tar.zst…) moves its `/usr`, `/etc` and `/opt` files under `/usr/local` and fixes its menu entry
 - flatpak, snap and Waydroid need a real Linux, so for those gurt points you at Linux on ChromeOS
