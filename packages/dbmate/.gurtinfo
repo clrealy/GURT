@@ -1,5 +1,5 @@
 pkgname = dbmate
-pkgver = 2.36.0
+pkgver = 2.37.0
 pkgrel = 1
 pkgdesc = Simple, framework-agnostic database migrations
 url = https://github.com/amacneil/dbmate
@@ -8,4 +8,4 @@ maintainer = clrealy
 category = dev
 arch = x86_64
 arch = aarch64
-source = dbmate::https://github.com/amacneil/dbmate/releases/download/v2.36.0/dbmate-linux-amd64
+source = dbmate::https://github.com/amacneil/dbmate/releases/download/v2.37.0/dbmate-linux-amd64
