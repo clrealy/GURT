@@ -17,16 +17,16 @@ LAST_DROP = [0.0, []]   # [when, paths]: files dropped on the app window (WebKit
 OPEN_FILE = [""]        # a file GURT was opened with (double-clicking a .gurt)
 SPEC_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+°:@/-]{0,200}$")
 # files you can drop into the app (same list gurt outsource understands)
-DROP_RE = re.compile(r"\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|gurt|appimage|dmg|exe|msi|snap|flatpak|flatpakref|"
+DROP_RE = re.compile(r"\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|gurt|chrot|appimage|dmg|exe|msi|snap|flatpak|flatpakref|"
                      r"tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst)$", re.I)
-CONV_FMTS = ("deb", "rpm", "pacman", "apk", "xbps", "eopkg", "appimage", "gurt", "tar.gz", "zip")
+CONV_FMTS = ("deb", "rpm", "pacman", "apk", "xbps", "eopkg", "appimage", "gurt", "chrot", "tar.gz", "zip")
 DROP_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]{0,200}$")
 DROP_MAX = 8 << 30   # 8 GiB
 
 
 CONV_EXT = {"deb": ".deb", "rpm": ".rpm", "pacman": ".pkg.tar.zst", "apk": ".apk", "xbps": ".xbps", "eopkg": ".eopkg",
-            "appimage": ".AppImage", "gurt": ".gurt", "tar.gz": ".tar.gz", "zip": ".zip"}
-PKG_EXT_RE = re.compile(r"\.(pkg\.tar(\.[a-z0-9]+)?|tar\.[a-z0-9]+|tgz|deb|rpm|apk|xbps|eopkg|appimage|gurt|zip|exe|msi|7z)$", re.I)
+            "appimage": ".AppImage", "gurt": ".gurt", "chrot": ".chrot", "tar.gz": ".tar.gz", "zip": ".zip"}
+PKG_EXT_RE = re.compile(r"\.(pkg\.tar(\.[a-z0-9]+)?|tar\.[a-z0-9]+|tgz|deb|rpm|apk|xbps|eopkg|appimage|gurt|chrot|zip|exe|msi|7z)$", re.I)
 
 
 def zone_dir():   # the Download Zone™: where The Congurter™ drops what it makes
@@ -61,7 +61,12 @@ def zone_signed(path):   # how a converted file is signed: "inside" it, the ext 
     return None
 
 
+CROS_DOWNLOADS = "/mnt/chromeos/MyFiles/Downloads"   # ChromeOS's Downloads, once it's shared with Linux
+
+
 def downloads_dir():
+    if os.path.isdir(CROS_DOWNLOADS):
+        return CROS_DOWNLOADS
     d = os.path.expanduser("~/Downloads")
     return d if os.path.isdir(d) else os.path.expanduser("~")
 
@@ -510,7 +515,7 @@ def state():
     gurt_keys = {i["key"] for i in installed} | {i["name"] for i in installed if i["src"] == "gurt"}
     outside = {n: how for n, how in outside_apps(main, p.get("pm", ""), flatpaks).items()
                if n not in gurt_keys and not any(a["name"] == n and a["ikey"] in gurt_keys for a in main)}
-    return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks, "outside": outside, "wsl": p.get("wsl") == "yes", "audio": audio_ok(),
+    return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks, "outside": outside, "wsl": p.get("wsl") == "yes", "cros": p.get("cros") == "yes", "audio": audio_ok(),
             "main": main, "fossonly": strict, "dirtpkgs": dirt, "installed": installed, "vibes": vibes(repo), "notify": notify_on(), "dev": p.get("dev", "no")}
 
 
@@ -626,7 +631,7 @@ class H(BaseHTTPRequestHandler):
             except OSError:
                 pass
             p = paths()
-            return self._send(200, {"distro": distro, "pm": p.get("pm", "?"), "wsl": p.get("wsl") == "yes", "mode": MODE, "audio": audio_ok(),
+            return self._send(200, {"distro": distro, "pm": p.get("pm", "?"), "wsl": p.get("wsl") == "yes", "cros": p.get("cros") == "yes", "mode": MODE, "audio": audio_ok(),
                                     "sudo": os.geteuid() == 0 or bool(shutil.which("sudo") or shutil.which("doas")), "utils": utils,
                                     "notify": notify_on(), "version": p.get("version", "?")})
         if u.path == "/api/history":   # gurt history: date \t install|remove \t app \t version [\t txn \t replaced version]
@@ -1097,6 +1102,8 @@ def open_window(url):
     opener = shutil.which("xdg-open") or shutil.which("open")
     if opener:
         subprocess.Popen([opener, url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    elif "CHROMEOS_RELEASE_NAME=" in (open("/etc/lsb-release").read() if os.path.isfile("/etc/lsb-release") else ""):
+        print(f"open this in Chrome (Ctrl + click it): {url}", flush=True)   # ChromeOS itself: Linux can't open Chrome
     else:
         print(f"open this in your browser: {url}")
 
@@ -1273,6 +1280,8 @@ def dnotify(kind, title, body, open_btn=False):
 
 PKG_FILE = DROP_RE
 def downloads_dir():
+    if os.path.isdir(CROS_DOWNLOADS):   # ChromeOS: where Chrome saves what you download
+        return CROS_DOWNLOADS
     try:
         d = subprocess.run(["xdg-user-dir", "DOWNLOAD"], capture_output=True, text=True, timeout=5).stdout.strip()
         if d and os.path.isdir(d) and os.path.realpath(d) != os.path.realpath(os.path.expanduser("~")):   # it says $HOME when unset
@@ -1912,7 +1921,7 @@ dialog .row{justify-content:flex-end}
       <span class="dropicon"></span>
       <b>drop a file here, or click to pick one</b>
       <span>gurt figures out what it is and installs it straight onto your system, any distro, no box</span>
-      <span class="fmts"><code>.deb</code><code>.rpm</code><code>.pkg.tar.zst</code><code>AppImage</code><code>.flatpak</code><code>.flatpakref</code><code>.snap</code><code>.apk</code><code>.xbps</code><code>.eopkg</code><code>.tar.gz</code><code>.zip</code><code>.7z</code><code>.exe</code><code>.msi</code><code>.dmg</code></span>
+      <span class="fmts"><code>.deb</code><code>.rpm</code><code>.pkg.tar.zst</code><code>AppImage</code><code>.flatpak</code><code>.flatpakref</code><code>.snap</code><code>.apk</code><code>.xbps</code><code>.eopkg</code><code>.chrot</code><code>.tar.gz</code><code>.zip</code><code>.7z</code><code>.exe</code><code>.msi</code><code>.dmg</code></span>
     </label>
     <div class="congurter" id="congurter">
       <div class="cg-title">The Congurter™ <small>any Linux package goes in, any other one comes out</small></div>
@@ -1932,7 +1941,7 @@ dialog .row{justify-content:flex-end}
                 <option value="deb">.deb (Debian, Ubuntu, Mint)</option><option value="rpm">.rpm (Fedora, openSUSE)</option>
                 <option value="pacman">.pkg.tar.zst (Arch, CachyOS)</option><option value="apk">.apk (Alpine)</option>
                 <option value="xbps">.xbps (Void)</option><option value="eopkg">.eopkg (Solus)</option>
-                <option value="appimage">AppImage (any distro)</option><option value="gurt">.gurt</option>
+                <option value="appimage">AppImage (any distro)</option><option value="gurt">.gurt</option><option value="chrot">.chrot (Tweakium)</option>
                 <option value="tar.gz">.tar.gz</option><option value="zip">.zip</option>
               </select>
             </label>
@@ -1982,8 +1991,8 @@ dialog .row{justify-content:flex-end}
     <div class="setuphead"><div><h2>Build your setup</h2><p class="blurb">tick everything you want, hit install once. works the same on every distro.</p></div>
       <button class="btn big" id="lotto2">spin the app lottery</button></div>
     <div id="lottowin2" hidden></div>
-    <div class="droidbar"><span><b>Android apps</b><small>free software from F-Droid, running in Waydroid. gurt sets it up, and a .apk you drop in has to be on F-Droid too</small></span>
-      <button class="btn ghost small" data-cmd="android" data-arg="setup">set up Android</button><button class="btn ghost small" data-cmd="android" data-arg="fdroid">get F-Droid</button><button class="btn ghost small" data-cmd="android" data-arg="open">open Android</button></div>
+    <div class="droidbar"><span><b>Android apps</b><small id="droidtxt">free software from F-Droid, running in Waydroid. gurt sets it up. a .apk that isn't on F-Droid gets a heads-up first</small></span>
+      <button class="btn ghost small" data-cmd="android" data-arg="setup">set up Android</button><button class="btn ghost small" data-cmd="android" data-arg="fdroid">get F-Droid</button><button class="btn ghost small" id="droidopen" data-cmd="android" data-arg="open">open Android</button></div>
     <div class="bcats" id="bcats"></div>
     <div id="bgroups"></div>
     <div id="cartbar" hidden><span id="cartcount"></span><span class="spacer"></span><button class="btn ghost small" id="cartclear">clear</button><button class="btn" id="cartgo">install them</button></div>
@@ -1995,7 +2004,7 @@ dialog .row{justify-content:flex-end}
 </main>
 <div id="console"><div class="bar"><span class="dot" id="cdot"></span><b id="ctitle">activity</b><span class="spacer"></span><button class="btn ghost small" id="cstop" hidden>stop</button><button class="btn ghost small" id="chide">hide</button></div><pre id="cout"></pre></div>
 
-<div id="dropzone" hidden><div>drop it to install<small>.deb · .rpm · .pkg.tar.zst · AppImage · .tar.gz · .zip · .flatpak · .exe · .dmg · Android .apk — any distro, no box</small></div></div>
+<div id="dropzone" hidden><div>drop it to install<small>.deb · .rpm · .pkg.tar.zst · AppImage · .tar.gz · .zip · .flatpak · .chrot · .exe · .dmg · Android .apk — any distro, no box</small></div></div>
 <div id="toast" hidden></div>
 <dialog id="v1dlg"><div class="v1hero">1.0</div><h3>GURT 1.0 is here</h3>
   <p>no more 0.something. what's new since you last looked:</p>
@@ -2068,8 +2077,11 @@ function devGate(){
   $("#devgo").onclick = go; $("#devpw").onkeydown = e => { if (e.key === "Enter") go(); };
   return true;
 }
-async function load(){ S = await api("/api/state"); ICONMAP = new Map(S.main.map(p => [p.name, p.icon])); $("#fossbtn").textContent = `FOSS only: ${S.fossonly ? "on" : "off"}`; $("#fossbtn").classList.toggle("ghost", !S.fossonly); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · Windows" : ""}`;
-  document.querySelector('nav button[data-tab="desktops"]').hidden = S.wsl;
+async function load(){ S = await api("/api/state"); ICONMAP = new Map(S.main.map(p => [p.name, p.icon])); $("#fossbtn").textContent = `FOSS only: ${S.fossonly ? "on" : "off"}`; $("#fossbtn").classList.toggle("ghost", !S.fossonly); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · Windows" : S.cros ? " · ChromeOS" : ""}`;
+  document.querySelector('nav button[data-tab="desktops"]').hidden = S.wsl || S.cros;   // no Linux desktops there: Windows / ChromeOS is the desktop
+  $("#droidtxt").textContent = S.cros ? "free software from F-Droid, installed into your Chromebook's own Android. a .apk that isn't on F-Droid gets a heads-up first"
+    : "free software from F-Droid, running in Waydroid. gurt sets it up. a .apk that isn't on F-Droid gets a heads-up first";
+  $("#droidopen").hidden = !!S.cros;
   fitNav();
   if (S.audio === false && !soundDismissed) $("#soundbar").hidden = false;   /* no Linux desktops on Windows */ renderMain(); renderInstalled(); renderNotify(); renderCmp(); if (!$("#t-setup").hidden) renderBuilder(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt();
   if (BYSIZE) api("/api/sizes").then(r => { SIZES = r.sizes || {}; renderInstalled(); }).catch(() => {}); else SIZES = null; }
@@ -3003,7 +3015,7 @@ function wizRender(){
     else {
       const miss = wizMissing(), chk = (ok, title, sub, st) => `<div class="wiz-check"><span class="mark ${ok ? "ok" : "no"}">${ok ? "✓" : "!"}</span><span><b>${title}</b>${sub ? `<small>${sub}</small>` : ""}</span><span class="st">${st || ""}</span></div>`;
       pg.innerHTML = `<h3>System check</h3><p>here's what GURT found.</p><div class="wiz-checks">
-        ${chk(true, esc(d.distro || "your distro"), `package manager: ${esc(d.pm || "?")}${d.wsl ? " · running in WSL on Windows" : ""}`)}
+        ${chk(true, esc(d.distro || "your distro"), `package manager: ${esc(d.pm || "?")}${d.wsl ? " · running in WSL on Windows" : d.cros ? " · Linux on ChromeOS" : ""}`)}
         ${chk(d.sudo, d.sudo ? "sudo works" : "no sudo or doas", d.sudo ? "GURT asks for your password when it installs things system-wide" : "install sudo, or run GURT as root")}
         ${chk(!miss.length, miss.length ? `${miss.length} utilit${miss.length === 1 ? "y" : "ies"} missing` : "every utility apps need is here", miss.length ? esc(miss.join(", ")) : "flatpak, git, unzip tools, a compiler…")}
         ${d.audio === false ? chk(false, "no sound in the app window", "the app window needs GStreamer's audio plugins (the app offers a fix)") : ""}

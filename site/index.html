@@ -285,6 +285,15 @@ body.carted{padding-bottom:74px}
 .mine{margin-left:auto;font:700 11.5px var(--mono);background:var(--accent);color:var(--accent-ink);padding:2px 7px;border-radius:var(--r);white-space:nowrap}
 .pick>p{margin:0;color:var(--muted);font-size:14px}
 .pick .dlbtns{margin-top:2px}
+.pick.wide{grid-column:1/-1}
+.crosways{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--edge);border-radius:var(--r)}
+.crosways>div{padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.crosways>div+div{border-left:1px solid var(--edge)}
+.crosways h3{margin:0;font:700 15px var(--sans);color:#fff}
+.crosways ol{margin:0;padding-left:18px;color:var(--muted);font-size:14px}
+.crosways p{margin:0;color:var(--muted);font-size:14px}
+.crosinst{margin:0;padding:8px 10px;background:var(--code);border:1px solid var(--edge);border-radius:var(--r);font-size:12.5px;white-space:pre-wrap;overflow-wrap:anywhere}
+@media (max-width:760px){.crosways{grid-template-columns:1fr}.crosways>div+div{border-left:0;border-top:1px solid var(--edge)}}
 .pick .smartscreen{margin-top:0}
 @media (max-width:760px){.choose{grid-template-columns:1fr}.pick.is-mine{order:-1}.headline{font-size:26px}.hero .logo .lg-gurt svg{height:72px}}
 .features{padding:34px 0 36px;background:var(--panel);border-bottom:1px solid var(--line)}
@@ -341,6 +350,20 @@ footer.site .cicada{color:#e7e7ea}
         <p class="dlsafe">Only do this with the file from <a href="https://github.com/clrealy/GURT/releases/latest">GURT's GitHub releases</a>. If you got a "GURTSetupWizard.exe" anywhere else, delete it. And if Windows Defender says it found a <b>virus</b> (not just "unrecognized app"), stop and don't run it.
         You can check your file against <code>SHA256SUMS</code> on the release page: <code>Get-FileHash GURTSetupWizard.exe</code> in PowerShell.</p>
       </div>
+      </section>
+      <section class="pick wide" id="pick-cros" aria-labelledby="pc-h">
+        <div class="pickhead"><div><h2 id="pc-h">GURT for ChromeOS</h2><small>Chromebooks, and Brunch on any PC</small></div><span class="mine" hidden>your system</span></div>
+        <div class="crosways">
+          <div><h3>In Linux on ChromeOS</h3>
+            <ol><li>Turn on Linux: Settings → About ChromeOS → Developers → Linux development environment</li>
+              <li>Download GURTSetupWizard.deb, open it in Files and hit <b>Install with Linux</b></li></ol>
+            <p>Apps land in your launcher, Flathub works, and Android apps go into your Chromebook's own Android.</p>
+            <div class="dlbtns" id="dl-cros"></div></div>
+          <div><h3>On ChromeOS itself</h3>
+            <p>Developer mode or Brunch, with Chromebrew. GURT lives in <code>/usr/local</code>, needs no sudo, uses <code>crew</code> for what apps need and moves other distros' packages into <code>/usr/local</code>. In the shell:</p>
+            <pre class="crosinst mono">curl -fsSLO https://gurtproject.org/install.sh
+sh install.sh</pre></div>
+        </div>
       </section>
     </div>
   </div>
@@ -540,11 +563,13 @@ const $ = s => document.querySelector(s);
     ["rpm", "GURTSetupWizard.rpm", "Fedora, openSUSE, RHEL", ""], ["arch", "GURTSetupWizard.pkg.tar.zst", "Arch, CachyOS, Manjaro", ""],
     ["apk", "GURTSetupWizard.apk", "Alpine", ""], ["xbps", "GURTSetupWizard.xbps", "Void", ""], ["eopkg", "GURTSetupWizard.eopkg", "Solus", ""]];
   const ua = navigator.userAgent, plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
-  const isWin = /Win/i.test(plat) || /Windows/i.test(ua), isLinux = !isWin && /Linux|X11|CrOS/i.test(plat + " " + ua) && !/Android/i.test(ua);
+  const isCros = /CrOS/.test(ua) || /Chrome OS|ChromeOS/i.test(plat), isWin = !isCros && (/Win/i.test(plat) || /Windows/i.test(ua)),
+    isLinux = !isWin && !isCros && /Linux|X11/i.test(plat + " " + ua) && !/Android/i.test(ua);
   const btn = (f, alt) => `<a class="dlbtn${alt ? " alt" : ""}" href="${REL}${f[1]}" data-k="${f[0]}">${f[1]}<small>${f[2]}</small></a>`;
   $("#dl-linux").innerHTML = FILES.filter(f => f[0] !== "win").map((f, i) => btn(f, i > 2)).join("");
   $("#dl-win").innerHTML = FILES.filter(f => f[0] === "win").map(f => btn(f, false)).join("");
-  const mine = isWin ? "#pick-win" : isLinux ? "#pick-linux" : "";   // your system's card gets marked (and goes first on phones)
+  $("#dl-cros").innerHTML = btn(["deb", "GURTSetupWizard.deb", "for Linux on ChromeOS"], false);
+  const mine = isWin ? "#pick-win" : isCros ? "#pick-cros" : isLinux ? "#pick-linux" : "";   // your system's card gets marked (and goes first on phones)
   if (mine) { $(mine).classList.add("is-mine"); $(mine + " .mine").hidden = false; }
   // Windows people get the "it's not malware" note right away; everyone else when they grab the .exe
   const showNote = () => { $("#smartscreen").hidden = false; };

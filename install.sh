@@ -7,7 +7,9 @@ BIN="${GURT_BIN:-/usr/local/bin}"
 SHARE="${GURT_SHARE:-/usr/local/share/gurt}"
 say() { printf '\033[32m==>\033[0m %s\n' "$*"; }
 die() { printf '\033[31m==> nah:\033[0m %s\n' "$*" >&2; exit 1; }
-if [ "$(id -u)" -eq 0 ]; then SUDO=""; elif command -v sudo >/dev/null; then SUDO=sudo; elif command -v doas >/dev/null; then SUDO=doas; else die "need sudo or doas"; fi
+# ChromeOS itself (developer mode / Brunch, with Chromebrew): /usr/local is yours and the rest is read-only, so no sudo
+CROS=""; grep -qs '^CHROMEOS_RELEASE_NAME=' /etc/lsb-release && [ ! -e /dev/.cros_milestone ] && CROS=1
+if [ "$(id -u)" -eq 0 ] || { [ -n "$CROS" ] && [ -w /usr/local ]; }; then SUDO=""; elif command -v sudo >/dev/null; then SUDO=sudo; elif command -v doas >/dev/null; then SUDO=doas; else die "need sudo or doas"; fi
 for t in bash git; do command -v "$t" >/dev/null || die "install $t first, then rerun"; done
 tar --version 2>/dev/null | grep -q GNU || die "gurt needs GNU tar (Alpine: apk add tar)"
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
@@ -19,7 +21,7 @@ $SUDO install -Dm644 "$tmp/gurt/vibes.map" "$SHARE/vibes.map"
 $SUDO install -Dm644 "$tmp/gurt/gui/gurt-gui.py" "$SHARE/gurt-gui.py"
 $SUDO install -Dm644 "$tmp/gurt/assets/wilhelm.mp3" "$SHARE/wilhelm.mp3"
 $SUDO install -Dm644 "$tmp/gurt/site/assets/apple-touch-icon.png" "$SHARE/gurt.png"
-[ -f /etc/gurt.conf ] || $SUDO install -Dm644 "$tmp/gurt/gurt.conf" /etc/gurt.conf
+[ -n "$CROS" ] || [ -f /etc/gurt.conf ] || $SUDO install -Dm644 "$tmp/gurt/gurt.conf" /etc/gurt.conf   # ChromeOS: /etc is read-only
 say "gurt installed to $BIN/gurt 🦆"
 "$BIN/gurt" yo
 # Donk OS 🫏 runs on gurt, so gurt sets up the utilities apps need right away (everywhere else: gurt utils)

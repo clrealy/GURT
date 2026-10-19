@@ -10,6 +10,8 @@
 - **Apps you got without gurt count as installed** (flatpak, snap, your distro, /opt, AppImages), and badges say where each one came from.
 - **Real app logos** instead of emoji, with your system's own icon as the fallback.
 - **Android apps through Waydroid**: `gurt install android/<app>` installs from F-Droid (the only store, so it's all free software). A closed-source .apk you bring still installs, after a heads-up. gurt sets Waydroid up the first time (plain Android, no Google apps). `gurt android` for the rest, or Setup → Android apps in the app.
+- **ChromeOS.** In Linux on ChromeOS, apps (flatpaks too) land in the launcher, Android apps go into the Chromebook's own Android, and GURTd watches ChromeOS's Downloads. On ChromeOS itself (developer mode or Brunch, with Chromebrew), gurt lives in `/usr/local` with no sudo, uses `crew` for deps (`crew/` packages too) and moves other distros' packages under `/usr/local`. gurtproject.org has a ChromeOS card.
+- **.chrot packages (Tweakium).** `gurt install ./x.chrot`, `gurt remove chrot/x`, `gurt chrot list|build`, and `gurt convert` to and from .chrot. Same database as the chrot tool, chrot dependencies, sus-checked hooks. The app's Install a file tab and GURTd's Downloads watcher know .chrot too.
 - **Mostly free software.** Closed-source apps are labeled, come after the free ones, and `gurt install` suggests free apps like them. `gurt foss on` (or **FOSS only** in the app and on the site) hides and blocks them. The setup wizard's starter apps are free software, except Steam.
 
 ### Site
