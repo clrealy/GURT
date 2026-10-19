@@ -946,6 +946,7 @@ remove_pkg() {
                asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
     box-*:*)   box_remove "$key"; return ;;
     android:*) android_remove "$key"; asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
+    chrot:*)   chrot_remove "$name"; asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
   esac
   local dbd="$DB/$key" rdeps=()
   mapfile -t rdeps < <(rdeps_of "$key")
@@ -1117,6 +1118,9 @@ install_any() { # spec reason
     flatpak) flatpak_install "$name" "$reason" ;;
     snap)    snap_install "$name" "$reason" ;;
     android) android_install "$name" "$reason" ;;
+    chrot)   local c; c=$(newest_first "$GURT_CACHE/rollback/chrot:$name"/*.chrot | head -n1 || true)
+             [[ -n $c ]] || die "chrot/ packages come from a .chrot file: gurt install ./$name-<version>.chrot"
+             chrot_install "$c" "$reason" ;;
     crew)    [[ $PM == crew ]] || die "crew/ is Chromebrew, ChromeOS's package manager: it only works on ChromeOS itself (with Chromebrew installed)"
              pm_has "$name" && { msg "$name is already installed (crew)"; return 0; }
              pm_install "$name" || die "crew couldn't install $name" ;;
@@ -1150,6 +1154,7 @@ norm_src() {
     snap|snapcraft|snapd)           echo snap ;;
     android|waydroid|fdroid|f-droid) echo android ;;
     crew|chromebrew)                echo crew ;;
+    chrot|tweakium)                 echo chrot ;;
     *)                              echo "$1" ;;
   esac
 }
@@ -1878,6 +1883,7 @@ conv_fmt() { # "deb" / "out.deb" / "arch" → format name, empty = not a format 
     eopkg|solus) echo eopkg ;;
     appimage) echo appimage ;;
     gurt) echo gurt ;;
+    chrot|tweakium) echo chrot ;;
     zip) echo zip ;;
     tar|targz) echo tar.gz ;;
     dmg|app|macos|mac|exe|msi|windows|win|pkg|msix|ipa) echo "nope:${l##*.}" ;;
@@ -1940,6 +1946,14 @@ conv_unpack() { # file tree scratch
       CV_DEPS=$(info_get "$tree/.PKGINFO" depends | paste -sd, -); CV_FAM=gurt
       [[ $(info_get "$tree/.PKGINFO" pkgrel) =~ ^[0-9]+$ ]] && CV_VER="$CV_VER-$(info_get "$tree/.PKGINFO" pkgrel)"
       rm -f "$tree/.PKGINFO" "$tree/.FILES" "$tree/.DIRS" ;;
+    *.chrot)
+      mkdir -p "$x/chrot" "$tree/usr"
+      tar -xzf "$f" -C "$x/chrot" --no-same-owner
+      [[ -f $x/chrot/CHROT && -d $x/chrot/files ]] || die "${f##*/} isn't a .chrot (no CHROT + files/)"
+      CV_NAME=$(chrot_get "$x/chrot/CHROT" name); CV_VER=$(chrot_get "$x/chrot/CHROT" version)
+      CV_DESC=$(chrot_get "$x/chrot/CHROT" description); CV_ARCH=$(chrot_get "$x/chrot/CHROT" arch); CV_FAM=none
+      [[ -f $x/chrot/install.sh || -f $x/chrot/remove.sh ]] && warn "its install.sh / remove.sh don't come along: other formats run their own scripts"
+      cp -a "$x/chrot/files/." "$tree/usr/" ;;
     *.appimage)
       install -Dm755 "$f" "$tree/opt/$CV_NAME/$CV_NAME.AppImage"
       mkdir -p "$tree/usr/bin" "$tree/usr/share/applications"
@@ -2392,6 +2406,25 @@ print(json.dumps({"name": os.environ["CV_NAME"], "ver": os.environ["CV_TVER"], "
         CV_GPG=${SIGN_FPR:-} CV_RSA=${SIGN_RSA:-} CV_RSA_NAME=${SIGN_RSA_NAME:-} GNUPGHOME="$SIGN_DIR/gnupg" \
         python3 -c "$CONV_PY" "$fmt" "$tree" "$out" ;;
     tar.gz) tar --owner=0 --group=0 --numeric-owner -czf "$out" -C "$tree" . ;;
+    chrot)  # files/ = what lives under the prefix: usr/bin → bin, usr/local/share → share, etc/ and opt/ keep their names
+      local c="$work/chrot" e; mkdir -p "$c/files"
+      for e in "$tree/usr/local" "$tree/usr"; do [[ -d $e ]] && { cp -a "$e/." "$c/files/"; rm -rf "$e"; }; done
+      rm -rf "$c/files/local"
+      ( shopt -s dotglob nullglob; for e in "$tree"/*; do cp -a "$e" "$c/files/"; done )
+      for e in "$c"/files/share/applications/*.desktop; do   # menu entries point at where chrot puts things
+        sed -i -e "s#=/usr/\(local/\)\?bin/#=$CHROT_PREFIX/bin/#g" -e "s#=/usr/\(local/\)\?share/#=$CHROT_PREFIX/share/#g" "$e"
+      done
+      { printf 'name=%s
+version=%s
+' "$CV_NAME" "$CVU"
+        [[ -n $CV_DESC ]] && printf 'description=%s
+' "${CV_DESC//$'\n'/ }"
+        printf 'arch=%s
+depends=
+' "$( [[ $CV_TARCH == any || $CV_TARCH == noarch || $CV_TARCH == all ]] && echo any || echo "$CV_TARCH")"; } > "$c/CHROT"
+      (( ${#CV_TDEPS[@]} )) && warn "chrot depends on chrot packages, so its deps aren't carried over: ${CV_TDEPS[*]}"
+      CV_TDEPS=()
+      tar --owner=0 --group=0 --numeric-owner -czf "$out" -C "$c" CHROT files ;;
     gurt)
       { printf 'pkgname = %s\npkgver = %s\npkgrel = %s\npkgdesc = %s\narch = %s\n' "$CV_NAME" "$CVU" "$CVR" "$CV_DESC" "$CV_TARCH"
         for d in "${CV_TDEPS[@]}"; do printf 'depends = %s\n' "${d%%|*}"; done
@@ -2466,7 +2499,7 @@ cmd_convert() { # file|url format|out-file [-o dir]
   [[ ${3:-} == -o && -n ${4:-} ]] && outdir=$4
   fmt=$(conv_fmt "$want")
   case $fmt in
-    "") die "gurt can't make '$want' 🤔 it makes: deb rpm pacman (.pkg.tar.zst) apk (Alpine) xbps eopkg appimage gurt tar.gz zip" ;;
+    "") die "gurt can't make '$want' 🤔 it makes: deb rpm pacman (.pkg.tar.zst) apk (Alpine) xbps eopkg appimage gurt chrot tar.gz zip" ;;
     nope:*) die "can't make a .${fmt#nope:} 💀 that's a macOS/Windows/phone format, and Linux programs don't run there no matter what box you put them in. gurt converts between Linux formats (deb rpm pacman apk xbps eopkg appimage gurt tar.gz zip)" ;;
   esac
   case ${want,,} in pkg.tar.zst|tar.gz) ;; *.*) out=$want ;; esac   # "app.rpm" = the output file name
@@ -2513,6 +2546,7 @@ cmd_convert() { # file|url format|out-file [-o dir]
       eopkg)    out="$CV_NAME-$CVU-$CVR-1-$CV_TARCH.eopkg" ;;
       appimage) out="$CV_NAME-$CVU-$CARCH.AppImage" ;;
       gurt)     out="$CV_NAME-$CVU-$CVR-$CV_ARCH.gurt" ;;
+      chrot)    out="$CV_NAME-$CVU.chrot" ;;
       tar.gz)   out="$CV_NAME-$CVU.tar.gz" ;;
       zip)      out="$CV_NAME-$CVU.zip" ;;
     esac
@@ -2525,6 +2559,7 @@ cmd_convert() { # file|url format|out-file [-o dir]
     local more=""; (( ${#CV_DROPPED[@]} > 10 )) && more=" and $(( ${#CV_DROPPED[@]} - 10 )) more"
     warn "left out deps gurt doesn't know the $fmt names for (if the app complains, install them yourself): ${CV_DROPPED[*]:0:10}$more"
   fi
+  [[ $fmt == chrot ]] && NOSIGN=true   # chrot 0.1 has no signatures yet
   if ! $NOSIGN; then case $fmt in apk|xbps) sign_setup rsa ;; *) sign_setup ;; esac; fi
   rm -f "$out.sig" "$out.sig2" "$out.asc"   # a signature left from an earlier convert to the same name would no longer match
   conv_pack "$fmt" "$tree" "$out" "$work"
@@ -2545,7 +2580,7 @@ cmd_convert() { # file|url format|out-file [-o dir]
 # .deb .rpm .pkg.tar.* .apk .xbps .eopkg → repacked like above · .AppImage → installed + menu entry
 # .tar.* .zip .7z .gz/.xz/.zst/.bz2 → source trees get built, prebuilt apps get installed · lone binaries too
 # .snap .flatpak .flatpakref → handed to snap/flatpak · .exe .msi → wine · .dmg → Darling (yes really 🍎)
-OS_FILE_RE='\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|appimage|dmg|exe|msi|snap|flatpak|flatpakref|tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst)$'
+OS_FILE_RE='\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|chrot|appimage|dmg|exe|msi|snap|flatpak|flatpakref|tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst)$'
 is_os_file() { # arg → is it a file (or a url to one) rather than a git repo?
   [[ -f $1 ]] && return 0
   local l=${1,,}; l=${l%%[?#]*}
@@ -2983,10 +3018,125 @@ cmd_android() { # setup | list | remove <app> | open | stop | status
   esac
 }
 
+# ── 📦 .chrot: Tweakium's package format (chrot 0.1.x). a gzip tar: CHROT (KEY=VALUE manifest, first match wins) +
+#    files/ (installed into /usr/local/chrot) + optional install.sh / remove.sh (run as root, after install / before
+#    remove). gurt keeps the same database as the chrot tool (/usr/local/chrot/db/<name>/), so the two see each other ──
+CHROT_PREFIX=${CHROT_PREFIX:-/usr/local/chrot}
+is_chrot() { [[ ${1,,} == *.chrot && -f $1 ]]; }
+chrot_get() { # manifest key → its value (first match wins, an inline # comment and spaces dropped)
+  awk -v k="$2" 'index($0, k "=") == 1 { v = substr($0, length(k) + 2); sub(/[ \t]+#.*$/, "", v); sub(/^[ \t]+/, "", v); sub(/[ \t\r]+$/, "", v); print v; exit }' "$1"
+}
+chrot_root() { # the hooks run as root, as the format says
+  if (( EUID == 0 )); then "$@"; elif command -v sudo >/dev/null; then sudo "$@"
+  else warn "no sudo here, so the hook runs as you"; "$@"; fi
+}
+chrot_installed() { [[ -d $CHROT_PREFIX/db/$1 ]]; }
+chrot_unlink() { # name → its files + /usr/local/bin links off the disk (the hook is the caller's business)
+  local db="$CHROT_PREFIX/db/$1" p
+  [[ -f $db/links ]] && while IFS= read -r p; do   # only links that still point into chrot
+    [[ -L $p && $(readlink "$p") == "$CHROT_PREFIX"/* ]] && asroot rm -f -- "$p"; done < "$db/links"
+  [[ -f $db/files ]] && while IFS= read -r p; do [[ $p == "$CHROT_PREFIX"/* && $p != */../* ]] && asroot rm -f -- "$p"; done < "$db/files"
+  [[ -d $CHROT_PREFIX ]] && asroot find "$CHROT_PREFIX" -mindepth 1 -depth -type d -empty ! -path "$CHROT_PREFIX/db" ! -path "$CHROT_PREFIX/db/*" -delete 2>/dev/null || true
+}
+chrot_install() { # file.chrot reason
+  local f reason=${2:-explicit} work name ver desc arch deps d e was="" n
+  f=$(readlink -f "$1")
+  is_chrot "$f" || die "${1##*/} isn't a .chrot file"
+  work=$(mktemp -d "${TMPDIR:-/tmp}/gurt-chrot.XXXXXX")
+  # only CHROT, files/…, install.sh and remove.sh come out, and none of them may climb out of the folder
+  tar -tzf "$f" > "$work/list" 2>/dev/null || { rm -rf "$work"; die "${f##*/} isn't a gzip tar, so it's not a .chrot"; }
+  if grep -qE '(^|/)\.\.(/|$)|^/' "$work/list"; then rm -rf "$work"; die "${f##*/} has sketchy paths (.. or absolute) — refusing"; fi
+  mkdir -p "$work/x"
+  tar -xzf "$f" -C "$work/x" --no-same-owner --wildcards CHROT ./CHROT 'files' 'files/*' './files' './files/*' install.sh ./install.sh remove.sh ./remove.sh 2>/dev/null || true
+  [[ -f $work/x/CHROT ]] || { rm -rf "$work"; die "${f##*/} has no CHROT manifest"; }
+  [[ -d $work/x/files ]] || { rm -rf "$work"; die "${f##*/} has no files/ folder"; }
+  name=$(chrot_get "$work/x/CHROT" name); ver=$(chrot_get "$work/x/CHROT" version)
+  desc=$(chrot_get "$work/x/CHROT" description); arch=$(chrot_get "$work/x/CHROT" arch); deps=$(chrot_get "$work/x/CHROT" depends)
+  [[ $name =~ ^[A-Za-z0-9][A-Za-z0-9._+-]*$ && -n $ver ]] || { rm -rf "$work"; die "${f##*/}: its CHROT needs a name and a version"; }
+  [[ -z $arch || $arch == any || $arch == "$(uname -m)" ]] || { rm -rf "$work"; die "$name is built for $arch, this computer is $(uname -m)"; }
+  for d in $deps; do   # chrot packages: already in, or a .chrot of it right next to this one
+    chrot_installed "$d" && continue
+    e=$(compgen -G "${f%/*}/$d-*.chrot" | sort -V | tail -n1 || true)
+    [[ -n $e ]] || { rm -rf "$work"; die "$name needs the chrot package $d (put $d-<version>.chrot next to ${f##*/}, or install it first)"; }
+    msg2 "$name needs $d: installing ${e##*/} first"; chrot_install "$e" dep
+  done
+  if [[ $reason == explicit ]]; then ask "install $name $ver (.chrot${desc:+: $desc})?" || { rm -rf "$work"; die "aborted, no cap"; }; fi
+  if [[ -f $work/x/install.sh || -f $work/x/remove.sh ]]; then   # hooks run as root: read them first
+    sus_gate "$work/x" "$name"
+    local hooks=""; for e in install.sh remove.sh; do [[ -f $work/x/$e ]] && hooks+=" $e"; done
+    [[ $reason == explicit ]] && ! $NOCONFIRM && { ask "$name runs its own script as root (${hooks# }) — ok?" || { rm -rf "$work"; die "aborted"; }; }
+  fi
+  chrot_installed "$name" && { was=$(chrot_get "$CHROT_PREFIX/db/$name/CHROT" version); msg2 "upgrading $name ${was:-?} → $ver"; chrot_unlink "$name"; }
+  # files/ → the prefix, never over another chrot package's file
+  local rel conflicts=() o
+  ( cd "$work/x/files" && find . -mindepth 1 \( -type f -o -type l \) | sed 's|^\./||' | LC_ALL=C sort ) > "$work/rel"
+  while IFS= read -r rel; do
+    [[ -e $CHROT_PREFIX/$rel || -L $CHROT_PREFIX/$rel ]] || continue
+    for o in "$CHROT_PREFIX"/db/*/files; do [[ -f $o && $o != "$CHROT_PREFIX/db/$name/files" ]] && grep -qxF "$CHROT_PREFIX/$rel" "$o" && conflicts+=("$CHROT_PREFIX/$rel (from $(basename "$(dirname "$o")"))"); done
+  done < "$work/rel"
+  if (( ${#conflicts[@]} )); then printf '   %s\n' "${conflicts[@]:0:20}" >&2; $FORCE || { rm -rf "$work"; die "$name would overwrite another chrot package's files ^ (--force if you're sure)"; }; fi
+  msg "installing $name $ver 📦 → $CHROT_PREFIX"
+  asroot mkdir -p "$CHROT_PREFIX" "$CHROT_PREFIX/db/$name" /usr/local/bin
+  asroot cp -a "$work/x/files/." "$CHROT_PREFIX/"
+  sed "s|^|$CHROT_PREFIX/|" "$work/rel" > "$work/files"
+  : > "$work/links"   # every bin/* gets a /usr/local/bin link, if that name's free
+  if [[ -d $work/x/files/bin ]]; then
+    for e in "$work/x/files/bin"/* "$work/x/files/bin"/.[!.]*; do
+      [[ -e $e || -L $e ]] || continue; n=${e##*/}
+      if [[ -e /usr/local/bin/$n || -L /usr/local/bin/$n ]]; then warn "/usr/local/bin/$n is taken, so $n stays at $CHROT_PREFIX/bin/$n"; continue; fi
+      asroot ln -s "$CHROT_PREFIX/bin/$n" "/usr/local/bin/$n" && echo "/usr/local/bin/$n" >> "$work/links"
+    done
+  fi
+  asroot cp "$work/x/CHROT" "$work/files" "$work/links" "$CHROT_PREFIX/db/$name/"
+  asroot rm -f "$CHROT_PREFIX/db/$name/remove.sh"; [[ -f $work/x/remove.sh ]] && asroot cp "$work/x/remove.sh" "$CHROT_PREFIX/db/$name/"
+  if [[ -f $work/x/install.sh ]]; then
+    msg2 "running $name's install.sh"
+    ( cd "$work/x" && chrot_root env CHROT_PREFIX="$CHROT_PREFIX" sh ./install.sh ) || warn "$name's install.sh failed"
+  fi
+  # gurt's own record (gurt remove, undo, the Installed tab, hogs)
+  record_meta "chrot:$name" "$name" "$ver" "${desc:-chrot package}" "$reason" chrot
+  cat "$work/files" "$work/links" | sed 's|^/||' | asroot tee "$DB/chrot:$name/files" >/dev/null
+  stash_pkg "chrot:$name" "$f" >/dev/null
+  log_hist install "chrot:$name" "$was"
+  rm -rf "$work"
+  msg "chrot/$name installed ✅$( [[ -s $CHROT_PREFIX/db/$name/links ]] && echo " (run: $(head -n1 "$CHROT_PREFIX/db/$name/links" | sed 's|.*/||'))")"
+}
+chrot_remove() { # name → runs remove.sh, then takes its files + links off
+  local name=$1 db="$CHROT_PREFIX/db/$1"
+  chrot_installed "$name" || { warn "chrot/$name isn't in $CHROT_PREFIX/db (already gone?)"; return 0; }
+  msg "removing chrot/$name"
+  [[ -f $db/remove.sh ]] && { ( cd "$db" && chrot_root env CHROT_PREFIX="$CHROT_PREFIX" sh ./remove.sh ) || warn "its remove.sh failed"; }
+  chrot_unlink "$name"
+  asroot rm -rf -- "$db"
+}
+chrot_build() { # dir → <name>-<version>.chrot, like chrot build does
+  local dir=${1:?usage: gurt chrot build <dir>} name ver out
+  [[ -f $dir/CHROT && -d $dir/files ]] || die "a chrot folder needs CHROT + files/"
+  name=$(chrot_get "$dir/CHROT" name); ver=$(chrot_get "$dir/CHROT" version)
+  [[ -n $name && -n $ver ]] || die "CHROT needs name= and version="
+  out="$PWD/$name-$ver.chrot"
+  local parts=(CHROT files); [[ -f $dir/install.sh ]] && parts+=(install.sh); [[ -f $dir/remove.sh ]] && parts+=(remove.sh)
+  tar --owner=0 --group=0 --numeric-owner -czf "$out" -C "$dir" "${parts[@]}"
+  msg "made ${out##*/} ✅ ($(du -h "$out" | cut -f1))"
+}
+cmd_chrot() { # list | install <file> | remove <name> | build <dir>
+  case ${1:-list} in
+    list|ls) [[ -d $CHROT_PREFIX/db ]] || { msg "no chrot packages yet"; return 0; }
+             local d; for d in "$CHROT_PREFIX"/db/*/; do [[ -f $d/CHROT ]] || continue
+               printf '  %-28s %-12s %s\n' "$(basename "$d")" "$(chrot_get "$d/CHROT" version)" "$(chrot_get "$d/CHROT" description)"; done ;;
+    install|add) shift; (( $# )) || die "usage: gurt chrot install <file.chrot>"; for d; do chrot_install "$d" explicit; done ;;
+    remove|rm) [[ -n ${2:-} ]] || die "usage: gurt chrot remove <name>"
+               if is_installed "chrot:$2"; then remove_pkg "chrot/$2"; else chrot_remove "$2"; fi ;;
+    build) chrot_build "${2:-}" ;;
+    *) die "usage: gurt chrot [list | install <file.chrot> | remove <name> | build <dir>]" ;;
+  esac
+}
+
 outsource_file() { # file-or-url reason
   local f reason=${2:-explicit} l nv name ver
   f=$(fetch_arg "$1"); l=${f,,}
   is_android_apk "$f" && { android_install_file "$f" "$reason"; return; }
+  is_chrot "$f" && { chrot_install "$f" "$reason"; return; }
   nv=$(file_namever "$f"); name=${nv%%$'\t'*}; ver=${nv#*$'\t'}
   case $l in
     *.deb|*.rpm|*.pkg.tar|*.pkg.tar.*|*.apk|*.xbps|*.eopkg) pkgfile_install "$f" "$reason" ;;
@@ -3752,6 +3902,7 @@ cmd_de() {
 # ───────────────────────── rollback / hold ─────────────────────────
 # every package gurt installs gets a copy in ~/.cache/gurt/rollback/<pkg>/ (last 3 versions)
 ROLLBACK_KEEP=${GURT_ROLLBACK_KEEP:-3}
+newest_first() { (( $# )) && ls -1t -- "$@" 2>/dev/null; return 0; }   # nullglob is on: no files must not mean "list ."
 stash_pkg() { # key file → prints the stashed path
   local d="$GURT_CACHE/rollback/${1//\//_}" out
   mkdir -p "$d" 2>/dev/null || { echo "$2"; return 0; }
@@ -3759,7 +3910,7 @@ stash_pkg() { # key file → prints the stashed path
   [[ $2 -ef $out ]] || cp -f -- "$2" "$out" 2>/dev/null || { echo "$2"; return 0; }
   touch "$out"
   # shellcheck disable=SC2012
-  ls -1t "$d"/*.gurt 2>/dev/null | tail -n +$((ROLLBACK_KEEP + 1)) | while IFS= read -r x; do rm -f -- "$x"; done
+  newest_first "$d"/*.gurt "$d"/*.chrot | tail -n +$((ROLLBACK_KEEP + 1)) | while IFS= read -r x; do rm -f -- "$x"; done
   echo "$out"
 }
 cmd_rollback() {
@@ -3769,7 +3920,7 @@ cmd_rollback() {
   d="$GURT_CACHE/rollback/${k//\//_}"
   cur=$(cat "$DB/$k/pkgfile" 2>/dev/null || true)
   # shellcheck disable=SC2012
-  mapfile -t list < <(ls -1t "$d"/*.gurt 2>/dev/null)
+  mapfile -t list < <(newest_first "$d"/*.gurt)
   for f in "${list[@]}"; do [[ $f -ef $cur ]] || { pick=$f; break; }; done
   [[ -n $pick ]] || die "no older version of $(pretty "$k") saved 😔 (gurt keeps the last $ROLLBACK_KEEP versions it installs, starting from 0.13.0)"
   local v; v=$(tar -xzOf "$pick" .PKGINFO 2>/dev/null | awk -F' = ' '$1=="pkgver"{v=$2} $1=="pkgrel"{r=$2} END{print v (r ? "-" r : "")}')
@@ -3785,7 +3936,7 @@ stash_find() { # key version → the saved .gurt of that version (from gurt's ro
   while IFS= read -r f; do
     v=$(tar -xzOf "$f" .PKGINFO 2>/dev/null | awk -F' = ' '$1=="pkgver"{v=$2} $1=="pkgrel"{r=$2} END{print v (r ? "-" r : "")}')
     [[ $v == "$2" ]] && { echo "$f"; return 0; }
-  done < <(ls -1t "$GURT_CACHE/rollback/${1//\//_}"/*.gurt 2>/dev/null)
+  done < <(newest_first "$GURT_CACHE/rollback/${1//\//_}"/*.gurt)
   return 1
 }
 # ── gurt undo: take back the last thing gurt did. gurt undo again = redo. gurt undo <app> rolls one app back ──
@@ -5948,6 +6099,7 @@ ${B}misc${R0}
   notify on|off|now    a desktop notification when updates are waiting (checks every 6 hours) 🔔
   gurtd [config]       GURTd, the background daemon: auto-updates, fresh lists, downloads → install, instant app 🐧
   android [setup|list|open|remove <app>|fdroid]   Android apps through Waydroid 🤖 (gurt install android/<app> = F-Droid)
+  chrot [list|install|remove|build]   Tweakium's .chrot packages (gurt install ./x.chrot works too) 📦
   foss on|off          FOSS-only mode: no closed-source apps at all (off: they install with a heads-up) 🔓
   snapshots            the snapshots gurt took before system upgrades (btrfs: snapper/timeshift/plain) 📸
   achievements         🏆 trophies for doing gurt things
@@ -6032,6 +6184,7 @@ main() {
     info)              cmd_info "$@" ;;
     install|i|get)     (( $# )) || die "install what tho"
                        for p; do if is_pkgfile "$p"; then pkgfile_install "$p" explicit
+                                 elif is_chrot "$p"; then chrot_install "$p" explicit
                                  elif [[ ${p,,} == *.gurt && -f $p ]]; then install_file "$p" explicit
                                  elif $SCAN && [[ $p != */* ]]; then scan_install "$p"; else install_any "$p" explicit; fi; done
                        ach_installs ;;
@@ -6053,6 +6206,7 @@ main() {
     gurtd|daemon)      cmd_gurtd "$@" ;;
     android|waydroid)  cmd_android "$@" ;;
     foss)              cmd_foss "$@" ;;
+    chrot)             cmd_chrot "$@" ;;
     snapshots|snaps)   cmd_snapshots ;;
     self-update|selfupdate) cmd_self_update ;;
     uninstall)         if (( $# )); then for p; do remove_pkg "$p"; done; play_scream; achieve yeet   # gurt uninstall <app> = gurt remove <app>
@@ -6066,7 +6220,7 @@ main() {
     run|open|launch)   cmd_run "$@" ;;
     owns)              cmd_owns "$@" ;;
     build)             build_pkg "${1:-.}" "${2:-$PWD}"; echo "$BUILT_PKG" ;;
-    add)               (( $# )) || die "add what tho"; for p; do if is_pkgfile "$p"; then pkgfile_install "$p" explicit; else install_file "$p" explicit; fi; done; ach_installs ;;
+    add)               (( $# )) || die "add what tho"; for p; do if is_pkgfile "$p"; then pkgfile_install "$p" explicit; elif is_chrot "$p"; then chrot_install "$p" explicit; else install_file "$p" explicit; fi; done; ach_installs ;;
     srcinfo)           cmd_srcinfo "$@" ;;
     checksum)          cmd_checksum "$@" ;;
     new)               cmd_new "$@" ;;

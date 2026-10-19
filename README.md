@@ -233,6 +233,20 @@ Two ways, and gurt knows which one it's in.
 - flatpak, snap and Waydroid need a real Linux, so for those gurt points you at Linux on ChromeOS
 - `gurt gui` prints a link to open in Chrome, and `gurt gurtd on` runs until you restart (ChromeOS doesn't start your stuff at login)
 
+#### .chrot (Tweakium) 📦
+
+gurt speaks Tweakium's package format (chrot 0.1): a gzip tar with a `CHROT` manifest (`name=`, `version=`, `description=`, `arch=x86_64|any`, `depends=`), a `files/` tree and optional `install.sh` / `remove.sh` hooks. gurt uses the same database as the `chrot` tool (`/usr/local/chrot/db/<name>/`), so the two see each other's packages.
+
+```sh
+gurt install ./fastfetch-2.70.0.chrot   # files/ → /usr/local/chrot, bin/* linked into /usr/local/bin (never over a name that's taken)
+gurt remove chrot/fastfetch             # runs its remove.sh first, then takes the files + links off
+gurt chrot list                         # every chrot package, whoever installed it
+gurt chrot build mydir/                 # mydir/CHROT + mydir/files/ → name-version.chrot
+gurt convert app.deb chrot              # any package → .chrot (and .chrot → deb/rpm/… works too)
+```
+
+Depends are chrot package names: gurt installs one first when its `.chrot` sits next to the one you asked for. Reinstalling a name upgrades it. The hooks run as root with `CHROT_PREFIX` set, so gurt runs its sus check on them and asks first. chrot 0.1 has no signatures or checksums yet, so only install `.chrot` files from people you trust. Works on any Linux, not just ChromeOS.
+
 ## Update your whole system 🐧
 
 gurt isn't just an installer: `gurt upgrade` updates **everything**. First your system, using your distro's own package manager the right way, then everything gurt installed, then flatpaks + snaps.

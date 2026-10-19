@@ -17,16 +17,16 @@ LAST_DROP = [0.0, []]   # [when, paths]: files dropped on the app window (WebKit
 OPEN_FILE = [""]        # a file GURT was opened with (double-clicking a .gurt)
 SPEC_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+°:@/-]{0,200}$")
 # files you can drop into the app (same list gurt outsource understands)
-DROP_RE = re.compile(r"\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|gurt|appimage|dmg|exe|msi|snap|flatpak|flatpakref|"
+DROP_RE = re.compile(r"\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|gurt|chrot|appimage|dmg|exe|msi|snap|flatpak|flatpakref|"
                      r"tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst)$", re.I)
-CONV_FMTS = ("deb", "rpm", "pacman", "apk", "xbps", "eopkg", "appimage", "gurt", "tar.gz", "zip")
+CONV_FMTS = ("deb", "rpm", "pacman", "apk", "xbps", "eopkg", "appimage", "gurt", "chrot", "tar.gz", "zip")
 DROP_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]{0,200}$")
 DROP_MAX = 8 << 30   # 8 GiB
 
 
 CONV_EXT = {"deb": ".deb", "rpm": ".rpm", "pacman": ".pkg.tar.zst", "apk": ".apk", "xbps": ".xbps", "eopkg": ".eopkg",
-            "appimage": ".AppImage", "gurt": ".gurt", "tar.gz": ".tar.gz", "zip": ".zip"}
-PKG_EXT_RE = re.compile(r"\.(pkg\.tar(\.[a-z0-9]+)?|tar\.[a-z0-9]+|tgz|deb|rpm|apk|xbps|eopkg|appimage|gurt|zip|exe|msi|7z)$", re.I)
+            "appimage": ".AppImage", "gurt": ".gurt", "chrot": ".chrot", "tar.gz": ".tar.gz", "zip": ".zip"}
+PKG_EXT_RE = re.compile(r"\.(pkg\.tar(\.[a-z0-9]+)?|tar\.[a-z0-9]+|tgz|deb|rpm|apk|xbps|eopkg|appimage|gurt|chrot|zip|exe|msi|7z)$", re.I)
 
 
 def zone_dir():   # the Download Zone™: where The Congurter™ drops what it makes
@@ -1921,7 +1921,7 @@ dialog .row{justify-content:flex-end}
       <span class="dropicon"></span>
       <b>drop a file here, or click to pick one</b>
       <span>gurt figures out what it is and installs it straight onto your system, any distro, no box</span>
-      <span class="fmts"><code>.deb</code><code>.rpm</code><code>.pkg.tar.zst</code><code>AppImage</code><code>.flatpak</code><code>.flatpakref</code><code>.snap</code><code>.apk</code><code>.xbps</code><code>.eopkg</code><code>.tar.gz</code><code>.zip</code><code>.7z</code><code>.exe</code><code>.msi</code><code>.dmg</code></span>
+      <span class="fmts"><code>.deb</code><code>.rpm</code><code>.pkg.tar.zst</code><code>AppImage</code><code>.flatpak</code><code>.flatpakref</code><code>.snap</code><code>.apk</code><code>.xbps</code><code>.eopkg</code><code>.chrot</code><code>.tar.gz</code><code>.zip</code><code>.7z</code><code>.exe</code><code>.msi</code><code>.dmg</code></span>
     </label>
     <div class="congurter" id="congurter">
       <div class="cg-title">The Congurter™ <small>any Linux package goes in, any other one comes out</small></div>
@@ -1941,7 +1941,7 @@ dialog .row{justify-content:flex-end}
                 <option value="deb">.deb (Debian, Ubuntu, Mint)</option><option value="rpm">.rpm (Fedora, openSUSE)</option>
                 <option value="pacman">.pkg.tar.zst (Arch, CachyOS)</option><option value="apk">.apk (Alpine)</option>
                 <option value="xbps">.xbps (Void)</option><option value="eopkg">.eopkg (Solus)</option>
-                <option value="appimage">AppImage (any distro)</option><option value="gurt">.gurt</option>
+                <option value="appimage">AppImage (any distro)</option><option value="gurt">.gurt</option><option value="chrot">.chrot (Tweakium)</option>
                 <option value="tar.gz">.tar.gz</option><option value="zip">.zip</option>
               </select>
             </label>
@@ -2004,7 +2004,7 @@ dialog .row{justify-content:flex-end}
 </main>
 <div id="console"><div class="bar"><span class="dot" id="cdot"></span><b id="ctitle">activity</b><span class="spacer"></span><button class="btn ghost small" id="cstop" hidden>stop</button><button class="btn ghost small" id="chide">hide</button></div><pre id="cout"></pre></div>
 
-<div id="dropzone" hidden><div>drop it to install<small>.deb · .rpm · .pkg.tar.zst · AppImage · .tar.gz · .zip · .flatpak · .exe · .dmg · Android .apk — any distro, no box</small></div></div>
+<div id="dropzone" hidden><div>drop it to install<small>.deb · .rpm · .pkg.tar.zst · AppImage · .tar.gz · .zip · .flatpak · .chrot · .exe · .dmg · Android .apk — any distro, no box</small></div></div>
 <div id="toast" hidden></div>
 <dialog id="v1dlg"><div class="v1hero">1.0</div><h3>GURT 1.0 is here</h3>
   <p>no more 0.something. what's new since you last looked:</p>
