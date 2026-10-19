@@ -1,6 +1,6 @@
 # Send files between any two computers with a short code
 pkgname=croc
-pkgver=11.5.4
+pkgver=11.5.5
 pkgrel=1
 pkgdesc="Send files between any two computers with a short code"
 url="https://github.com/schollz/croc"
