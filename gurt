@@ -3035,13 +3035,19 @@ chrot_root() { # the hooks run as root, as the format says
   if (( EUID == 0 )); then "$@"; elif command -v sudo >/dev/null; then sudo "$@"
   else warn "no sudo here, so the hook runs as you"; "$@"; fi
 }
+chrot_as() { # write in the chrot prefix: as you when it's yours, else as root (the chrot tool makes it root's)
+  if (( EUID == 0 )) || { [[ -w $CHROT_PREFIX ]] && { [[ ! -e $CHROT_PREFIX/db ]] || [[ -w $CHROT_PREFIX/db ]]; }; } ||
+     { [[ ! -e $CHROT_PREFIX ]] && [[ -w ${CHROT_PREFIX%/*} ]]; }; then "$@"
+  elif command -v sudo >/dev/null; then sudo "$@"
+  else die "$CHROT_PREFIX belongs to root and there's no sudo here"; fi
+}
 chrot_installed() { [[ -d $CHROT_PREFIX/db/$1 ]]; }
 chrot_unlink() { # name → its files + /usr/local/bin links off the disk (the hook is the caller's business)
   local db="$CHROT_PREFIX/db/$1" p
   [[ -f $db/links ]] && while IFS= read -r p; do   # only links that still point into chrot
     [[ -L $p && $(readlink "$p") == "$CHROT_PREFIX"/* ]] && asroot rm -f -- "$p"; done < "$db/links"
-  [[ -f $db/files ]] && while IFS= read -r p; do [[ $p == "$CHROT_PREFIX"/* && $p != */../* ]] && asroot rm -f -- "$p"; done < "$db/files"
-  [[ -d $CHROT_PREFIX ]] && asroot find "$CHROT_PREFIX" -mindepth 1 -depth -type d -empty ! -path "$CHROT_PREFIX/db" ! -path "$CHROT_PREFIX/db/*" -delete 2>/dev/null || true
+  [[ -f $db/files ]] && while IFS= read -r p; do [[ $p == "$CHROT_PREFIX"/* && $p != */../* ]] && chrot_as rm -f -- "$p"; done < "$db/files"
+  [[ -d $CHROT_PREFIX ]] && chrot_as find "$CHROT_PREFIX" -mindepth 1 -depth -type d -empty ! -path "$CHROT_PREFIX/db" ! -path "$CHROT_PREFIX/db/*" -delete 2>/dev/null || true
 }
 chrot_install() { # file.chrot reason
   local f reason=${2:-explicit} work name ver desc arch deps d e was="" n
@@ -3081,8 +3087,8 @@ chrot_install() { # file.chrot reason
   done < "$work/rel"
   if (( ${#conflicts[@]} )); then printf '   %s\n' "${conflicts[@]:0:20}" >&2; $FORCE || { rm -rf "$work"; die "$name would overwrite another chrot package's files ^ (--force if you're sure)"; }; fi
   msg "installing $name $ver 📦 → $CHROT_PREFIX"
-  asroot mkdir -p "$CHROT_PREFIX" "$CHROT_PREFIX/db/$name" /usr/local/bin
-  asroot cp -a "$work/x/files/." "$CHROT_PREFIX/"
+  chrot_as mkdir -p "$CHROT_PREFIX" "$CHROT_PREFIX/db/$name"; asroot mkdir -p /usr/local/bin
+  chrot_as cp -a "$work/x/files/." "$CHROT_PREFIX/"
   sed "s|^|$CHROT_PREFIX/|" "$work/rel" > "$work/files"
   : > "$work/links"   # every bin/* gets a /usr/local/bin link, if that name's free
   if [[ -d $work/x/files/bin ]]; then
@@ -3092,8 +3098,8 @@ chrot_install() { # file.chrot reason
       asroot ln -s "$CHROT_PREFIX/bin/$n" "/usr/local/bin/$n" && echo "/usr/local/bin/$n" >> "$work/links"
     done
   fi
-  asroot cp "$work/x/CHROT" "$work/files" "$work/links" "$CHROT_PREFIX/db/$name/"
-  asroot rm -f "$CHROT_PREFIX/db/$name/remove.sh"; [[ -f $work/x/remove.sh ]] && asroot cp "$work/x/remove.sh" "$CHROT_PREFIX/db/$name/"
+  chrot_as cp "$work/x/CHROT" "$work/files" "$work/links" "$CHROT_PREFIX/db/$name/"
+  chrot_as rm -f "$CHROT_PREFIX/db/$name/remove.sh"; [[ -f $work/x/remove.sh ]] && chrot_as cp "$work/x/remove.sh" "$CHROT_PREFIX/db/$name/"
   if [[ -f $work/x/install.sh ]]; then
     msg2 "running $name's install.sh"
     ( cd "$work/x" && chrot_root env CHROT_PREFIX="$CHROT_PREFIX" sh ./install.sh ) || warn "$name's install.sh failed"
@@ -3112,7 +3118,7 @@ chrot_remove() { # name → runs remove.sh, then takes its files + links off
   msg "removing chrot/$name"
   [[ -f $db/remove.sh ]] && { ( cd "$db" && chrot_root env CHROT_PREFIX="$CHROT_PREFIX" sh ./remove.sh ) || warn "its remove.sh failed"; }
   chrot_unlink "$name"
-  asroot rm -rf -- "$db"
+  chrot_as rm -rf -- "$db"
 }
 chrot_build() { # dir → <name>-<version>.chrot, like chrot build does
   local dir=${1:?usage: gurt chrot build <dir>} name ver out
