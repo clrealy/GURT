@@ -1,6 +1,6 @@
 # Cloudflare Tunnel client, expose local sites safely
 pkgname=cloudflared
-pkgver=2026.9.3
+pkgver=2026.10.2
 pkgrel=1
 pkgdesc="Cloudflare Tunnel client, expose local sites safely"
 url="https://github.com/cloudflare/cloudflared"
@@ -11,8 +11,8 @@ arch=(x86_64 aarch64)
 # official prebuilt release binary
 source_x86_64=("cloudflared::https://github.com/cloudflare/cloudflared/releases/download/${pkgver}/cloudflared-linux-amd64")
 source_aarch64=("cloudflared::https://github.com/cloudflare/cloudflared/releases/download/${pkgver}/cloudflared-linux-arm64")
-sha256sums_x86_64=(77e26d8d900e0b8469f416239d14b5f296525fdf79fee6f511ef55609e3fbac2)
-sha256sums_aarch64=(aaeb2d7d0da3614634c7e03ab13487a1522c2e79165ed2929cfe23d5e95b326d)
+sha256sums_x86_64=('35fbdd2beb378436c7da377d7358cea8e33f9c94a6705d1d8036bf9b0d6d8005')
+sha256sums_aarch64=('b7e55b4d9702c2ab5f8348f780bb1db044527fc555367714c78e0595750a4665')
 
 package() {
   install -Dm755 cloudflared "$pkgdir$prefix/bin/cloudflared"
