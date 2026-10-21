@@ -1,6 +1,6 @@
 # CLI for Argo CD, GitOps continuous delivery for Kubernetes
 pkgname=argocd
-pkgver=3.5.3
+pkgver=3.5.6
 pkgrel=1
 pkgdesc="CLI for Argo CD, GitOps continuous delivery for Kubernetes"
 url="https://github.com/argoproj/argo-cd"
@@ -12,8 +12,8 @@ _tag=v$pkgver
 # official prebuilt release binary
 source_x86_64=("argocd::https://github.com/argoproj/argo-cd/releases/download/${_tag}/argocd-linux-amd64")
 source_aarch64=("argocd::https://github.com/argoproj/argo-cd/releases/download/${_tag}/argocd-linux-arm64")
-sha256sums_x86_64=(b860f73f57cbddd993cd446f5236d797c1b1ac8554857b2683d2669f17e765b4)
-sha256sums_aarch64=(bb37e5d62df897ea1610f7c647fdc78657a0e3a928dc21893faf7bf66a4646cb)
+sha256sums_x86_64=('db9d17b70593d3f86a4dcf08d9ebbb85a42e995426ac5f928b737260656102d3')
+sha256sums_aarch64=('281aea75a1eaea15e2839f12626e78684f76099f09ffb0b05d35f64344ed1256')
 
 package() {
   install -Dm755 argocd "$pkgdir$prefix/bin/argocd"
