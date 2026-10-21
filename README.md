@@ -574,7 +574,7 @@ gurt install dirt/<name>
 gurt dirt off
 ```
 
-Rules are in [`dirt/README.md`](dirt/README.md) — legal, labeled, and **nothing involving minors you sick fuck**.
+Rules are in [`dirt/README.md`](dirt/README.md) — legal, labeled, and **nothing involving minors you sick fuck**
 
 ## Usage
 
