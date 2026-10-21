@@ -1,0 +1,44 @@
+# GURTBUILD for 7reels — made with the upload form on the GURT site
+pkgname=7reels
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="we pirate too"
+url="https://7reels.cc"
+license="unknown"
+maintainer="clrealy"
+arch=(x86_64 aarch64)
+depends=(xdg-utils)
+makedepends=()
+source=(
+  "7reels.png"
+)
+sha256sums=(
+  "SKIP"
+)
+
+build() {
+  true
+}
+
+package() {
+  # Install the launch script
+  install -Dm755 /dev/stdin "$pkgdir/usr/bin/7reels" << 'EOF'
+#!/bin/sh
+exec xdg-open "https://7reels.cc"
+EOF
+
+  # Install the custom 7R logo
+  install -Dm644 "7reels.png" "$pkgdir/usr/share/pixmaps/7reels.png"
+
+  # Install the desktop entry pointing to the icon
+  install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/7reels.desktop" << 'EOF'
+[Desktop Entry]
+Name=7Reels
+Comment=we pirate too
+Exec=7reels
+Icon=7reels
+Terminal=false
+Type=Application
+Categories=Network;WebBrowser;Utility;
+EOF
+}
