@@ -1,6 +1,6 @@
 # Runs the right Bazel version for your project
 pkgname=bazelisk
-pkgver=1.29.0
+pkgver=1.30.0
 pkgrel=1
 pkgdesc="Runs the right Bazel version for your project"
 url="https://github.com/bazelbuild/bazelisk"
@@ -12,8 +12,8 @@ _tag=v$pkgver
 # official prebuilt release binary
 source_x86_64=("bazelisk::https://github.com/bazelbuild/bazelisk/releases/download/${_tag}/bazelisk-linux-amd64")
 source_aarch64=("bazelisk::https://github.com/bazelbuild/bazelisk/releases/download/${_tag}/bazelisk-linux-arm64")
-sha256sums_x86_64=(5a408715e932c0250d28bd84555f12edbf70117de42f9181691c736eacc4a992)
-sha256sums_aarch64=(e20e8b0f4f240091b7a55bf17b9398bd4f40ee70ae0208dff95dd4c445fb4010)
+sha256sums_x86_64=('a248ae2b2b62b5baebb748f6fba7203bff1a27e5d01b55399a8406744cb539e8')
+sha256sums_aarch64=('b2bcc040c213b44586b121bda6d983c35df121b917c3a7a66fb16f2fa0df1a4f')
 
 package() {
   install -Dm755 bazelisk "$pkgdir$prefix/bin/bazelisk"
