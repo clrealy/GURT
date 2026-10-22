@@ -22,16 +22,16 @@ build() {
 
 package() {
   # Install the launch script
-  install -Dm755 /dev/stdin "$pkgdir/usr/bin/7reels" << 'EOF'
+  install -Dm755 /dev/stdin "$pkgdir/usr/local/bin/7reels" << 'EOF'
 #!/bin/sh
 exec xdg-open "https://7reels.cc"
 EOF
 
   # Install the custom 7R logo
-  install -Dm644 "7reels.png" "$pkgdir/usr/share/pixmaps/7reels.png"
+  install -Dm644 "7reels.png" "$pkgdir/usr/local/share/pixmaps/7reels.png"
 
   # Install the desktop entry pointing to the icon
-  install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/7reels.desktop" << 'EOF'
+  install -Dm644 /dev/stdin "$pkgdir/usr/local/share/applications/7reels.desktop" << 'EOF'
 [Desktop Entry]
 Name=7Reels
 Comment=we pirate too
