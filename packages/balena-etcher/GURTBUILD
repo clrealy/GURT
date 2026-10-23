@@ -1,6 +1,6 @@
 # Flash OS images to USB drives and SD cards, safely
 pkgname=balena-etcher
-pkgver=2.1.7
+pkgver=2.1.9
 pkgrel=1
 pkgdesc="Flash OS images to USB drives and SD cards without wiping the wrong disk"
 url="https://etcher.balena.io"
@@ -11,7 +11,7 @@ arch=(x86_64)
 aliases=(etcher balenaetcher)
 # official prebuilt release (the Electron app, zipped)
 source=("https://github.com/balena-io/etcher/releases/download/v$pkgver/balenaEtcher-linux-x64-$pkgver.zip")
-sha256sums=(6602dc2195f422daf7c5bc3eaf0eaff1def7ccd8aba0cd9b36e8966b4e0e6d16)
+sha256sums=('21ac9eb72a3f4d737623f85fc5ddd4073febb08b40e601b8051e99634da4fb09')
 
 package() {
   local dir="$prefix/lib/balena-etcher"
