@@ -1,6 +1,6 @@
 pkgname=btop
-pkgver=1.4.4
-pkgrel=2
+pkgver=1.4.8
+pkgrel=1
 pkgdesc="Good-looking system monitor for your CPU, memory, disks, network and processes"
 url="https://github.com/aristocratos/btop"
 license="Apache-2.0"
