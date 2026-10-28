@@ -1,5 +1,5 @@
 pkgname = act
-pkgver = 0.2.89
+pkgver = 0.2.92
 pkgrel = 1
 pkgdesc = Run your GitHub Actions on your own machine
 url = https://github.com/nektos/act
@@ -10,4 +10,4 @@ arch = x86_64
 arch = aarch64
 makedepends = go
 makedepends = git
-source = git+https://github.com/nektos/act.git#tag=v0.2.89
+source = git+https://github.com/nektos/act.git#tag=v0.2.92
