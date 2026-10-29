@@ -1,6 +1,6 @@
 # Way better shell history you can search and sync
 pkgname=atuin
-pkgver=18.23.0
+pkgver=18.24.3
 pkgrel=1
 pkgdesc="Way better shell history you can search and sync"
 url="https://github.com/atuinsh/atuin"
@@ -12,8 +12,8 @@ _tag=v$pkgver
 # official prebuilt release binaries
 source_x86_64=("https://github.com/atuinsh/atuin/releases/download/$_tag/atuin-x86_64-unknown-linux-musl.tar.gz")
 source_aarch64=("https://github.com/atuinsh/atuin/releases/download/$_tag/atuin-aarch64-unknown-linux-musl.tar.gz")
-sha256sums_x86_64=(d1b40dd6e7cd3d823867ffe22b39a025bc420f7875926ae9ca974155378da14d)
-sha256sums_aarch64=(faf91adc71e6b661b21ed4f486babbd7af9d17363d4276da4a0251f83c72498d)
+sha256sums_x86_64=('7e2ae5dbbced1c40ee9eb20815436253a7fac2363a77024021892880beb0b589')
+sha256sums_aarch64=('48d7bc0e6821bcaef7e9752abaa4ded541b36889b1620923d8abb17fa34059b3')
 
 package() {
   install -Dm755 "$(find . -type f -name atuin -perm -u+x | head -n1)" "$pkgdir$prefix/bin/atuin"
