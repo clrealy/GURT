@@ -1,0 +1,35 @@
+# GURTBUILD for jacb - made to match the GURT site upload form
+pkgname=jacb
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Minimal non-Chromium browser (WebKitGTK) with the SUAIJP content blocker"
+url="https://github.com/clrealy/JACB"
+license="MIT"
+maintainer="clrealy"
+arch=(any)
+depends=(python3 python-gobject gtk4 webkitgtk)
+makedepends=()
+source=("git+https://github.com/clrealy/JACB.git#tag=v$pkgver")
+sha256sums=('SKIP')
+
+package() {
+    cd "$pkgname-$pkgver"
+    install -Dm755 jacb.py       "$pkgdir$prefix/bin/jacb"
+    install -Dm755 suaijp.py     "$pkgdir$prefix/bin/suaijp"
+    install -Dm644 LICENSE       "$pkgdir$prefix/share/licenses/$pkgname/LICENSE"
+    install -Dm644 jacb-icon.png "$pkgdir$prefix/share/icons/hicolor/256x256/apps/jacb.png"
+
+    # named after the app id so Wayland picks up the icon
+    install -d "$pkgdir$prefix/share/applications"
+    cat > "$pkgdir$prefix/share/applications/me.jacb.browser.desktop" << 'DESKTOP'
+[Desktop Entry]
+Type=Application
+Name=JACB
+Comment=JACB Ain't Chromium Brother
+Exec=jacb
+Icon=jacb
+Terminal=false
+Categories=Network;WebBrowser;
+StartupWMClass=me.jacb.browser
+DESKTOP
+}
