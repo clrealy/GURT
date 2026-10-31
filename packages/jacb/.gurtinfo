@@ -1,0 +1,13 @@
+pkgname = jacb
+pkgver = 0.1.0
+pkgrel = 1
+pkgdesc = Minimal non-Chromium browser (WebKitGTK) with the SUAIJP content blocker
+url = https://github.com/clrealy/JACB
+license = MIT
+maintainer = clrealy
+arch = any
+depends = python3
+depends = python-gobject
+depends = gtk4
+depends = webkitgtk
+source = git+https://github.com/clrealy/JACB.git#tag=v0.1.0
