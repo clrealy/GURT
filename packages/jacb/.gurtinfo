@@ -9,5 +9,5 @@ arch = any
 depends = python3
 depends = python-gobject
 depends = gtk4
-depends = webkitgtk
+depends = webkit2gtk-4.1
 source = git+https://github.com/clrealy/JACB.git#tag=v0.1.0
