@@ -7,7 +7,7 @@ url="https://github.com/clrealy/JACB"
 license="MIT"
 maintainer="clrealy"
 arch=(any)
-depends=(python3 python-gobject gtk4 webkitgtk)
+depends=(python3 python-gobject gtk4 webkit2gtk-4.1)
 makedepends=()
 source=("git+https://github.com/clrealy/JACB.git#tag=v$pkgver")
 sha256sums=('SKIP')
