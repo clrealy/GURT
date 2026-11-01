@@ -1,6 +1,6 @@
 # Run your GitHub Actions on your own machine
 pkgname=act
-pkgver=0.2.89
+pkgver=0.2.94
 pkgrel=1
 pkgdesc="Run your GitHub Actions on your own machine"
 url="https://github.com/nektos/act"
