@@ -1,6 +1,6 @@
 # Manage your dotfiles across all your machines
 pkgname=chezmoi
-pkgver=2.73.0
+pkgver=2.74.0
 pkgrel=1
 pkgdesc="Manage your dotfiles across all your machines"
 url="https://github.com/twpayne/chezmoi"
