@@ -1329,8 +1329,19 @@ def watch_downloads():
 def daemon_loop():
     last_refresh = last_check = 0
     waiting = ""   # why the last due check was held off (saver)
+    seen = ""      # a new version on disk, seen once (an update writes files one by one: wait till it's settled)
     while True:
         now, c = time.time(), dconf()
+        stamp = code_stamp()
+        if stamp != STAMP[0] and not any(not j.done for j in JOBS.values()):
+            if stamp == seen:   # GURT got updated: start over as the new version
+                dlog("GURT was updated, restarting GURTd on the new version")
+                try:
+                    os.remove(URL_FILE)
+                except OSError:
+                    pass
+                os.execv(sys.executable, [sys.executable] + sys.argv)
+            seen = stamp
         try:
             if HELD and not in_quiet(c):   # quiet hours are over: the notifications that waited
                 for k in list(HELD):
@@ -1380,13 +1391,29 @@ def daemon_tray():
     return True
 
 
+def code_stamp():
+    """which gurt + app code is on disk now. GURTd keeps serving the code it started with, so an update changes this"""
+    out = []
+    for f in (os.path.realpath(__file__), os.path.realpath(shutil.which(GURT) or GURT)):
+        try:
+            st = os.stat(f)
+            out.append(f"{st.st_mtime_ns}:{st.st_size}")
+        except OSError:
+            out.append("-")
+    return " ".join(out)
+
+
+STAMP = [""]   # the code GURTd started with
+
+
 def run_daemon(server, url):
     DAEMON[0] = True
+    STAMP[0] = code_stamp()
     dlog("Linus sees you. Starting GURTd btw")
     os.makedirs(RUN_DIR, exist_ok=True)
     fd = os.open(URL_FILE, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     with os.fdopen(fd, "w") as f:
-        f.write(url + "\n")
+        f.write(url + "\n" + STAMP[0] + "\n")   # gurt gui only attaches to a GURTd running today's code
     threading.Thread(target=server.serve_forever, daemon=True).start()
     threading.Thread(target=daemon_loop, daemon=True).start()
     threading.Thread(target=watch_downloads, daemon=True).start()
@@ -1403,10 +1430,14 @@ def run_daemon(server, url):
 
 
 def attach_window():
-    """gurt gui with GURTd running: just open a window onto its server"""
+    """gurt gui with GURTd running: just open a window onto its server, if that server runs today's code"""
     try:
-        url = open(URL_FILE).read().strip()
+        lines = open(URL_FILE).read().split("\n")
     except OSError:
+        return False
+    url, stamp = lines[0].strip(), (lines[1].strip() if len(lines) > 1 else "")
+    if not url or stamp != code_stamp():   # GURTd is still on the version from before an update
+        subprocess.Popen(["systemctl", "--user", "try-restart", "gurtd"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return False
     tk = find_toolkit()
     if tk:
@@ -1448,8 +1479,8 @@ def main():
              os.path.expanduser("~/.local/share/icons/hicolor/256x256/apps/gurt.png")]
     server = ThreadingHTTPServer(("127.0.0.1", a.port), H)
     PORT = server.server_address[1]
-    if a.attach:
-        sys.exit(0 if attach_window() else 1)
+    if a.attach and attach_window():
+        sys.exit(0)   # otherwise (GURTd is outdated or gone): open GURT on its own, the normal way
     ASKPASS = write_askpass()
     tk = None if (a.no_window or a.browser or a.daemon) else find_toolkit()
     global MODE
