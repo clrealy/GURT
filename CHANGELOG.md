@@ -1,5 +1,10 @@
 # GURT changelog 🦆
 
+## Not released yet
+
+### Removed
+- **.chrot packages.** `gurt chrot`, installing and removing `.chrot` files, and converting to or from .chrot are gone. ChromeOS support (Chromebrew, /usr/local) stays.
+
 ## 1.1.0: GURTd, undo, Android apps and ChromeOS 🐧
 
 A new look, a background daemon, an undo button, Android apps, ChromeOS, and a mostly-free-software Main GURT with 150 more apps.
