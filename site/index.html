@@ -284,6 +284,8 @@ body.carted{padding-bottom:74px}
 .pickhead small{color:var(--muted)}
 .mine{margin-left:auto;font:700 11.5px var(--mono);background:var(--accent);color:var(--accent-ink);padding:2px 7px;border-radius:var(--r);white-space:nowrap}
 .pick>p{margin:0;color:var(--muted);font-size:14px}
+.pick>p.nixnote{font-size:13px;border-top:1px solid var(--edge);padding-top:8px}
+.nixnote code{overflow-wrap:anywhere}
 .pick .dlbtns{margin-top:2px}
 .pick.wide{grid-column:1/-1}
 .crosways{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--edge);border-radius:var(--r)}
@@ -338,6 +340,7 @@ footer.site .cicada{color:#e7e7ea}
         <div class="pickhead"><div><h2 id="pl-h">GURT for Linux</h2><small>the GURT Setup Wizard as your distro's own package</small></div><span class="mine" hidden>your system</span></div>
         <p>Open it like any package. It installs GURT and the app, then the setup wizard picks your sources, your look and your first apps. Updates come with your normal system updates.</p>
         <div class="dlbtns" id="dl-linux"></div>
+        <p class="nixnote">NixOS: no package for it, so run <code>curl -fsSL https://gurtproject.org/install.sh | sh</code>. nixpkgs becomes <code>nix/</code>, and other distros' packages run through nix-ld, no box.</p>
       </section>
       <section class="pick" id="pick-win" aria-labelledby="pw-h">
         <div class="pickhead"><div><h2 id="pw-h">GURT for Windows</h2><small>Windows 10 / 11, through WSL</small></div><span class="mine" hidden>your system</span></div>
@@ -372,7 +375,7 @@ footer.site .cicada{color:#e7e7ea}
     <h2 class="bandtitle">What GURT does</h2>
     <div class="fgrid">
       <article class="feat"><h3>Main GURT</h3><p>2,500+ community recipes, built for your distro: official vendor repos, prebuilt downloads with pinned checksums, Flathub apps.</p><a href="#packages">browse packages →</a></article>
-      <article class="feat"><h3>Every distro's repos</h3><p>The AUR, apt, dnf, zypper, pacman, Flathub and the Snap Store, on whatever distro you run. <code>gurt install aur/yay</code> on Mint just works.</p><a href="https://github.com/clrealy/GURT#readme">how it works →</a></article>
+      <article class="feat"><h3>Every distro's repos</h3><p>The AUR, apt, dnf, zypper, pacman, Void's xbps, Solus' eopkg, Flathub and the Snap Store, on whatever distro you run. <code>gurt install aur/yay</code> on Mint just works.</p><a href="https://github.com/clrealy/GURT#readme">how it works →</a></article>
       <article class="feat"><h3>The GURT app</h3><p>Search, install and update everything in one window, with an update count, history, your app list and six skins.</p><a href="#get">get the app →</a></article>
       <article class="feat"><h3>Convert anything</h3><p>Turn a .deb into an .rpm, an AppImage into a pacman package, or a folder into a signed repo. Every file comes out signed.</p><a href="https://github.com/clrealy/GURT#readme">gurt convert →</a></article>
       <article class="feat"><h3>Safe by default</h3><p>Signatures get checked, build scripts get a sus check before anything runs, and btrfs systems get a snapshot before big upgrades.</p><a href="https://github.com/clrealy/GURT#readme">trust + safety →</a></article>
@@ -402,6 +405,8 @@ gurt outsource user/repo   <span class="c"># any git repo: clone + build + insta
       <button class="src" role="tab" aria-selected="false" data-src="dnf">dnf/ <small>Fedora</small></button>
       <button class="src" role="tab" aria-selected="false" data-src="zypper">zypper/ <small>openSUSE</small></button>
       <button class="src" role="tab" aria-selected="false" data-src="pacman">pacman/ <small>Arch</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="xbps">xbps/ <small>Void</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="eopkg">eopkg/ <small>Solus</small></button>
       <button class="src" role="tab" aria-selected="false" data-src="flatpak">flatpak/ <small>Flathub</small></button>
       <button class="src" role="tab" aria-selected="false" data-src="snap">snap/ <small>Snap Store</small></button>
       <button class="src dirtbtn" role="tab" aria-selected="false" data-src="dirt">dirt/ <small>18+</small></button>
@@ -454,7 +459,7 @@ gurt outsource user/repo   <span class="c"># any git repo: clone + build + insta
       <div><h4>Project</h4><a href="https://github.com/clrealy/GURT">Source code</a><a href="https://github.com/clrealy/GURT#readme">Docs</a><a href="https://github.com/clrealy/GURT/issues">Report a bug</a></div>
     </div>
     <p class="fnote">
-    Works on Debian, Ubuntu, Mint, Fedora, Arch, openSUSE, Alpine, Void, Gentoo, Solus and friends. Other sources are searched from the CLI: <code>gurt search -a &lt;term&gt;</code>.
+    Works on Debian, Ubuntu, Mint, Fedora, Arch, openSUSE, Alpine, Void, Gentoo, Solus, NixOS and friends. Other sources are searched from the CLI: <code>gurt search -a &lt;term&gt;</code>.
     Recipes are user-submitted — always read the GURTBUILD (or PKGBUILD) before you install. ·
     <a href="https://github.com/clrealy/GURT">source</a> ·
     <a href="https://github.com/clrealy/GURT/blob/main/CONTRIBUTING.md">submit a package</a><br>
@@ -709,6 +714,10 @@ const SRC = {
             web: t => `https://software.opensuse.org/search?q=${encodeURIComponent(t)}`, webName: "software.opensuse.org" },
   pacman: { title: "pacman · Arch", blurb: "Arch's official binary packages, installable on non-Arch distros.",
             web: t => `https://archlinux.org/packages/?q=${encodeURIComponent(t)}`, webName: "archlinux.org" },
+  xbps:   { title: "xbps · Void", blurb: "Void Linux's binary packages, installable on non-Void distros. musl systems get Void's musl repo.",
+            web: t => `https://voidlinux.org/packages/?arch=x86_64&q=${encodeURIComponent(t)}`, webName: "voidlinux.org" },
+  eopkg:  { title: "eopkg · Solus", blurb: "Solus's binary packages, installable on non-Solus distros (x86_64 only).",
+            web: t => `https://github.com/search?q=${encodeURIComponent("repo:getsolus/packages path:packages/ " + t)}&type=code`, webName: "Solus's package recipes on GitHub" },
   flatpak:{ title: "flatpak · Flathub", blurb: "Flathub apps, sandboxed. gurt installs flatpak + adds Flathub for you the first time. Use the app id or just the name (gurt install flatpak/gimp).",
             web: t => `https://flathub.org/apps/search?q=${encodeURIComponent(t)}`, webName: "flathub.org" },
   dirt:   { title: "DIRT · mature section" },

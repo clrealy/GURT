@@ -2,6 +2,14 @@
 
 ## Not released yet
 
+### New
+- **Void and Solus repos.** `xbps/` (alias `void/`) and `eopkg/` (alias `solus/`) work like `apt/` and `pacman/` on any distro: search them, install from them, and their deps come along. A musl system gets Void's musl repo. Downloaded `.xbps` and `.eopkg` files now pull their deps from those repos too.
+- **The AUR on NixOS.** `aur/` isn't blocked there anymore: `-bin` packages run through nix-ld, and ones that compile build with nixpkgs' gcc pointed at `/usr` and your nix profile.
+- **NixOS support ❄️.** gurt spots NixOS and uses nixpkgs as its package manager: `gurt install nix/<attr>`, `gurt search nix/<term>`, `gurt remove nix/<attr>`, all into your own nix profile, no sudo (`nix/` works anywhere nix is installed). Main GURT apps come from nixpkgs when nixpkgs has them. Other distros' packages and `.deb` / `.rpm` / `.pkg.tar.zst` files install straight onto the system (no box) and run through nix-ld, AppImages run with `appimage-run`, `/usr` and `/usr/local` get added to your PATH, and `gurt sysup` runs `nixos-rebuild`. For flatpak, nix-ld and Waydroid, gurt gives you the `configuration.nix` line.
+
+### Fixed
+- `gurt list` hung, or printed nothing, when the Main GURT recipes weren't downloaded yet.
+
 ### Removed
 - **.chrot packages.** `gurt chrot`, installing and removing `.chrot` files, and converting to or from .chrot are gone. ChromeOS support (Chromebrew, /usr/local) stays.
 

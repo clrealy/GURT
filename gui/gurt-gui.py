@@ -212,7 +212,7 @@ SKINS = ("gurt", "win11", "xp", "w95", "vapor", "hacker")
 TRACKS = ("auto", "shop", "lofi", "chip", "synth")
 LEGENDARY = ("hpa2", "tsudore", "opsec", "oneko", "zsnes", "frozen-bubble")
 ACH_IDS = ("legendary", "streak7", "lottery", "compare", "v1", "wizard")
-SYNC_SRCS = ("aur", "apt", "dnf", "zypper", "pacman")
+SYNC_SRCS = ("aur", "apt", "dnf", "zypper", "pacman", "xbps", "eopkg")
 
 
 def skin():
@@ -515,7 +515,7 @@ def state():
     gurt_keys = {i["key"] for i in installed} | {i["name"] for i in installed if i["src"] == "gurt"}
     outside = {n: how for n, how in outside_apps(main, p.get("pm", ""), flatpaks).items()
                if n not in gurt_keys and not any(a["name"] == n and a["ikey"] in gurt_keys for a in main)}
-    return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks, "outside": outside, "wsl": p.get("wsl") == "yes", "cros": p.get("cros") == "yes", "audio": audio_ok(),
+    return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks, "outside": outside, "wsl": p.get("wsl") == "yes", "cros": p.get("cros") == "yes", "nix": p.get("nix") == "yes", "nixos": p.get("nixos") == "yes", "audio": audio_ok(),
             "main": main, "fossonly": strict, "dirtpkgs": dirt, "installed": installed, "vibes": vibes(repo), "notify": notify_on(), "dev": p.get("dev", "no")}
 
 
@@ -2005,8 +2005,11 @@ dialog .row{justify-content:flex-end}
       <button data-src="dnf">dnf/ <small>Fedora</small></button>
       <button data-src="zypper">zypper/ <small>openSUSE</small></button>
       <button data-src="pacman">pacman/ <small>Arch</small></button>
+      <button data-src="xbps">xbps/ <small>Void</small></button>
+      <button data-src="eopkg">eopkg/ <small>Solus</small></button>
       <button data-src="flatpak">flatpak/ <small>Flathub</small></button>
       <button data-src="snap">snap/ <small>Snap Store</small></button>
+      <button data-src="nix" hidden>nix/ <small>nixpkgs</small></button>
       <button data-src="dirt" class="dirtbtn">dirt/ <small>18+</small></button>
     </div>
     <p class="blurb" id="blurb" hidden></p>
@@ -2118,8 +2121,10 @@ function devGate(){
   $("#devgo").onclick = go; $("#devpw").onkeydown = e => { if (e.key === "Enter") go(); };
   return true;
 }
-async function load(){ S = await api("/api/state"); ICONMAP = new Map(S.main.map(p => [p.name, p.icon])); $("#fossbtn").textContent = `FOSS only: ${S.fossonly ? "on" : "off"}`; $("#fossbtn").classList.toggle("ghost", !S.fossonly); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · Windows" : S.cros ? " · ChromeOS" : ""}`;
-  document.querySelector('nav button[data-tab="desktops"]').hidden = S.wsl || S.cros;   // no Linux desktops there: Windows / ChromeOS is the desktop
+async function load(){ S = await api("/api/state"); ICONMAP = new Map(S.main.map(p => [p.name, p.icon])); $("#fossbtn").textContent = `FOSS only: ${S.fossonly ? "on" : "off"}`; $("#fossbtn").classList.toggle("ghost", !S.fossonly); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · Windows" : S.cros ? " · ChromeOS" : S.nixos ? " · NixOS" : ""}`;
+  document.querySelector('#srcs button[data-src="nix"]').hidden = !S.nix;   // nixpkgs: on NixOS, or wherever nix is installed
+  document.querySelector('#srcs button[data-src="snap"]').hidden = !!S.nixos;   // NixOS has no snapd
+  document.querySelector('nav button[data-tab="desktops"]').hidden = S.wsl || S.cros || S.nixos;   // no Linux desktops there: Windows / ChromeOS is the desktop, NixOS sets its own in configuration.nix
   $("#droidtxt").textContent = S.cros ? "free software from F-Droid, installed into your Chromebook's own Android. a .apk that isn't on F-Droid gets a heads-up first"
     : "free software from F-Droid, running in Waydroid. gurt sets it up. a .apk that isn't on F-Droid gets a heads-up first";
   $("#droidopen").hidden = !!S.cros;
@@ -3033,7 +3038,8 @@ const STARTER = {"Browsers": ["firefox", "brave", "librewolf", "zen-browser", "c
   "Gaming": ["steam", "heroic", "lutris", "prismlauncher", "bottles"]};
 const WIZ_SRCS = [["flatpak", "Flathub", "sandboxed apps, and where most Main GURT apps come from"], ["aur", "the AUR", "Arch's user repo, built from source on your PC (gurt checks the build scripts for red flags first)"],
   ["apt", "Debian / Ubuntu repos", "apt/ packages on any distro"], ["dnf", "Fedora repos", "dnf/ packages on any distro"],
-  ["zypper", "openSUSE repos", "zypper/ packages on any distro"], ["pacman", "Arch repos", "pacman/ packages on any distro"]];
+  ["zypper", "openSUSE repos", "zypper/ packages on any distro"], ["pacman", "Arch repos", "pacman/ packages on any distro"],
+  ["xbps", "Void repos", "xbps/ packages on any distro"], ["eopkg", "Solus repos", "eopkg/ packages on any distro"]];
 const WIZ_SKINS = [["gurt", "GURT"], ["win11", "Windows 11"], ["xp", "Windows XP"], ["w95", "Windows 95"], ["vapor", "Vaporwave"], ["hacker", "Hacker"]];
 const WIZ_TRACKS = [["auto", "auto"], ["shop", "shop"], ["lofi", "lofi"], ["chip", "chiptune"], ["synth", "synthwave"]];
 let W = null, wizStep = 0, wizDoc = null, wizState = "edit";   // edit → running → done
