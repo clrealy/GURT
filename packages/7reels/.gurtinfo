@@ -1,0 +1,11 @@
+pkgname = 7reels
+pkgver = 1.0.0
+pkgrel = 1
+pkgdesc = we pirate too
+url = https://7reels.cc
+license = unknown
+maintainer = clrealy
+arch = x86_64
+arch = aarch64
+depends = xdg-utils
+source = 7reels.png

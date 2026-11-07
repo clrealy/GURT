@@ -15,7 +15,7 @@ gurt install zypper/htop    # openSUSE's repos... on Red Star OS, if you're brav
 gurt install dnf/fastfetch  # Fedora's repos... on Arch
 gurt install pacman/btop    # Arch's official repos... on Ubuntu
 gurt install flatpak/gimp   # Flathub, flatpak set up for you
-gurt install snap/spotify   # the Snap Store
+gurt install snap/spotify   # you're a weirdo if you do this
 ```
 
 Prefer flags? `--repo` works too, and `aur/yay` and `yay --repo aur` do the exact same thing:
@@ -580,7 +580,7 @@ gurt install dirt/<name>
 gurt dirt off
 ```
 
-Rules are in [`dirt/README.md`](dirt/README.md) — legal, labeled, and **nothing involving minors, ever**.
+Rules are in [`dirt/README.md`](dirt/README.md) — legal, labeled, and **nothing involving minors you sick fuck**
 
 ## Usage
 
