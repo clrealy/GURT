@@ -581,7 +581,7 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/":
             if not self._host_ok() or not secrets.compare_digest((q.get("t") or [""])[0], TOKEN):
                 return self._send(403, "nope, open GURT with: gurt gui", "text/plain")
-            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()).replace("__SFX__", "off" if conf().get("sfx") is False else "on").replace("__MUSIC__", "off" if conf().get("music") is False else "on").replace("__TRACK__", conf().get("track") if conf().get("track") in TRACKS else "auto").replace("__SEEN__", html_attr(str(conf().get("seen", "")))).replace("__WIZ__", "new" if not conf() or (WIZARD[0] and conf().get("wizard") != "done") else str(conf().get("wizard", ""))).replace("__APP__", "setup" if WIZARD[0] else "gurt").replace("__FROM__", "app" if WIZARD[1] else "").replace("__OPEN__", html_attr(OPEN_FILE[0])), "text/html")
+            return self._send(200, PAGE.replace("__TOKEN__", TOKEN).replace("__MODE__", MODE).replace("__THEME__", theme()).replace("__SKIN__", skin()).replace("__SFX__", "off" if conf().get("sfx") is False else "on").replace("__MUSIC__", "off" if conf().get("music") is False else "on").replace("__TRACK__", conf().get("track") if conf().get("track") in TRACKS else "auto").replace("__SEEN__", html_attr(str(conf().get("seen", "")))).replace("__WIZ__", "new" if not conf() or (WIZARD[0] and conf().get("wizard") != "done") else str(conf().get("wizard", ""))).replace("__APP__", "setup" if WIZARD[0] else "gurt").replace("__GATE__", "1" if not WIZARD[0] and conf().get("wizard") != "done" else "").replace("__FROM__", "app" if WIZARD[1] else "").replace("__OPEN__", html_attr(OPEN_FILE[0])), "text/html")
         if u.path in ("/icon.png", "/logo.png", "/dirt-logo.png"):
             repo = paths().get("repo", "")
             want = {"/logo.png": "gurt-logo.png", "/dirt-logo.png": "dirt-logo.png"}.get(u.path, "apple-touch-icon.png")
@@ -602,6 +602,8 @@ class H(BaseHTTPRequestHandler):
                 return self._send(404, b"", "image/png")
         if not self._auth():
             return self._send(403, {"error": "bad token"})
+        if u.path == "/api/wizstate":   # GURT waits behind its lock screen until the setup wizard is finished
+            return self._send(200, {"done": conf().get("wizard") == "done"})
         if u.path == "/api/gurtd":   # GURTd: running? its settings, the end of its log
             running = DAEMON[0]
             if not running:
@@ -863,7 +865,7 @@ class H(BaseHTTPRequestHandler):
                 return self._send(400, {"error": "nope"})
             r = subprocess.run([GURT, "__achieve", a], capture_output=True, text=True, timeout=20, env=dict(os.environ, NO_COLOR="1"))
             return self._send(200, {"line": ANSI.sub("", r.stderr).strip()})
-        if u.path == "/api/wizard":   # the setup wizard ran (or was skipped): don't pop it up again
+        if u.path == "/api/wizard":   # the setup wizard was finished: GURT is unlocked
             save_conf(wizard="done", seen=str(body.get("v", ""))[:20])
             return self._send(200, {"ok": True})
         if u.path == "/api/seen":   # the "welcome to a new version" card shows once per version
@@ -1329,8 +1331,19 @@ def watch_downloads():
 def daemon_loop():
     last_refresh = last_check = 0
     waiting = ""   # why the last due check was held off (saver)
+    seen = ""      # a new version on disk, seen once (an update writes files one by one: wait till it's settled)
     while True:
         now, c = time.time(), dconf()
+        stamp = code_stamp()
+        if stamp != STAMP[0] and not any(not j.done for j in JOBS.values()):
+            if stamp == seen:   # GURT got updated: start over as the new version
+                dlog("GURT was updated, restarting GURTd on the new version")
+                try:
+                    os.remove(URL_FILE)
+                except OSError:
+                    pass
+                os.execv(sys.executable, [sys.executable] + sys.argv)
+            seen = stamp
         try:
             if HELD and not in_quiet(c):   # quiet hours are over: the notifications that waited
                 for k in list(HELD):
@@ -1380,13 +1393,29 @@ def daemon_tray():
     return True
 
 
+def code_stamp():
+    """which gurt + app code is on disk now. GURTd keeps serving the code it started with, so an update changes this"""
+    out = []
+    for f in (os.path.realpath(__file__), os.path.realpath(shutil.which(GURT) or GURT)):
+        try:
+            st = os.stat(f)
+            out.append(f"{st.st_mtime_ns}:{st.st_size}")
+        except OSError:
+            out.append("-")
+    return " ".join(out)
+
+
+STAMP = [""]   # the code GURTd started with
+
+
 def run_daemon(server, url):
     DAEMON[0] = True
+    STAMP[0] = code_stamp()
     dlog("Linus sees you. Starting GURTd btw")
     os.makedirs(RUN_DIR, exist_ok=True)
     fd = os.open(URL_FILE, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     with os.fdopen(fd, "w") as f:
-        f.write(url + "\n")
+        f.write(url + "\n" + STAMP[0] + "\n")   # gurt gui only attaches to a GURTd running today's code
     threading.Thread(target=server.serve_forever, daemon=True).start()
     threading.Thread(target=daemon_loop, daemon=True).start()
     threading.Thread(target=watch_downloads, daemon=True).start()
@@ -1403,10 +1432,14 @@ def run_daemon(server, url):
 
 
 def attach_window():
-    """gurt gui with GURTd running: just open a window onto its server"""
+    """gurt gui with GURTd running: just open a window onto its server, if that server runs today's code"""
     try:
-        url = open(URL_FILE).read().strip()
+        lines = open(URL_FILE).read().split("\n")
     except OSError:
+        return False
+    url, stamp = lines[0].strip(), (lines[1].strip() if len(lines) > 1 else "")
+    if not url or stamp != code_stamp():   # GURTd is still on the version from before an update
+        subprocess.Popen(["systemctl", "--user", "try-restart", "gurtd"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return False
     tk = find_toolkit()
     if tk:
@@ -1432,6 +1465,8 @@ def main():
     ap.add_argument("files", nargs="*", help="a package to open (double-clicking a .gurt file)")
     a = ap.parse_args()
     WIZARD[:] = [a.wizard, a.from_app]
+    if not a.wizard and not a.daemon and not a.probe and conf().get("wizard") != "done":
+        WIZARD[0] = True   # the GURT Setup Wizard comes first: until it's finished, opening GURT opens the wizard
     if a.files:
         f = a.files[0]
         if f.startswith("file://"):
@@ -1448,8 +1483,8 @@ def main():
              os.path.expanduser("~/.local/share/icons/hicolor/256x256/apps/gurt.png")]
     server = ThreadingHTTPServer(("127.0.0.1", a.port), H)
     PORT = server.server_address[1]
-    if a.attach:
-        sys.exit(0 if attach_window() else 1)
+    if a.attach and attach_window():
+        sys.exit(0)   # otherwise (GURTd is outdated or gone): open GURT on its own, the normal way
     ASKPASS = write_askpass()
     tk = None if (a.no_window or a.browser or a.daemon) else find_toolkit()
     global MODE
@@ -1493,11 +1528,6 @@ def main():
         pass
     finally:
         shutil.rmtree(os.path.dirname(ASKPASS), ignore_errors=True)
-        if WIZARD[0] and conf().get("wizard") != "done":   # the setup wizard got closed with its ✕: skipped, so it won't nag
-            try:
-                save_conf(wizard="done")
-            except Exception:
-                pass
 
 
 PORT, ASKPASS, ICONS, MODE = 0, "", [], "browser"
@@ -1531,7 +1561,7 @@ def audio_ok():
     return any(os.path.isfile(os.path.join(d, "libgstautodetect.so")) for d in dirs)
 
 PAGE = r"""<!doctype html>
-<html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__" data-music="__MUSIC__" data-track="__TRACK__" data-seen="__SEEN__" data-wiz="__WIZ__" data-app="__APP__" data-from="__FROM__" data-open="__OPEN__"><head>
+<html lang="en" data-theme="__THEME__" data-skin="__SKIN__" data-sfx="__SFX__" data-music="__MUSIC__" data-track="__TRACK__" data-seen="__SEEN__" data-wiz="__WIZ__" data-gate="__GATE__" data-app="__APP__" data-from="__FROM__" data-open="__OPEN__"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GURT</title><link rel="icon" href="/icon.png">
 <style>
@@ -1887,7 +1917,17 @@ dialog .row{justify-content:flex-end}
 :root[data-skin=hacker] .chip::before{content:"<"}:root[data-skin=hacker] .chip::after{content:">"}:root[data-skin=hacker] .chip{border:0;padding:0 2px}
 :root[data-skin=hacker] dialog,:root[data-skin=hacker] #prefpop,:root[data-skin=hacker] .morepop{border:1px dashed #33ff66}
 :root[data-skin=hacker] .search input{border-style:dashed;caret-color:#33ff66}
+#wizgate{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;align-items:flex-start;padding:12vh 24px 24px}
+#wizgate[hidden]{display:none}
+#wizgate .in{max-width:520px;border:1px solid var(--edge);border-radius:var(--r);background:var(--panel)}
+#wizgate h2{margin:0;padding:8px 12px;border-bottom:1px solid var(--edge);font:700 15px var(--sans)}
+#wizgate p{margin:10px 12px;color:var(--muted)}
+#wizgate .row{display:flex;gap:6px;align-items:center;padding:0 12px 12px}
+#wizgate small{font:12px var(--mono);color:var(--muted)}
 </style></head><body>
+<div id="wizgate" hidden><div class="in"><h2>Set up GURT first</h2>
+  <p>GURT opens once you've finished the GURT Setup Wizard: a minute of questions about your sources, your look and your first apps.</p>
+  <div class="row"><button class="btn" id="wizgatego">open the setup wizard</button><small id="wizgatewait">waiting for the wizard…</small></div></div></div>
 <header>
   <div class="brand"><span class="logosvg"><!--logo--><svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -1223 3791 1805" role="img" aria-label="gurt"><path transform="translate(70 70) rotate(-4 529 -300) translate(0 0) scale(1 -1)" d="M257 347Q79 422 79 640Q79 796 188.0 880.5Q297 965 500 965Q543 965 610.5 957.5Q678 950 709 940L934 1051L969 1008L855 846Q917 770 917 640Q917 481 809.5 395.5Q702 310 496 310Q417 310 343 322L319 246Q321 217 356.0 191.5Q391 166 442 166H661Q1004 166 1004 -98Q1004 -207 944.5 -285.5Q885 -364 769.5 -408.0Q654 -452 482 -452Q278 -452 166.0 -393.5Q54 -335 54 -233Q54 -188 90.5 -146.0Q127 -104 232 -43Q173 -20 131.5 37.0Q90 94 90 157ZM785 -166Q785 -71 658 -71H341Q253 -135 253 -216Q253 -280 314.5 -312.0Q376 -344 483 -344Q628 -344 706.5 -297.0Q785 -250 785 -166ZM494 410Q568 410 601.0 467.5Q634 525 634 640Q634 755 601.5 809.5Q569 864 494 864Q425 864 393.5 809.5Q362 755 362 640Q362 525 393.0 467.5Q424 410 494 410Z" fill="#ffc629"/><path transform="translate(70 70) rotate(3 1552 -418) translate(994 40) scale(1 -1)" d="M705 82 637 47Q497 -25 385 -25Q125 -25 125 252V850L31 874V940H414V291Q414 207 449.5 160.0Q485 113 551 113Q627 113 703 147V850L617 874V940H992V90L1084 66V0H719Z" fill="#141414"/><path transform="translate(70 70) rotate(-5 2563 -555) translate(2103 -70) scale(1 -1)" d="M461 745Q569 865 654.5 917.5Q740 970 811 970H865V627H809L750 753Q687 753 607.0 725.5Q527 698 466 661V90L617 66V0H55V66L177 90V850L55 874V940H450Z" fill="#141414"/><path transform="translate(70 70) rotate(4 3335 -556) translate(2982 10) scale(1 -1)" d="M438 -20Q303 -20 229.5 41.0Q156 102 156 217V836H33V901L178 940L295 1153H445V940H643V836H445V235Q445 170 472.0 137.0Q499 104 543 104Q596 104 673 120V35Q643 14 570.5 -3.0Q498 -20 438 -20Z" fill="#141414"/><path class="logo-g" transform="rotate(-4 529 -300) translate(0 0) scale(1 -1)" d="M257 347Q79 422 79 640Q79 796 188.0 880.5Q297 965 500 965Q543 965 610.5 957.5Q678 950 709 940L934 1051L969 1008L855 846Q917 770 917 640Q917 481 809.5 395.5Q702 310 496 310Q417 310 343 322L319 246Q321 217 356.0 191.5Q391 166 442 166H661Q1004 166 1004 -98Q1004 -207 944.5 -285.5Q885 -364 769.5 -408.0Q654 -452 482 -452Q278 -452 166.0 -393.5Q54 -335 54 -233Q54 -188 90.5 -146.0Q127 -104 232 -43Q173 -20 131.5 37.0Q90 94 90 157ZM785 -166Q785 -71 658 -71H341Q253 -135 253 -216Q253 -280 314.5 -312.0Q376 -344 483 -344Q628 -344 706.5 -297.0Q785 -250 785 -166ZM494 410Q568 410 601.0 467.5Q634 525 634 640Q634 755 601.5 809.5Q569 864 494 864Q425 864 393.5 809.5Q362 755 362 640Q362 525 393.0 467.5Q424 410 494 410Z" fill="var(--logo-ink)" stroke="#141414" stroke-width="18"/><path transform="rotate(3 1552 -418) translate(994 40) scale(1 -1)" d="M705 82 637 47Q497 -25 385 -25Q125 -25 125 252V850L31 874V940H414V291Q414 207 449.5 160.0Q485 113 551 113Q627 113 703 147V850L617 874V940H992V90L1084 66V0H719Z" fill="#e8302a" stroke="#141414" stroke-width="18"/><path transform="rotate(-5 2563 -555) translate(2103 -70) scale(1 -1)" d="M461 745Q569 865 654.5 917.5Q740 970 811 970H865V627H809L750 753Q687 753 607.0 725.5Q527 698 466 661V90L617 66V0H55V66L177 90V850L55 874V940H450Z" fill="#1fa64a" stroke="#141414" stroke-width="18"/><path transform="rotate(4 3335 -556) translate(2982 10) scale(1 -1)" d="M438 -20Q303 -20 229.5 41.0Q156 102 156 217V836H33V901L178 940L295 1153H445V940H643V836H445V235Q445 170 472.0 137.0Q499 104 543 104Q596 104 673 120V35Q643 14 570.5 -3.0Q498 -20 438 -20Z" fill="#2456e0" stroke="#141414" stroke-width="18"/></svg><!--/logo--></span><img class="dirtlogo" src="/dirt-logo.png" alt="dirt."><div class="ver" id="ver"></div></div>
   <nav>
@@ -2041,6 +2081,7 @@ dialog .row{justify-content:flex-end}
 
 <script>
 const T = "__TOKEN__", MODE = "__MODE__", SETUP = document.documentElement.dataset.app === "setup";   // SETUP: this window is the setup wizard app
+const GATED = !SETUP && document.documentElement.dataset.gate === "1";   // GURT, before the setup wizard's been finished
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const api = (p, body) => fetch(p, body ? {method:"POST", headers:{"X-Gurt-Token":T,"Content-Type":"application/json"}, body:JSON.stringify(body)} : {headers:{"X-Gurt-Token":T}}).then(r => r.json());
@@ -2304,12 +2345,23 @@ $("#achbtn").addEventListener("click", async () => {
   $("#achdlg").showModal();
 });
 $("#achclose").addEventListener("click", () => $("#achdlg").close());
+// GURT is locked until the setup wizard is finished (this page only gets here locked when GURTd served it):
+// the wizard opens in its own window, and GURT unlocks itself the moment it's done
+if (GATED) {
+  $("#wizgate").hidden = false;
+  $("#wizgatego").addEventListener("click", wizStart);
+  wizStart();
+  const poll = setInterval(async () => {
+    const r = await api("/api/wizstate").catch(() => null);
+    if (r && r.done) { clearInterval(poll); location.reload(); }
+  }, 2000);
+}
 // first time on 1.0: a little welcome (once), and the day-one trophy
 (() => {
   const seen = document.documentElement.dataset.seen || "", ver = () => (S && S.version) || "";
   const show = () => {
     if (devGate()) return;   // the dev password comes first
-    if (SETUP || document.documentElement.dataset.wiz === "new") { wizStart(); return; }   // brand new: the wizard covers what's new too
+    if (SETUP || document.documentElement.dataset.wiz === "new") { if (!GATED) wizStart(); return; }   // brand new: the wizard covers what's new too
     if (!/^1\./.test(ver()) || /^1\./.test(seen)) return;
     $("#v1dlg").showModal(); SFX.play("legendary");
     $("#v1ok").onclick = () => $("#v1dlg").close();
@@ -3088,13 +3140,12 @@ $("#wiznext").addEventListener("click", async () => {
 $("#wizback").addEventListener("click", () => { if (wizStep > 0) { wizStep--; wizRender(); } });
 $("#wizcancel").addEventListener("click", async () => {
   if (!SETUP) return $("#wizard").close();
-  await api("/api/wizard", {v: (S && S.version) || ""}).catch(() => {});   // skipped: the first-login autostart won't nag
-  wizQuit(false);
+  if (document.documentElement.dataset.wiz !== "done" && !await ask("Quit the setup wizard?", "GURT opens once the setup wizard is finished. It'll be here next time.")) return;
+  wizQuit(false);   // not finished = GURT stays locked; the wizard comes back next time
 });
 $("#wizard").addEventListener("cancel", e => { if (SETUP || wizState === "running") e.preventDefault(); });   // no Esc mid-install (or out of the wizard app)
 $("#wizard").addEventListener("close", () => {
   if (SETUP) { if (!wizQuitting) $("#wizard").showModal(); return; }   // the wizard app is the wizard: Esc can't leave an empty window
-  if (document.documentElement.dataset.wiz === "new") api("/api/wizard", {v: (S && S.version) || ""}).catch(() => {});   // skipped: don't nag
 });
 $("#wizopen").addEventListener("click", wizStart);
 $("#wizpage").addEventListener("change", async e => {

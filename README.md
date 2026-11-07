@@ -176,6 +176,8 @@ Your **GitHub account is your GURT account**. There are no new passwords, and GU
 
 On Linux, your software center installs it like any other app. Then open **GURT Setup Wizard** from your app menu (it also opens by itself at your next login). It's its own app, separate from GURT, and walks you through the rest: a system check, where apps come from, your look, a few starter apps (or 📥 import your list from your old PC), and update alerts. GURT made these files itself with `gurt convert`.
 
+The setup wizard comes first: until you've finished it, opening GURT opens the wizard, and finishing it opens GURT. Closing it halfway doesn't count, so it comes back next time. In a terminal, `gurt` runs the wizard before your first command too (in the terminal when there's no desktop). Scripts, pipes, `-y`, root and GURTd are never stopped; `GURT_NO_WIZARD=1` skips it.
+
 `gurt setup` opens the wizard again anytime (`gurt setup --terminal` asks the same questions right in the terminal, and 🎨 → 🧙 setup wizard in GURT opens it too). Picked apps on the website's 🧰 Build your setup? Hit 📄 save as a list, then 📥 import it in the wizard.
 
 **Updates:** the GURTSetupWizard `.deb` and `.rpm` add the GURT repo (`gurtproject.org/repo`), so new versions of GURT come with your normal system updates: `sudo apt upgrade`, `sudo zypper up` / `dup`, `sudo dnf upgrade`. On Arch, add it to `/etc/pacman.conf` yourself, as below. `gurt self-update` tells you the right command.
@@ -225,9 +227,15 @@ Two ways, and gurt knows which one it's in.
 - GURTd watches ChromeOS's Downloads once you share it with Linux (Files → right-click Downloads → Share with Linux)
 - `gurt de` and the app's Desktops tab sit out: ChromeOS is your desktop
 
-**On ChromeOS itself** (developer mode, or Brunch on a regular PC) with [Chromebrew](https://chromebrew.github.io). Download [install.sh](https://gurtproject.org/install.sh) and run `sh install.sh` in the shell:
+**On ChromeOS itself** (developer mode, or Brunch on a regular PC) with [Chromebrew](https://chromebrew.github.io). ChromeOS won't run a script file from your home folder (`Refusing to exec … from noexec mount`), so pipe it into bash, in the shell:
 
-- everything lives in `/usr/local`, the one place ChromeOS lets you write: gurt itself, its database (`/usr/local/var/lib/gurt`) and every app. No sudo
+```sh
+curl -fsSL https://gurtproject.org/install.sh | bash
+```
+
+No git needed (it grabs a tarball when git's missing). Then:
+
+- everything lives in `/usr/local`, the one place ChromeOS lets you write and run things: gurt itself, its database (`/usr/local/var/lib/gurt`), its cache and temp files (`/usr/local/var/cache/gurt`, `/usr/local/tmp/gurt`) and every app. No sudo
 - Chromebrew is the package manager: deps come from `crew`, `gurt install crew/<pkg>` and `gurt search crew/<term>` work, `gurt sysup` runs `crew update` + `crew upgrade`
 - other distros' packages work: `gurt install ./thing.deb` (or .rpm, .pkg.tar.zst…) moves its `/usr`, `/etc` and `/opt` files under `/usr/local` and fixes its menu entry
 - flatpak, snap and Waydroid need a real Linux, so for those gurt points you at Linux on ChromeOS

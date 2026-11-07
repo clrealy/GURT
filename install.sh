@@ -10,11 +10,16 @@ die() { printf '\033[31m==> nah:\033[0m %s\n' "$*" >&2; exit 1; }
 # ChromeOS itself (developer mode / Brunch, with Chromebrew): /usr/local is yours and the rest is read-only, so no sudo
 CROS=""; grep -qs '^CHROMEOS_RELEASE_NAME=' /etc/lsb-release && [ ! -e /dev/.cros_milestone ] && CROS=1
 if [ "$(id -u)" -eq 0 ] || { [ -n "$CROS" ] && [ -w /usr/local ]; }; then SUDO=""; elif command -v sudo >/dev/null; then SUDO=sudo; elif command -v doas >/dev/null; then SUDO=doas; else die "need sudo or doas"; fi
-for t in bash git; do command -v "$t" >/dev/null || die "install $t first, then rerun"; done
+command -v bash >/dev/null || die "install bash first, then rerun"
+command -v git >/dev/null || command -v curl >/dev/null || die "install git (or curl) first, then rerun"
 tar --version 2>/dev/null | grep -q GNU || die "gurt needs GNU tar (Alpine: apk add tar)"
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 say "grabbing gurt"
-git clone -q --depth 1 "$REPO" "$tmp/gurt"
+if command -v git >/dev/null; then git clone -q --depth 1 "$REPO" "$tmp/gurt"
+else   # no git (ChromeOS itself): GitHub's tarball
+  mkdir -p "$tmp/gurt"
+  curl -fsSL "${GURT_TARBALL:-https://github.com/clrealy/GURT/archive/refs/heads/main.tar.gz}" | tar -xz -C "$tmp/gurt" --strip-components=1 || die "couldn't download gurt"
+fi
 $SUDO install -Dm755 "$tmp/gurt/gurt" "$BIN/gurt"
 $SUDO install -Dm644 "$tmp/gurt/deps.map" "$SHARE/deps.map"
 $SUDO install -Dm644 "$tmp/gurt/vibes.map" "$SHARE/vibes.map"

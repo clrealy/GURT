@@ -1,17 +1,22 @@
 # GURT changelog 🦆
 
-## Not released yet
+## 1.1.0: GURTd, undo, Android apps and ChromeOS 🐧
+
+A new look, a background daemon, an undo button, Android apps, ChromeOS, and a mostly-free-software Main GURT with 150 more apps.
 
 ### New
+- **A new look.** Denser and cleaner in every skin: real app logos instead of emoji icons, no more tiny all-caps labels, and the same rules on gurtproject.org.
 - **GURTd**, gurt's background daemon (`gurt gurtd on`, `gurt gurtd config`, or Updates → GURTd in the app). It keeps package lists fresh, checks for updates (and auto-updates if you want), asks to install new .deb/.rpm/AppImage downloads, and makes the app open instantly. Saver mode waits on battery or metered data; quiet hours hold its popups.
 - **`gurt undo`** takes back the last thing gurt did (installs, removes, upgrades, all as one step). Run it again to redo. In the app: **undo last** in the history dialog.
 - **The disk hog finder.** `gurt hogs all` shows everything on your disk, not just gurt's apps. `gurt hogs junk` lists caches, trash, old logs and package downloads, and `gurt hogs clean` tosses them. In the app: **free up space** on the Installed tab.
 - **Linux From Scratch support.** gurt detects LFS and builds what it needs from Main GURT recipes.
 - **Apps you got without gurt count as installed** (flatpak, snap, your distro, /opt, AppImages), and badges say where each one came from.
-- **Real app logos** instead of emoji, with your system's own icon as the fallback.
+- **Real app logos**: Flathub's, then your system's own icon, then a letter tile.
 - **Android apps through Waydroid**: `gurt install android/<app>` installs from F-Droid (the only store, so it's all free software). A closed-source .apk you bring still installs, after a heads-up. gurt sets Waydroid up the first time (plain Android, no Google apps). `gurt android` for the rest, or Setup → Android apps in the app.
 - **ChromeOS.** In Linux on ChromeOS, apps (flatpaks too) land in the launcher, Android apps go into the Chromebook's own Android, and GURTd watches ChromeOS's Downloads. On ChromeOS itself (developer mode or Brunch, with Chromebrew), gurt lives in `/usr/local` with no sudo, uses `crew` for deps (`crew/` packages too) and moves other distros' packages under `/usr/local`. gurtproject.org has a ChromeOS card.
 - **.chrot packages (Tweakium).** `gurt install ./x.chrot`, `gurt remove chrot/x`, `gurt chrot list|build`, and `gurt convert` to and from .chrot. Same database as the chrot tool, chrot dependencies, sus-checked hooks. The app's Install a file tab and GURTd's Downloads watcher know .chrot too.
+- **The setup wizard comes first.** Until it's finished, opening GURT opens the GURT Setup Wizard, and `gurt` in a terminal runs it before your first command. Closing the wizard halfway no longer counts as done. Scripts, `-y`, root and GURTd aren't affected (`GURT_NO_WIZARD=1` skips it).
+- **GURTd restarts itself after an update**, so the app never opens onto the old version.
 - **Mostly free software.** Closed-source apps are labeled, come after the free ones, and `gurt install` suggests free apps like them. `gurt foss on` (or **FOSS only** in the app and on the site) hides and blocks them. The setup wizard's starter apps are free software, except Steam.
 
 ### Site
