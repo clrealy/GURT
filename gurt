@@ -43,7 +43,10 @@ DNF_MIRROR="${DNF_MIRROR:-https://dl.fedoraproject.org/pub/fedora/linux/releases
 ZYPPER_MIRROR="${ZYPPER_MIRROR:-https://download.opensuse.org/tumbleweed/repo/oss}"
 PACMAN_MIRROR="${PACMAN_MIRROR:-https://geo.mirror.pkgbuild.com}"
 PACMAN_REPOS="${PACMAN_REPOS:-core extra}"
-FOREIGN_SOURCES="aur apt dnf zypper pacman flatpak snap"
+XBPS_MIRROR="${XBPS_MIRROR:-https://repo-default.voidlinux.org/current}"   # musl systems get its /musl repo (see sync_xbps)
+EOPKG_DEFAULT=https://cdn.getsol.us/repo/polaris
+EOPKG_MIRROR="${EOPKG_MIRROR:-$EOPKG_DEFAULT}"
+FOREIGN_SOURCES="aur apt dnf zypper pacman xbps eopkg flatpak snap"
 IDX_DIR="$GURT_CACHE/index"
 IDX_MAX_AGE="${IDX_MAX_AGE:-86400}"   # re-download foreign indexes after a day
 
@@ -173,7 +176,7 @@ nix_meta() { # attr → "version<TAB>free|closed<TAB>description", nothing when 
 nix_has() { # attr → in your nix profile, or part of the NixOS system
   local a=$1 p=${1##*.} re
   re=${a//./\\.}
-  if nix_newstyle; then "${NIXF[@]}" profile list 2>/dev/null | grep -qE "(legacyPackages\.[^.]+\.$re|^Name: +$re)( |$)" && return 0
+  if nix_newstyle; then "${NIXF[@]}" profile list 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -qE "(legacyPackages\.[^.]+\.$re|^Name: +$re)( |$)" && return 0
   elif command -v nix-env >/dev/null; then nix-env -q 2>/dev/null | grep -qE "^$p-[0-9]" && return 0; fi
   [[ -e /run/current-system/sw ]] && nix-store -q --references /run/current-system/sw 2>/dev/null | grep -qE "^/nix/store/[a-z0-9]{32}-$p-[0-9]"
 }
@@ -181,7 +184,7 @@ nix_install() { # attrs… → your profile (whichever kind it is: nix profile, 
   local a args=()
   if nix_newstyle || { [[ ! -e $HOME/.nix-profile ]] && ! nix_channels; }; then
     for a; do args+=("nixpkgs#$a"); done
-    "${NIXF[@]}" profile install "${args[@]}"
+    "${NIXF[@]}" profile add "${args[@]}" 2>/dev/null || "${NIXF[@]}" profile install "${args[@]}"   # add: nix 2.29+
   elif nix_channels; then nix-env -f '<nixpkgs>' -iA "$@"
   else nix-env -I nixpkgs=flake:nixpkgs -f '<nixpkgs>' -iA "$@"; fi   # a nix-env profile but no channel: the registry's nixpkgs
 }
@@ -222,10 +225,16 @@ nix_pkg_install() { # attr reason → nix/<attr>, tracked like everything else g
 nix_search() { # term → nixpkgs packages, gurt style
   command -v nix >/dev/null || die "nix/ is nixpkgs, and nix isn't here (it comes with NixOS, or: https://nixos.org/download)"
   msg2 "searching nixpkgs (the first search downloads its package list, so it takes a minute)"
-  "${NIXF[@]}" search nixpkgs "$1" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | awk -v m="$MAG" -v b="$B" -v g="$GRN" -v z="$R0" '
-    /^\* / { a = $2; sub(/^legacyPackages\.[^.]+\./, "", a); v = $3; gsub(/[()]/, "", v); if (v == "") v = "?"; printf "%snix/%s%s%s%s %s%s%s\n", m, z, b, a, z, g, v, z; n++; next }
-    NF { sub(/^ +/, ""); print "    " $0 }
-    END { exit !n }' | head -n 80
+  local rows
+  rows=$("${NIXF[@]}" search nixpkgs "$1" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | awk -v t="${1,,}" '
+    function out() { if (a == "") return; n = tolower(a); b = n; sub(/.*\./, "", b)
+      r = (n == t ? 0 : b == t ? 1 : index(n, t) == 1 ? 2 : index(b, t) == 1 ? 3 : 4) + (index(a, ".") ? 5 : 0)
+      print r "\t" a "\t" (v == "" ? "?" : v) "\t" d; a = d = "" }
+    /^\* / { out(); a = $2; sub(/^legacyPackages\.[^.]+\./, "", a); v = $3; gsub(/[()]/, "", v); next }
+    NF && a != "" && d == "" { d = $0; sub(/^ +/, "", d) }
+    END { out() }' | sort -t$'\t' -k1,1n -k2,2 | head -n 40) || true
+  [[ -n $rows ]] || return 1
+  awk -F'\t' -v m="$MAG" -v b="$B" -v g="$GRN" -v z="$R0" '{ printf "%snix/%s%s%s%s %s%s%s\n", m, z, b, $2, z, g, $3, z; if ($4 != "") print "    " $4 }' <<<"$rows"
 }
 
 # NixOS only reads programs from your profiles, so what gurt puts in /usr and /usr/local needs lines in /etc/profile.local
@@ -269,10 +278,6 @@ nixos_elf_check() { # file.gurt (installed) → a heads-up when its programs can
 nixos_needs() { # what nix-option → stop with the configuration.nix line that turns it on
   $NIXOS || return 0
   die "❄️ on NixOS, $1 gets turned on in your config: add  $2  to /etc/nixos/configuration.nix, run: sudo nixos-rebuild switch, then try again"
-}
-nixos_no() { # what → stop: it's a normal-Linux thing NixOS can't run
-  $NIXOS || return 0
-  die "$1 and that needs a normal distro's toolchain ❄️ try nixpkgs (gurt search nix/<name>), Flathub (flatpak/), or the binary from apt/ dnf/ pacman/"
 }
 
 # ── 🐧 Linux From Scratch: no package manager, so "is it installed?" means "is it on the system?" ──
@@ -759,6 +764,13 @@ build_pkg() {
     fetch_sources
     export MAKEFLAGS="${MAKEFLAGS:--j$(nproc 2>/dev/null || echo 2)}"
     export CFLAGS="${CFLAGS:--O2 -pipe}" CXXFLAGS="${CXXFLAGS:--O2 -pipe}"
+    if $NIXOS; then   # nixpkgs' gcc only looks in /nix: point it at your nix profile and at what other distros' packages put in /usr
+      local np="$HOME/.nix-profile"
+      export CPATH="${CPATH:+$CPATH:}$np/include:/usr/local/include:/usr/include"
+      export LIBRARY_PATH="${LIBRARY_PATH:+$LIBRARY_PATH:}$np/lib:/usr/local/lib:/usr/lib"
+      export PKG_CONFIG_PATH="${PKG_CONFIG_PATH:+$PKG_CONFIG_PATH:}$np/lib/pkgconfig:$np/share/pkgconfig:/usr/local/lib/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig"
+      export LDFLAGS="${LDFLAGS:+$LDFLAGS }-Wl,-rpath,$np/lib -Wl,-rpath,/usr/local/lib -Wl,-rpath,/usr/lib"   # and find them when it runs
+    fi
     if declare -F prepare >/dev/null; then msg "prepare()"; cd "$srcdir"; prepare; fi
     if declare -F pkgver  >/dev/null; then cd "$srcdir"; pkgver=$(pkgver); msg2 "pkgver() says $pkgver"; fi
     if declare -F build   >/dev/null; then msg "build()";   cd "$srcdir"; build;   fi
@@ -1256,7 +1268,8 @@ install_any() { # spec reason
     git)  local u; u=$(info_get "$DB/git:$name/info" outsource_url 2>/dev/null)
           [[ -n $u ]] || die "git/ packages come from a url: gurt outsource https://github.com/user/repo"
           outsource_install "$u" "$reason" ;;
-    aur)  nixos_no "aur/ builds Arch packages from source,"; aur_install "$name" "$reason" ;;
+    aur)  $NIXOS && [[ $reason == explicit && $name != *-bin ]] && msg2 "❄️ AUR on NixOS: -bin packages just work (nix-ld runs them). this one compiles, with nixpkgs' gcc pointed at /usr and your nix profile"
+          aur_install "$name" "$reason" ;;
     file) die "file/ packages come from a file: gurt install ./$name.deb (or .rpm / .pkg.tar.zst)" ;;
     flatpak) flatpak_install "$name" "$reason" ;;
     snap)    snap_install "$name" "$reason" ;;
@@ -1290,6 +1303,8 @@ norm_src() {
     dnf|yum|rpm|fedora)             echo dnf ;;
     zypper|suse|opensuse)           echo zypper ;;
     pacman|arch|archlinux)          echo pacman ;;
+    xbps|void|voidlinux)            echo xbps ;;
+    eopkg|solus)                    echo eopkg ;;
     aur)                            echo aur ;;
     flatpak|flathub)                echo flatpak ;;
     snap|snapcraft|snapd)           echo snap ;;
@@ -1312,15 +1327,15 @@ all_sources()  { echo "$FOREIGN_SOURCES $(custom_repos | tr '\n' ' ')"; }
 src_kind() {
   case $1 in
     git|dirt|file|box-*) echo "$1" ;;
-    gurt) echo gurt ;; aur) echo aur ;; apt) echo apt ;; dnf|zypper) echo rpm ;; pacman) echo pacman ;;
+    gurt) echo gurt ;; aur) echo aur ;; apt) echo apt ;; dnf|zypper) echo rpm ;; pacman) echo pacman ;; xbps) echo xbps ;; eopkg) echo eopkg ;;
     flatpak) echo flatpak ;; snap) echo snap ;;
     *) if repo_file "$1" >/dev/null; then repo_get "$1" type; else echo unknown; fi ;;
   esac
 }
-is_binary_src() { case $(src_kind "$1") in apt|rpm|pacman) return 0 ;; *) return 1 ;; esac; }
+is_binary_src() { case $(src_kind "$1") in apt|rpm|pacman|xbps|eopkg) return 0 ;; *) return 1 ;; esac; }
 src_pm() {
   case $1 in
-    aur|pacman) echo pacman ;; apt|dnf|zypper) echo "$1" ;;
+    aur|pacman) echo pacman ;; apt|dnf|zypper|xbps|eopkg) echo "$1" ;;
     *) case $(src_kind "$1") in apt) echo apt ;; rpm) echo dnf ;; pacman) echo pacman ;; esac ;;
   esac
 }
@@ -1332,6 +1347,8 @@ src_base() {
     dnf)    echo "${DNF_MIRROR//\$arch/$CARCH}" ;;
     zypper) echo "${ZYPPER_MIRROR//\$arch/$CARCH}" ;;
     pacman) echo "$PACMAN_MIRROR" ;;
+    xbps)   if host_musl; then echo "$XBPS_MIRROR/musl"; else echo "$XBPS_MIRROR"; fi ;;
+    eopkg)  eopkg_base ;;
     *)      local u; u=$(repo_get "$1" url); echo "${u//\$arch/$CARCH}" ;;
   esac
 }
@@ -1368,7 +1385,7 @@ sync_source() {
   case $(src_kind "$s") in
     aur) msg2 "aur is searched live, nothing to sync"; return 0 ;;
     flatpak|snap) msg2 "$s keeps its own index, nothing to sync"; return 0 ;;
-    apt|rpm|pacman) ;;
+    apt|rpm|pacman|xbps|eopkg) ;;
     gurt|git|dirt|file|box-*) return 0 ;;   # nothing to download for these
     *) die "unknown source '$s' (have: gurt $(all_sources))" ;;
   esac
@@ -1378,6 +1395,8 @@ sync_source() {
     apt)        sync_apt "$tmp" "$APT_MIRROR" "$APT_SUITE" "$APT_COMPONENTS" "" ;;
     dnf|zypper) sync_rpm "$s" "$tmp" "" ;;
     pacman)     sync_pacman "$tmp" "$PACMAN_MIRROR/\$repo/os/\$arch" "$PACMAN_REPOS" ;;
+    xbps)       XBPS_MIRROR=$(src_base xbps) sync_xbps "$tmp" ;;
+    eopkg)      rm -f "$IDX_DIR/eopkg.base"; sync_eopkg "$tmp" ;;
     *) case $(src_kind "$s") in
          apt)    sync_apt "$tmp" "$(src_base "$s")" "$(repo_get "$s" suite)" "$(repo_get "$s" components)" "$(repo_get "$s" key)" ;;
          rpm)    sync_rpm "$s" "$tmp" "$(repo_get "$s" key)" ;;
@@ -1388,6 +1407,68 @@ sync_source() {
   mv "$tmp/index.tsv" "$out"; rm -rf "$tmp"
   msg2 "$(wc -l < "$out") packages in $s"
 }
+
+# Void: <arch>-repodata is a compressed tar with index.plist (every package: pkgver, run_depends, filename-sha256…).
+# packages live next to it as <pkgver>.<arch>.xbps
+sync_xbps() { # tmp
+  local tmp=$1 a; a=$(xbps_arch)
+  need_tool python3 xbps
+  fetch_quiet "$XBPS_MIRROR/$a-repodata" "$tmp/repodata" || die "can't reach Void's repo ($XBPS_MIRROR/$a-repodata)"
+  head -c 4 "$tmp/repodata" | od -An -tx1 | grep -q '28 b5 2f fd' && need_tool zstd xbps
+  python3 - "$tmp/repodata" <<'PY'
+import io, lzma, gzip, plistlib, re, subprocess, sys, tarfile
+raw = open(sys.argv[1], "rb").read()
+if raw[:4] == b"\x28\xb5\x2f\xfd": raw = subprocess.run(["zstd", "-dc"], input=raw, capture_output=True, check=True).stdout
+elif raw[:2] == b"\x1f\x8b": raw = gzip.decompress(raw)
+elif raw[:6] == b"\xfd7zXZ\x00": raw = lzma.decompress(raw)
+with tarfile.open(fileobj=io.BytesIO(raw)) as t:
+    idx = plistlib.loads(t.extractfile("index.plist").read())
+def bare(d):   # "libX11>=1.6_1" / "foo-1.0_1" (an exact pkgver) → the name
+    n = re.split(r"[<>=]", d, 1)[0]
+    return re.sub(r"-[^-]+_[0-9]+$", "", n) if n == d else n
+for name, p in sorted(idx.items()):
+    pv = p.get("pkgver", ""); ver = pv[len(name) + 1:] if pv.startswith(name + "-") else pv
+    sha = p.get("filename-sha256", "")
+    if not pv or not sha: continue
+    deps = ",".join(dict.fromkeys(bare(d) for d in p.get("run_depends", []) if bare(d)))
+    prov = ",".join(dict.fromkeys([bare(x) for x in p.get("provides", [])] + list(p.get("shlib-provides", []))))
+    desc = re.sub(r"\s+", " ", p.get("short_desc", ""))
+    print("\t".join([name, ver, f"{pv}.{p.get('architecture', 'noarch')}.xbps", "sha256:" + sha, deps, desc, prov]))
+PY
+}
+xbps_arch() { if host_musl; then echo "$CARCH-musl"; else echo "$CARCH"; fi; }
+
+# Solus: eopkg-index.xml.xz lists every package (the newest <Update> in <History> is its version, sha1 <PackageHash>)
+sync_eopkg() { # tmp
+  local tmp=$1
+  [[ $CARCH == x86_64 ]] || die "Solus is x86_64 only, and this is $CARCH"
+  need_tool python3 eopkg
+  if ! fetch_quiet "$EOPKG_MIRROR/eopkg-index.xml.xz" "$tmp/index.xz"; then
+    [[ $EOPKG_MIRROR == "$EOPKG_DEFAULT" ]] || die "can't reach Solus's repo ($EOPKG_MIRROR)"
+    EOPKG_MIRROR=${EOPKG_DEFAULT%/*}/shannon   # older Solus repo name
+    fetch_quiet "$EOPKG_MIRROR/eopkg-index.xml.xz" "$tmp/index.xz" || die "can't reach Solus's repo (cdn.getsol.us)"
+    echo "$EOPKG_MIRROR" > "$IDX_DIR/eopkg.base"
+  fi
+  python3 - "$tmp/index.xz" <<'PY'
+import lzma, re, sys, xml.etree.ElementTree as ET
+def txt(e, path):
+    x = e.find(path); return re.sub(r"\s+", " ", x.text or "").strip() if x is not None and x.text else ""
+for ev, e in ET.iterparse(lzma.open(sys.argv[1])):
+    if e.tag != "Package" or e.find("PackageURI") is None: continue
+    name, uri, sha = txt(e, "Name"), txt(e, "PackageURI"), txt(e, "PackageHash")
+    up = e.find("History/Update")
+    ver = txt(up, "Version") + ("-" + up.get("release") if up is not None and up.get("release") else "") if up is not None else ""
+    deps = []
+    for d in e.findall("RuntimeDependencies/*"):
+        alts = [x.text.strip() for x in ([d] if d.tag == "Dependency" else d.findall("Dependency")) if x.text]
+        if alts: deps.append("|".join(alts))
+    prov = [x.text.strip() for x in e.findall("Provides/SharedLibrary") if x.text]
+    if name and uri:
+        print("\t".join([name, ver, uri, ("sha1:" + sha) if sha else "", ",".join(deps), txt(e, "Summary"), ",".join(prov)]))
+    e.clear()
+PY
+}
+eopkg_base() { cat "$IDX_DIR/eopkg.base" 2>/dev/null || echo "$EOPKG_MIRROR"; }
 
 # Packages / control stanzas → index rows (name ver file sum deps desc provides)
 APT_ROWS_AWK='BEGIN { RS=""; FS="\n"; OFS="\t" }
@@ -1755,6 +1836,7 @@ pkgfile_unpack() { # file to-dir scratch-dir
       tar -xzf "$file" -C "$to" 2>/dev/null
       rm -f "$to/.PKGINFO" "$to"/.SIGN.* "$to"/.pre-* "$to"/.post-* "$to/.trigger" ;;
     *.xbps)
+      head -c 4 "$file" | od -An -tx1 | grep -q '28 b5 2f fd' && need_tool zstd xbps
       tar -xf "$file" -C "$to"
       rm -f "$to/props.plist" "$to/files.plist" "$to/INSTALL" "$to/REMOVE" ;;
     *.eopkg)
@@ -2004,7 +2086,7 @@ pkgfile_install() { # file-or-url reason
   local d dl=()
   IFS=, read -ra dl <<<"$deps"
   case $fam in
-    apk|xbps|eopkg) for d in "${dl[@]}"; do local_dep "$fam" "$d"; done ;;
+    apk) for d in "${dl[@]}"; do local_dep "$fam" "$d"; done ;;   # Alpine: musl, so only what your distro has
     *) if ! $NODEPS && [[ -n $deps ]]; then ( ensure_idx "$fam" ) >/dev/null 2>&1 || warn "couldn't grab the $fam index — only deps your distro has will get installed"; fi
        for d in "${dl[@]}"; do foreign_dep "$fam" "$d"; done ;;
   esac
@@ -3481,7 +3563,7 @@ scan_sources() { # name
   row=$(aur_info "$q" 2>/dev/null | head -n1 || true)
   [[ -n $row ]] && { tsv "$row"; scan_add 4 aur "$q" "${F[1]}" "AUR — built from source"; }
   # 5/6. binary repos (same family as you first) + your custom repos
-  for s in apt dnf zypper pacman $(custom_repos); do
+  for s in apt dnf zypper pacman xbps eopkg $(custom_repos); do
     is_binary_src "$s" || continue
     ( ensure_idx "$s" ) >/dev/null 2>&1 || continue
     row=$(idx_lookup "$s" "$q" || true)
@@ -3490,7 +3572,7 @@ scan_sources() { # name
     if [[ $(src_pm "$s") == "$PM" ]]; then
       printf '%s\n' "${SCAN_HITS[@]}" | grep -q '^2|native|' && continue   # same thing as "your distro"
       scan_add 5 "$s" "$q" "${F[1]}" "binary, same family as your distro"
-    elif [[ " apt dnf zypper pacman " == *" $s "* ]]; then scan_add 6 "$s" "$q" "${F[1]}" "binary from another distro"
+    elif [[ " apt dnf zypper pacman xbps eopkg " == *" $s "* ]]; then scan_add 6 "$s" "$q" "${F[1]}" "binary from another distro"
     else scan_add 5 "$s" "$q" "${F[1]}" "your custom repo"; fi
   done
   # 7. Snap Store
@@ -4308,8 +4390,8 @@ cmd_setup() {
   else msg2 "every utility apps need is here ✅"; fi
   printf '\n%s[2/4] app sources%s\n' "$B" "$R0"
   msg2 "your distro's repos ($PM) and Main GURT always work. Flathub came with the utilities."
-  if ! $NOCONFIRM && ask "download the package lists for other distros' repos (apt dnf zypper pacman), so searching them is instant?"; then
-    for p in apt dnf zypper pacman; do ( sync_source "$p" ) || warn "$p didn't sync (no internet?), skipped"; done
+  if ! $NOCONFIRM && ask "download the package lists for other distros' repos (apt dnf zypper pacman xbps eopkg), so searching them is instant?"; then
+    for p in apt dnf zypper pacman xbps eopkg; do ( sync_source "$p" ) || warn "$p didn't sync (no internet?), skipped"; done
   fi
   printf '\n%s[3/4] starter apps%s\n' "$B" "$R0"
   for p in $SETUP_PICKS; do
@@ -4605,7 +4687,7 @@ cmd_complete() {
     commands)  printf '%s\n' sync search info install update upgrade self-update uninstall remove autoremove list files owns lottery sysup \
                  build add srcinfo checksum new repo dirt gui de outsource undo rollback hold unhold export import completions doctor version help yo \
                  convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache ;;
-    sources)   printf '%s/\n' aur apt dnf zypper pacman flatpak snap dirt ;;
+    sources)   printf '%s/\n' aur apt dnf zypper pacman xbps eopkg flatpak snap nix dirt ;;
   esac
   return 0
 }
@@ -4895,7 +4977,7 @@ cmd_sync() { # [source...|all]
   for s in "$@"; do
     s=$(norm_src "$s")
     case $s in
-      all) sync_main; local x; for x in apt dnf zypper pacman $(custom_repos); do ( sync_source "$x" ) || warn "$x didn't sync, skipping"; done ;;
+      all) sync_main; local x; for x in apt dnf zypper pacman xbps eopkg $(custom_repos); do ( sync_source "$x" ) || warn "$x didn't sync, skipping"; done ;;
       gurt) sync_main ;;
       *) sync_source "$s" ;;
     esac
@@ -5095,7 +5177,7 @@ find_outdated() {
 used_sources() {
   local d k seen=" "
   for d in "$DB"/*:*/; do k=$(basename "$d"); k=${k%%:*}; [[ $seen == *" $k "* ]] || { seen+="$k "; echo "$k"; }; done
-  for k in apt dnf zypper pacman $(custom_repos); do [[ -f $(idx_file "$k") && $seen != *" $k "* ]] && { seen+="$k "; echo "$k"; }; done
+  for k in apt dnf zypper pacman xbps eopkg $(custom_repos); do [[ -f $(idx_file "$k") && $seen != *" $k "* ]] && { seen+="$k "; echo "$k"; }; done
   return 0
 }
 
@@ -5300,7 +5382,7 @@ _gurt() {
       [[ ${#COMPREPLY[@]} == 1 && ${COMPREPLY[0]} != */ ]] && COMPREPLY[0]+=" " ;;
     dirt) COMPREPLY=($(compgen -W "on off status list" -- "$cur")) ;;
     repo|repos) COMPREPLY=($(compgen -W "add list remove" -- "$cur")) ;;
-    sync) COMPREPLY=($(compgen -W "all aur apt dnf zypper pacman" -- "$cur")) ;;
+    sync) COMPREPLY=($(compgen -W "all aur apt dnf zypper pacman xbps eopkg" -- "$cur")) ;;
     import|add|export|build) COMPREPLY=($(compgen -f -- "$cur")) ;;
     completions) COMPREPLY=($(compgen -W "bash zsh fish" -- "$cur")) ;;
   esac
@@ -5317,7 +5399,7 @@ _gurt() {
     install|i|get|info|search|s) compadd -- ${(f)"$(gurt __complete available)"}; compadd -S '' -- ${(f)"$(gurt __complete sources)"} ;;
     dirt) compadd on off status list ;;
     repo|repos) compadd add list remove ;;
-    sync) compadd all aur apt dnf zypper pacman ;;
+    sync) compadd all aur apt dnf zypper pacman xbps eopkg ;;
     import|add|export|build) _files ;;
     completions) compadd bash zsh fish ;;
   esac
@@ -5332,7 +5414,7 @@ complete -c gurt -n '__fish_seen_subcommand_from remove rm yeet files rollback u
 complete -c gurt -n '__fish_seen_subcommand_from install i get info search s' -a '(gurt __complete available; gurt __complete sources)'
 complete -c gurt -n '__fish_seen_subcommand_from dirt' -a 'on off status list'
 complete -c gurt -n '__fish_seen_subcommand_from repo repos' -a 'add list remove'
-complete -c gurt -n '__fish_seen_subcommand_from sync' -a 'all aur apt dnf zypper pacman'
+complete -c gurt -n '__fish_seen_subcommand_from sync' -a 'all aur apt dnf zypper pacman xbps eopkg'
 complete -c gurt -n '__fish_seen_subcommand_from import add export build' -F
 complete -c gurt -n '__fish_seen_subcommand_from completions' -a 'bash zsh fish'
 EOF
@@ -6078,7 +6160,7 @@ cmd_version() {
     "${c3}arch${r}     $CARCH"
     "${c4}packages${r} $n installed${breakdown:+ ($breakdown)}"
     "${c2}recipes${r}  $recipes"
-    "${c3}sources${r}  gurt aur apt dnf zypper pacman flatpak snap"
+    "${c3}sources${r}  gurt aur apt dnf zypper pacman xbps eopkg flatpak snap nix"
     "${c4}DIRT${r}     $dirt"
     "${c2}site${r}     https://gurtproject.org"
     ""
@@ -6109,6 +6191,8 @@ ${B}sources${R0}   (no prefix = main GURT · write it as aur/yay OR  yay --repo 
   dnf/htop             Fedora binary packages             (aliases: fedora/ yum/ rpm/)
   zypper/htop          openSUSE binary packages           (aliases: suse/ opensuse/)
   pacman/htop          Arch official binary packages      (aliases: arch/)
+  xbps/htop            Void Linux binary packages         (aliases: void/)
+  eopkg/htop           Solus binary packages              (aliases: solus/)
   flatpak/gimp         Flathub apps (gurt sets up flatpak for you)  (alias: flathub/)
   snap/spotify         Snap Store apps (gurt sets up snapd for you)
   nix/hello            nixpkgs, into your own nix profile (NixOS, or anywhere nix is)  (alias: nixpkgs/)
@@ -6220,7 +6304,7 @@ main() {
       --box|--container) BOX=true ;;
       --no-box)       NOBOX=true ;;
       --scanrepos|--scan) SCAN=true ;;
-      -r|--repo|--from) shift; REPO=${1:?--repo needs a source (gurt aur apt dnf zypper pacman)} ;;
+      -r|--repo|--from) shift; REPO=${1:?--repo needs a source (gurt aur apt dnf zypper pacman xbps eopkg)} ;;
       --repo=*|--from=*)  REPO=${1#*=} ;;
       --key)          shift; KEYSRC=${1:?--key needs a url or file} ;;
       --key=*)        KEYSRC=${1#*=} ;;

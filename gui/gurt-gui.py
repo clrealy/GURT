@@ -2005,6 +2005,8 @@ dialog .row{justify-content:flex-end}
       <button data-src="dnf">dnf/ <small>Fedora</small></button>
       <button data-src="zypper">zypper/ <small>openSUSE</small></button>
       <button data-src="pacman">pacman/ <small>Arch</small></button>
+      <button data-src="xbps">xbps/ <small>Void</small></button>
+      <button data-src="eopkg">eopkg/ <small>Solus</small></button>
       <button data-src="flatpak">flatpak/ <small>Flathub</small></button>
       <button data-src="snap">snap/ <small>Snap Store</small></button>
       <button data-src="nix" hidden>nix/ <small>nixpkgs</small></button>
