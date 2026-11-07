@@ -5824,7 +5824,7 @@ cmd_doctor() {
   if $CROS_NATIVE; then
     msg2 "💻 ChromeOS itself: gurt keeps everything in /usr/local (database: $DB), packages from other distros get moved there too, no sudo needed"
     if command -v crew >/dev/null; then msg2 "Chromebrew ✅ (crew/ packages, and what gurt builds needs from it)"
-    else warn "no Chromebrew: install it (or Tweakium) so gurt can get what apps need"; fi
+    else warn "no Chromebrew: install it so gurt can get what apps need"; fi
     msg2 "flatpak, snap and Waydroid need Linux (Crostini): turn it on in Settings → About ChromeOS → Developers"
   fi
   if is_cros; then
