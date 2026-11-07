@@ -405,6 +405,8 @@ gurt outsource user/repo   <span class="c"># any git repo: clone + build + insta
       <button class="src" role="tab" aria-selected="false" data-src="dnf">dnf/ <small>Fedora</small></button>
       <button class="src" role="tab" aria-selected="false" data-src="zypper">zypper/ <small>openSUSE</small></button>
       <button class="src" role="tab" aria-selected="false" data-src="pacman">pacman/ <small>Arch</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="xbps">xbps/ <small>Void</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="eopkg">eopkg/ <small>Solus</small></button>
       <button class="src" role="tab" aria-selected="false" data-src="flatpak">flatpak/ <small>Flathub</small></button>
       <button class="src" role="tab" aria-selected="false" data-src="snap">snap/ <small>Snap Store</small></button>
       <button class="src dirtbtn" role="tab" aria-selected="false" data-src="dirt">dirt/ <small>18+</small></button>
@@ -712,6 +714,10 @@ const SRC = {
             web: t => `https://software.opensuse.org/search?q=${encodeURIComponent(t)}`, webName: "software.opensuse.org" },
   pacman: { title: "pacman · Arch", blurb: "Arch's official binary packages, installable on non-Arch distros.",
             web: t => `https://archlinux.org/packages/?q=${encodeURIComponent(t)}`, webName: "archlinux.org" },
+  xbps:   { title: "xbps · Void", blurb: "Void Linux's binary packages, installable on non-Void distros. musl systems get Void's musl repo.",
+            web: t => `https://voidlinux.org/packages/?arch=x86_64&q=${encodeURIComponent(t)}`, webName: "voidlinux.org" },
+  eopkg:  { title: "eopkg · Solus", blurb: "Solus's binary packages, installable on non-Solus distros (x86_64 only).",
+            web: t => `https://github.com/search?q=${encodeURIComponent("repo:getsolus/packages path:packages/ " + t)}&type=code`, webName: "Solus's package recipes on GitHub" },
   flatpak:{ title: "flatpak · Flathub", blurb: "Flathub apps, sandboxed. gurt installs flatpak + adds Flathub for you the first time. Use the app id or just the name (gurt install flatpak/gimp).",
             web: t => `https://flathub.org/apps/search?q=${encodeURIComponent(t)}`, webName: "flathub.org" },
   dirt:   { title: "DIRT · mature section" },

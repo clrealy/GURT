@@ -212,7 +212,7 @@ SKINS = ("gurt", "win11", "xp", "w95", "vapor", "hacker")
 TRACKS = ("auto", "shop", "lofi", "chip", "synth")
 LEGENDARY = ("hpa2", "tsudore", "opsec", "oneko", "zsnes", "frozen-bubble")
 ACH_IDS = ("legendary", "streak7", "lottery", "compare", "v1", "wizard")
-SYNC_SRCS = ("aur", "apt", "dnf", "zypper", "pacman")
+SYNC_SRCS = ("aur", "apt", "dnf", "zypper", "pacman", "xbps", "eopkg")
 
 
 def skin():
@@ -3038,7 +3038,8 @@ const STARTER = {"Browsers": ["firefox", "brave", "librewolf", "zen-browser", "c
   "Gaming": ["steam", "heroic", "lutris", "prismlauncher", "bottles"]};
 const WIZ_SRCS = [["flatpak", "Flathub", "sandboxed apps, and where most Main GURT apps come from"], ["aur", "the AUR", "Arch's user repo, built from source on your PC (gurt checks the build scripts for red flags first)"],
   ["apt", "Debian / Ubuntu repos", "apt/ packages on any distro"], ["dnf", "Fedora repos", "dnf/ packages on any distro"],
-  ["zypper", "openSUSE repos", "zypper/ packages on any distro"], ["pacman", "Arch repos", "pacman/ packages on any distro"]];
+  ["zypper", "openSUSE repos", "zypper/ packages on any distro"], ["pacman", "Arch repos", "pacman/ packages on any distro"],
+  ["xbps", "Void repos", "xbps/ packages on any distro"], ["eopkg", "Solus repos", "eopkg/ packages on any distro"]];
 const WIZ_SKINS = [["gurt", "GURT"], ["win11", "Windows 11"], ["xp", "Windows XP"], ["w95", "Windows 95"], ["vapor", "Vaporwave"], ["hacker", "Hacker"]];
 const WIZ_TRACKS = [["auto", "auto"], ["shop", "shop"], ["lofi", "lofi"], ["chip", "chiptune"], ["synth", "synthwave"]];
 let W = null, wizStep = 0, wizDoc = null, wizState = "edit";   // edit → running → done

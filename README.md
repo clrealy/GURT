@@ -49,7 +49,7 @@ Mirrors and releases are set in [`gurt.conf`](gurt.conf), so apt can point at Ub
 
 ### System tools go in a box automatically 📦
 
-Regular `apt/` `dnf/` `zypper/` `pacman/` installs are for **apps**. **System utilities automatically go in a box**, which is a real container of their distro. gurt boxes a package when:
+Regular `apt/` `dnf/` `zypper/` `pacman/` `xbps/` installs are for **apps**. **System utilities automatically go in a box**, which is a real container of their distro. gurt boxes a package when:
 
 - it's a package manager, a frontend for one, or a distro config tool (dnfdragora, synaptic, yast, mintupdate…)
 - it depends on package-manager internals (libdnf, libzypp, libapt-pkg, python3-apt…)
@@ -93,7 +93,7 @@ It **never** pulls another distro's glibc, systemd, bash, coreutils, package man
 
 ### The honest part
 
-Main GURT and `aur/` build from source, so they work pretty much everywhere. Binary sources (`apt/` `dnf/` `zypper/` `pacman/`) are **vibes-based**. A binary built for a distro with a newer glibc than yours won't run.
+Main GURT and `aur/` build from source, so they work pretty much everywhere. Binary sources (`apt/` `dnf/` `zypper/` `pacman/` `xbps/` `eopkg/`) are **vibes-based**. A binary built for a distro with a newer glibc than yours won't run.
 
 gurt checks every binary after installing it and tells you if something is missing. If it says your glibc is too old, try the `aur/` version, which builds on your system.
 
@@ -229,7 +229,7 @@ curl -fsSL https://gurtproject.org/install.sh | sh
 
 - **nixpkgs is the package manager.** `gurt install nix/<attr>`, `gurt search nix/<term>`, `gurt remove nix/<attr>`. They go into your own nix profile (`nix profile` or `nix-env`, whichever you use), as you, no sudo. Deps of Main GURT recipes come from nixpkgs too.
 - **Main GURT checks nixpkgs first.** If nixpkgs has the app, you get that build (it's made for NixOS). Flathub recipes work like everywhere else once flatpak is on.
-- **Other distros' packages install straight onto the system, no box.** `apt/`, `dnf/`, `zypper/`, `pacman/` and `.deb` / `.rpm` / `.pkg.tar.zst` files go into `/usr` like on any distro. nix-ld starts their programs, and the libraries they need come from nixpkgs when it has them, else from the distro the package was made for. `aur/` works too: `-bin` packages just run, and ones that compile use nixpkgs' gcc, pointed at `/usr` and your nix profile.
+- **Other distros' packages install straight onto the system, no box.** `apt/`, `dnf/`, `zypper/`, `pacman/`, `xbps/`, `eopkg/` and `.deb` / `.rpm` / `.pkg.tar.zst` / `.xbps` / `.eopkg` files go into `/usr` like on any distro. nix-ld starts their programs, and the libraries they need come from nixpkgs when it has them, else from the distro the package was made for. `aur/` works too: `-bin` packages just run, and ones that compile use nixpkgs' gcc, pointed at `/usr` and your nix profile.
 - **AppImages** run through `appimage-run` (gurt gets it from nixpkgs).
 - **`/usr` and `/usr/local` on your PATH.** NixOS doesn't look there, so gurt adds a few lines to `/etc/profile.local` (NixOS reads it at login): PATH, the app menu, and nix-ld's library path.
 - **`gurt sysup`** runs `nixos-rebuild switch --upgrade` (or `nix flake update` + `nixos-rebuild switch` when `/etc/nixos/flake.nix` exists), then upgrades your nix profile.
@@ -583,7 +583,7 @@ found gimp in 3 place(s):
 :: pick one [1-3] (enter = 1, q = cancel):
 ```
 
-It checks Main GURT, your own distro, Flathub, the AUR, apt/dnf/zypper/pacman, your custom repos and the Snap Store, then lets you pick. With `-y` it takes the top one.
+It checks Main GURT, your own distro, Flathub, the AUR, apt/dnf/zypper/pacman/xbps/eopkg, your custom repos and the Snap Store, then lets you pick. With `-y` it takes the top one.
 
 ## DIRT 🔞 (opt-in mature section)
 
@@ -602,7 +602,7 @@ Rules are in [`dirt/README.md`](dirt/README.md) — legal, labeled, and **nothin
 
 ```sh
 gurt sync                 # pull the latest Main GURT recipes
-gurt sync all             # + download the apt/dnf/zypper/pacman indexes
+gurt sync all             # + download the apt/dnf/zypper/pacman/xbps/eopkg indexes
 gurt search fetch         # search Main GURT
 gurt search aur/fetch     # search one source
 gurt search -a fetch      # search EVERYTHING

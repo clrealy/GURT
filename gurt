@@ -1259,8 +1259,9 @@ install_any() { # spec reason
   fi
   if $BOX || [[ $src == box-* ]]; then
     src=${src#box-}
-    case $src in apt|dnf|zypper|pacman) box_install "$src" "$name" "$reason"; return ;;
-      *) die "--box works with apt/ dnf/ zypper/ pacman/ (gurt, aur, flatpak and snap already run fine without it)" ;; esac
+    case $src in apt|dnf|zypper|pacman|xbps) box_install "$src" "$name" "$reason"; return ;;
+      eopkg) die "--box doesn't do Solus: there's no Solus container image for distrobox. eopkg/ installs straight onto your system" ;;
+      *) die "--box works with apt/ dnf/ zypper/ pacman/ xbps/ (gurt, aur, flatpak and snap already run fine without it)" ;; esac
   fi
   case $src in
     gurt) ensure_repo; PKG_TREE=packages TREE_SRC=gurt resolve_and_install "$name" "$reason" ;;
@@ -1772,7 +1773,7 @@ OSPART_RE='^(linux|linux-lts|linux-zen|linux-hardened|linux-image.*|linux-header
 # should this explicit install go in a box? prints the reason, empty = no
 box_reason() { # src name deps files(newline list, may be empty)
   local src=$1 name=$2 deps=$3 files=${4:-} d
-  case $src in apt|dnf|zypper|pacman) ;; *) return 0 ;; esac
+  case $src in apt|dnf|zypper|pacman|xbps) ;; *) return 0 ;; esac
   [[ $name =~ $SYSTOOL_RE ]] && { echo "it's a system utility for its own distro"; return; }
   local IFS=,; for d in $deps; do [[ ${d%%[<>=]*} =~ $PMLIB_RE ]] && { echo "it needs package-manager internals ($d)"; return; }; done
   if [[ -n $files ]] && grep -qE "$SYSFILE_RE" <<<"$files"; then echo "it installs system services/hooks"; return; fi
@@ -3398,13 +3399,14 @@ PY
 }
 
 # ── boxes: the REAL distro in a container (podman/docker + distrobox) — for system tools & stubborn apps ──
-box_name()  { case $1 in apt) echo gurt-debian ;; dnf) echo gurt-fedora ;; zypper) echo gurt-opensuse ;; pacman) echo gurt-arch ;; esac; }
+box_name()  { case $1 in apt) echo gurt-debian ;; dnf) echo gurt-fedora ;; zypper) echo gurt-opensuse ;; pacman) echo gurt-arch ;; xbps) echo gurt-void ;; esac; }
 box_image() {
   case $1 in
     apt)    if [[ $APT_MIRROR == *ubuntu* ]]; then echo "docker.io/library/ubuntu:${APT_SUITE:-latest}"; else echo docker.io/library/debian:stable; fi ;;
     dnf)    echo "registry.fedoraproject.org/fedora:$(sed -n 's|.*/releases/\([0-9]*\)/.*|\1|p' <<<"$DNF_MIRROR" | grep . || echo latest)" ;;
     zypper) echo registry.opensuse.org/opensuse/tumbleweed:latest ;;
     pacman) echo docker.io/library/archlinux:latest ;;
+    xbps)   echo ghcr.io/void-linux/void-glibc-full:latest ;;
   esac
 }
 box_cmd() { # src action [pkg]
@@ -3425,6 +3427,10 @@ box_cmd() { # src action [pkg]
     pacman:remove)  echo "sudo pacman -Rns --noconfirm '$p'" ;;
     pacman:files)   echo "pacman -Qlq '$p'" ;;
     pacman:upgrade) echo "sudo pacman -Syu --noconfirm" ;;
+    xbps:install)   echo "sudo xbps-install -Sy '$p'" ;;
+    xbps:remove)    echo "sudo xbps-remove -y '$p'" ;;
+    xbps:files)     echo "xbps-query -f '$p'" ;;
+    xbps:upgrade)   echo "sudo xbps-install -Syu xbps && sudo xbps-install -Syu" ;;
   esac
 }
 ensure_box_tools() {
@@ -4298,7 +4304,7 @@ trust_label() { # src [info-file]
             elif info_get "$2" source | grep -q '://'; then echo "official download ✅"
             else echo "Main GURT"; fi
           else echo "Main GURT"; fi ;;
-    apt|dnf|zypper|pacman) echo "distro repo 🔏" ;;
+    apt|dnf|zypper|pacman|xbps|eopkg) echo "distro repo 🔏" ;;
     flatpak) echo "Flathub 📦" ;; snap) echo "Snap Store" ;;
     aur) echo "user upload ⚠️" ;; git) echo "random repo ⚠️" ;; file) echo "your file" ;; *) echo "$1" ;;
   esac
@@ -5059,7 +5065,7 @@ cmd_search() { # [-a] [src/]term
     else search_main "$term" && found=1; fi
   elif [[ $src == dirt ]]; then dirt_on || die "DIRT is off 🔒 (gurt dirt on — 18+ only)"; PKG_TREE=dirt TREE_SRC=dirt search_main "$term" && found=1
   else search_foreign "$src" "$term" && found=1; fi
-  (( found )) || { echo "nothing matched '$term' 😔 womp womp"; [[ $src == gurt ]] && ! $ALLSRC && echo "try: gurt search -a $term   (searches aur, apt, dnf, zypper, pacman too)"; return 1; }
+  (( found )) || { echo "nothing matched '$term' 😔 womp womp"; [[ $src == gurt ]] && ! $ALLSRC && echo "try: gurt search -a $term   (searches aur, apt, dnf, zypper, pacman, xbps, eopkg too)"; return 1; }
 }
 
 cmd_info() {
@@ -5359,7 +5365,7 @@ upgrade_containers() {   # flatpak + snap update their own apps
   local d
   d=("$DB"/flatpak:*/); if (( ${#d[@]} )) && command -v flatpak >/dev/null; then msg "updating flatpaks"; flatpak update --user -y --noninteractive || warn "flatpak update had problems"; fi
   d=("$DB"/snap:*/);    if (( ${#d[@]} )) && command -v snap >/dev/null;    then msg "updating snaps";    asroot snap refresh || warn "snap refresh had problems"; fi
-  local s; for s in apt dnf zypper pacman; do
+  local s; for s in apt dnf zypper pacman xbps; do
     d=("$DB"/box-"$s":*/)
     if (( ${#d[@]} )) && command -v distrobox >/dev/null; then
       msg "updating the $(box_name "$s") box"; distrobox enter "$(box_name "$s")" -- sh -c "$(box_cmd "$s" upgrade)" || warn "$(box_name "$s") update had problems"
@@ -5858,7 +5864,7 @@ repo_list() {
   local r f
   printf '%s%-22s %-7s %s%s\n' "$B" "name" "type" "url" "$R0"
   printf '%-22s %-7s %s\n' gurt main "$GURT_REPO_URL" aur build "$AUR_URL" apt apt "$APT_MIRROR ($APT_SUITE)" \
-    dnf rpm "$(src_base dnf)" zypper rpm "$(src_base zypper)" pacman pacman "$PACMAN_MIRROR"
+    dnf rpm "$(src_base dnf)" zypper rpm "$(src_base zypper)" pacman pacman "$PACMAN_MIRROR" xbps xbps "$(src_base xbps)" eopkg eopkg "$(src_base eopkg)"
   for r in $(custom_repos); do
     f=$(repo_file "$r")
     printf '%-22s %-7s %s%s%s\n' "$r" "$(repo_get "$r" type)" "$(repo_get "$r" url)" \
@@ -6279,7 +6285,7 @@ ${B}options${R0}
   -y, --noconfirm      don't ask, just send it
   -f, --force          reinstall / overwrite / ignore reverse deps
   -r, --repo SRC       use this source for bare names, e.g.  gurt install htop --repo apt
-  --box                force apt/ dnf/ zypper/ pacman/ stuff into a real container of that distro
+  --box                force apt/ dnf/ zypper/ pacman/ xbps/ stuff into a real container of that distro
                        (system utilities go there automatically)
   --no-box             never auto-box (you know what you're doing)
   -a, --all            search every source
