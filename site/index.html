@@ -284,6 +284,8 @@ body.carted{padding-bottom:74px}
 .pickhead small{color:var(--muted)}
 .mine{margin-left:auto;font:700 11.5px var(--mono);background:var(--accent);color:var(--accent-ink);padding:2px 7px;border-radius:var(--r);white-space:nowrap}
 .pick>p{margin:0;color:var(--muted);font-size:14px}
+.pick>p.nixnote{font-size:13px;border-top:1px solid var(--edge);padding-top:8px}
+.nixnote code{overflow-wrap:anywhere}
 .pick .dlbtns{margin-top:2px}
 .pick.wide{grid-column:1/-1}
 .crosways{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--edge);border-radius:var(--r)}
@@ -338,6 +340,7 @@ footer.site .cicada{color:#e7e7ea}
         <div class="pickhead"><div><h2 id="pl-h">GURT for Linux</h2><small>the GURT Setup Wizard as your distro's own package</small></div><span class="mine" hidden>your system</span></div>
         <p>Open it like any package. It installs GURT and the app, then the setup wizard picks your sources, your look and your first apps. Updates come with your normal system updates.</p>
         <div class="dlbtns" id="dl-linux"></div>
+        <p class="nixnote">NixOS: no package for it, so run <code>curl -fsSL https://gurtproject.org/install.sh | sh</code>. nixpkgs becomes <code>nix/</code>, and other distros' packages go in a box.</p>
       </section>
       <section class="pick" id="pick-win" aria-labelledby="pw-h">
         <div class="pickhead"><div><h2 id="pw-h">GURT for Windows</h2><small>Windows 10 / 11, through WSL</small></div><span class="mine" hidden>your system</span></div>
@@ -454,7 +457,7 @@ gurt outsource user/repo   <span class="c"># any git repo: clone + build + insta
       <div><h4>Project</h4><a href="https://github.com/clrealy/GURT">Source code</a><a href="https://github.com/clrealy/GURT#readme">Docs</a><a href="https://github.com/clrealy/GURT/issues">Report a bug</a></div>
     </div>
     <p class="fnote">
-    Works on Debian, Ubuntu, Mint, Fedora, Arch, openSUSE, Alpine, Void, Gentoo, Solus and friends. Other sources are searched from the CLI: <code>gurt search -a &lt;term&gt;</code>.
+    Works on Debian, Ubuntu, Mint, Fedora, Arch, openSUSE, Alpine, Void, Gentoo, Solus, NixOS and friends. Other sources are searched from the CLI: <code>gurt search -a &lt;term&gt;</code>.
     Recipes are user-submitted — always read the GURTBUILD (or PKGBUILD) before you install. ·
     <a href="https://github.com/clrealy/GURT">source</a> ·
     <a href="https://github.com/clrealy/GURT/blob/main/CONTRIBUTING.md">submit a package</a><br>

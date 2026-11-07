@@ -70,6 +70,8 @@ R="${GURT_ROOT%/}"                       # "" when root is /
 # yours. so gurt keeps everything there (its database too), relocates packages into it and never needs sudo
 is_cros_native() { [[ ! -e /dev/.cros_milestone ]] && grep -qs '^CHROMEOS_RELEASE_NAME=' /etc/lsb-release; }
 CROS_NATIVE=false; is_cros_native && CROS_NATIVE=true
+is_nixos() { [[ -e /etc/NIXOS ]] || { [[ -r /etc/os-release ]] && [[ $(. /etc/os-release; echo "${ID:-}") == nixos ]]; }; }
+NIXOS=false; { [[ ${GURT_NIXOS:-} == 1 ]] || is_nixos; } && NIXOS=true   # GURT_NIXOS=1: testing
 DB="$R/var/lib/gurt/local"
 $CROS_NATIVE && [[ -z $R ]] && DB=/usr/local/var/lib/gurt/local
 SELF_DIR=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
@@ -101,6 +103,7 @@ asroot() {
 detect_pm() {
   local id="" like=""
   if $CROS_NATIVE; then if command -v crew >/dev/null; then echo crew; else echo none; fi; return; fi   # Chromebrew
+  if $NIXOS; then if command -v nix >/dev/null; then echo nix; else echo none; fi; return; fi            # nixpkgs
   if [[ -r /etc/os-release ]]; then
     id=$(. /etc/os-release; echo "${ID:-}"); like=$(. /etc/os-release; echo "${ID_LIKE:-}")
   fi
@@ -142,8 +145,124 @@ pm_has() {
     eopkg)          eopkg li 2>/dev/null | awk '{print $1}' | grep -qxF "$1" ;;
     lfs)            lfs_has "$1" ;;
     crew)           [[ -f /usr/local/etc/crew/meta/$1.filelist ]] ;;
+    nix)            nix_has "$1" ;;
     *)              return 1 ;;
   esac
+}
+
+# ── ❄️ NixOS (and nix anywhere): nixpkgs is a source (nix/<attr>), and on NixOS it's the package manager. installs go
+#    into your own nix profile, as you, no sudo. NixOS has no /usr, /lib or FHS, so other distros' programs can't run
+#    there directly: their packages go in a box (distrobox), and gurt's own stuff lives in /usr/local (see nixos_paths) ──
+NIXF=(nix --extra-experimental-features 'nix-command flakes')
+nix_newstyle() { [[ -e $HOME/.nix-profile/manifest.json ]]; }   # a `nix profile` profile: nix-env can't touch it
+nix_channels() { nix-instantiate --find-file nixpkgs >/dev/null 2>&1; }
+nix_pkgs() { # the nix expression for nixpkgs: your channel, else the flake registry's nixpkgs
+  # shellcheck disable=SC2016
+  if nix_channels; then echo 'import <nixpkgs> {}'; else echo '(builtins.getFlake "nixpkgs").legacyPackages.${builtins.currentSystem}'; fi
+}
+nix_attr_ok() { [[ $1 =~ ^[A-Za-z0-9_][A-Za-z0-9_.+-]*$ ]]; }
+nix_meta() { # attr → "version<TAB>free|closed<TAB>description", nothing when nixpkgs has no such package
+  nix_attr_ok "$1" || return 1
+  command -v nix >/dev/null || return 1
+  "${NIXF[@]}" eval --raw --impure --expr "let p = $(nix_pkgs); d = p.lib.attrByPath (p.lib.splitString \".\" \"$1\") null p;
+    ls = p.lib.toList (d.meta.license or []); in if d == null || !(p.lib.isDerivation d) then \"\" else
+    \"\${d.version or \"\"}\t\${if builtins.any (l: builtins.isAttrs l && !(l.free or true)) ls then \"closed\" else \"free\"}\t\${
+      builtins.replaceStrings [\"\n\" \"\t\"] [\" \" \" \"] (d.meta.description or \"\")}\"" 2>/dev/null
+}
+nix_has() { # attr → in your nix profile, or part of the NixOS system
+  local a=$1 p=${1##*.} re
+  re=${a//./\\.}
+  if nix_newstyle; then "${NIXF[@]}" profile list 2>/dev/null | grep -qE "(legacyPackages\.[^.]+\.$re|^Name: +$re)( |$)" && return 0
+  elif command -v nix-env >/dev/null; then nix-env -q 2>/dev/null | grep -qE "^$p-[0-9]" && return 0; fi
+  [[ -e /run/current-system/sw ]] && nix-store -q --references /run/current-system/sw 2>/dev/null | grep -qE "^/nix/store/[a-z0-9]{32}-$p-[0-9]"
+}
+nix_install() { # attrs… → your profile (whichever kind it is: nix profile, or nix-env)
+  local a args=()
+  if nix_newstyle || { [[ ! -e $HOME/.nix-profile ]] && ! nix_channels; }; then
+    for a; do args+=("nixpkgs#$a"); done
+    "${NIXF[@]}" profile install "${args[@]}"
+  elif nix_channels; then nix-env -f '<nixpkgs>' -iA "$@"
+  else nix-env -I nixpkgs=flake:nixpkgs -f '<nixpkgs>' -iA "$@"; fi   # a nix-env profile but no channel: the registry's nixpkgs
+}
+nix_remove() { # attr
+  local a=$1
+  if nix_newstyle; then
+    "${NIXF[@]}" profile remove "$a" 2>/dev/null || "${NIXF[@]}" profile remove "legacyPackages.$(nix_system).$a"
+  else nix-env -e "${a##*.}"; fi
+}
+nix_system() { "${NIXF[@]}" eval --raw --impure --expr builtins.currentSystem 2>/dev/null || echo "$(uname -m)-linux"; }
+nix_upgrade_profile() {
+  if nix_newstyle; then "${NIXF[@]}" profile upgrade --all 2>/dev/null || "${NIXF[@]}" profile upgrade '.*'
+  else nix-channel --update >/dev/null 2>&1 || true; nix-env -u; fi
+}
+nix_pkg_install() { # attr reason → nix/<attr>, tracked like everything else gurt installs
+  local a=$1 reason=${2:-explicit} key="nix:$1" meta ver lic desc
+  command -v nix >/dev/null || die "nix/ is nixpkgs, and nix isn't here (it comes with NixOS, or: https://nixos.org/download)"
+  nix_attr_ok "$a" || die "'$a' isn't a nixpkgs attribute name"
+  if is_installed "$key" && ! $FORCE; then
+    [[ $reason == explicit ]] && msg "$(pretty "$key") is already installed (gurt upgrade updates your nix profile) 👍"; return 0
+  fi
+  msg2 "asking nixpkgs about $a (the first time takes a bit)"
+  meta=$(nix_meta "$a") || meta=""
+  [[ -n $meta ]] || die "nixpkgs has no package called $a (try: gurt search nix/$a)"
+  IFS=$'\t' read -r ver lic desc <<<"$meta"
+  if [[ $lic == closed && $reason == explicit ]]; then
+    foss_strict && die "nix/$a is closed source, and FOSS-only mode is on 🔒 (gurt foss off allows it)"
+    warn "nix/$a is closed source 🔒 (nixpkgs only installs it if you allow unfree: NIXPKGS_ALLOW_UNFREE=1, or allowUnfree in your config)"
+  fi
+  if [[ $reason == explicit ]]; then ask "install nix/$a ${ver:-} (${desc:-from nixpkgs})?" || die "aborted, no cap"; fi
+  msg "installing $a from nixpkgs ❄️ (into your nix profile, no sudo)"
+  if [[ $lic == closed ]]; then NIXPKGS_ALLOW_UNFREE=1 nix_install "$a" || die "nix couldn't install $a"
+  else nix_install "$a" || die "nix couldn't install $a"; fi
+  record_meta "$key" "$a" "${ver:-latest}" "${desc:-nixpkgs package}" "$reason" nix
+  log_hist install "$key"
+  msg "$(pretty "$key") installed ✅"
+}
+nix_search() { # term → nixpkgs packages, gurt style
+  command -v nix >/dev/null || die "nix/ is nixpkgs, and nix isn't here (it comes with NixOS, or: https://nixos.org/download)"
+  msg2 "searching nixpkgs (the first search downloads its package list, so it takes a minute)"
+  "${NIXF[@]}" search nixpkgs "$1" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | awk -v m="$MAG" -v b="$B" -v g="$GRN" -v z="$R0" '
+    /^\* / { a = $2; sub(/^legacyPackages\.[^.]+\./, "", a); v = $3; gsub(/[()]/, "", v); if (v == "") v = "?"; printf "%snix/%s%s%s%s %s%s%s\n", m, z, b, a, z, g, v, z; n++; next }
+    NF { sub(/^ +/, ""); print "    " $0 }
+    END { exit !n }' | head -n 80
+}
+
+# NixOS only reads programs from your profiles, so what gurt puts in /usr/local (and boxes in ~/.local/bin) needs lines in /etc/profile.local
+# (NixOS's own /etc/profile reads it). gurt adds it once, and tells you the configuration.nix way too
+NIXOS_PROFILE=${GURT_NIXOS_PROFILE:-/etc/profile.local}
+nixos_paths() {
+  $NIXOS && [[ -z $R ]] || return 0
+  grep -qs 'gurt: /usr/local' "$NIXOS_PROFILE" && return 0
+  msg2 "❄️ NixOS doesn't look in /usr/local, so gurt adds it to $NIXOS_PROFILE (your PATH and app menu, from your next login)"
+  printf '%s\n' '# gurt: /usr/local is where gurt installs things, and NixOS doesn'"'"'t look there on its own' \
+    'case ":$PATH:" in *:/usr/local/bin:*) ;; *) export PATH="$PATH:/usr/local/bin" ;; esac' \
+    'case ":$PATH:" in *:"$HOME/.local/bin":*) ;; *) export PATH="$PATH:$HOME/.local/bin" ;; esac' \
+    'case ":${XDG_DATA_DIRS:-}:" in *:/usr/local/share:*) ;; *) export XDG_DATA_DIRS="${XDG_DATA_DIRS:-/run/current-system/sw/share}:/usr/local/share" ;; esac' \
+    | asroot tee -a "$NIXOS_PROFILE" >/dev/null || { warn "couldn't write $NIXOS_PROFILE"; return 0; }
+  msg2 "rather keep it in your config? environment.extraInit = ''export PATH=\"\$PATH:/usr/local/bin\"''; does the same"
+}
+# a program built for other distros asks for /lib64/ld-linux…, and NixOS only has that with nix-ld
+nixos_elf_check() { # file.gurt (installed) → a heads-up when its programs can't start on NixOS
+  $NIXOS && [[ -z $R ]] || return 0
+  [[ -e /lib64/ld-linux-x86-64.so.2 || -e /lib/ld-linux-aarch64.so.1 ]] && return 0
+  local f
+  while IFS= read -r f; do
+    [[ $f =~ (^|/)(s?bin|libexec)/ && -f /$f && -x /$f ]] || continue
+    if head -c 4096 "/$f" 2>/dev/null | grep -qa -e '/lib64/ld-linux' -e '/lib/ld-linux' -e '/lib/ld-musl'; then
+      warn "❄️ /$f was built for a normal Linux, and NixOS can't start those on its own"
+      msg2 "turn on nix-ld: add  programs.nix-ld.enable = true;  to /etc/nixos/configuration.nix, then: sudo nixos-rebuild switch"
+      return 0
+    fi
+  done < <(tar -xzOf "$1" .FILES 2>/dev/null)
+  return 0
+}
+nixos_needs() { # what nix-option → stop with the configuration.nix line that turns it on
+  $NIXOS || return 0
+  die "❄️ on NixOS, $1 gets turned on in your config: add  $2  to /etc/nixos/configuration.nix, run: sudo nixos-rebuild switch, then try again"
+}
+nixos_no() { # what → stop: it's a normal-Linux thing NixOS can't run
+  $NIXOS || return 0
+  die "$1 and NixOS has no /usr or /lib for it ❄️ try nixpkgs (gurt search nix/<name>), Flathub (flatpak/), or a box: gurt install --box apt/<name>"
 }
 
 # ── 🐧 Linux From Scratch: no package manager, so "is it installed?" means "is it on the system?" ──
@@ -294,6 +413,9 @@ pm_install() {
     eopkg)  asroot eopkg install -y "$@" ;;
     lfs)    lfs_install "$@" ;;
     crew)   crew install "$@" < <(yes) ;;   # Chromebrew runs as you, no sudo
+    nix)    local a ok=(); for a; do if nix_attr_ok "$a" && [[ -n $(nix_meta "$a") ]]; then ok+=("$a"); else warn "nixpkgs has no $a, skipping it (if the app needs it, look for it: gurt search nix/$a)"; fi; done
+            (( ${#ok[@]} )) || return 0
+            nix_install "${ok[@]}" ;;   # your nix profile, no sudo
     *)      die "couldn't find a package manager I know. install these yourself then rerun with --nodeps: $*" ;;
   esac
 }
@@ -757,6 +879,7 @@ install_file() { # file.gurt [reason]
   asroot cp "$tmp/pkgfile"  "$dbd/pkgfile"
   rm -rf "$tmp"
   post_install "$key"
+  if $NIXOS && [[ -z $R ]]; then nixos_paths; nixos_elf_check "$f"; fi
   log_hist install "$key" "$was"
   msg "$(pretty "$key") installed ✅"
 }
@@ -951,6 +1074,8 @@ remove_pkg() {
                asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
     box-*:*)   box_remove "$key"; return ;;
     android:*) android_remove "$key"; asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
+    nix:*)     msg "removing $(pretty "$key") from your nix profile"; nix_remove "$name" || warn "nix couldn't remove it (already gone?)"
+               asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
   esac
   local dbd="$DB/$key" rdeps=()
   mapfile -t rdeps < <(rdeps_of "$key")
@@ -1055,6 +1180,11 @@ resolve_and_install() { # name reason
     flatpak) flatpak_install "$(info_get "$info" via_pkg)" "$reason"; mark_origin "flatpak:$(info_get "$info" via_pkg)" "$name"; return ;;
     snap)    snap_install "$(info_get "$info" via_pkg)" "$reason"; mark_origin "snap:$(info_get "$info" via_pkg)" "$name"; return ;;
   esac
+  if $NIXOS && [[ -z $R ]] && ! is_installed "$key" && [[ -n $(nix_meta "$name") ]]; then   # built for NixOS beats repacked
+    msg "❄️ nixpkgs has $name, built for NixOS, so that's the one gurt installs (nix/$name)"
+    nix_pkg_install "$name" "$reason"; mark_origin "nix:$name" "$name"; return
+  fi
+  [[ -n $via ]] && nixos_no "$name comes from its vendor's repo for other distros (nixpkgs doesn't have it),"
   if [[ -n $via ]]; then
     if ! repo_file "$via" >/dev/null; then
       msg "$name comes from its official repo — adding '$via' 🔏"
@@ -1106,6 +1236,10 @@ install_any() { # spec reason
     printf '%s  Linus Torvalds is here. He sees you.%s\n\n' "$B" "$R0" >&2
     exit 1
   fi
+  if $NIXOS && [[ -z $R ]] && ! $BOX && [[ $src == apt || $src == dnf || $src == zypper || $src == pacman ]]; then
+    msg2 "❄️ NixOS can't run other distros' programs straight on the system, so $src/$name goes in a box (the real $src, in a container)"
+    BOX=true
+  fi
   if $BOX || [[ $src == box-* ]]; then
     src=${src#box-}
     case $src in apt|dnf|zypper|pacman) box_install "$src" "$name" "$reason"; return ;;
@@ -1117,7 +1251,7 @@ install_any() { # spec reason
     git)  local u; u=$(info_get "$DB/git:$name/info" outsource_url 2>/dev/null)
           [[ -n $u ]] || die "git/ packages come from a url: gurt outsource https://github.com/user/repo"
           outsource_install "$u" "$reason" ;;
-    aur)  aur_install "$name" "$reason" ;;
+    aur)  nixos_no "aur/ builds Arch packages from source,"; aur_install "$name" "$reason" ;;
     file) die "file/ packages come from a file: gurt install ./$name.deb (or .rpm / .pkg.tar.zst)" ;;
     flatpak) flatpak_install "$name" "$reason" ;;
     snap)    snap_install "$name" "$reason" ;;
@@ -1125,7 +1259,9 @@ install_any() { # spec reason
     crew)    [[ $PM == crew ]] || die "crew/ is Chromebrew, ChromeOS's package manager: it only works on ChromeOS itself (with Chromebrew installed)"
              pm_has "$name" && { msg "$name is already installed (crew)"; return 0; }
              pm_install "$name" || die "crew couldn't install $name" ;;
-    *) is_binary_src "$src" || die "unknown source '$src' — pick one of: gurt $(all_sources) (or add one: gurt repo add)"
+    nix)     nix_pkg_install "$name" "$reason" ;;
+    *) is_binary_src "$src" || die "unknown source '$src' — pick one of: gurt $(all_sources) nix (or add one: gurt repo add)"
+       nixos_no "$src/ is a repo for other distros,"
        foreign_install "$src" "$name" "$reason" ;;
   esac
 }
@@ -1155,6 +1291,7 @@ norm_src() {
     snap|snapcraft|snapd)           echo snap ;;
     android|waydroid|fdroid|f-droid) echo android ;;
     crew|chromebrew)                echo crew ;;
+    nix|nixpkgs|nixos)              echo nix ;;
     *)                              echo "$1" ;;
   esac
 }
@@ -1462,6 +1599,7 @@ pm_available() {
     apk)    apk search -e "$1" 2>/dev/null | grep -q . ;;
     xbps)   xbps-query -R "$1" >/dev/null 2>&1 ;;
     eopkg)  eopkg info "$1" 2>/dev/null | grep -q '^Name' ;;
+    nix)    [[ -n $(nix_meta "$1") ]] ;;
     *)      return 1 ;;
   esac
 }
@@ -1813,6 +1951,13 @@ pkgfile_install() { # file-or-url reason
   row=$(pkgfile_meta "$f")
   local F; tsv "$row"; name=${F[0]:-}; ver=${F[1]:-}; deps=${F[2]:-}; desc=${F[3]:-}; prov=${F[4]:-}; arch=${F[5]:-}
   [[ -n $name && -n $ver ]] || die "couldn't read the name/version out of ${f##*/} — is it a real package?"
+  if $NIXOS && [[ -z $R ]]; then
+    case $fam in
+      apt|dnf|pacman) msg2 "❄️ NixOS can't run ${f##*/} straight on the system, so it goes in the $(box_name "$fam") box"
+                      box_install "$fam" "$name" "$reason" "$f"; return ;;
+      *) nixos_no "${f##*/} is a package for another distro," ;;
+    esac
+  fi
   pkgfile_arch_ok "$fam" "$arch" || $FORCE || die "${f##*/} is built for $arch, your CPU is $CARCH — that won't run 💀"
   if { [[ $fam == apk && $arch != noarch ]] || [[ $arch == *-musl ]]; } && ! host_musl && ! $FORCE; then
     die "${f##*/} is built for musl (Alpine/Void-musl) — its programs won't run on your glibc system 💀 (--force if it's just scripts/data)"
@@ -2646,9 +2791,13 @@ appimage_install() { # file name ver reason
   app="$work/pkg$GURT_PREFIX/lib/gurt-apps/$name"
   mkdir -p "$app" "$work/pkg$GURT_PREFIX/bin" "$work/pkg$GURT_PREFIX/share/applications" "$work/x"
   install -m755 "$f" "$app/$name.AppImage"
-  # no FUSE 2 on your system? it still runs (extract-and-run mode)
+  if $NIXOS && [[ -z $R ]]; then   # NixOS: an AppImage needs the normal-Linux libraries appimage-run brings along
+    command -v appimage-run >/dev/null || { msg2 "❄️ NixOS runs AppImages with appimage-run: getting it from nixpkgs"; install_native appimage-run; }
+    printf '#!/bin/sh\nexec appimage-run "%s" "$@"\n' "$GURT_PREFIX/lib/gurt-apps/$name/$name.AppImage" > "$work/pkg$GURT_PREFIX/bin/$name"
+  else   # no FUSE 2 on your system? it still runs (extract-and-run mode)
   printf '#!/bin/sh\nldconfig -p 2>/dev/null | grep -q "libfuse\\.so\\.2" || export APPIMAGE_EXTRACT_AND_RUN=1\nexec "%s" "$@"\n' \
     "$GURT_PREFIX/lib/gurt-apps/$name/$name.AppImage" > "$work/pkg$GURT_PREFIX/bin/$name"
+  fi
   chmod 755 "$work/pkg$GURT_PREFIX/bin/$name"
   # borrow its menu entry + icon
   ( cd "$work/x" && for p in '*.desktop' '*.png' '*.svg'; do "$app/$name.AppImage" --appimage-extract "$p" >/dev/null 2>&1 || true; done )
@@ -2807,6 +2956,7 @@ waydroid_get() { # install Waydroid itself, from your distro (or Waydroid's own 
   command -v waydroid >/dev/null || die "Waydroid still isn't there 😔"
 }
 ensure_waydroid() { # Waydroid installed, Android downloaded, the container + your session running
+  command -v waydroid >/dev/null || nixos_needs "Waydroid" "virtualisation.waydroid.enable = true;"
   waydroid_get
   if [[ ! -f /var/lib/waydroid/waydroid.cfg ]]; then
     msg "downloading Android for Waydroid (LineageOS without Google's apps, about 1 GB, just once) ⏳"
@@ -3027,6 +3177,7 @@ cros_native_no() { # what → stop: it needs things ChromeOS itself doesn't have
 }
 ensure_flatpak() {
   cros_native_no "flatpak (and Flathub apps)"
+  command -v flatpak >/dev/null || nixos_needs "flatpak" "services.flatpak.enable = true;"
   if ! command -v flatpak >/dev/null; then
     $NODEPS && die "flatpak isn't installed (and --nodeps is on)"
     msg "flatpak isn't installed — getting it from your distro"
@@ -3076,6 +3227,7 @@ flatpak_install() { # name reason
 
 ensure_snap() {
   cros_native_no "snap"
+  $NIXOS && ! command -v snap >/dev/null && die "❄️ NixOS has no snapd, so no snaps. the same app is usually on Flathub (gurt search flatpak/<name>) or in nixpkgs (gurt search nix/<name>)"
   if is_wsl && [[ ! -d /run/systemd/system ]]; then
     die "snaps need systemd, and it's off in your WSL 🪟 turn it on: put [boot] + systemd=true in /etc/wsl.conf, run 'wsl --shutdown' in PowerShell, then try again (or grab the flatpak/ version)"
   fi
@@ -3173,6 +3325,10 @@ box_cmd() { # src action [pkg]
   local s=$1 a=$2 p=${3:-}
   case $s:$a in
     apt:install)    echo "sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y '$p'" ;;
+    apt:installfile) echo "sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y '$p'" ;;
+    dnf:installfile) echo "sudo dnf install -y '$p'" ;;
+    zypper:installfile) echo "sudo zypper -n install --allow-unsigned-rpm '$p'" ;;
+    pacman:installfile) echo "sudo pacman -U --noconfirm '$p'" ;;
     apt:remove)     echo "sudo apt-get remove -y '$p'" ;;
     apt:files)      echo "dpkg -L '$p'" ;;
     apt:upgrade)    echo "sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y" ;;
@@ -3191,6 +3347,7 @@ box_cmd() { # src action [pkg]
 }
 ensure_box_tools() {
   local need=()
+  command -v podman >/dev/null || command -v docker >/dev/null || nixos_needs "podman (boxes run in it)" "virtualisation.podman.enable = true;"
   command -v podman >/dev/null || command -v docker >/dev/null || need+=(podman)
   command -v distrobox >/dev/null || need+=(distrobox)
   if (( ${#need[@]} )); then
@@ -3206,18 +3363,20 @@ ensure_box() { # src
   msg "creating the $n box ($(box_image "$1")) — first time takes a minute ☕"
   distrobox create --yes --name "$n" --image "$(box_image "$1")" || die "couldn't create the $n box"
 }
-box_install() { # src pkg reason
-  local src=$1 pkg=$2 reason=${3:-explicit} n key="box-$1:$2" files f exported=()
+box_install() { # src pkg reason [package file]
+  local src=$1 pkg=$2 reason=${3:-explicit} file=${4:-} n key="box-$1:$2" files f exported=()
   n=$(box_name "$src")
   if is_installed "$key" && ! $FORCE; then
     [[ $reason == explicit ]] && msg "$(pretty "$key") is already installed — gurt upgrade keeps the box updated 👍"
     return 0
   fi
   ensure_box_tools
-  [[ $reason == explicit ]] && { ask "install $pkg with the real ${src} inside a $n container?" || die "aborted, no cap"; }
+  [[ $reason == explicit ]] && { ask "install $pkg${file:+ (${file##*/})} with the real ${src} inside a $n container?" || die "aborted, no cap"; }
   ensure_box "$src"
   msg "installing $pkg inside $n 📦"
-  distrobox enter "$n" -- sh -c "$(box_cmd "$src" install "$pkg")" || die "$src couldn't install $pkg inside the box"
+  if [[ -n $file ]]; then   # the box sees your whole system under /run/host
+    distrobox enter "$n" -- sh -c "$(box_cmd "$src" installfile "/run/host$(readlink -f "$file")")" || die "$src couldn't install ${file##*/} inside the box"
+  else distrobox enter "$n" -- sh -c "$(box_cmd "$src" install "$pkg")" || die "$src couldn't install $pkg inside the box"; fi
   files=$(distrobox enter "$n" -- sh -c "$(box_cmd "$src" files "$pkg")" 2>/dev/null || true)
   # apps → your app menu, commands → ~/.local/bin
   while IFS= read -r f; do
@@ -3235,7 +3394,8 @@ box_install() { # src pkg reason
   : > "$tmp/files"; : > "$tmp/dirs"; echo "$reason" > "$tmp/reason"
   asroot mkdir -p "$DB/$key"; for f in info files dirs reason; do asroot cp "$tmp/$f" "$DB/$key/$f"; done; rm -rf "$tmp"
   (( ${#exported[@]} )) || warn "$pkg didn't have any apps or commands to export — use it with: distrobox enter $n"
-  [[ ":$PATH:" == *":$HOME/.local/bin:"* ]] || warn "$HOME/.local/bin isn't in your PATH — add this to ~/.bashrc:  export PATH=\"\$HOME/.local/bin:\$PATH\""
+  nixos_paths
+  $NIXOS || [[ ":$PATH:" == *":$HOME/.local/bin:"* ]] || warn "$HOME/.local/bin isn't in your PATH — add this to ~/.bashrc:  export PATH=\"\$HOME/.local/bin:\$PATH\""
   log_hist install "$key"
   msg "$(pretty "$key") installed ✅ (it runs inside $n, so it can't touch your real system's files)"
 }
@@ -3771,7 +3931,7 @@ stash_pkg() { # key file → prints the stashed path
 cmd_rollback() {
   local k cur d f pick="" list=()
   k=$(resolve_key "${1:?usage: gurt rollback <pkg>}") || die "$1 isn't installed"
-  case $k in flatpak:*|snap:*|box-*) die "$(pretty "$k") is managed by ${k%%:*} — roll it back there" ;; esac
+  case $k in flatpak:*|snap:*|nix:*|box-*) die "$(pretty "$k") is managed by ${k%%:*} — roll it back there" ;; esac
   d="$GURT_CACHE/rollback/${k//\//_}"
   cur=$(cat "$DB/$k/pkgfile" 2>/dev/null || true)
   # shellcheck disable=SC2012
@@ -4779,6 +4939,8 @@ search_foreign() { # src term
   elif [[ $src == crew ]]; then
     command -v crew >/dev/null || die "crew/ is Chromebrew, ChromeOS's package manager: only on ChromeOS itself"
     crew search "$term"; return
+  elif [[ $src == nix ]]; then
+    nix_search "$term"; return
   elif [[ $src == android ]]; then
     fdroid_sync
     rows=$(awk -F'\t' -v t="${term,,}" 'index(tolower($1 "\t" $6), t) { n = tolower($6); sub(/ — .*/, "", n)
@@ -4842,6 +5004,11 @@ cmd_info() {
     flatpak)
       ensure_flatpak; local id; id=$(flatpak_resolve "$name"); [[ -n $id ]] || die "nothing on Flathub matches '$name'"
       key="flatpak:$id"; flatpak remote-info --user flathub "$id" 2>/dev/null || flatpak remote-info flathub "$id" 2>/dev/null || die "couldn't get info for $id" ;;
+    nix)
+      local m v l d; m=$(nix_meta "$name") || m=""; [[ -n $m ]] || die "nixpkgs has no package called $name (try: gurt search nix/$name)"
+      IFS=$'\t' read -r v l d <<<"$m"
+      printf '%-14s: %s\n' source "nix (nixpkgs)" pkgname "$name" version "${v:-?}" pkgdesc "$d" license "$([[ $l == closed ]] && echo "closed source" || echo "free software")" \
+        url "https://search.nixos.org/packages?query=$name" ;;
     file)
       is_installed "$key" || die "file/$name isn't installed (file/ packages come from: gurt install ./$name.deb / .rpm / .pkg.tar.zst)"
       awk -F' = ' '{ printf "%-14s: %s\n", $1, substr($0, length($1)+4) }' "$DB/$key/info" ;;
@@ -4885,9 +5052,9 @@ recipe_of() { # key → the Main GURT recipe it came from (works for installs fr
       awk -F' = ' 'FNR == 1 { if (n != "") out(); n = FILENAME; sub(/\/\.gurtinfo$/, "", n); sub(/.*\//, "", n); vt = vp = vr = "" }
         $1 == "via_type" { vt = $2 } $1 == "via_pkg" { vp = $2 } $1 == "via_repo" { vr = $2 }
         function out() { if (vt == "flatpak" || vt == "snap") print vt ":" vp "\t" n; else if (vr != "") print vr ":" (vp != "" ? vp : n) "\t" n }
-        END { if (n != "") out() }' "$GURT_REPO_DIR"/packages/*/.gurtinfo 2>/dev/null)
+        END { if (n != "") out() }' "$GURT_REPO_DIR"/packages/*/.gurtinfo /dev/null 2>/dev/null)   # /dev/null: no recipes yet ≠ read stdin
   fi
-  [[ -n ${RECIPE_OF[$1]:-} ]] && echo "${RECIPE_OF[$1]}"
+  if [[ -n ${RECIPE_OF[$1]:-} ]]; then echo "${RECIPE_OF[$1]}"; fi
 }
 cmd_list() {
   local d k r
@@ -4913,7 +5080,7 @@ find_outdated() {
       gurt) is_gurt_pkg "$name" && new=$(repo_ver "$name") ;;
       dirt) if PKG_TREE=dirt is_gurt_pkg "$name"; then new=$(PKG_TREE=dirt repo_ver "$name"); fi ;;
       aur)  dir=$(aur_clone "$name" 2>/dev/null) && new=$(aur_srcinfo_ver "$dir/.SRCINFO") ;;
-      flatpak|snap|box-*) ;;   # they update themselves (see upgrade_containers)
+      flatpak|snap|nix|box-*) ;;   # they update themselves (see upgrade_containers, system_upgrade)
       file) ;;                 # came from a file you had — install a newer file to update it
       git)  local u c h; u=$(info_get "$d/info" outsource_url); c=$(info_get "$d/info" outsource_commit)
             h=$( [[ -n $u ]] && git ls-remote "$u" HEAD 2>/dev/null | cut -f1 || true)
@@ -4945,7 +5112,7 @@ refresh_all() {
   fi
   sync_main
   for s in $(used_sources); do
-    [[ $s == aur || $s == flatpak || $s == snap || $s == git || $s == dirt || $s == file || $s == box-* ]] && continue
+    [[ $s == aur || $s == flatpak || $s == snap || $s == nix || $s == git || $s == dirt || $s == file || $s == box-* ]] && continue
     ( sync_source "$s" ) || warn "couldn't refresh $s, skipping"
   done
   mkdir -p "$GURT_CACHE" && touch "$stamp"
@@ -4984,7 +5151,19 @@ system_upgrade() {
     asroot rpm-ostree upgrade || warn "rpm-ostree upgrade had problems"
     msg2 "reboot to boot into the update"; return 0
   fi
-  [[ -e /etc/NIXOS ]] && { warn "NixOS updates through its config: sudo nixos-rebuild switch --upgrade"; return 0; }
+  if $NIXOS; then   # NixOS: your configuration.nix is the system, so a rebuild is the update (it keeps the old one to boot back into)
+    if [[ -f /etc/nixos/flake.nix ]]; then
+      msg "❄️ updating NixOS (nix flake update + nixos-rebuild switch, from /etc/nixos)"
+      asroot "${NIXF[@]}" flake update --flake /etc/nixos && asroot nixos-rebuild switch --flake /etc/nixos
+    elif [[ -f /etc/nixos/configuration.nix ]]; then
+      msg "❄️ updating NixOS (nixos-rebuild switch --upgrade)"
+      asroot nixos-rebuild switch --upgrade
+    else warn "❄️ NixOS: no /etc/nixos/configuration.nix or flake.nix here, so rebuild it from wherever your config lives"; true; fi \
+      || warn "nixos-rebuild had problems (scroll up). your last generation is still there to boot into"
+    msg "❄️ updating your nix profile"; nix_upgrade_profile || warn "your nix profile update had problems"
+    msg2 "old NixOS generations take space: sudo nix-collect-garbage --delete-older-than 30d"
+    return 0
+  fi
   snapshot_before "system upgrade"
   case $PM in
     apt)
@@ -5024,6 +5203,9 @@ system_upgrade() {
     emerge)
       msg "🐧 updating your system (emerge --sync + @world — grab a snack 🍿)"
       asroot emerge --sync && asroot emerge --ask="$($NOCONFIRM && echo n || echo y)" --update --deep --newuse @world ;;
+    nix)
+      msg "❄️ updating your nix profile"
+      nix_upgrade_profile ;;
     crew)
       msg "💻 updating Chromebrew (crew update + upgrade). ChromeOS updates itself: Settings → About ChromeOS"
       crew update && crew upgrade < <(yes) ;;
@@ -5821,6 +6003,16 @@ cmd_doctor() {
   command -v sudo >/dev/null || command -v doas >/dev/null || (( EUID == 0 )) || warn "no sudo/doas found"
   [[ $PM == none ]] && warn "no known package manager — you'll have to install deps yourself (--nodeps)"
   [[ $PM == lfs ]] && msg2 "🐧 Linux From Scratch: deps come from Main GURT recipes (built here) and pip; the rest, BLFS tells you how"
+  if $NIXOS; then
+    msg2 "❄️ NixOS: nixpkgs is your package manager (nix/ packages go in your own nix profile, no sudo). other distros' packages go in a box"
+    command -v nix >/dev/null && msg2 "nix ✅ $(nix --version 2>/dev/null | head -n1)" || warn "no nix command?? that's NixOS's whole thing"
+    if nix_channels; then msg2 "nixpkgs: your channel"; else msg2 "nixpkgs: the flake registry (no channel)"; fi
+    if [[ -e /lib64/ld-linux-x86-64.so.2 || -e /lib/ld-linux-aarch64.so.1 ]]; then msg2 "nix-ld ✅ (programs built for other distros can start)"
+    else msg2 "no nix-ld: programs built for other distros won't start. to fix: programs.nix-ld.enable = true; in configuration.nix"; fi
+    command -v flatpak >/dev/null && msg2 "flatpak ✅" || msg2 "no flatpak: Flathub apps need services.flatpak.enable = true; in configuration.nix"
+    command -v podman >/dev/null || command -v docker >/dev/null && msg2 "podman ✅ (boxes work)" || msg2 "no podman: boxes need virtualisation.podman.enable = true; in configuration.nix"
+    grep -qs 'gurt: /usr/local' "$NIXOS_PROFILE" && msg2 "/usr/local is on your PATH ($NIXOS_PROFILE) ✅" || msg2 "/usr/local isn't on your PATH yet (gurt adds it the first time it installs something there)"
+  fi
   if $CROS_NATIVE; then
     msg2 "💻 ChromeOS itself: gurt keeps everything in /usr/local (database: $DB), packages from other distros get moved there too, no sudo needed"
     if command -v crew >/dev/null; then msg2 "Chromebrew ✅ (crew/ packages, and what gurt builds needs from it)"
@@ -5923,6 +6115,7 @@ ${B}sources${R0}   (no prefix = main GURT · write it as aur/yay OR  yay --repo 
   pacman/htop          Arch official binary packages      (aliases: arch/)
   flatpak/gimp         Flathub apps (gurt sets up flatpak for you)  (alias: flathub/)
   snap/spotify         Snap Store apps (gurt sets up snapd for you)
+  nix/hello            nixpkgs, into your own nix profile (NixOS, or anywhere nix is)  (alias: nixpkgs/)
 
 ${B}DIRT${R0}   (the mature section — off by default, 18+, never on the website)
   dirt on | off | status | list        then: gurt install dirt/<name>
@@ -6129,7 +6322,7 @@ main() {
     __complete)        cmd_complete "$@" ;;
     __achieve)         [[ ${1:-} =~ ^[a-z0-9]+$ ]] && achieve "$1" ;;
     __devunlock)       [[ $(dev_state) == locked ]] || exit 0; IFS= read -r p || p=""; dev_check "$p" ;;   # the app sends it on stdin
-    __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\nwsl=%s\ncros=%s\ndev=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" "$(is_wsl && echo yes || echo no)" "$( { is_cros || $CROS_NATIVE; } && echo yes || echo no)" "$(dev_state)" ;;
+    __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\nwsl=%s\ncros=%s\ndev=%s\nnix=%s\nnixos=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" "$(is_wsl && echo yes || echo no)" "$( { is_cros || $CROS_NATIVE; } && echo yes || echo no)" "$(dev_state)" "$(command -v nix >/dev/null && echo yes || echo no)" "$($NIXOS && echo yes || echo no)" ;;
     gui)               cmd_gui "$@" ;;
     completions)       completion_script "${1:?usage: gurt completions bash|zsh|fish}" ;;
     outsource|os|clone) (( $# )) || die "outsource what tho — gurt outsource https://github.com/user/repo (or a file: gurt outsource ./app.deb)"

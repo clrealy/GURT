@@ -28,6 +28,15 @@ $SUDO install -Dm644 "$tmp/gurt/assets/wilhelm.mp3" "$SHARE/wilhelm.mp3"
 $SUDO install -Dm644 "$tmp/gurt/site/assets/apple-touch-icon.png" "$SHARE/gurt.png"
 [ -n "$CROS" ] || [ -f /etc/gurt.conf ] || $SUDO install -Dm644 "$tmp/gurt/gurt.conf" /etc/gurt.conf   # ChromeOS: /etc is read-only
 say "gurt installed to $BIN/gurt 🦆"
+# NixOS only finds programs in its profiles: /usr/local/bin (and ~/.local/bin, where boxes put commands) go in
+# /etc/profile.local, which NixOS's own /etc/profile reads
+if [ -e /etc/NIXOS ] && ! grep -qs 'gurt: /usr/local' /etc/profile.local; then
+  printf '%s\n' '# gurt: /usr/local is where gurt installs things, and NixOS doesn'"'"'t look there on its own' \
+    'case ":$PATH:" in *:/usr/local/bin:*) ;; *) export PATH="$PATH:/usr/local/bin" ;; esac' \
+    'case ":$PATH:" in *:"$HOME/.local/bin":*) ;; *) export PATH="$PATH:$HOME/.local/bin" ;; esac' \
+    'case ":${XDG_DATA_DIRS:-}:" in *:/usr/local/share:*) ;; *) export XDG_DATA_DIRS="${XDG_DATA_DIRS:-/run/current-system/sw/share}:/usr/local/share" ;; esac' \
+    | $SUDO tee -a /etc/profile.local >/dev/null && say "❄️ NixOS: added /usr/local to your PATH in /etc/profile.local (new terminals get it)"
+fi
 "$BIN/gurt" yo
 # Donk OS 🫏 runs on gurt, so gurt sets up the utilities apps need right away (everywhere else: gurt utils)
 if [ -r /etc/os-release ] && (. /etc/os-release; case " ${ID:-} ${ID_LIKE:-} " in *" donkos "*|*" donk "*) exit 0 ;; *) exit 1 ;; esac); then

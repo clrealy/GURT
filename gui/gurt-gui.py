@@ -515,7 +515,7 @@ def state():
     gurt_keys = {i["key"] for i in installed} | {i["name"] for i in installed if i["src"] == "gurt"}
     outside = {n: how for n, how in outside_apps(main, p.get("pm", ""), flatpaks).items()
                if n not in gurt_keys and not any(a["name"] == n and a["ikey"] in gurt_keys for a in main)}
-    return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks, "outside": outside, "wsl": p.get("wsl") == "yes", "cros": p.get("cros") == "yes", "audio": audio_ok(),
+    return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks, "outside": outside, "wsl": p.get("wsl") == "yes", "cros": p.get("cros") == "yes", "nix": p.get("nix") == "yes", "nixos": p.get("nixos") == "yes", "audio": audio_ok(),
             "main": main, "fossonly": strict, "dirtpkgs": dirt, "installed": installed, "vibes": vibes(repo), "notify": notify_on(), "dev": p.get("dev", "no")}
 
 
@@ -2007,6 +2007,7 @@ dialog .row{justify-content:flex-end}
       <button data-src="pacman">pacman/ <small>Arch</small></button>
       <button data-src="flatpak">flatpak/ <small>Flathub</small></button>
       <button data-src="snap">snap/ <small>Snap Store</small></button>
+      <button data-src="nix" hidden>nix/ <small>nixpkgs</small></button>
       <button data-src="dirt" class="dirtbtn">dirt/ <small>18+</small></button>
     </div>
     <p class="blurb" id="blurb" hidden></p>
@@ -2118,8 +2119,10 @@ function devGate(){
   $("#devgo").onclick = go; $("#devpw").onkeydown = e => { if (e.key === "Enter") go(); };
   return true;
 }
-async function load(){ S = await api("/api/state"); ICONMAP = new Map(S.main.map(p => [p.name, p.icon])); $("#fossbtn").textContent = `FOSS only: ${S.fossonly ? "on" : "off"}`; $("#fossbtn").classList.toggle("ghost", !S.fossonly); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · Windows" : S.cros ? " · ChromeOS" : ""}`;
-  document.querySelector('nav button[data-tab="desktops"]').hidden = S.wsl || S.cros;   // no Linux desktops there: Windows / ChromeOS is the desktop
+async function load(){ S = await api("/api/state"); ICONMAP = new Map(S.main.map(p => [p.name, p.icon])); $("#fossbtn").textContent = `FOSS only: ${S.fossonly ? "on" : "off"}`; $("#fossbtn").classList.toggle("ghost", !S.fossonly); $("#ver").textContent = `v${S.version} · ${S.pm}${S.wsl ? " · Windows" : S.cros ? " · ChromeOS" : S.nixos ? " · NixOS" : ""}`;
+  document.querySelector('#srcs button[data-src="nix"]').hidden = !S.nix;   // nixpkgs: on NixOS, or wherever nix is installed
+  document.querySelector('#srcs button[data-src="snap"]').hidden = !!S.nixos;   // NixOS has no snapd
+  document.querySelector('nav button[data-tab="desktops"]').hidden = S.wsl || S.cros || S.nixos;   // no Linux desktops there: Windows / ChromeOS is the desktop, NixOS sets its own in configuration.nix
   $("#droidtxt").textContent = S.cros ? "free software from F-Droid, installed into your Chromebook's own Android. a .apk that isn't on F-Droid gets a heads-up first"
     : "free software from F-Droid, running in Waydroid. gurt sets it up. a .apk that isn't on F-Droid gets a heads-up first";
   $("#droidopen").hidden = !!S.cros;

@@ -41,6 +41,7 @@ It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine,
 | `pacman/` `arch/` | **Arch** official repos | downloads the `.pkg.tar.zst`, checks it, unpacks it |
 | `flatpak/` `flathub/` | **Flathub** | runs `flatpak install` for you (sets up flatpak + Flathub the first time) |
 | `snap/` | **Snap Store** | runs `snap install` for you (sets up snapd the first time; asks before `--classic`) |
+| `nix/` `nixpkgs/` | **nixpkgs** (on NixOS, or anywhere nix is installed) | installs into your own nix profile, no sudo |
 
 Mirrors and releases are set in [`gurt.conf`](gurt.conf), so apt can point at Ubuntu instead of Debian, for example.
 
@@ -215,6 +216,32 @@ LFS has no package manager on purpose, so gurt fills in: it spots LFS (`/etc/lfs
 - **`gurt sysup`** points you at the LFS + BLFS advisories, since LFS updates by rebuilding. Everything gurt installed still updates with `gurt upgrade`.
 
 Before you start, build `git`, `curl` (or `wget`) and `sudo` from BLFS. Then download [install.sh](https://gurtproject.org/install.sh) and run `sh install.sh`.
+
+### NixOS ❄️
+
+NixOS has no `/usr` or `/lib` the way other distros do, so gurt runs it differently. Install with the one-liner (there's no GURTSetupWizard package for NixOS):
+
+```sh
+curl -fsSL https://gurtproject.org/install.sh | sh
+```
+
+- **nixpkgs is the package manager.** `gurt install nix/<attr>`, `gurt search nix/<term>`, `gurt remove nix/<attr>`. They go into your own nix profile (`nix profile` or `nix-env`, whichever you use), as you, no sudo. Deps of Main GURT recipes come from nixpkgs too.
+- **Main GURT checks nixpkgs first.** If nixpkgs has the app, you get that build (it's made for NixOS). Flathub recipes work like everywhere else once flatpak is on.
+- **Other distros' packages go in a box.** `apt/`, `dnf/`, `zypper/`, `pacman/` and `.deb` / `.rpm` / `.pkg.tar.zst` files install with the real distro inside a distrobox container, and their apps and commands get exported to you. `aur/`, Alpine, Void and Solus packages don't work on NixOS.
+- **AppImages** run through `appimage-run` (gurt gets it from nixpkgs).
+- **`/usr/local` on your PATH.** NixOS doesn't look there, so gurt adds a few lines to `/etc/profile.local` (NixOS reads it at login).
+- **`gurt sysup`** runs `nixos-rebuild switch --upgrade` (or `nix flake update` + `nixos-rebuild switch` when `/etc/nixos/flake.nix` exists), then upgrades your nix profile.
+
+Some things are system settings on NixOS, so gurt tells you the `configuration.nix` line instead of installing them:
+
+```nix
+services.flatpak.enable = true;           # Flathub apps
+virtualisation.podman.enable = true;      # boxes
+programs.nix-ld.enable = true;            # programs built for other distros
+virtualisation.waydroid.enable = true;    # Android apps
+```
+
+There are no snaps (NixOS has no snapd) and no `gurt de` (your desktop is set in `configuration.nix`).
 
 ### ChromeOS 💻
 
