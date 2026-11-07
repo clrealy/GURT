@@ -4260,6 +4260,34 @@ for i, lab in enumerate(labels):
 '
 }
 
+# ── 🧙 the GURT Setup Wizard comes first: until you've finished it, the app is the wizard, and gurt in a terminal
+#    runs it before anything else. scripts, -y, root, the app's own jobs and GURTd never get stopped ──
+wizard_done() { grep -qs '"wizard": *"done"' "${XDG_CONFIG_HOME:-$HOME/.config}/gurt/gui.json"; }
+wizard_mark_done() {
+  local f="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/gui.json"; mkdir -p "${f%/*}"
+  if command -v python3 >/dev/null; then
+    python3 - "$f" <<'PY' || true
+import json, sys
+f = sys.argv[1]
+try: c = json.load(open(f))
+except Exception: c = {}
+c["wizard"] = "done"; json.dump(c, open(f, "w"))
+PY
+  elif [[ ! -s $f ]]; then echo '{"wizard": "done"}' > "$f"; fi
+}
+wizard_gate() { # cmd
+  wizard_done && return 0
+  [[ -t 0 && -t 1 ]] || return 0          # a script, a pipe, the app's own jobs, GURTd
+  $NOCONFIRM && return 0
+  (( EUID == 0 )) && return 0
+  [[ -n ${GURT_NO_WIZARD:-} || -n ${GURT_GUI:-} ]] && return 0
+  case $1 in setup|wizard|help|version|yo|hi|doctor|gui|completions|uninstall|__*) return 0 ;; esac
+  msg "first things first: the GURT Setup Wizard 🧙 a minute of questions, then gurt's all yours"
+  cmd_setup
+  wizard_done || die "finish the GURT Setup Wizard first (gurt setup), then gurt's yours"
+  msg "now: gurt $1"
+}
+
 # ── 🧙 gurt setup: the GURT Setup Wizard. its own app on a desktop; gurt setup --terminal (or no desktop) asks here ──
 SETUP_PICKS="firefox brave librewolf vesktop telegram signal vlc spotube obs-studio gimp krita libreoffice joplin vscodium neovim btop steam heroic prismlauncher"   # mostly free software
 cmd_setup() {
@@ -4300,7 +4328,7 @@ cmd_setup() {
   if [[ $(cmd_notify status) == on ]]; then msg2 "update alerts are already on 🔔"
   elif ask "🔔 a desktop notification when updates are waiting?"; then cmd_notify on || true; fi
   if ! $NOCONFIRM && has_display && ask "🖥️ set up the GURT app (its own window + a menu entry)?"; then cmd_gui --setup || warn "the app window didn't set up, gurt gui still opens it in your browser"; fi
-  printf '\n'; achieve wizard
+  printf '\n'; achieve wizard; wizard_mark_done
   msg "you're all set 🦆 try: gurt search like photoshop · gurt lottery · gurt gui"
 }
 
@@ -4678,6 +4706,7 @@ cmd_gui() {
     install_native $(map_dep python3) || die "couldn't install python3 — install it yourself, then run gurt gui again"
   fi
   local py
+  (( $# == 0 )) && ! wizard_done && set -- --wizard   # the GURT Setup Wizard comes first
   if (( $# == 0 )) && [[ -f $GURTD_URL ]] && gurtd_running && py=$(gui_script); then   # GURTd keeps GURT ready: instant
     exec python3 "$py" --attach
   fi
@@ -6185,6 +6214,7 @@ main() {
   local cmd=${1:-hi}; shift || true
   [[ $cmd == __complete ]] || ensure_completions
   dev_gate "$cmd"
+  wizard_gate "$cmd"
   local p
   # --repo X  →  every bare package name becomes X/name
   if [[ -n $REPO ]]; then

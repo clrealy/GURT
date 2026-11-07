@@ -176,6 +176,8 @@ Your **GitHub account is your GURT account**. There are no new passwords, and GU
 
 On Linux, your software center installs it like any other app. Then open **GURT Setup Wizard** from your app menu (it also opens by itself at your next login). It's its own app, separate from GURT, and walks you through the rest: a system check, where apps come from, your look, a few starter apps (or 📥 import your list from your old PC), and update alerts. GURT made these files itself with `gurt convert`.
 
+The setup wizard comes first: until you've finished it, opening GURT opens the wizard, and finishing it opens GURT. Closing it halfway doesn't count, so it comes back next time. In a terminal, `gurt` runs the wizard before your first command too (in the terminal when there's no desktop). Scripts, pipes, `-y`, root and GURTd are never stopped; `GURT_NO_WIZARD=1` skips it.
+
 `gurt setup` opens the wizard again anytime (`gurt setup --terminal` asks the same questions right in the terminal, and 🎨 → 🧙 setup wizard in GURT opens it too). Picked apps on the website's 🧰 Build your setup? Hit 📄 save as a list, then 📥 import it in the wizard.
 
 **Updates:** the GURTSetupWizard `.deb` and `.rpm` add the GURT repo (`gurtproject.org/repo`), so new versions of GURT come with your normal system updates: `sudo apt upgrade`, `sudo zypper up` / `dup`, `sudo dnf upgrade`. On Arch, add it to `/etc/pacman.conf` yourself, as below. `gurt self-update` tells you the right command.
