@@ -227,17 +227,16 @@ curl -fsSL https://gurtproject.org/install.sh | sh
 
 - **nixpkgs is the package manager.** `gurt install nix/<attr>`, `gurt search nix/<term>`, `gurt remove nix/<attr>`. They go into your own nix profile (`nix profile` or `nix-env`, whichever you use), as you, no sudo. Deps of Main GURT recipes come from nixpkgs too.
 - **Main GURT checks nixpkgs first.** If nixpkgs has the app, you get that build (it's made for NixOS). Flathub recipes work like everywhere else once flatpak is on.
-- **Other distros' packages go in a box.** `apt/`, `dnf/`, `zypper/`, `pacman/` and `.deb` / `.rpm` / `.pkg.tar.zst` files install with the real distro inside a distrobox container, and their apps and commands get exported to you. `aur/`, Alpine, Void and Solus packages don't work on NixOS.
+- **Other distros' packages install straight onto the system, no box.** `apt/`, `dnf/`, `zypper/`, `pacman/` and `.deb` / `.rpm` / `.pkg.tar.zst` files go into `/usr` like on any distro. nix-ld starts their programs, and the libraries they need come from nixpkgs when it has them, else from the distro the package was made for. `aur/` (it builds from source) doesn't work on NixOS.
 - **AppImages** run through `appimage-run` (gurt gets it from nixpkgs).
-- **`/usr/local` on your PATH.** NixOS doesn't look there, so gurt adds a few lines to `/etc/profile.local` (NixOS reads it at login).
+- **`/usr` and `/usr/local` on your PATH.** NixOS doesn't look there, so gurt adds a few lines to `/etc/profile.local` (NixOS reads it at login): PATH, the app menu, and nix-ld's library path.
 - **`gurt sysup`** runs `nixos-rebuild switch --upgrade` (or `nix flake update` + `nixos-rebuild switch` when `/etc/nixos/flake.nix` exists), then upgrades your nix profile.
 
 Some things are system settings on NixOS, so gurt tells you the `configuration.nix` line instead of installing them:
 
 ```nix
 services.flatpak.enable = true;           # Flathub apps
-virtualisation.podman.enable = true;      # boxes
-programs.nix-ld.enable = true;            # programs built for other distros
+programs.nix-ld.enable = true;            # programs from other distros' packages
 virtualisation.waydroid.enable = true;    # Android apps
 ```
 

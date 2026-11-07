@@ -3,7 +3,7 @@
 ## Not released yet
 
 ### New
-- **NixOS support ❄️.** gurt spots NixOS and uses nixpkgs as its package manager: `gurt install nix/<attr>`, `gurt search nix/<term>`, `gurt remove nix/<attr>`, all into your own nix profile, no sudo (`nix/` works anywhere nix is installed). Main GURT apps come from nixpkgs when nixpkgs has them. Other distros' packages and `.deb` / `.rpm` / `.pkg.tar.zst` files go in a box, AppImages run with `appimage-run`, `/usr/local` gets added to your PATH, and `gurt sysup` runs `nixos-rebuild`. For flatpak, podman, nix-ld and Waydroid, gurt gives you the `configuration.nix` line.
+- **NixOS support ❄️.** gurt spots NixOS and uses nixpkgs as its package manager: `gurt install nix/<attr>`, `gurt search nix/<term>`, `gurt remove nix/<attr>`, all into your own nix profile, no sudo (`nix/` works anywhere nix is installed). Main GURT apps come from nixpkgs when nixpkgs has them. Other distros' packages and `.deb` / `.rpm` / `.pkg.tar.zst` files install straight onto the system (no box) and run through nix-ld, AppImages run with `appimage-run`, `/usr` and `/usr/local` get added to your PATH, and `gurt sysup` runs `nixos-rebuild`. For flatpak, nix-ld and Waydroid, gurt gives you the `configuration.nix` line.
 
 ### Fixed
 - `gurt list` hung, or printed nothing, when the Main GURT recipes weren't downloaded yet.

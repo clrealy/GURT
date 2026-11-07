@@ -151,8 +151,9 @@ pm_has() {
 }
 
 # ── ❄️ NixOS (and nix anywhere): nixpkgs is a source (nix/<attr>), and on NixOS it's the package manager. installs go
-#    into your own nix profile, as you, no sudo. NixOS has no /usr, /lib or FHS, so other distros' programs can't run
-#    there directly: their packages go in a box (distrobox), and gurt's own stuff lives in /usr/local (see nixos_paths) ──
+#    into your own nix profile, as you, no sudo. other distros' packages install straight onto the system like everywhere
+#    else (/usr, /opt): nix-ld gives their programs the /lib64/ld-linux… they ask for, and nixos_paths puts /usr and
+#    /usr/local on PATH + nix-ld's library path, since NixOS doesn't look there on its own. no box ──
 NIXF=(nix --extra-experimental-features 'nix-command flakes')
 nix_newstyle() { [[ -e $HOME/.nix-profile/manifest.json ]]; }   # a `nix profile` profile: nix-env can't touch it
 nix_channels() { nix-instantiate --find-file nixpkgs >/dev/null 2>&1; }
@@ -227,24 +228,33 @@ nix_search() { # term → nixpkgs packages, gurt style
     END { exit !n }' | head -n 80
 }
 
-# NixOS only reads programs from your profiles, so what gurt puts in /usr/local (and boxes in ~/.local/bin) needs lines in /etc/profile.local
-# (NixOS's own /etc/profile reads it). gurt adds it once, and tells you the configuration.nix way too
+# NixOS only reads programs from your profiles, so what gurt puts in /usr and /usr/local needs lines in /etc/profile.local
+# (NixOS's own /etc/profile reads it): PATH, the app menu, and nix-ld's library path so other distros' programs find
+# the libraries gurt put next to them. gurt adds them once
 NIXOS_PROFILE=${GURT_NIXOS_PROFILE:-/etc/profile.local}
+NIXOS_MARK='gurt: /usr + /usr/local'
+nixos_profile_lines() {
+  printf '%s\n' "# $NIXOS_MARK: where gurt installs things, and NixOS doesn't look there on its own" \
+    'for d in /usr/local/bin /usr/bin "$HOME/.local/bin"; do case ":$PATH:" in *":$d:"*) ;; *) PATH="$PATH:$d" ;; esac; done; export PATH' \
+    'for d in /usr/local/share /usr/share; do case ":${XDG_DATA_DIRS:-}:" in *":$d:"*) ;; *) XDG_DATA_DIRS="${XDG_DATA_DIRS:-/run/current-system/sw/share}:$d" ;; esac; done; export XDG_DATA_DIRS' \
+    'NIX_LD_LIBRARY_PATH=${NIX_LD_LIBRARY_PATH:-/run/current-system/sw/share/nix-ld/lib}; for d in "$HOME/.nix-profile/lib" "/etc/profiles/per-user/$USER/lib" /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib/aarch64-linux-gnu /usr/lib64 /usr/lib; do case ":${NIX_LD_LIBRARY_PATH:-}:" in *":$d:"*) ;; *) NIX_LD_LIBRARY_PATH="${NIX_LD_LIBRARY_PATH:+$NIX_LD_LIBRARY_PATH:}$d" ;; esac; done; export NIX_LD_LIBRARY_PATH' \
+    'unset d'
+}
 nixos_paths() {
   $NIXOS && [[ -z $R ]] || return 0
-  grep -qs 'gurt: /usr/local' "$NIXOS_PROFILE" && return 0
-  msg2 "❄️ NixOS doesn't look in /usr/local, so gurt adds it to $NIXOS_PROFILE (your PATH and app menu, from your next login)"
-  printf '%s\n' '# gurt: /usr/local is where gurt installs things, and NixOS doesn'"'"'t look there on its own' \
-    'case ":$PATH:" in *:/usr/local/bin:*) ;; *) export PATH="$PATH:/usr/local/bin" ;; esac' \
-    'case ":$PATH:" in *:"$HOME/.local/bin":*) ;; *) export PATH="$PATH:$HOME/.local/bin" ;; esac' \
-    'case ":${XDG_DATA_DIRS:-}:" in *:/usr/local/share:*) ;; *) export XDG_DATA_DIRS="${XDG_DATA_DIRS:-/run/current-system/sw/share}:/usr/local/share" ;; esac' \
-    | asroot tee -a "$NIXOS_PROFILE" >/dev/null || { warn "couldn't write $NIXOS_PROFILE"; return 0; }
-  msg2 "rather keep it in your config? environment.extraInit = ''export PATH=\"\$PATH:/usr/local/bin\"''; does the same"
+  grep -qs "$NIXOS_MARK" "$NIXOS_PROFILE" && return 0
+  msg2 "❄️ NixOS doesn't look in /usr or /usr/local, so gurt adds them to $NIXOS_PROFILE (your PATH, app menu and nix-ld, from your next login)"
+  nixos_profile_lines | asroot tee -a "$NIXOS_PROFILE" >/dev/null || { warn "couldn't write $NIXOS_PROFILE"; return 0; }
 }
+nixos_ld_dirs() { # where nix-ld finds libraries (the same list nixos_profile_lines adds)
+  local IFS=:; printf '%s\n' ${NIX_LD_LIBRARY_PATH:-/run/current-system/sw/share/nix-ld/lib} \
+    "$HOME/.nix-profile/lib" "/etc/profiles/per-user/${USER:-$(id -un)}/lib" /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib/aarch64-linux-gnu /usr/lib64 /usr/lib | awk '!s[$0]++'
+}
+nixos_ld_ok() { [[ -e /lib64/ld-linux-x86-64.so.2 || -e /lib/ld-linux-aarch64.so.1 ]]; }
 # a program built for other distros asks for /lib64/ld-linux…, and NixOS only has that with nix-ld
 nixos_elf_check() { # file.gurt (installed) → a heads-up when its programs can't start on NixOS
   $NIXOS && [[ -z $R ]] || return 0
-  [[ -e /lib64/ld-linux-x86-64.so.2 || -e /lib/ld-linux-aarch64.so.1 ]] && return 0
+  nixos_ld_ok && return 0
   local f
   while IFS= read -r f; do
     [[ $f =~ (^|/)(s?bin|libexec)/ && -f /$f && -x /$f ]] || continue
@@ -262,7 +272,7 @@ nixos_needs() { # what nix-option → stop with the configuration.nix line that 
 }
 nixos_no() { # what → stop: it's a normal-Linux thing NixOS can't run
   $NIXOS || return 0
-  die "$1 and NixOS has no /usr or /lib for it ❄️ try nixpkgs (gurt search nix/<name>), Flathub (flatpak/), or a box: gurt install --box apt/<name>"
+  die "$1 and that needs a normal distro's toolchain ❄️ try nixpkgs (gurt search nix/<name>), Flathub (flatpak/), or the binary from apt/ dnf/ pacman/"
 }
 
 # ── 🐧 Linux From Scratch: no package manager, so "is it installed?" means "is it on the system?" ──
@@ -1184,7 +1194,6 @@ resolve_and_install() { # name reason
     msg "❄️ nixpkgs has $name, built for NixOS, so that's the one gurt installs (nix/$name)"
     nix_pkg_install "$name" "$reason"; mark_origin "nix:$name" "$name"; return
   fi
-  [[ -n $via ]] && nixos_no "$name comes from its vendor's repo for other distros (nixpkgs doesn't have it),"
   if [[ -n $via ]]; then
     if ! repo_file "$via" >/dev/null; then
       msg "$name comes from its official repo — adding '$via' 🔏"
@@ -1236,10 +1245,6 @@ install_any() { # spec reason
     printf '%s  Linus Torvalds is here. He sees you.%s\n\n' "$B" "$R0" >&2
     exit 1
   fi
-  if $NIXOS && [[ -z $R ]] && ! $BOX && [[ $src == apt || $src == dnf || $src == zypper || $src == pacman ]]; then
-    msg2 "❄️ NixOS can't run other distros' programs straight on the system, so $src/$name goes in a box (the real $src, in a container)"
-    BOX=true
-  fi
   if $BOX || [[ $src == box-* ]]; then
     src=${src#box-}
     case $src in apt|dnf|zypper|pacman) box_install "$src" "$name" "$reason"; return ;;
@@ -1261,7 +1266,6 @@ install_any() { # spec reason
              pm_install "$name" || die "crew couldn't install $name" ;;
     nix)     nix_pkg_install "$name" "$reason" ;;
     *) is_binary_src "$src" || die "unknown source '$src' — pick one of: gurt $(all_sources) nix (or add one: gurt repo add)"
-       nixos_no "$src/ is a repo for other distros,"
        foreign_install "$src" "$name" "$reason" ;;
   esac
 }
@@ -1562,6 +1566,9 @@ CORE_RE='^(ncurses|ncurses-libs|ncurses-base|libncurses.*|libtinfo.*|readline|li
 LDCACHE=""
 ld_has() {
   [[ -n $LDCACHE ]] || LDCACHE=$( { ldconfig -p || /sbin/ldconfig -p; } 2>/dev/null || true)
+  if $NIXOS && [[ $LDCACHE != *"(nix-ld)"* ]]; then   # NixOS: no ld cache, so: what nix-ld hands other distros' programs
+    local d f; LDCACHE+=$'\n'$(for d in $(nixos_ld_dirs); do for f in "$d"/lib*.so*; do printf '\t%s (nix-ld)\n' "${f##*/}"; done; done)
+  fi
   local re; re=$(sed 's/[][\.*^$+?(){}|/]/\\&/g' <<<"$1")
   grep -qiE "^[[:space:]]+$re " <<<"$LDCACHE"      # -i: debian says libxss1, the lib is libXss.so.1
 }
@@ -1701,6 +1708,7 @@ system_route() { # src name reason why
     pm_has "$name" && msg "$name installed from $PM ✅" || die "$PM couldn't install $name"
     return 0
   fi
+  $NIXOS && die "❄️ $src/$name is system stuff ($why), and nixpkgs has no $name. on NixOS that belongs in configuration.nix"
   msg "📦 $src/$name goes in a box — $why"
   box_install "$src" "$name" "$reason"
 }
@@ -1709,6 +1717,9 @@ WARNED_FOREIGN=false
 foreign_banner() {
   $WARNED_FOREIGN && return 0; WARNED_FOREIGN=true
   msg2 "foreign packages install into /usr like their distro expects. gurt never overwrites files your distro owns, and never touches glibc/systemd/etc 🛡️"
+  if $NIXOS && [[ -z $R ]] && ! nixos_ld_ok; then
+    warn "❄️ NixOS needs nix-ld to start programs built for other distros: add  programs.nix-ld.enable = true;  to /etc/nixos/configuration.nix, then: sudo nixos-rebuild switch"
+  fi
 }
 
 # binary package from another distro → .gurt
@@ -1951,13 +1962,6 @@ pkgfile_install() { # file-or-url reason
   row=$(pkgfile_meta "$f")
   local F; tsv "$row"; name=${F[0]:-}; ver=${F[1]:-}; deps=${F[2]:-}; desc=${F[3]:-}; prov=${F[4]:-}; arch=${F[5]:-}
   [[ -n $name && -n $ver ]] || die "couldn't read the name/version out of ${f##*/} — is it a real package?"
-  if $NIXOS && [[ -z $R ]]; then
-    case $fam in
-      apt|dnf|pacman) msg2 "❄️ NixOS can't run ${f##*/} straight on the system, so it goes in the $(box_name "$fam") box"
-                      box_install "$fam" "$name" "$reason" "$f"; return ;;
-      *) nixos_no "${f##*/} is a package for another distro," ;;
-    esac
-  fi
   pkgfile_arch_ok "$fam" "$arch" || $FORCE || die "${f##*/} is built for $arch, your CPU is $CARCH — that won't run 💀"
   if { [[ $fam == apk && $arch != noarch ]] || [[ $arch == *-musl ]]; } && ! host_musl && ! $FORCE; then
     die "${f##*/} is built for musl (Alpine/Void-musl) — its programs won't run on your glibc system 💀 (--force if it's just scripts/data)"
@@ -3325,10 +3329,6 @@ box_cmd() { # src action [pkg]
   local s=$1 a=$2 p=${3:-}
   case $s:$a in
     apt:install)    echo "sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y '$p'" ;;
-    apt:installfile) echo "sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y '$p'" ;;
-    dnf:installfile) echo "sudo dnf install -y '$p'" ;;
-    zypper:installfile) echo "sudo zypper -n install --allow-unsigned-rpm '$p'" ;;
-    pacman:installfile) echo "sudo pacman -U --noconfirm '$p'" ;;
     apt:remove)     echo "sudo apt-get remove -y '$p'" ;;
     apt:files)      echo "dpkg -L '$p'" ;;
     apt:upgrade)    echo "sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y" ;;
@@ -3363,20 +3363,18 @@ ensure_box() { # src
   msg "creating the $n box ($(box_image "$1")) — first time takes a minute ☕"
   distrobox create --yes --name "$n" --image "$(box_image "$1")" || die "couldn't create the $n box"
 }
-box_install() { # src pkg reason [package file]
-  local src=$1 pkg=$2 reason=${3:-explicit} file=${4:-} n key="box-$1:$2" files f exported=()
+box_install() { # src pkg reason
+  local src=$1 pkg=$2 reason=${3:-explicit} n key="box-$1:$2" files f exported=()
   n=$(box_name "$src")
   if is_installed "$key" && ! $FORCE; then
     [[ $reason == explicit ]] && msg "$(pretty "$key") is already installed — gurt upgrade keeps the box updated 👍"
     return 0
   fi
   ensure_box_tools
-  [[ $reason == explicit ]] && { ask "install $pkg${file:+ (${file##*/})} with the real ${src} inside a $n container?" || die "aborted, no cap"; }
+  [[ $reason == explicit ]] && { ask "install $pkg with the real ${src} inside a $n container?" || die "aborted, no cap"; }
   ensure_box "$src"
   msg "installing $pkg inside $n 📦"
-  if [[ -n $file ]]; then   # the box sees your whole system under /run/host
-    distrobox enter "$n" -- sh -c "$(box_cmd "$src" installfile "/run/host$(readlink -f "$file")")" || die "$src couldn't install ${file##*/} inside the box"
-  else distrobox enter "$n" -- sh -c "$(box_cmd "$src" install "$pkg")" || die "$src couldn't install $pkg inside the box"; fi
+  distrobox enter "$n" -- sh -c "$(box_cmd "$src" install "$pkg")" || die "$src couldn't install $pkg inside the box"
   files=$(distrobox enter "$n" -- sh -c "$(box_cmd "$src" files "$pkg")" 2>/dev/null || true)
   # apps → your app menu, commands → ~/.local/bin
   while IFS= read -r f; do
@@ -3394,8 +3392,7 @@ box_install() { # src pkg reason [package file]
   : > "$tmp/files"; : > "$tmp/dirs"; echo "$reason" > "$tmp/reason"
   asroot mkdir -p "$DB/$key"; for f in info files dirs reason; do asroot cp "$tmp/$f" "$DB/$key/$f"; done; rm -rf "$tmp"
   (( ${#exported[@]} )) || warn "$pkg didn't have any apps or commands to export — use it with: distrobox enter $n"
-  nixos_paths
-  $NIXOS || [[ ":$PATH:" == *":$HOME/.local/bin:"* ]] || warn "$HOME/.local/bin isn't in your PATH — add this to ~/.bashrc:  export PATH=\"\$HOME/.local/bin:\$PATH\""
+  [[ ":$PATH:" == *":$HOME/.local/bin:"* ]] || warn "$HOME/.local/bin isn't in your PATH — add this to ~/.bashrc:  export PATH=\"\$HOME/.local/bin:\$PATH\""
   log_hist install "$key"
   msg "$(pretty "$key") installed ✅ (it runs inside $n, so it can't touch your real system's files)"
 }
@@ -6004,14 +6001,13 @@ cmd_doctor() {
   [[ $PM == none ]] && warn "no known package manager — you'll have to install deps yourself (--nodeps)"
   [[ $PM == lfs ]] && msg2 "🐧 Linux From Scratch: deps come from Main GURT recipes (built here) and pip; the rest, BLFS tells you how"
   if $NIXOS; then
-    msg2 "❄️ NixOS: nixpkgs is your package manager (nix/ packages go in your own nix profile, no sudo). other distros' packages go in a box"
+    msg2 "❄️ NixOS: nixpkgs is your package manager (nix/ packages go in your own nix profile, no sudo). other distros' packages go into /usr, run by nix-ld"
     command -v nix >/dev/null && msg2 "nix ✅ $(nix --version 2>/dev/null | head -n1)" || warn "no nix command?? that's NixOS's whole thing"
     if nix_channels; then msg2 "nixpkgs: your channel"; else msg2 "nixpkgs: the flake registry (no channel)"; fi
-    if [[ -e /lib64/ld-linux-x86-64.so.2 || -e /lib/ld-linux-aarch64.so.1 ]]; then msg2 "nix-ld ✅ (programs built for other distros can start)"
+    if nixos_ld_ok; then msg2 "nix-ld ✅ (programs built for other distros can start)"
     else msg2 "no nix-ld: programs built for other distros won't start. to fix: programs.nix-ld.enable = true; in configuration.nix"; fi
     command -v flatpak >/dev/null && msg2 "flatpak ✅" || msg2 "no flatpak: Flathub apps need services.flatpak.enable = true; in configuration.nix"
-    command -v podman >/dev/null || command -v docker >/dev/null && msg2 "podman ✅ (boxes work)" || msg2 "no podman: boxes need virtualisation.podman.enable = true; in configuration.nix"
-    grep -qs 'gurt: /usr/local' "$NIXOS_PROFILE" && msg2 "/usr/local is on your PATH ($NIXOS_PROFILE) ✅" || msg2 "/usr/local isn't on your PATH yet (gurt adds it the first time it installs something there)"
+    grep -qs "$NIXOS_MARK" "$NIXOS_PROFILE" && msg2 "/usr and /usr/local are on your PATH ($NIXOS_PROFILE) ✅" || msg2 "/usr and /usr/local aren't on your PATH yet (gurt adds them the first time it installs something there)"
   fi
   if $CROS_NATIVE; then
     msg2 "💻 ChromeOS itself: gurt keeps everything in /usr/local (database: $DB), packages from other distros get moved there too, no sudo needed"
