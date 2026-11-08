@@ -516,7 +516,20 @@ def state():
     outside = {n: how for n, how in outside_apps(main, p.get("pm", ""), flatpaks).items()
                if n not in gurt_keys and not any(a["name"] == n and a["ikey"] in gurt_keys for a in main)}
     return {"version": p.get("version", "?"), "pm": p.get("pm", "?"), "dirt": p.get("dirt") == "on", "flatpaks": flatpaks, "outside": outside, "wsl": p.get("wsl") == "yes", "cros": p.get("cros") == "yes", "nix": p.get("nix") == "yes", "nixos": p.get("nixos") == "yes", "hook": p.get("hook") == "on", "audio": audio_ok(),
-            "main": main, "fossonly": strict, "dirtpkgs": dirt, "installed": installed, "vibes": vibes(repo), "notify": notify_on(), "dev": p.get("dev", "no")}
+            "main": main, "fossonly": strict, "dirtpkgs": dirt, "installed": installed, "vibes": vibes(repo), "ghonly": ghonly(repo), "notify": notify_on(), "dev": p.get("dev", "no")}
+
+
+def ghonly(repo):   # gh-only.map: "category|owner/repo|name|what it is" → free apps that ship on GitHub releases
+    for f in (os.path.join(repo, "gh-only.map"), os.path.join(os.path.dirname(os.path.abspath(GURT)), "gh-only.map"), "/usr/share/gurt/gh-only.map", "/usr/local/share/gurt/gh-only.map"):
+        if os.path.isfile(f):
+            out = []
+            for line in open(f, encoding="utf-8", errors="replace"):
+                parts = line.rstrip("\n").split("|")
+                if line.startswith("#") or len(parts) < 4:
+                    continue
+                out.append({"cat": parts[0], "repo": parts[1], "name": parts[2], "desc": "|".join(parts[3:])})
+            return out
+    return []
 
 
 def vibes(repo):   # vibes.map: "photoshop|photo editor: gimp krita …" → {"photoshop": [...], "photo editor": [...]}
@@ -1662,6 +1675,8 @@ main{flex:1;overflow:auto;padding:12px 14px 24px}
 #cmpdlg{max-width:min(920px,calc(100vw - 32px));width:100%}#cmptable{overflow-x:auto}#cmptable table{border-collapse:collapse;width:100%;font-size:13px}
 #cmptable th,#cmptable td{text-align:left;padding:6px 9px;border:1px solid var(--line);vertical-align:top}#cmptable th{font:600 12.5px var(--mono);color:var(--muted);white-space:nowrap;background:var(--tag)}
 .cmpbtn{margin-left:2px}.cmpbtn.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.ghlink{display:block;font:11px var(--mono);color:var(--muted);text-decoration:none;margin:2px 0 4px;overflow-wrap:anywhere}
+.ghlink:hover{color:var(--ink);text-decoration:underline}
 .vibehead{font:700 13px var(--mono);color:var(--ink);background:var(--tag);padding:5px 10px;border-bottom:1px solid var(--line)}
 .chip.trust{cursor:help}.chip.t-hi{border-color:var(--good);color:var(--good)}.chip.t-mid{border-color:#c98f00;color:#c98f00}.chip.t-lo{border-color:#e8590c;color:#e8590c}
 .empty{color:var(--muted);text-align:center;padding:28px 10px;font:13px var(--mono)}
@@ -2144,7 +2159,7 @@ async function load(){ S = await api("/api/state"); ICONMAP = new Map(S.main.map
     : "free software from F-Droid, running in Waydroid. gurt sets it up. a .apk that isn't on F-Droid gets a heads-up first";
   $("#droidopen").hidden = !!S.cros;
   fitNav();
-  if (S.audio === false && !soundDismissed) $("#soundbar").hidden = false;   /* no Linux desktops on Windows */ renderMain(); renderInstalled(); renderNotify(); renderHook(); renderCmp(); if (!$("#t-setup").hidden) renderBuilder(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt();
+  if (S.audio === false && !soundDismissed) $("#soundbar").hidden = false;   /* no Linux desktops on Windows */ renderMain(); renderInstalled(); renderNotify(); renderHook(); renderCmp(); if (!$("#t-setup").hidden) renderBuilder(); if (typeof SRC !== "undefined" && SRC === "dirt") renderDirt(); if (typeof SRC !== "undefined" && SRC === "gh" && !$("#q").value.trim()) $("#srcgrid").innerHTML = ghShelf();
   if (BYSIZE) api("/api/sizes").then(r => { SIZES = r.sizes || {}; renderInstalled(); }).catch(() => {}); else SIZES = null; }
 const inst = spec => {
   const m = S.main.find(p => p.name === spec);
@@ -2445,6 +2460,7 @@ const BLURB = {
   pacman: "Arch's official binary packages, installable on non-Arch distros.",
   flatpak: "Flathub apps, sandboxed. gurt sets up flatpak + Flathub for you.",
   snap: "Snap Store apps. gurt sets up snapd for you."};
+BLURB.gh = "Apps straight from GitHub releases. gurt picks the file for your system, checks it and keeps it updated.";
 BLURB.dirt = "DIRT is GURT's mature section (18+). Packages here install with gurt install dirt/<name>.";
 let SRC = "gurt";
 function renderDirt(){
@@ -2460,6 +2476,18 @@ async function openDirt(){
   if (!S.dirt) { const r = await run("dirt", "on", {quiet:true, confirm:false}); if (!r || r.rc !== 0) return; }
   setSrc("dirt", true);
 }
+// the gh/ tab, before you search: free apps that ship their Linux builds on GitHub (gh-only.map), by category
+function ghShelf(){
+  if (!(S.ghonly || []).length) return `<div class="empty">type something and hit Enter to search gh</div>`;
+  let last = "", h = "";
+  for (const a of S.ghonly) {
+    if (a.cat !== last) { h += `<div class="vibehead">only on GitHub: ${esc(a.cat)}</div>`; last = a.cat; }
+    const key = "gh:" + a.repo.split("/")[1].toLowerCase(), i = S.installed.find(x => x.key === key);
+    h += card({name:a.name, src:"gh", ver:"", desc:noEmoji(a.desc), extra:`<a class="ghlink" href="https://github.com/${esc(a.repo)}" target="_blank" rel="noopener">github.com/${esc(a.repo)}</a>`,
+      actions: i ? `<span class="chip ok">installed ✓</span>${actBtn("remove", "remove", i.spec, "ghost")}` : actBtn("install", "install", "gh/" + a.repo)});
+  }
+  return h;
+}
 function setSrc(src, gated){
   if (src === "dirt" && !gated) return openDirt();
   SRC = src;
@@ -2470,7 +2498,7 @@ function setSrc(src, gated){
   $("#blurb").hidden = main; $("#blurb").textContent = BLURB[src] || "";
   $("#q").placeholder = main ? "search Main GURT… (Enter searches every source)" : `search ${src}/… and hit Enter`;
   if (src === "dirt") { renderDirt(); renderMain(); return; }
-  if (!main) $("#srcgrid").innerHTML = `<div class="empty">type something and hit Enter to search ${esc(src)}</div>`;
+  if (!main) $("#srcgrid").innerHTML = src === "gh" && (S.ghonly || []).length ? ghShelf() : `<div class="empty">type something and hit Enter to search ${esc(src)}</div>`;
   if (!main && $("#q").value.trim()) searchSrc();
   renderMain();
 }

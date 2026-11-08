@@ -571,6 +571,7 @@ gurt install fierfox           # typo? gurt asks "did you mean: firefox?"
 gurt try aur/btop              # install it, try it in a new shell, type exit and it's gone again (deps too) 🧪
 gurt try pip/cowsay -- cowsay hi   # …or just run one command with it
 gurt dupes                     # apps you have more than once: firefox from your distro AND flatpak AND gurt 👯
+gurt gh-only                   # free apps that ship on GitHub releases · gurt install gh/vesktop 🐙
 ```
 
 In the app: type "like discord" in the search, hit **compare** on up to 4 cards to see them side by side, **biggest first** on the Installed tab sorts by size and **free up space** shows the junk with a toss button for each, **alert me** on the Updates tab turns alerts on, and `/` jumps to the search box.

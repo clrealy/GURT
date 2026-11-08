@@ -1,0 +1,44 @@
+# 🐙 gh-only.map: free apps that ship their Linux builds on GitHub releases (not in most distro repos, or way newer there)
+# gurt gh-only lists them, the app and gurtproject.org show them on the gh/ tab. gurt install gh/<name> works for these.
+# category|owner/repo|name|what it is      (free software only: check the license before adding one)
+apps|Vencord/Vesktop|vesktop|Discord with Vencord built in, and screen share with sound on Linux
+apps|Legcord/Legcord|legcord|a light Discord client
+apps|th-ch/youtube-music|youtube-music|YouTube Music as a desktop app, with plugins and an ad blocker
+apps|KRTirtho/spotube|spotube|a Spotify client that plays from YouTube and friends, no premium needed
+apps|jeffvli/feishin|feishin|a music player for your Jellyfin or Navidrome server
+apps|FreeTubeApp/FreeTube|freetube|YouTube without ads or tracking
+apps|mifi/lossless-cut|lossless-cut|cut videos and audio in seconds without re-encoding
+apps|upscayl/upscayl|upscayl|make blurry images sharp with AI, on your own computer
+apps|pot-app/pot-desktop|pot|translate and read text off your screen
+apps|siyuan-note/siyuan|siyuan|notes and a personal wiki, stored on your computer
+apps|logseq/logseq|logseq|an outliner for notes and journals, with links between pages
+apps|AppFlowy-IO/AppFlowy|appflowy|an open Notion: docs, boards and databases
+apps|streetwriters/notesnook|notesnook|end-to-end encrypted notes
+apps|marktext/marktext|marktext|a simple Markdown editor that shows the result as you type
+apps|jgraph/drawio-desktop|drawio|diagrams and flowcharts (draw.io) offline
+apps|usebruno/bruno|bruno|an API client that keeps your requests as plain files
+apps|Kong/insomnia|insomnia|an API client for REST, GraphQL and gRPC
+apps|qarmin/czkawka|czkawka|find duplicate files, similar photos and other junk
+apps|ventoy/Ventoy|ventoy|put many ISO files on one USB stick and boot any of them
+apps|balena-io/etcher|etcher|flash an OS image to a USB stick or SD card
+apps|arduino/arduino-ide|arduino-ide|program Arduino boards
+browsers|zen-browser/desktop|zen-browser|a calm Firefox-based browser with vertical tabs
+browsers|Floorp-Projects/Floorp|floorp|a Firefox-based browser with lots of layout options
+browsers|Alex313031/thorium|thorium|a fast Chromium build
+games|PrismLauncher/PrismLauncher|prismlauncher|a Minecraft launcher for many instances and mods
+games|pcsx2/pcsx2|pcsx2|a PlayStation 2 emulator
+games|RPCS3/rpcs3-binaries-linux|rpcs3|a PlayStation 3 emulator
+games|xemu-project/xemu|xemu|an original Xbox emulator
+games|shadps4-emu/shadPS4|shadps4|a PlayStation 4 emulator
+dev|ollama/ollama|ollama|run AI models on your own computer
+dev|zed-industries/zed|zed|a fast code editor
+dev|lapce/lapce|lapce|a code editor written in Rust
+dev|helix-editor/helix|helix|a modal terminal editor with LSP built in
+dev|wez/wezterm|wezterm|a GPU terminal with tabs, splits and a Lua config
+terminal|jesseduffield/lazygit|lazygit|git in a terminal UI
+terminal|jesseduffield/lazydocker|lazydocker|Docker and Compose in a terminal UI
+terminal|sxyazi/yazi|yazi|a fast terminal file manager with image previews
+terminal|yorukot/superfile|superfile|a pretty terminal file manager
+terminal|zellij-org/zellij|zellij|a terminal workspace with panes and tabs
+terminal|derailed/k9s|k9s|Kubernetes in a terminal UI
+terminal|yt-dlp/yt-dlp|yt-dlp|download video and audio from YouTube and 1000+ sites

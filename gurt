@@ -1023,7 +1023,12 @@ fix_rpaths() { # key
 resolve_key() { # user spec (name or src/name) -> installed db key
   local spec=$1 src name k
   if [[ $spec == */* ]]; then src=$(norm_src "${spec%%/*}"); name=${spec#*/}; k=$(pkey "$src" "$name")
-    is_installed "$k" && { echo "$k"; return; }; return 1; fi
+    is_installed "$k" && { echo "$k"; return; }
+    if [[ $src == gh ]]; then   # gh/zen-browser (a gh-only.map name) is installed as gh:desktop (its repo's name)
+      local r; r=$(ghonly_rows | awk -F'|' -v n="${name,,}" '$3 == n { print $2; exit }')
+      [[ -n $r ]] && k=$(gh_key "$r") && is_installed "$k" && { echo "$k"; return; }
+    fi
+    return 1; fi
   is_installed "$spec" && { echo "$spec"; return; }
   # a Main GURT recipe that installs from Flathub / snap / an official repo lives under that source's key
   local ri; ri=$(repo_info "$spec")
@@ -3510,8 +3515,37 @@ gh_key() { local r=${1##*/}; echo "gh:${r,,}"; }
 gh_repo_of() { # spec (owner/repo, or the repo name of one you installed) → owner/repo
   gh_repo_ok "$1" && { echo "$1"; return; }
   local r; r=$(info_get "$DB/gh:${1,,}/info" gh_repo 2>/dev/null) || true
-  [[ -n $r ]] || die "gh/ needs owner/repo, like: gurt install gh/neovim/neovim"
+  [[ -n $r ]] || r=$(ghonly_rows | awk -F'|' -v n="${1,,}" '$3 == n { print $2; exit }')
+  [[ -n $r ]] || die "gh/ needs owner/repo, like: gurt install gh/neovim/neovim (or a name from gurt gh-only)"
   echo "$r"
+}
+# ── 🐙 gh-only.map: free apps that ship their Linux builds on GitHub releases. gurt gh-only lists them ──
+ghonly_file() {
+  local f
+  for f in "$GURT_REPO_DIR/gh-only.map" "$SELF_DIR/gh-only.map" /usr/local/share/gurt/gh-only.map /usr/share/gurt/gh-only.map; do
+    [[ -r $f ]] && { echo "$f"; return 0; }
+  done
+  return 1
+}
+ghonly_rows() { local f; f=$(ghonly_file) || return 0; grep -v '^#' "$f" | grep '|' || true; }   # category|owner/repo|name|what it is
+cmd_ghonly() { # [category | --check]
+  local rows c r n d last="" k mark row
+  rows=$(ghonly_rows); [[ -n $rows ]] || die "couldn't find gh-only.map (gurt sync fetches it)"
+  if [[ ${1:-} == --check ]]; then   # CI: every app on the list still has a file for Linux on this computer
+    local bad=0
+    while IFS='|' read -r c r n d; do
+      if row=$( (gh_pick "$r") 2>/dev/null ) && [[ -n $row ]]; then printf '  ✓ %-30s %s\n' "$r" "$(cut -f2 <<<"$row")"
+      else printf '  ✗ %-30s no Linux file for %s in the newest release\n' "$r" "$CARCH"; bad=1; fi
+    done <<<"$rows"
+    return "$bad"
+  fi
+  [[ -n ${1:-} ]] && { rows=$(awk -F'|' -v c="${1,,}" '$1 == c' <<<"$rows"); [[ -n $rows ]] || die "no category called $1 (apps browsers games dev terminal)"; }
+  while IFS='|' read -r c r n d; do
+    [[ $c == "$last" ]] || { printf '\n%s%s%s\n' "$B" "$c" "$R0"; last=$c; }
+    k=$(gh_key "$r"); mark=""; is_installed "$k" && mark=" ${GRN}installed ✓${R0}"
+    printf '  %-16s %s%s\n  %-16s %s\n' "gh/$n" "$d" "$mark" "" "github.com/$r"
+  done <<<"$rows"
+  echo; msg2 "only on GitHub, or way newer there. install one: gurt install gh/<name> 🐙"
 }
 gh_install() { # owner/repo reason
   local repo reason=${2:-explicit} key row tag asset url dg sums rname f got was="" before after k inner=() old
@@ -5556,7 +5590,7 @@ cmd_complete() {
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
     commands)  printf '%s\n' sync search info install update upgrade self-update uninstall remove autoremove list files owns lottery sysup \
                  build add srcinfo checksum new repo dirt gui de outsource undo rollback hold unhold export import completions doctor version help yo \
-                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache try dupes hotwyr ;;
+                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache try dupes hotwyr gh-only ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman apk xbps eopkg gentoo flatpak snap nix gh pip npm cargo appimage brew dirt ;;
   esac
   return 0
@@ -7188,6 +7222,7 @@ ${B}misc${R0}
   hold / unhold <pkg>  stop / resume upgrades for a package
   try <pkg> [-- cmd]   install it, try it in a new shell (or run cmd), and it's gone when you exit 🧪
   dupes                apps you have more than once (your distro + flatpak + gurt…) 👯
+  gh-only [category]   free apps that ship on GitHub releases (apps browsers games dev terminal) 🐙
   export [file]        save the list of stuff you installed
   lottery [category]   🎰 spin for a random app (browsers chat media creative office dev gaming system cli …)
   import <file>        install everything from an export (new PC speedrun)
@@ -7332,6 +7367,7 @@ main() {
     hold|pin)          (( $# )) || die "hold what tho"; cmd_hold "$@" ;;
     try)               cmd_try "$@" ;;
     dupes|dupe|doubles) cmd_dupes ;;
+    gh-only|ghonly|github) cmd_ghonly "$@" ;;
     unhold|unpin)      (( $# )) || die "unhold what tho"; cmd_unhold "$@" ;;
     export)            cmd_export "$@" ;;
     lottery|lotto|gamble) cmd_lottery "$@" ;;

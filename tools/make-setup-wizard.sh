@@ -22,6 +22,7 @@ mkdir -p "$out"; out=$(cd "$out" && pwd)
 install -Dm755 "$root/gurt"                             "$t/usr/bin/gurt"
 install -Dm644 "$root/deps.map"                         "$t/usr/share/gurt/deps.map"
 install -Dm644 "$root/vibes.map"                        "$t/usr/share/gurt/vibes.map"
+install -Dm644 "$root/gh-only.map"                      "$t/usr/share/gurt/gh-only.map"
 install -Dm644 "$root/gui/gurt-gui.py"                  "$t/usr/share/gurt/gurt-gui.py"
 install -Dm644 "$root/assets/wilhelm.mp3"               "$t/usr/share/gurt/wilhelm.mp3"
 install -Dm644 "$root/site/assets/apple-touch-icon.png" "$t/usr/share/gurt/gurt.png"

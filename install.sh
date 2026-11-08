@@ -23,6 +23,7 @@ fi
 $SUDO install -Dm755 "$tmp/gurt/gurt" "$BIN/gurt"
 $SUDO install -Dm644 "$tmp/gurt/deps.map" "$SHARE/deps.map"
 $SUDO install -Dm644 "$tmp/gurt/vibes.map" "$SHARE/vibes.map"
+$SUDO install -Dm644 "$tmp/gurt/gh-only.map" "$SHARE/gh-only.map"
 $SUDO install -Dm644 "$tmp/gurt/gui/gurt-gui.py" "$SHARE/gurt-gui.py"
 $SUDO install -Dm644 "$tmp/gurt/assets/wilhelm.mp3" "$SHARE/wilhelm.mp3"
 $SUDO install -Dm644 "$tmp/gurt/site/assets/apple-touch-icon.png" "$SHARE/gurt.png"
