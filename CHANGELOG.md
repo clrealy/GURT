@@ -4,6 +4,8 @@
 
 ### New
 - **Hotwyr ⚡: gurt backs up your package manager.** `gurt hotwyr on` (or the setup wizard): when `sudo apt install yay` can't find yay, gurt offers aur/yay. `apt upgrade`, `pacman -Syu` and friends also update what gurt installed, `apt search` / `pacman -Ss` show gurt's results too, and a command you don't have gets an "install it with gurt?". Works in bash, zsh and fish, only for what you type, never in scripts.
+- **`gurt try` 🧪** Install something, try it in a new shell, type `exit` and it's gone again, deps and all (it asks if you want to keep it). `gurt try pip/cowsay -- cowsay hi` runs one command instead.
+- **`gurt dupes` 👯** Finds apps you have more than once: from your distro, Flatpak (user and system), Snap and gurt, like Firefox from pacman *and* Flathub *and* `apt/firefox`.
 - **The GURT infomercial 📼** A 30-second retro ad in `promo/` (16:9 and 9:16), rendered from `promo/src`.
 
 ### Fixed
