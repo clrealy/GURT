@@ -298,6 +298,56 @@ body.carted{padding-bottom:74px}
 @media (max-width:760px){.crosways{grid-template-columns:1fr}.crosways>div+div{border-left:0;border-top:1px solid var(--edge)}}
 .pick .smartscreen{margin-top:0}
 @media (max-width:760px){.choose{grid-template-columns:1fr}.pick.is-mine{order:-1}.headline{font-size:26px}.hero .logo .lg-gurt svg{height:72px}}
+/* hero: what gurt does on the left (the demo terminal), getting it on the right */
+.herogrid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-items:start}
+.heromain{min-width:0}
+.demo{margin-top:18px;border:1px solid var(--edge);border-radius:var(--r);background:#0b0c0e}
+.demobar{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:6px 8px;border-bottom:1px solid var(--edge)}
+.demobar .who{font:12px var(--mono);color:var(--muted);margin-right:auto;padding-right:8px}
+.demotab{font:600 12px var(--mono);background:transparent;color:var(--muted);border:1px solid var(--edge);border-radius:var(--r);padding:3px 8px;cursor:pointer}
+.demotab:hover{border-color:var(--muted);color:#e7e7ea}
+.demotab.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.demoscreen{margin:0;padding:12px 14px;height:14.5em;overflow:hidden;font:13.5px/1.55 var(--mono);color:#e7e7ea;white-space:pre-wrap;overflow-wrap:anywhere}
+.demoscreen .pr{color:#7fdc7f}.demoscreen .er{color:#ff6b5d}.demoscreen .hw{color:var(--accent)}.demoscreen .dm{color:#9a9aa3}.demoscreen .ok{color:#7fdc7f;font-weight:700}
+.demoscreen .cur{display:inline-block;width:.6em;height:1.1em;vertical-align:text-bottom;background:#e7e7ea;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+@media (max-width:600px){.demoscreen{height:21em;font-size:12px;padding:10px}}
+@media (prefers-reduced-motion:reduce){.demoscreen .cur{animation:none}}
+.getbox{background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.gethead{font:800 18px var(--sans);margin:0;color:#fff}
+.getsub{margin:0;color:var(--muted);font-size:13px}
+.getbox .choose{display:flex;flex-direction:column;gap:6px;margin:0}
+.getbox .pick{padding:0;gap:0;background:var(--bg-hero,#101114)}
+.getbox .pick>summary{list-style:none;cursor:pointer;padding:9px 10px;gap:8px}
+.getbox .pick>summary::-webkit-details-marker{display:none}
+.getbox .pick>summary::before{content:"+";font:700 14px var(--mono);color:var(--muted);width:12px;flex:none}
+.getbox .pick[open]>summary::before{content:"\2212"}
+.getbox .pick[open]>summary{border-bottom:1px solid var(--edge)}
+.getbox .pick h2{font-size:15px}
+.getbox .pick>:not(summary){margin:8px 10px}
+.getbox .pick>p{font-size:13px}
+.getbox .pick.is-mine{order:-1}
+.getbox .crosways{grid-template-columns:1fr}
+.getbox .crosways>div+div{border-left:0;border-top:1px solid var(--edge)}
+.getbox .dlbtns{flex-direction:column;gap:3px}
+.getbox .dlbtn{flex-direction:row;justify-content:space-between;align-items:baseline;gap:10px;padding:5px 9px;font-size:13px}
+.getbox .dlbtn small{text-align:right;color:inherit;opacity:.85}
+.srcstrip{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:18px}
+.srclabel{font:700 12px var(--mono);color:var(--muted);margin-right:6px}
+.srcchip{font:600 12px var(--mono);color:#e7e7ea;text-decoration:none;border:1px solid var(--edge);border-radius:var(--r);padding:3px 7px;background:var(--panel)}
+.srcchip:hover,.srcchip:focus-visible{border-color:var(--accent);outline:none}
+.linuxdl{margin-top:16px}
+.linuxdl.is-mine{border-color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
+@media (max-width:900px){.herogrid{grid-template-columns:minmax(0,1fr)}}
+/* features as dense rows: name | what it does | where to go */
+.frows{border:1px solid var(--edge);border-radius:var(--r);background:var(--bg)}
+.frow{display:grid;grid-template-columns:190px minmax(0,1fr) auto;gap:14px;align-items:baseline;padding:9px 12px;border-top:1px solid var(--edge);text-decoration:none;color:var(--ink)}
+.frow:first-child{border-top:0}
+.frow b{font:700 14px var(--mono)}
+.frow span{color:var(--muted);font-size:14px}
+.frow i{font:600 12px var(--mono);font-style:normal;border-bottom:2px solid var(--accent);white-space:nowrap}
+.frow:hover,.frow:focus-visible{background:var(--tag);outline:none}
+@media (max-width:700px){.frow{grid-template-columns:minmax(0,1fr);gap:2px}.frow i{justify-self:start;margin-top:4px}}
 .features{padding:34px 0 36px;background:var(--panel);border-bottom:1px solid var(--line)}
 .bandtitle{font:800 22px var(--sans);letter-spacing:-.01em;margin:0 0 14px}
 .fgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
@@ -330,20 +380,31 @@ footer.site .cicada{color:#e7e7ea}
   </div>
 </nav>
 <section class="hero" id="top">
-  <div class="wrap">
+  <div class="wrap herogrid" id="get">
+  <div class="heromain">
     <h1 class="logo"><span class="srh">GURT, the GURT Universal Repository Thingy</span><span class="lg-gurt"><!--logo--><svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -1223 3791 1805" role="img" aria-label="gurt"><path transform="translate(70 70) rotate(-4 529 -300) translate(0 0) scale(1 -1)" d="M257 347Q79 422 79 640Q79 796 188.0 880.5Q297 965 500 965Q543 965 610.5 957.5Q678 950 709 940L934 1051L969 1008L855 846Q917 770 917 640Q917 481 809.5 395.5Q702 310 496 310Q417 310 343 322L319 246Q321 217 356.0 191.5Q391 166 442 166H661Q1004 166 1004 -98Q1004 -207 944.5 -285.5Q885 -364 769.5 -408.0Q654 -452 482 -452Q278 -452 166.0 -393.5Q54 -335 54 -233Q54 -188 90.5 -146.0Q127 -104 232 -43Q173 -20 131.5 37.0Q90 94 90 157ZM785 -166Q785 -71 658 -71H341Q253 -135 253 -216Q253 -280 314.5 -312.0Q376 -344 483 -344Q628 -344 706.5 -297.0Q785 -250 785 -166ZM494 410Q568 410 601.0 467.5Q634 525 634 640Q634 755 601.5 809.5Q569 864 494 864Q425 864 393.5 809.5Q362 755 362 640Q362 525 393.0 467.5Q424 410 494 410Z" fill="#ffc629"/><path transform="translate(70 70) rotate(3 1552 -418) translate(994 40) scale(1 -1)" d="M705 82 637 47Q497 -25 385 -25Q125 -25 125 252V850L31 874V940H414V291Q414 207 449.5 160.0Q485 113 551 113Q627 113 703 147V850L617 874V940H992V90L1084 66V0H719Z" fill="#141414"/><path transform="translate(70 70) rotate(-5 2563 -555) translate(2103 -70) scale(1 -1)" d="M461 745Q569 865 654.5 917.5Q740 970 811 970H865V627H809L750 753Q687 753 607.0 725.5Q527 698 466 661V90L617 66V0H55V66L177 90V850L55 874V940H450Z" fill="#141414"/><path transform="translate(70 70) rotate(4 3335 -556) translate(2982 10) scale(1 -1)" d="M438 -20Q303 -20 229.5 41.0Q156 102 156 217V836H33V901L178 940L295 1153H445V940H643V836H445V235Q445 170 472.0 137.0Q499 104 543 104Q596 104 673 120V35Q643 14 570.5 -3.0Q498 -20 438 -20Z" fill="#141414"/><path class="logo-g" transform="rotate(-4 529 -300) translate(0 0) scale(1 -1)" d="M257 347Q79 422 79 640Q79 796 188.0 880.5Q297 965 500 965Q543 965 610.5 957.5Q678 950 709 940L934 1051L969 1008L855 846Q917 770 917 640Q917 481 809.5 395.5Q702 310 496 310Q417 310 343 322L319 246Q321 217 356.0 191.5Q391 166 442 166H661Q1004 166 1004 -98Q1004 -207 944.5 -285.5Q885 -364 769.5 -408.0Q654 -452 482 -452Q278 -452 166.0 -393.5Q54 -335 54 -233Q54 -188 90.5 -146.0Q127 -104 232 -43Q173 -20 131.5 37.0Q90 94 90 157ZM785 -166Q785 -71 658 -71H341Q253 -135 253 -216Q253 -280 314.5 -312.0Q376 -344 483 -344Q628 -344 706.5 -297.0Q785 -250 785 -166ZM494 410Q568 410 601.0 467.5Q634 525 634 640Q634 755 601.5 809.5Q569 864 494 864Q425 864 393.5 809.5Q362 755 362 640Q362 525 393.0 467.5Q424 410 494 410Z" fill="var(--logo-ink)" stroke="#141414" stroke-width="18"/><path transform="rotate(3 1552 -418) translate(994 40) scale(1 -1)" d="M705 82 637 47Q497 -25 385 -25Q125 -25 125 252V850L31 874V940H414V291Q414 207 449.5 160.0Q485 113 551 113Q627 113 703 147V850L617 874V940H992V90L1084 66V0H719Z" fill="#e8302a" stroke="#141414" stroke-width="18"/><path transform="rotate(-5 2563 -555) translate(2103 -70) scale(1 -1)" d="M461 745Q569 865 654.5 917.5Q740 970 811 970H865V627H809L750 753Q687 753 607.0 725.5Q527 698 466 661V90L617 66V0H55V66L177 90V850L55 874V940H450Z" fill="#1fa64a" stroke="#141414" stroke-width="18"/><path transform="rotate(4 3335 -556) translate(2982 10) scale(1 -1)" d="M438 -20Q303 -20 229.5 41.0Q156 102 156 217V836H33V901L178 940L295 1153H445V940H643V836H445V235Q445 170 472.0 137.0Q499 104 543 104Q596 104 673 120V35Q643 14 570.5 -3.0Q498 -20 438 -20Z" fill="#2456e0" stroke="#141414" stroke-width="18"/></svg><!--/logo--></span><img class="lg-dirt" src="assets/dirt-logo.png?v=2" alt="dirt." width="1024" height="449"></h1>
     <div class="stripe" aria-hidden="true"></div>
     <p class="headline">Every distro's apps, on every distro.</p>
     <p class="tag"><b>G</b>URT <b>U</b>niversal <b>R</b>epository <b>T</b>hingy. The AUR on Mint, apt on SUSE, zypper on Red Star OS… plus <b>Main GURT</b>, a community repo of 2,500+ apps. Free and open source (MIT).</p>
-    <div class="choose" id="get">
-      <section class="pick" id="pick-linux" aria-labelledby="pl-h">
-        <div class="pickhead"><div><h2 id="pl-h">GURT for Linux</h2><small>the GURT Setup Wizard as your distro's own package</small></div><span class="mine" hidden>your system</span></div>
-        <p>Open it like any package. It installs GURT and the app, then the setup wizard picks your sources, your look and your first apps. Updates come with your normal system updates.</p>
-        <div class="dlbtns" id="dl-linux"></div>
-        <p class="nixnote">NixOS: no package for it, so run <code>curl -fsSL https://gurtproject.org/install.sh | sh</code>. nixpkgs becomes <code>nix/</code>, and other distros' packages run through nix-ld, no box.</p>
-      </section>
-      <section class="pick" id="pick-win" aria-labelledby="pw-h">
-        <div class="pickhead"><div><h2 id="pw-h">GURT for Windows</h2><small>Windows 10 / 11, through WSL</small></div><span class="mine" hidden>your system</span></div>
+    <div class="demo" id="demo" aria-label="what gurt looks like in a terminal">
+      <div class="demobar"><span class="who" id="demowho">you@mint:~</span>
+        <button class="demotab on" type="button" data-d="0">Hotwyr</button><button class="demotab" type="button" data-d="1">GitHub releases</button><button class="demotab" type="button" data-d="2">like photoshop</button><button class="demotab" type="button" data-d="3">any distro</button><button class="demotab" type="button" data-d="4">convert</button></div>
+      <pre class="demoscreen" id="demoscreen" aria-live="off"></pre>
+    </div>
+    <div class="srcstrip" aria-label="the sources gurt installs from"><span class="srclabel">20 sources</span><a class="srcchip" href="#packages" data-go="gurt">gurt/</a><a class="srcchip" href="#packages" data-go="aur">aur/</a><a class="srcchip" href="#packages" data-go="apt">apt/</a><a class="srcchip" href="#packages" data-go="dnf">dnf/</a><a class="srcchip" href="#packages" data-go="zypper">zypper/</a><a class="srcchip" href="#packages" data-go="pacman">pacman/</a><a class="srcchip" href="#packages" data-go="apk">apk/</a><a class="srcchip" href="#packages" data-go="xbps">xbps/</a><a class="srcchip" href="#packages" data-go="eopkg">eopkg/</a><a class="srcchip" href="#packages" data-go="gentoo">gentoo/</a><a class="srcchip" href="https://github.com/clrealy/GURT#nixos-">nix/</a><a class="srcchip" href="#packages" data-go="flatpak">flatpak/</a><a class="srcchip" href="#packages" data-go="snap">snap/</a><a class="srcchip" href="#packages" data-go="gh">gh/</a><a class="srcchip" href="#packages" data-go="appimage">appimage/</a><a class="srcchip" href="#packages" data-go="pip">pip/</a><a class="srcchip" href="#packages" data-go="npm">npm/</a><a class="srcchip" href="#packages" data-go="cargo">cargo/</a><a class="srcchip" href="#packages" data-go="brew">brew/</a><a class="srcchip" href="https://github.com/clrealy/GURT#android-apps-waydroid-">android/</a></div>
+    <section class="pick linuxdl" id="pick-linux" aria-labelledby="pl-h">
+      <div class="pickhead"><div><h2 id="pl-h">GURT for Linux</h2><small>the GURT Setup Wizard as your distro's own package</small></div><span class="mine" hidden>your system</span></div>
+      <p>Open it like any package: it installs GURT and the app, then the setup wizard runs. Updates come with your system's.</p>
+      <div class="dlbtns" id="dl-linux"></div>
+      <p class="nixnote">NixOS: no package for it, so run <code>curl -fsSL https://gurtproject.org/install.sh | sh</code>. nixpkgs becomes <code>nix/</code>, and other distros' packages run through nix-ld, no box.</p>
+    </section>
+  </div>
+  <aside class="getbox" id="other-os" aria-labelledby="get-h">
+    <h2 class="gethead" id="get-h">Other Operating Systems</h2>
+    <p class="getsub" id="getsub">GURT on Windows (through WSL) and on Chromebooks.</p>
+    <div class="choose">
+      <details class="pick" id="pick-win">
+        <summary class="pickhead"><div><h2 id="pw-h">GURT for Windows</h2><small>Windows 10 / 11, through WSL</small></div><span class="mine" hidden>your system</span></summary>
         <p>Sets up WSL if you don't have it, installs GURT inside it, and puts a <code>gurt</code> command and the GURT app in your Start menu. Linux apps you install show up there too.</p>
         <div class="dlbtns" id="dl-win"></div>
 <div class="smartscreen" id="smartscreen" hidden>
@@ -353,9 +414,9 @@ footer.site .cicada{color:#e7e7ea}
         <p class="dlsafe">Only do this with the file from <a href="https://github.com/clrealy/GURT/releases/latest">GURT's GitHub releases</a>. If you got a "GURTSetupWizard.exe" anywhere else, delete it. And if Windows Defender says it found a <b>virus</b> (not just "unrecognized app"), stop and don't run it.
         You can check your file against <code>SHA256SUMS</code> on the release page: <code>Get-FileHash GURTSetupWizard.exe</code> in PowerShell.</p>
       </div>
-      </section>
-      <section class="pick wide" id="pick-cros" aria-labelledby="pc-h">
-        <div class="pickhead"><div><h2 id="pc-h">GURT for ChromeOS</h2><small>Chromebooks, and Brunch on any PC</small></div><span class="mine" hidden>your system</span></div>
+      </details>
+      <details class="pick" id="pick-cros">
+        <summary class="pickhead"><div><h2 id="pc-h">GURT for ChromeOS</h2><small>Chromebooks, and Brunch on any PC</small></div><span class="mine" hidden>your system</span></summary>
         <div class="crosways">
           <div><h3>In Linux on ChromeOS</h3>
             <ol><li>Turn on Linux: Settings → About ChromeOS → Developers → Linux development environment</li>
@@ -366,20 +427,23 @@ footer.site .cicada{color:#e7e7ea}
             <p>Developer mode or Brunch, with Chromebrew. GURT lives in <code>/usr/local</code>, needs no sudo, uses <code>crew</code> for what apps need and moves other distros' packages into <code>/usr/local</code>. ChromeOS won't run a script file from your home folder, so pipe it into bash, in the shell:</p>
             <pre class="crosinst mono">curl -fsSL https://gurtproject.org/install.sh | bash</pre></div>
         </div>
-      </section>
+      </details>
     </div>
+  </aside>
   </div>
 </section>
 <section class="features" id="features">
   <div class="wrap">
     <h2 class="bandtitle">What GURT does</h2>
-    <div class="fgrid">
-      <article class="feat"><h3>Main GURT</h3><p>2,500+ community recipes, built for your distro: official vendor repos, prebuilt downloads with pinned checksums, Flathub apps.</p><a href="#packages">browse packages →</a></article>
-      <article class="feat"><h3>Every distro's repos</h3><p>The AUR, apt, dnf, zypper, pacman, Alpine, Void, Solus and Gentoo repos, Flathub, the Snap Store, GitHub releases, AppImageHub, PyPI, npm, crates.io and Homebrew, on whatever distro you run. <code>gurt install aur/yay</code> on Mint just works.</p><a href="https://github.com/clrealy/GURT#readme">how it works →</a></article>
-      <article class="feat"><h3>The GURT app</h3><p>Search, install and update everything in one window, with an update count, history, your app list and six skins.</p><a href="#get">get the app →</a></article>
-      <article class="feat"><h3>Convert anything</h3><p>Turn a .deb into an .rpm, an AppImage into a pacman package, or a folder into a signed repo. Every file comes out signed.</p><a href="https://github.com/clrealy/GURT#readme">gurt convert →</a></article>
-      <article class="feat"><h3>Safe by default</h3><p>Signatures get checked, build scripts get a sus check before anything runs, and btrfs systems get a snapshot before big upgrades.</p><a href="https://github.com/clrealy/GURT#readme">trust + safety →</a></article>
-      <article class="feat"><h3>Oops buttons</h3><p>Roll back an update, hold a version, see your install history, and take your whole app list to a new PC with export / import.</p><a href="https://github.com/clrealy/GURT#readme">rollback + more →</a></article>
+    <div class="frows">
+      <a class="frow" href="#packages"><b>Main GURT</b><span>2,500+ community recipes built for your distro: official vendor repos, prebuilt downloads with pinned checksums, Flathub apps.</span><i>browse packages →</i></a>
+      <a class="frow" href="#packages"><b>Every distro's repos</b><span>The AUR, apt, dnf, zypper, pacman, Alpine, Void, Solus and Gentoo, plus Flathub, Snap, nixpkgs, GitHub releases, AppImageHub, PyPI, npm, crates.io and Homebrew. On whatever distro you run.</span><i>see all 20 →</i></a>
+      <a class="frow" href="https://github.com/clrealy/GURT#hotwyr-gurt-backs-up-your-package-manager-"><b>Hotwyr</b><span>Your package manager with gurt as its backup: sudo apt install yay can't find yay, so gurt offers aur/yay. Upgrades, searches and "command not found" include gurt too.</span><i>gurt hotwyr on →</i></a>
+      <a class="frow" href="#get"><b>The GURT app</b><span>Search, install and update everything in one window, with an update count, history, your app list and six skins.</span><i>get the app →</i></a>
+      <a class="frow" href="https://github.com/clrealy/GURT#convert-packages-gurt-convert-"><b>Convert anything</b><span>A .deb into an .rpm, an AppImage into a pacman package, a folder into a signed repo. Every file comes out signed.</span><i>gurt convert →</i></a>
+      <a class="frow" href="https://github.com/clrealy/GURT#trust--safety-"><b>Safe by default</b><span>Signatures get checked, build scripts get a sus check before anything runs, btrfs systems get a snapshot before big upgrades.</span><i>trust + safety →</i></a>
+      <a class="frow" href="https://github.com/clrealy/GURT#oops-buttons-undo-rollback-hold-exportimport-"><b>Oops buttons</b><span>Undo, roll back an update, hold a version, see your history, and take your whole app list to a new PC.</span><i>undo + rollback →</i></a>
+      <a class="frow" href="#get"><b>Runs everywhere</b><span>Every Linux distro (NixOS and ChromeOS included) and Windows through WSL. Android apps through Waydroid or your Chromebook's own Android.</span><i>download →</i></a>
     </div>
   </div>
 </section>
@@ -394,7 +458,10 @@ gurt install zypper/htop   <span class="c"># openSUSE's repos, anywhere</span>
 gurt install htop --repo apt  <span class="c"># same thing, flag style</span>
 gurt install flatpak/gimp  <span class="c"># Flathub, set up for you</span>
 gurt install snap/spotify  <span class="c"># Snap Store too</span>
-gurt outsource user/repo   <span class="c"># any git repo: clone + build + install</span></div>
+gurt install gh/neovim/neovim <span class="c"># a GitHub release, the right file for you</span>
+gurt install pip/httpie    <span class="c"># Python apps, each in its own venv</span>
+gurt outsource user/repo   <span class="c"># any git repo: clone + build + install</span>
+gurt hotwyr on             <span class="c"># your package manager asks gurt when it can't find something</span></div>
   </section>
   <section id="packages">
     <h2 class="bandtitle">Packages</h2>
@@ -571,8 +638,8 @@ const $ = s => document.querySelector(s);
 // download buttons: the right GURTSetupWizard for this computer, + the SmartScreen note for Windows
 (() => {
   const REL = "https://github.com/clrealy/GURT/releases/latest/download/";
-  const FILES = [["win", "GURTSetupWizard.exe", "Windows 10 / 11", ""], ["deb", "GURTSetupWizard.deb", "Debian, Ubuntu, Mint, Pop!_OS", ""],
-    ["rpm", "GURTSetupWizard.rpm", "Fedora, openSUSE, RHEL", ""], ["arch", "GURTSetupWizard.pkg.tar.zst", "Arch, CachyOS, Manjaro", ""],
+  const FILES = [["win", "GURTSetupWizard.exe", "Windows 10 / 11", ""], ["deb", "GURTSetupWizard.deb", "Debian · Ubuntu · Mint", ""],
+    ["rpm", "GURTSetupWizard.rpm", "Fedora · openSUSE", ""], ["arch", "GURTSetupWizard.pkg.tar.zst", "Arch · CachyOS", ""],
     ["apk", "GURTSetupWizard.apk", "Alpine", ""], ["xbps", "GURTSetupWizard.xbps", "Void", ""], ["eopkg", "GURTSetupWizard.eopkg", "Solus", ""]];
   const ua = navigator.userAgent, plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
   const isCros = /CrOS/.test(ua) || /Chrome OS|ChromeOS/i.test(plat), isWin = !isCros && (/Win/i.test(plat) || /Windows/i.test(ua)),
@@ -583,10 +650,64 @@ const $ = s => document.querySelector(s);
   $("#dl-cros").innerHTML = btn(["deb", "GURTSetupWizard.deb", "for Linux on ChromeOS"], false);
   const mine = isWin ? "#pick-win" : isCros ? "#pick-cros" : isLinux ? "#pick-linux" : "";   // your system's card gets marked (and goes first on phones)
   if (mine) { $(mine).classList.add("is-mine"); $(mine + " .mine").hidden = false; }
+  if (isWin || isCros) $(mine).open = true;   // on Windows or a Chromebook, that panel opens in the "other" card
+  if (isWin || isCros) $("#getsub").textContent = `you're on ${isWin ? "Windows" : "a Chromebook"}, so that one's open.`;
   // Windows people get the "it's not malware" note right away; everyone else when they grab the .exe
   const showNote = () => { $("#smartscreen").hidden = false; };
   if (isWin) showNote();
   document.addEventListener("click", e => { const a = e.target.closest(".dlbtn"); if (a && a.dataset.k === "win") showNote(); });
+})();
+// the demo terminal: what gurt really prints, typed out (no emoji: the site shows text)
+(() => {
+  const P = (who, cmd) => ({ who, cmd }), O = (cls, text) => ({ cls, text });
+  const DEMOS = [
+    ["you@mint:~", [P("you@mint:~", "sudo apt install yay"), O("er", "E: Unable to locate package yay"),
+      O("hw", "==> Hotwyr: apt doesn't have yay, but gurt does: aur/yay"), O("", ":: install with gurt? [y/N] y"),
+      O("dm", "==> fetching aur/yay"), O("dm", "  -> the sus check read its PKGBUILD: nothing weird"), O("ok", "==> aur/yay installed ✓")]],
+    ["you@fedora:~", [P("you@fedora:~", "gurt install gh/neovim/neovim"), O("dm", "  -> asking GitHub about neovim/neovim's newest release"),
+      O("", "==> github.com/neovim/neovim → nvim-linux-x86_64.appimage"), O("dm", "  -> sha256 matches GitHub's ✓"),
+      O("ok", "==> gh/neovim installed ✓"), O("dm", "  -> gurt upgrade checks GitHub for new releases")]],
+    ["you@arch:~", [P("you@arch:~", "gurt search like photoshop"), O("", "apps like photoshop:"),
+      O("", "  gimp      GNU Image Manipulation Program"), O("", "  krita     digital painting, made by artists"),
+      O("", "  pinta     simple drawing and image editing"), O("", "  photopea  (web) the closest look-alike")]],
+    ["you@void:~", [P("you@void:~", "gurt install apt/cowsay"), O("dm", "  -> downloading cowsay_3.03+dfsg2-8_all.deb (Debian's)"),
+      O("dm", "  -> Text::CharWidth is a Perl module: using your distro's perl-Text-CharWidth"), O("ok", "==> apt/cowsay installed ✓"),
+      P("you@void:~", "cowsay gurt"), O("", " ______\n< gurt >\n ------\n        \\   ^__^\n         \\  (oo)\\_______")]],
+    ["you@debian:~", [P("you@debian:~", "gurt convert obsidian.AppImage pacman"), O("", "==> obsidian.AppImage → obsidian-1.9-1-x86_64.pkg.tar.zst"),
+      O("dm", "  -> signed (obsidian-1.9-1-x86_64.pkg.tar.zst.sig next to it)"), O("ok", "==> made obsidian-1.9-1-x86_64.pkg.tar.zst ✓"),
+      P("you@debian:~", "gurt convert app.deb rpm"), O("ok", "==> made app-1.0-1.x86_64.rpm ✓ (signed)")]],
+  ];
+  const scr = $("#demoscreen"), who = $("#demowho"), tabs = [...document.querySelectorAll(".demotab")];
+  const esc2 = t => t.replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"}[c]));
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let cur = 0, timer = 0, auto = true;
+  const line = (st, partial) => st.cmd !== undefined
+    ? `<span class="pr">${esc2(st.who)}$</span> ${esc2(partial ?? st.cmd)}` : `<span class="${st.cls}">${esc2(st.text)}</span>`;
+  function show(i, animate) {
+    clearTimeout(timer); cur = i;
+    tabs.forEach((t, k) => t.classList.toggle("on", k === i));
+    const [w, steps] = DEMOS[i]; who.textContent = w;
+    if (!animate) { scr.innerHTML = steps.map(st => line(st)).join("\n") + "\n" + `<span class="pr">${esc2(w)}$</span> <span class="cur"></span>`; return; }
+    let done = [], s = 0, c = 0;
+    const tick = () => {
+      if (s >= steps.length) {
+        scr.innerHTML = done.join("\n") + "\n" + `<span class="pr">${esc2(w)}$</span> <span class="cur"></span>`;
+        if (auto) timer = setTimeout(() => show((cur + 1) % DEMOS.length, true), 2600);
+        return;
+      }
+      const st = steps[s];
+      if (st.cmd !== undefined && c < st.cmd.length) {
+        c++; scr.innerHTML = [...done, line(st, st.cmd.slice(0, c)) + '<span class="cur"></span>'].join("\n");
+        timer = setTimeout(tick, 38 + Math.random() * 40); return;
+      }
+      done.push(line(st)); s++; c = 0;
+      scr.innerHTML = done.join("\n");
+      timer = setTimeout(tick, st.cmd !== undefined ? 450 : 260);
+    };
+    tick();
+  }
+  tabs.forEach((t, k) => t.addEventListener("click", () => { auto = false; show(k, !still); }));
+  show(0, !still);
 })();
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 // the people who run GURT get an owner badge next to their name
@@ -793,6 +914,8 @@ document.querySelectorAll(".src").forEach(b => b.addEventListener("click", () =>
   setSrc(b.dataset.src);
 }));
 $("#gnah").addEventListener("click", () => gate.close());
+// the hero's source chips open the package browser on that source
+document.querySelectorAll(".srcchip[data-go]").forEach(a => a.addEventListener("click", () => { if (SRC[a.dataset.go]) setSrc(a.dataset.go); }));
 $("#gyeah").addEventListener("click", () => {
   gate.close(); setSrc("dirt");
   if (!DPKGS.loaded) fetch("dirt.json").then(r => r.json()).then(d => { DPKGS = d.packages; DPKGS.loaded = true; if (CUR === "dirt") render(); })
