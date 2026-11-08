@@ -1460,7 +1460,7 @@ def toks(s):
     out = []
     for x in s.split():
         if x.startswith("!"): continue
-        x = re.sub(r"^(so|cmd|pc):", "", x); x = re.split(r"[<>=~]", x, 1)[0]
+        x = re.sub(r"^(so|cmd|pc):", "", x); x = re.split(r"[<>=~]", x, maxsplit=1)[0]
         if x and x not in out: out.append(x)
     return ",".join(out)
 for rec in (data or "").split("\n\n"):
@@ -1529,7 +1529,7 @@ for blk in open(sys.argv[1], encoding="utf-8", errors="replace").read().split("\
     name, ver = rest[:m.start()], m.group(1)
     path = f.get("PATH") or f"{cpv}.tbz2"
     prov = " ".join(f.get("PROVIDES", "").split()[1:]).replace(" ", ",")
-    pk[name] = "\t".join([name, ver, path, "sha1:" + f.get("SHA1", ""), deps(f.get("RDEPEND", "")), f.get("DESC", "").replace("\t", " "), prov])
+    pk[name] = "\t".join([name, ver, path, "sha1:" + f.get("SHA1", ""), deps(f.get("RDEPEND", "")), (f.get("DESC") or f"{cat}/{name}").replace("\t", " "), prov])
 for n in sorted(pk): print(pk[n])
 PY
 }
@@ -1554,7 +1554,7 @@ with tarfile.open(fileobj=io.BytesIO(raw)) as t:
         open(sys.argv[2], "wb").write(meta["public-key"] if isinstance(meta.get("public-key"), bytes) else b"")
     except Exception: open(sys.argv[2], "wb").write(b"")
 def bare(d):   # "libX11>=1.6_1" / "foo-1.0_1" (an exact pkgver) → the name
-    n = re.split(r"[<>=]", d, 1)[0]
+    n = re.split(r"[<>=]", d, maxsplit=1)[0]
     return re.sub(r"-[^-]+_[0-9]+$", "", n) if n == d else n
 for name, p in sorted(idx.items()):
     pv = p.get("pkgver", ""); ver = pv[len(name) + 1:] if pv.startswith(name + "-") else pv
@@ -2014,12 +2014,34 @@ pkgfile_unpack() { # file to-dir scratch-dir
 }
 
 # a .deb / .rpm / .pkg.tar.* on disk → .gurt
+# a program asks for its loader by path (Void: /lib/ld-linux-x86-64.so.2, Debian keeps it in /lib64). when this system
+# has the same loader somewhere else, point the program there (patchelf), so it starts
+host_loader() { local d; for d in /lib64 /lib /usr/lib64 /usr/lib /usr/lib/x86_64-linux-gnu /usr/lib/aarch64-linux-gnu; do [[ -e $d/$1 ]] && { echo "$d/$1"; return 0; }; done; return 1; }
+fix_interp() { # dir (an unpacked package)
+  local f want have n=0
+  while IFS= read -r -d '' f; do
+    is_elf "$f" || continue
+    want=$(LC_ALL=C grep -aoE -m1 '/(usr/)?lib(64)?/ld-linux[-a-z0-9_.]*\.so\.[0-9]+' "$f" | head -n1 || true)
+    [[ -n $want && ! -e $want ]] || continue
+    have=$(host_loader "${want##*/}") || continue
+    if ! command -v patchelf >/dev/null; then
+      $NODEPS && { warn "${f##*/} wants $want, which this system keeps at $have: install patchelf so gurt can fix that"; return 0; }
+      msg2 "getting patchelf from your distro (this package's programs look for their loader in another place)"
+      install_native "$(map_dep patchelf)" >&2 || true
+      command -v patchelf >/dev/null || { warn "couldn't get patchelf: programs that want $want won't start"; return 0; }
+    fi
+    patchelf --set-interpreter "$have" "$f" 2>/dev/null && n=$((n + 1))
+  done < <(find "$1" -type f -perm -u+x -print0)
+  (( n )) && msg2 "pointed $n program(s) at this system's loader"
+  return 0
+}
 repack_file() { # src name ver file deps desc provides
   local src=$1 name=$2 ver=$3 file=$4 deps=$5 desc=$6 prov=${7:-} work data
   mkdir -p "$GURT_CACHE/pkg"
   (( $(stat -c %s "$file" 2>/dev/null || echo 0) > BIG_BYTES )) && msg2 "unpacking $name, it's a big one so give it a minute ⏳"
   work=$(mktemp -d "${TMPDIR:-/tmp}/gurt-repack.XXXXXX"); mkdir -p "$work/pkg" "$work/x"
   pkgfile_unpack "$file" "$work/pkg" "$work/x"
+  fix_interp "$work/pkg"
   {
     printf 'pkgname = %s\npkgver = %s\npkgdesc = %s\narch = %s\n' "$name" "$ver" "$desc" "$CARCH"
     local d; IFS=, read -ra dl <<<"${deps//|/,}"; for d in "${dl[@]}"; do [[ -n $d ]] && printf 'depends = %s\n' "$d"; done
@@ -2453,7 +2475,8 @@ cmd_key() { # [show|export [dir]|trust]
       local did=false
       command -v rpm >/dev/null && [[ -d /var/lib/rpm || -d /usr/lib/sysimage/rpm ]] && { asroot rpm --import "$tmp/gurt-key.asc" && msg2 "rpm trusts it ✅"; did=true; }
       if command -v pacman-key >/dev/null; then
-        [[ -d /etc/pacman.d/gnupg ]] || asroot pacman-key --init >/dev/null 2>&1 || true
+        # a keyring that was never set up (fresh containers) has no local key to sign with: set it up first
+        asroot pacman-key --list-secret-keys 2>/dev/null | grep -q . || asroot pacman-key --init >/dev/null 2>&1 || true
         if asroot pacman-key --add "$tmp/gurt-key.asc" >/dev/null 2>&1 && asroot pacman-key --lsign-key "$SIGN_FPR" >/dev/null 2>&1; then msg2 "pacman trusts it ✅"
         else warn "pacman-key wouldn't take it — try: sudo pacman-key --init, then gurt key trust again"; fi
         did=true
@@ -3490,7 +3513,7 @@ gh_install() { # owner/repo reason
   while IFS= read -r k; do [[ -n $k && $k != "$key" ]] && inner+=("$k"); done < <(comm -13 <(echo "$before") <(echo "$after"))
   (( ${#inner[@]} )) || [[ -z $old ]] || mapfile -t inner < <(tr ' ' '\n' <<<"$old" | sed '/^$/d')
   record_meta "$key" "${repo##*/}" "$tag" "${rname:-$repo} (GitHub release)" "$reason" gh
-  { printf 'gh_repo = %s\ngh_asset = %s\n' "$repo" "$asset"; (( ${#inner[@]} )) && printf 'inner = %s\n' "${inner[*]}"; } | asroot tee -a "$DB/$key/info" >/dev/null
+  { printf 'gh_repo = %s\ngh_asset = %s\n' "$repo" "$asset"; if (( ${#inner[@]} )); then printf 'inner = %s\n' "${inner[*]}"; fi; } | asroot tee -a "$DB/$key/info" >/dev/null
   for k in "${inner[@]}"; do grep -qx "gh_by = $key" "$DB/$k/info" 2>/dev/null || echo "gh_by = $key" | asroot tee -a "$DB/$k/info" >/dev/null; done
   log_hist install "$key" "$was"
   msg "$(pretty "$key") $tag installed ✅ (gurt upgrade checks GitHub for new releases)"

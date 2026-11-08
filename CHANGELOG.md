@@ -3,6 +3,10 @@
 ## Not released yet
 
 ### Fixed
+- **Void programs wouldn't start on Debian, Ubuntu and friends.** Void builds its programs to look for their loader at `/lib/ld-linux-x86-64.so.2`, and those distros keep it in `/lib64`. gurt now points programs from other distros at the loader your system has.
+- **`gh/` crashed** right after handing a release's package to your distro's package manager.
+- **`gurt key trust` on Arch** failed when pacman's keyring had never been set up (fresh installs and containers). gurt sets it up now.
+- Gentoo search showed "(no description)": it shows the package's category now when Gentoo leaves the description out.
 - **"gurt X is out" showed up late.** `gurt update` and `gurt upgrade` now ask GitHub for the newest release, so a new gurt shows up right away, even when your package lists were refreshed a little while ago.
 
 ## 1.2.0: Repomageddon 🌋

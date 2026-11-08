@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GURT infomercial</title>
+<!-- rendered frame by frame by render.js: render(t) draws second t, nothing runs on its own -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Bungee+Shade&family=VT323&family=JetBrains+Mono:wght@500;800&family=Anton&display=block" rel="stylesheet">
+<style>
+:root { --y: #ffc629; --r: #e8432f; --g: #2fa84f; --b: #2b6fd6; --ink: #111; --paper: #fff8e6; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
+#stage { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #14110b; font-family: "Anton", sans-serif; color: #fff; }
+.scene { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; }
+.on { display: flex; }
+.vert .scene { padding: 0 4vw; }
+
+/* ── the infomercial look ── */
+.huge { font-family: "Bungee", sans-serif; text-transform: uppercase; line-height: .95; text-align: center; letter-spacing: .01em;
+  color: var(--y); -webkit-text-stroke: .35vmin #000;
+  text-shadow: .5vmin .5vmin 0 #000, 1vmin 1vmin 0 var(--r), 1.5vmin 1.5vmin 0 #000; }
+.shade { font-family: "Bungee Shade", sans-serif; color: #fff; text-shadow: none; -webkit-text-stroke: 0; }
+.cap { font-family: "Anton", sans-serif; text-transform: uppercase; font-size: 5.2vmin; letter-spacing: .04em; text-align: center;
+  background: #000; color: #fff; padding: .6vmin 2.4vmin; border: .5vmin solid var(--y); }
+.stripe { display: flex; width: 70vmin; height: 2.8vmin; border: .5vmin solid #000; }
+.stripe i { flex: 1; } .stripe i:nth-child(1) { background: var(--r); } .stripe i:nth-child(2) { background: var(--y); }
+.stripe i:nth-child(3) { background: var(--g); } .stripe i:nth-child(4) { background: var(--b); }
+
+/* starburst sticker */
+.burst { position: absolute; width: 30vmin; height: 30vmin; display: grid; place-items: center; text-align: center;
+  font-family: "Bungee", sans-serif; font-size: 3.6vmin; line-height: 1; color: #000; padding: 5vmin;
+  background: var(--y); clip-path: polygon(50% 0%, 61% 13%, 77% 6%, 79% 22%, 95% 25%, 88% 40%, 100% 50%, 88% 60%, 95% 75%, 79% 78%, 77% 94%, 61% 87%, 50% 100%, 39% 87%, 23% 94%, 21% 78%, 5% 75%, 12% 60%, 0% 50%, 12% 40%, 5% 25%, 21% 22%, 23% 6%, 39% 13%); }
+.burst.red { background: var(--r); color: #fff; }
+
+/* the terminal */
+.term { width: min(78vw, 140vmin); background: #0c0c0c; border: .4vmin solid #555; font-family: "JetBrains Mono", monospace; font-size: 3.1vmin; }
+.vert .term { width: 92vw; font-size: 3.4vw; }
+.term .bar { display: flex; gap: 1vmin; padding: 1vmin 1.4vmin; background: #2a2a2a; border-bottom: .3vmin solid #555; font-size: 2.2vmin; color: #aaa; }
+.vert .term .bar { font-size: 2.6vw; }
+.term .bar b { width: 1.8vmin; height: 1.8vmin; border-radius: 50%; background: #666; display: inline-block; }
+.term pre { padding: 2vmin 2.4vmin; min-height: 26vmin; white-space: pre-wrap; line-height: 1.45; font-family: inherit; }
+.p { color: #7fdc7f; } .err { color: #ff5d4d; font-weight: 800; } .ok { color: #7fdc7f; font-weight: 800; } .dim { color: #888; } .yl { color: var(--y); }
+.cursor { background: #ddd; color: #000; }
+
+/* rays behind the logo */
+#rays { position: absolute; inset: -60%; background: repeating-conic-gradient(from 0deg, var(--y) 0deg 10deg, #1a1405 10deg 20deg); }
+.logo svg { width: 70vmin; height: auto; display: block; filter: drop-shadow(1vmin 1vmin 0 #000); }
+
+/* source chips */
+#chips { position: relative; width: 92vw; height: 62vh; }
+.chip { position: absolute; font-family: "JetBrains Mono", monospace; font-weight: 800; font-size: 3vmin; padding: .8vmin 1.6vmin;
+  background: #fff; color: #000; border: .45vmin solid #000; box-shadow: .6vmin .6vmin 0 #000; white-space: nowrap; }
+.chip:nth-child(4n+1) { background: var(--y); } .chip:nth-child(4n+2) { background: #fff; } .chip:nth-child(4n+3) { background: #9fe0ff; } .chip:nth-child(4n) { background: #ffc0b5; }
+#count { font-size: 17vmin; }
+
+/* the app in a TV */
+.tv { position: relative; width: min(70vw, 120vmin); padding: 3vmin; background: #3a2a1a; border: .6vmin solid #000; border-radius: 4vmin; box-shadow: inset 0 0 0 1vmin #5a4028; }
+.vert .tv { width: 88vw; }
+.tv img { width: 100%; display: block; border-radius: 2vmin; border: .5vmin solid #000; }
+.stamp { position: absolute; font-family: "Bungee", sans-serif; font-size: 5.4vmin; padding: 1vmin 2.4vmin; background: var(--r); color: #fff;
+  border: .6vmin solid #fff; outline: .5vmin solid #000; text-transform: uppercase; white-space: nowrap; }
+
+/* prices */
+.price { font-family: "Anton", sans-serif; font-size: 13vmin; color: #fff; position: relative; line-height: 1.05; }
+.price .x { position: absolute; left: -4%; right: -4%; top: 50%; height: 1.6vmin; background: var(--r); transform: rotate(-8deg); transform-origin: left; }
+.free { font-family: "Bungee", sans-serif; font-size: 19vmin; color: var(--g); -webkit-text-stroke: .4vmin #000; text-shadow: 1vmin 1vmin 0 #000; }
+.url { font-family: "Bungee", sans-serif; font-size: 8.4vmin; color: #fff; -webkit-text-stroke: .3vmin #000; text-shadow: .8vmin .8vmin 0 var(--b); }
+.vert .url { font-size: 8.6vw; }
+.cmd { font-family: "JetBrains Mono", monospace; font-size: 2.9vmin; background: #000; color: var(--y); border: .4vmin solid var(--y); padding: 1.4vmin 2vmin; }
+.vert .cmd { font-size: 2.5vw; }
+.vert #chips { height: 54vh; margin-top: -16vh; }
+.phone { font-family: "VT323", monospace; font-size: 6.4vmin; color: #ff5d4d; letter-spacing: .1em; }
+.fine { position: absolute; bottom: 10vmin; left: 0; right: 0; text-align: center; font-family: "VT323", monospace; font-size: 2.6vmin; color: #ddd; padding: 0 4vw; }
+
+/* ── VHS on top of everything ── */
+#vhs { position: absolute; inset: 0; pointer-events: none; z-index: 50; }
+#scan { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 2px, transparent 2px 4px); }
+#noise { position: absolute; inset: 0; opacity: .09; mix-blend-mode: screen; }
+#track { position: absolute; left: 0; right: 0; height: 3.5vh; background: rgba(255,255,255,.1); filter: blur(2px); }
+.osd { position: absolute; font-family: "VT323", monospace; font-size: 4.2vmin; color: #fff; text-shadow: .3vmin .3vmin 0 #000; letter-spacing: .06em; }
+#vig { position: absolute; inset: 0; box-shadow: inset 0 0 18vmin rgba(0,0,0,.75); }
+#flash { position: absolute; inset: 0; background: #fff; opacity: 0; z-index: 40; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <!-- 1 + 2: the problem, in black and white -->
+  <section class="scene" id="s1">
+    <div class="cap" id="s1cap" style="position:absolute;top:9vh">Are you tired of THIS?!</div>
+    <div class="term" id="s1term"><div class="bar"><b></b><b></b><b></b>&nbsp;terminal</div><pre id="s1pre"></pre></div>
+    <div class="burst red" id="s1x" style="font-size:7vmin">WOMP<br>WOMP</div>
+  </section>
+  <!-- 3: introducing -->
+  <section class="scene" id="s3">
+    <div id="rays"></div>
+    <div class="huge shade" id="s3intro" style="font-size:9vmin;position:relative">Introducing…</div>
+    <div class="logo" id="s3logo" style="position:relative"></div>
+    <div class="stripe" id="s3stripe" style="position:relative;margin-top:2vmin"><i></i><i></i><i></i><i></i></div>
+    <div class="cap" id="s3sub" style="position:relative;margin-top:3vmin">The GURT Universal Repository Thingy</div>
+  </section>
+  <!-- 4: the AUR on Mint -->
+  <section class="scene" id="s4">
+    <div class="huge" id="s4cap" style="font-size:9vmin;margin-bottom:4vmin">The AUR… on MINT?!</div>
+    <div class="term"><div class="bar"><b></b><b></b><b></b>&nbsp;you@linuxmint</div><pre id="s4pre"></pre></div>
+    <div class="burst" id="s4burst">IT<br>JUST<br>WORKS!</div>
+  </section>
+  <!-- 5: but wait -->
+  <section class="scene" id="s5">
+    <div class="huge" id="s5wait" style="font-size:13vmin">But wait…<br>there's MORE!</div>
+    <div id="chips"></div>
+    <div class="huge" id="count" style="position:absolute">0 sources!</div>
+  </section>
+  <!-- 6: the app -->
+  <section class="scene" id="s6">
+    <div class="tv" id="s6tv"><img src="app.png" alt=""></div>
+    <div class="stamp" id="st1">6 skins!</div>
+    <div class="stamp" id="st2" style="background:var(--b)">Undo button!</div>
+    <div class="stamp" id="st3" style="background:var(--g)">Android apps!</div>
+    <div class="stamp" id="st4" style="background:#000;color:var(--y)">NixOS too!</div>
+  </section>
+  <!-- 7: the price + call now -->
+  <section class="scene" id="s7">
+    <div id="s7a" style="display:flex;flex-direction:column;align-items:center;gap:2vmin">
+      <div class="cap">How much would you pay?</div>
+      <div class="price" id="p1">$99.99<span class="x"></span></div>
+      <div class="price" id="p2">$19.99<span class="x"></span></div>
+      <div class="free" id="pfree">$0.00!</div>
+      <div class="cap" id="pfoss" style="background:var(--g);color:#000;border-color:#000">Free &amp; open source</div>
+    </div>
+    <div id="s7b" style="display:none;flex-direction:column;align-items:center;gap:3vmin">
+      <div class="logo" id="s7logo"></div>
+      <div class="url">gurtproject.org</div>
+      <div class="cmd">curl -fsSL https://gurtproject.org/install.sh | sh</div>
+      <div class="phone" id="phone">☎ OPERATORS ARE STANDING BY ☎</div>
+    </div>
+    <div class="fine">Results may vary. Works on Linux, Windows (WSL) and ChromeOS. Not available for macOS. Linus is watching. MIT license.</div>
+  </section>
+
+  <div id="flash"></div>
+  <div id="vhs"><canvas id="noise"></canvas><div id="scan"></div><div id="track"></div><div id="vig"></div>
+    <div class="osd" style="top:4vmin;left:5vmin" id="osdplay">PLAY ▶</div>
+    <div class="osd" style="top:4vmin;right:5vmin" id="osdtime">SP 0:00:00</div>
+    <div class="osd" style="bottom:4vmin;left:5vmin" id="osddate">NOV. 8 1996</div>
+  </div>
+</div>
+<script>
+const $ = s => document.querySelector(s);
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const outBack = x => { const c = 1.9; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const outCubic = x => 1 - Math.pow(1 - x, 3);
+const typed = (s, t, a, cps = 22) => s.slice(0, Math.max(0, Math.floor((t - a) * cps)));
+const VERT = innerHeight > innerWidth;
+if (VERT) document.body.classList.add("vert");
+// the logo: same SVG as the site
+fetch("logo.svg").then(r => r.text()).then(svg => { $("#s3logo").innerHTML = svg; $("#s7logo").innerHTML = svg; window.LOGO = true; });
+
+// every scene: [start, end)
+const SC = { s1: [0, 7], s3: [7, 10.4], s4: [10.4, 15.6], s5: [15.6, 20.4], s6: [20.4, 24.4], s7: [24.4, 30.5] };
+const SOURCES = ["apt/", "dnf/", "zypper/", "pacman/", "aur/", "apk/", "xbps/", "eopkg/", "gentoo/", "nix/", "flatpak/", "snap/",
+  "gh/", "appimage/", "pip/", "npm/", "cargo/", "brew/", "android/", "gurt/"];
+const chips = $("#chips");
+SOURCES.forEach(s => { const c = document.createElement("div"); c.className = "chip"; c.textContent = s; chips.appendChild(c); });
+// deterministic noise
+function rnd(seed) { let x = Math.sin(seed * 9301 + 49297) * 233280; return x - Math.floor(x); }
+const nc = $("#noise"), nx = nc.getContext("2d"); nc.width = 320; nc.height = 180;
+function noise(f) {
+  const img = nx.createImageData(320, 180); let s = f * 7919;
+  for (let i = 0; i < img.data.length; i += 4) { s = (s * 16807) % 2147483647; const v = s % 255; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
+  nx.putImageData(img, 0, 0);
+}
+
+function render(t) {
+  const f = Math.round(t * 30);
+  for (const [id, [a, b]] of Object.entries(SC)) $("#" + id).classList.toggle("on", t >= a && t < b);
+  // the "before" part is black and white, the rest is loud
+  $("#stage").style.filter = t < 7 ? "grayscale(1) contrast(1.25) brightness(.92)" : "saturate(1.25)";
+
+  // 1 + 2: three distros saying no
+  if (t < 7) {
+    let txt = "";
+    const L = [
+      [0.6, '<span class="p">mint $</span> ', "sudo apt install yay", 1.7, '<span class="err">E: Unable to locate package yay</span>'],
+      [2.4, '<span class="p">fedora $</span> ', "sudo dnf install spotify", 3.4, '<span class="err">No match for argument: spotify</span>'],
+      [4.0, '<span class="p">arch $</span> ', "sudo pacman -S obsidian-but-on-mint", 5.0, '<span class="err">error: target not found</span>'],
+    ];
+    for (const [a, pr, cmd, at, err] of L) {
+      if (t < a) break;
+      txt += pr + typed(cmd, t, a, 26) + (t < at ? '<span class="cursor"> </span>' : "") + "\n";
+      if (t >= at) txt += err + "\n";
+    }
+    $("#s1pre").innerHTML = txt;
+    $("#s1cap").textContent = t < 3.6 ? "Are you tired of THIS?!" : "Wrong distro?";
+    $("#s1cap").style.transform = `rotate(${Math.sin(t * 9) * 1.2}deg)`;
+    const w = prog(t, 5.6, 5.9);
+    const x = $("#s1x");
+    x.style.opacity = w; x.style.transform = `scale(${0.3 + outBack(w) * 0.7}) rotate(-12deg)`;
+    x.style.right = VERT ? "6vw" : "10vw"; x.style.bottom = VERT ? "18vh" : "8vh";
+    $("#s1term").style.transform = `translateX(${t > 1.7 && t < 1.9 || t > 3.4 && t < 3.6 || t > 5.0 && t < 5.2 ? Math.sin(t * 120) * 1.2 : 0}vmin)`;
+  }
+
+  // 3: introducing GURT
+  if (t >= 7 && t < 10.4) {
+    $("#rays").style.transform = `rotate(${(t - 7) * 25}deg)`;
+    const a = prog(t, 7, 7.5), b = prog(t, 7.8, 8.4), c = prog(t, 8.6, 9);
+    $("#s3intro").style.opacity = 1 - prog(t, 7.75, 7.9);
+    $("#s3intro").style.transform = `scale(${0.6 + outBack(a) * 0.4})`;
+    $("#s3intro").style.position = t < 7.9 ? "relative" : "absolute";
+    $("#s3logo").style.transform = `scale(${outBack(b)}) rotate(${(1 - b) * -20}deg)`;
+    $("#s3logo").style.opacity = b > 0 ? 1 : 0;
+    $("#s3stripe").style.transform = `scaleX(${outCubic(c)})`;
+    $("#s3sub").style.opacity = c; $("#s3sub").style.transform = `translateY(${(1 - outCubic(c)) * 6}vmin)`;
+  }
+  // flashes on the big moments
+  const fl = [7, 15.6, 27.0].map(x => t >= x && t < x + 0.25 ? 1 - (t - x) / 0.25 : 0);
+  $("#flash").style.opacity = Math.max(...fl) * 0.9;
+
+  // 4: aur/yay on Mint
+  if (t >= 10.4 && t < 15.6) {
+    const a = 10.9;
+    let s = '<span class="p">you@linuxmint $</span> ' + typed("gurt install aur/yay", t, a, 18);
+    if (t < 12.1) s += '<span class="cursor"> </span>';
+    if (t >= 12.2) s += '\n<span class="dim">==> fetching aur/yay</span>';
+    if (t >= 12.5) {
+      const p = prog(t, 12.5, 14.0), n = Math.round(p * 24);
+      s += `\n<span class="dim">  building</span> <span class="yl">${"█".repeat(n)}${"░".repeat(24 - n)}</span> ${Math.round(p * 100)}%`;
+    }
+    if (t >= 14.1) s += '\n<span class="ok">==> aur/yay installed ✓</span>';
+    $("#s4pre").innerHTML = s;
+    $("#s4cap").style.transform = `scale(${0.7 + outBack(prog(t, 10.4, 10.8)) * 0.3}) rotate(-2deg)`;
+    const bu = prog(t, 14.2, 14.6), bb = $("#s4burst");
+    bb.style.opacity = bu; bb.style.transform = `scale(${outBack(bu)}) rotate(${12 + (t - 14.2) * 20}deg)`;
+    bb.style.right = VERT ? "4vw" : "6vw"; bb.style.top = VERT ? "66vh" : "62vh";
+  }
+
+  // 5: but wait, there's more + 20 sources
+  if (t >= 15.6 && t < 20.4) {
+    const w = $("#s5wait");
+    const on = t < 17.2;
+    w.style.display = on ? "block" : "none";
+    w.style.transform = `scale(${0.85 + 0.15 * outBack(prog(t, 15.6, 15.9)) + Math.sin(t * 18) * 0.015}) rotate(${Math.sin(t * 7) * 2}deg)`;
+    w.style.color = Math.floor(t * 6) % 2 ? "var(--y)" : "#fff";
+    chips.style.display = on ? "none" : "block";
+    const W = chips.clientWidth, H = chips.clientHeight;
+    const cols = VERT ? 3 : 5, rows = Math.ceil(SOURCES.length / cols);
+    [...chips.children].forEach((c, i) => {
+      const at = 17.25 + i * 0.12, p = outBack(prog(t, at, at + 0.35));
+      const col = i % cols, row = Math.floor(i / cols);
+      const x = (col + 0.5) / cols * W - c.offsetWidth / 2 + (rnd(i) - 0.5) * W * 0.05;
+      const y = (row + 0.5) / rows * H * 0.92 - c.offsetHeight / 2;
+      c.style.left = x + "px"; c.style.top = (y - (1 - p) * H * 1.2) + "px";
+      c.style.transform = `rotate(${(rnd(i + 7) - 0.5) * 14}deg)`; c.style.opacity = t >= at ? 1 : 0;
+    });
+    const n = Math.min(20, Math.max(0, Math.floor((t - 17.25) / 0.12) + 1));
+    const ct = $("#count");
+    ct.style.display = on ? "none" : "block";
+    ct.textContent = `${n} sources!`;
+    ct.style.bottom = VERT ? "8vh" : "4vh";
+    ct.style.transform = `scale(${n === 20 ? 1 + 0.08 * Math.sin(t * 20) : 1})`;
+  }
+
+  // 6: the app
+  if (t >= 20.4 && t < 24.4) {
+    const a = outBack(prog(t, 20.4, 20.9));
+    $("#s6tv").style.transform = `scale(${0.4 + 0.6 * a}) rotate(${(1 - a) * 10 - 2}deg)`;
+    const spots = VERT ? [["6vw", "12vh"], ["40vw", "22vh"], ["5vw", "74vh"], ["38vw", "82vh"]]
+                       : [["4vw", "10vh"], ["66vw", "14vh"], ["5vw", "76vh"], ["64vw", "80vh"]];
+    ["#st1", "#st2", "#st3", "#st4"].forEach((id, i) => {
+      const at = 21.1 + i * 0.75, p = prog(t, at, at + 0.2), e = $(id);
+      e.style.left = spots[i][0]; e.style.top = spots[i][1];
+      e.style.opacity = p > 0 ? 1 : 0;
+      e.style.transform = `scale(${2.2 - 1.2 * outCubic(p)}) rotate(${[-8, 6, 5, -6][i]}deg)`;
+    });
+  }
+
+  // 7: the price, then call now
+  if (t >= 24.4) {
+    const showA = t < 28.2;
+    $("#s7a").style.display = showA ? "flex" : "none";
+    $("#s7b").style.display = showA ? "none" : "flex";
+    const strike = (id, at) => { $(id + " .x").style.transform = `rotate(-8deg) scaleX(${outCubic(prog(t, at, at + 0.25))})`; };
+    $("#p1").style.opacity = t >= 25.2 ? 1 : 0; strike("#p1", 25.7);
+    $("#p2").style.opacity = t >= 26.0 ? 1 : 0; strike("#p2", 26.5);
+    const fr = prog(t, 27.0, 27.3);
+    $("#pfree").style.opacity = fr > 0 ? 1 : 0; $("#pfree").style.transform = `scale(${0.3 + 0.7 * outBack(fr)}) rotate(-4deg)`;
+    $("#pfoss").style.opacity = prog(t, 27.3, 27.5);
+    if (!showA) {
+      const b = outBack(prog(t, 28.2, 28.6));
+      $("#s7b").style.transform = `scale(${0.6 + 0.4 * b})`;
+      $("#phone").style.opacity = Math.floor(t * 3) % 2 ? 1 : 0.15;
+    }
+  }
+
+  // VHS: noise, a tracking bar, the counter
+  noise(f);
+  const tb = $("#track"); tb.style.top = ((t * 23) % 120 - 10) + "vh";
+  const s = Math.floor(t); $("#osdtime").textContent = `SP 0:00:${String(s).padStart(2, "0")}`;
+  $("#osdplay").style.opacity = t < 1.2 ? (Math.floor(t * 3) % 2 ? 1 : 0) : 1;
+  $("#stage").style.transform = `translateX(${rnd(f) > 0.93 ? (rnd(f + 1) - 0.5) * 8 : 0}px)`;
+}
+window.render = render;
+window.ready = async () => { await document.fonts.ready; while (!window.LOGO) await new Promise(r => setTimeout(r, 50)); render(0); return true; };
+</script>
+</body>
+</html>
