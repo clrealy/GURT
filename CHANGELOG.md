@@ -1,6 +1,8 @@
 # GURT changelog 🦆
 
-## Not released yet
+## 1.3.0: Hotwyred ⚡
+
+gurt hooks into the package manager you already type, tries apps without keeping them, finds the ones you have twice, and `gurt self-update` stops looping on Arch.
 
 ### New
 - **Hotwyr ⚡: gurt backs up your package manager.** `gurt hotwyr on` (or the setup wizard): when `sudo apt install yay` can't find yay, gurt offers aur/yay. `apt upgrade`, `pacman -Syu` and friends also update what gurt installed, `apt search` / `pacman -Ss` show gurt's results too, and a command you don't have gets an "install it with gurt?". Works in bash, zsh and fish, only for what you type, never in scripts.
