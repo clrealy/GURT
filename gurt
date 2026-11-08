@@ -9,7 +9,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-GURT_VERSION="1.2.0"
+GURT_VERSION="1.3.0"
 
 # ───────────────────────── config ─────────────────────────
 # load order: /etc/gurt.conf  →  ~/.config/gurt/gurt.conf  →  env vars win
@@ -4861,6 +4861,100 @@ cmd_undo() {
 }
 cmd_hold() { local k; for p in "$@"; do k=$(resolve_key "$p") || die "$p isn't installed"; echo held | asroot tee "$DB/$k/held" >/dev/null; msg "$(pretty "$k") held 📌 — upgrade will skip it"; done; }
 cmd_unhold() { local k; for p in "$@"; do k=$(resolve_key "$p") || die "$p isn't installed"; asroot rm -f "$DB/$k/held"; msg "$(pretty "$k") unheld — back to getting updates"; done; }
+
+# ── 🧪 gurt try: install something, use it, and it's gone again when you're done ──
+db_keys() { local d; for d in "$DB"/*/; do basename "$d"; done | LC_ALL=C sort; }
+cmd_try() { # spec [-- command…]
+  (( $# )) || die "try what tho"
+  local spec=$1 before new=() k main="" rc=0 keep=false; shift
+  [[ ${1:-} == -- ]] && shift
+  if k=$(resolve_key "$spec" 2>/dev/null); then
+    msg "you already have $(pretty "$k") 👍 trying it won't remove it after"
+    if (( $# )); then "$@"; fi; return
+  fi
+  before=$(db_keys)
+  install_any "$spec" explicit
+  mapfile -t new < <(comm -13 <(echo "$before") <(db_keys))
+  if (( ! ${#new[@]} )); then
+    warn "$PM installed $spec, so gurt can't take it back by itself (remove it with $PM when you're done)"
+    if (( $# )); then "$@"; fi; return
+  fi
+  main=$(resolve_key "$spec" 2>/dev/null) || main=""
+  if (( $# )); then
+    "$@" || rc=$?
+  elif [[ -t 0 && -t 1 ]]; then
+    msg "try $spec out 🧪 a new shell's open for you. type exit when you're done and gurt takes it back"
+    GURT_TRYING=$spec "${SHELL:-/bin/bash}" -i || true
+  else
+    warn "no terminal to try it in (gurt try $spec -- <command> runs a command instead)"
+  fi
+  if ! $NOCONFIRM && ask "keep $spec?"; then keep=true; fi
+  if $keep; then msg "$spec stays 👍"; return "$rc"; fi
+  local was=$FORCE; FORCE=true   # only what this try installed goes, so nothing else can need it
+  for k in ${main:+"$main"} "${new[@]}"; do is_installed "$k" && remove_pkg "$k"; done
+  FORCE=$was
+  msg "all gone, like it was never there 👻"
+  return "$rc"
+}
+
+# ── 👯 gurt dupes: the same app from more than one place (your distro + flatpak + gurt…) ──
+dupe_norm() { # app name or id → a name to compare: org.mozilla.firefox → firefox, discord-bin → discord
+  local n=${1,,}
+  [[ $n == *.*.* ]] && n=${n##*.}
+  n=${n%-bin}; n=${n%-git}; n=${n%-appimage}; n=${n%.appimage}; n=${n%-nightly}; n=${n%-stable}
+  echo "$n"
+}
+native_names() { # what your distro's package manager installed, one name per line
+  case $PM in
+    apt)            dpkg-query -W -f='${Package}\n' 2>/dev/null ;;
+    dnf|yum|zypper) command -v rpm >/dev/null && rpm -qa --qf '%{NAME}\n' 2>/dev/null ;;
+    pacman)         pacman -Qq 2>/dev/null ;;
+    apk)            apk info 2>/dev/null ;;
+    xbps)           xbps-query -l 2>/dev/null | awk '{ sub(/-[^-]*$/, "", $2); print $2 }' ;;
+    eopkg)          eopkg li 2>/dev/null | awk 'NF { print $1 }' ;;
+  esac
+  return 0
+}
+cmd_dupes() {
+  local d k src name where n id inst t rows="" own
+  # gurt's own installs (what you asked for, not deps)
+  for d in "$DB"/*/; do
+    k=$(basename "$d")
+    [[ $(cat "$d/reason" 2>/dev/null) == dep ]] && continue
+    grep -q '^gh_by = ' "$d/info" 2>/dev/null && continue
+    if [[ $k == *:* ]]; then src=${k%%:*}; name=${k#*:}; else src=gurt; name=$k; fi
+    where="$(pretty "$k") (gurt)"; [[ $src == flatpak ]] && where="flatpak/$name"
+    rows="$rows$(dupe_norm "${name##*/}")"$'\t'"$where"$'\t'"$src"$'\n'
+  done
+  if command -v flatpak >/dev/null; then
+    while IFS=$'\t' read -r id inst; do
+      [[ -n $id ]] || continue
+      where="flatpak/$id"; [[ $inst == system ]] && where+=" (system)"
+      rows="$rows$(dupe_norm "$id")"$'\t'"$where"$'\t'flatpak$'\n'
+    done < <(flatpak list --app --columns=application,installation 2>/dev/null)
+  fi
+  if command -v snap >/dev/null; then
+    while read -r n _; do
+      if [[ -n $n && $n != Name ]]; then rows="$rows$(dupe_norm "$n")"$'\t'"snap/$n"$'\t'snap$'\n'; fi
+    done < <(snap list 2>/dev/null)
+  fi
+  # your distro's packages, but only names that showed up above (no point comparing 2000 libraries)
+  case $PM in apt) own="apt" ;; dnf|yum|zypper) own="dnf zypper" ;; pacman) own="pacman aur" ;; *) own=$PM ;; esac
+  if [[ -n $rows ]]; then
+    while IFS= read -r n; do
+      t=$(dupe_norm "$n")
+      grep -q "^$t"$'\t' <<<"$rows" || continue
+      # gurt handed it to your package manager itself? then it's the same install, not a second one
+      for src in $own; do grep -qxF "$t	$src/$n (gurt)	$src" <<<"$rows" && continue 2; done
+      rows="$rows$t"$'\t'"$PM/$n (your distro)"$'\t'"$PM"$'\n'
+    done < <(native_names)
+  fi
+  local out; out=$(printf '%s' "$rows" | awk -F'\t' 'NF >= 2 && !seen[$1 FS $2]++ { c[$1]++; w[$1] = w[$1] "\n    → " $2 }
+    END { for (n in c) if (c[n] > 1) printf "%s\t%d%s\n\n", n, c[n], w[n] }')
+  if [[ -z $out ]]; then msg "no dupes, every app's here once ✨"; return 0; fi
+  printf '%s\n' "$out" | sed "s/^\([^\t]*\)\t\([0-9]*\)/${B}\1${R0}, \2 times 👯/"
+  msg2 "keep the one you like: gurt remove <the one you don't> (or your distro's / flatpak's own remove)"
+}
 is_held() { [[ -f $DB/$1/held ]]; }
 
 # ───────────────────────── export / import ─────────────────────────
@@ -5462,7 +5556,7 @@ cmd_complete() {
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
     commands)  printf '%s\n' sync search info install update upgrade self-update uninstall remove autoremove list files owns lottery sysup \
                  build add srcinfo checksum new repo dirt gui de outsource undo rollback hold unhold export import completions doctor version help yo \
-                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache ;;
+                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache try dupes hotwyr ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman apk xbps eopkg gentoo flatpak snap nix gh pip npm cargo appimage brew dirt ;;
   esac
   return 0
@@ -6194,7 +6288,7 @@ _gurt() {
   if (( COMP_CWORD == 1 )); then COMPREPLY=($(compgen -W "$(gurt __complete commands)" -- "$cur")); return; fi
   case $cmd in
     remove|rm|yeet|files|run|rollback|undo|hold|unhold|pin|unpin) COMPREPLY=($(compgen -W "$(gurt __complete installed)" -- "$cur")) ;;
-    install|i|get|info|search|s) compopt -o nospace 2>/dev/null
+    install|i|get|info|search|s|try) compopt -o nospace 2>/dev/null
       COMPREPLY=($(compgen -W "$(gurt __complete available; gurt __complete sources)" -- "$cur"))
       [[ ${#COMPREPLY[@]} == 1 && ${COMPREPLY[0]} != */ ]] && COMPREPLY[0]+=" " ;;
     dirt) COMPREPLY=($(compgen -W "on off status list" -- "$cur")) ;;
@@ -6213,7 +6307,7 @@ _gurt() {
   if (( CURRENT == 2 )); then compadd -- ${(f)"$(gurt __complete commands)"}; return; fi
   case $words[2] in
     remove|rm|yeet|files|run|rollback|undo|hold|unhold|pin|unpin) compadd -- ${(f)"$(gurt __complete installed)"} ;;
-    install|i|get|info|search|s) compadd -- ${(f)"$(gurt __complete available)"}; compadd -S '' -- ${(f)"$(gurt __complete sources)"} ;;
+    install|i|get|info|search|s|try) compadd -- ${(f)"$(gurt __complete available)"}; compadd -S '' -- ${(f)"$(gurt __complete sources)"} ;;
     dirt) compadd on off status list ;;
     repo|repos) compadd add list remove ;;
     sync) compadd all aur apt dnf zypper pacman apk xbps eopkg gentoo ;;
@@ -6228,7 +6322,7 @@ EOF
 complete -c gurt -f
 complete -c gurt -n '__fish_is_first_arg' -a '(gurt __complete commands)'
 complete -c gurt -n '__fish_seen_subcommand_from remove rm yeet files rollback undo hold unhold pin unpin' -a '(gurt __complete installed)'
-complete -c gurt -n '__fish_seen_subcommand_from install i get info search s' -a '(gurt __complete available; gurt __complete sources)'
+complete -c gurt -n '__fish_seen_subcommand_from install i get info search s try' -a '(gurt __complete available; gurt __complete sources)'
 complete -c gurt -n '__fish_seen_subcommand_from dirt' -a 'on off status list'
 complete -c gurt -n '__fish_seen_subcommand_from repo repos' -a 'add list remove'
 complete -c gurt -n '__fish_seen_subcommand_from sync' -a 'all aur apt dnf zypper pacman apk xbps eopkg gentoo'
@@ -6330,15 +6424,24 @@ cmd_self_update() {
     msg "you're on $(/usr/bin/gurt version 2>/dev/null || echo "the newest dev build") ✅"
     return 0
   fi
-  # installed from a GURTSetupWizard package: your package manager owns gurt, so it does the updating
+  # installed from a GURTSetupWizard package: grab the newest release's package and let your package manager swap it in.
+  # (pacman has no repo drop-in folder and unsigned .debs get no apt repo, so "just run your system updates" can loop forever)
   if [[ $self == /usr/bin/gurt && -f /usr/share/gurt/gurt-gui.py ]] && ! $FORCE; then
-    case $PM in
-      apt) msg "gurt came with your system updates 📦 run: sudo apt update && sudo apt upgrade" ;;
-      dnf|yum) msg "gurt came with your system updates 📦 run: sudo dnf upgrade gurt" ;;
-      zypper) msg "gurt came with your system updates 📦 run: sudo zypper up gurt" ;;
-      pacman) msg "gurt came with your system updates 📦 run: sudo pacman -Syu" ;;
-      *) msg "gurt came from a GURTSetupWizard package 📦 grab the newest one: https://github.com/clrealy/GURT/releases/latest" ;;
-    esac
+    local ext r url
+    new=$(latest_gurt_ver)
+    if [[ -n $new ]] && ! vnewer "$GURT_VERSION" "$new"; then
+      msg "gurt $GURT_VERSION is already the newest 😎"; return 0
+    fi
+    ext=$(own_pkg_ext) || { msg "gurt came from a GURTSetupWizard package 📦 grab the newest one: https://github.com/clrealy/GURT/releases/latest"; return 0; }
+    r=${GURT_REPO_URL%.git}; [[ $r == https://github.com/*/* ]] || r=https://github.com/clrealy/GURT
+    url="$r/releases/latest/download/GURTSetupWizard.$ext"
+    ask "update gurt $GURT_VERSION -> ${new:-the newest release} with $PM?" || die "aborted"
+    tmp=$(mktemp -d)
+    msg "grabbing GURTSetupWizard.$ext ${new:+($new) }📦"
+    curl -fsSL -o "$tmp/GURTSetupWizard.$ext" "$url" || { rm -rf "$tmp"; die "couldn't download $url"; }
+    own_pkg_install "$tmp/GURTSetupWizard.$ext" || { rm -rf "$tmp"; die "$PM couldn't install $url"; }
+    rm -rf "$tmp"
+    msg "you're on $(/usr/bin/gurt version 2>/dev/null || echo "the newest gurt") ✅"
     return 0
   fi
   sync_main
@@ -7083,6 +7186,8 @@ ${B}misc${R0}
   undo                 take back the last thing gurt did (an install, remove or upgrade). again = redo ↩️
   rollback <pkg>       go back to the version before (gurt keeps the last 3) + hold it there
   hold / unhold <pkg>  stop / resume upgrades for a package
+  try <pkg> [-- cmd]   install it, try it in a new shell (or run cmd), and it's gone when you exit 🧪
+  dupes                apps you have more than once (your distro + flatpak + gurt…) 👯
   export [file]        save the list of stuff you installed
   lottery [category]   🎰 spin for a random app (browsers chat media creative office dev gaming system cli …)
   import <file>        install everything from an export (new PC speedrun)
@@ -7225,6 +7330,8 @@ main() {
     rollback)          cmd_rollback "$@" && achieve rollback ;;
     undo)              cmd_undo "$@" && achieve rollback ;;
     hold|pin)          (( $# )) || die "hold what tho"; cmd_hold "$@" ;;
+    try)               cmd_try "$@" ;;
+    dupes|dupe|doubles) cmd_dupes ;;
     unhold|unpin)      (( $# )) || die "unhold what tho"; cmd_unhold "$@" ;;
     export)            cmd_export "$@" ;;
     lottery|lotto|gamble) cmd_lottery "$@" ;;
