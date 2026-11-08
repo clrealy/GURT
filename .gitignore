@@ -1,3 +1,4 @@
 site/packages.json
 site/dirt.json
 dist/
+__pycache__/
