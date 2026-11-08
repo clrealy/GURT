@@ -31,6 +31,9 @@ pub enum After {
     Convert(String),
     Wizard(usize),
     DevUnlock,
+    Redeem,
+    KeyGen,
+    KeyCheck,
     Upgrade,
 }
 
@@ -83,7 +86,29 @@ pub enum Dialog {
     Compare,
     DirtGate,
     DevLock(String, String),
+    /// 🔑 redeem a GURT key: what you typed, what gurt said, did it work
+    Redeem(String, Vec<String>, bool),
+    /// 🧪 dev builds: make a key (which unlocks are ticked, a note, the new key's lines) + check one
+    KeyGen(KeyGenView),
 }
+#[derive(Default)]
+pub struct KeyGenView {
+    pub picks: Vec<bool>,
+    pub note: String,
+    pub made: Vec<(String, String)>, // key= line= unlock= what= from gurt __keygen
+    pub check: String,
+    pub checked: Vec<(String, String)>,
+    pub err: String,
+}
+/// everything a GURT key can unlock (the same list as gurt's KEY_UNLOCKS)
+pub const KEY_UNLOCKS: [(&str, &str); 7] = [
+    ("app:hpa2", "the secret app hpa2"), ("skin:gold", "the Golden Duck skin + coin sounds"), ("track:shanty", "the shanty music track"),
+    ("ach:golden", "achievement: golden duck"), ("ach:quack", "achievement: duck whisperer"), ("ach:shanty", "achievement: sea legs"), ("ach:konami", "achievement: up up down down"),
+];
+fn kv_lines(lines: &[String]) -> Vec<(String, String)> {
+    lines.iter().filter_map(|l| l.split_once('=').filter(|(k, _)| ["key", "line", "unlock", "what", "note"].contains(k)).map(|(k, v)| (k.to_string(), data::no_emoji(v)))).collect()
+}
+
 pub struct GurtdView {
     pub running: bool,
     pub c: HashMap<String, String>,
@@ -291,6 +316,16 @@ impl App {
         }
     }
     fn on_first_load(&mut self) {
+        // 🔑 a locked skin or track (gui.json edited by hand, or a dev build swapped for a normal one) falls back
+        if self.skin == Skin::Gold && !self.st.has("skin:gold") {
+            self.skin = Skin::Gurt;
+            self.sound.set_skin(Skin::Gurt);
+        }
+        if crate::sound::track_locked(&self.sound.track) && !self.st.has(&format!("track:{}", self.sound.track)) {
+            self.sound.track = "auto".into();
+            data::save_conf("track", "auto".into());
+            self.sound.sync_music();
+        }
         if self.st.dev == "locked" {
             self.dialog = Some(Dialog::DevLock(String::new(), String::new()));
             return;
@@ -455,6 +490,32 @@ impl App {
                 }
             }
             After::Wizard(i) => crate::wizard::task_done(self, i, rc, &lines),
+            After::Redeem => {
+                let ok = rc == 0;
+                let said: Vec<String> = lines.iter().skip(1).map(|l| data::no_emoji(l.trim().trim_start_matches("==> nah:").trim_start_matches("==>").trim_start_matches("->").trim())).filter(|l| !l.is_empty()).collect();
+                if let Some(Dialog::Redeem(input, out, good)) = &mut self.dialog {
+                    *out = said;
+                    *good = ok;
+                    if ok {
+                        input.clear();
+                    }
+                }
+                self.sound.play(if ok { "jackpot" } else { "err" });
+                if ok {
+                    self.reload(); // 🔑 new skins, tracks and apps show up now
+                }
+            }
+            After::KeyGen | After::KeyCheck => {
+                let kv = kv_lines(&lines);
+                let err = if rc == 0 { String::new() } else { lines.iter().rev().find(|l| l.contains("nah:")).map(|l| data::no_emoji(l.split("nah:").nth(1).unwrap_or(l).trim())).unwrap_or_else(|| "that didn't work".into()) };
+                if let Some(Dialog::KeyGen(v)) = &mut self.dialog {
+                    v.err = err;
+                    if matches!(act.after, After::KeyGen) { v.made = kv; } else { v.checked = kv; }
+                }
+                if rc == 0 {
+                    self.sound.play("ok");
+                }
+            }
             After::DevUnlock => {
                 // reload, and look again: still locked = a wrong password (gurt swapped in the normal GURT)
                 self.dialog = None;
@@ -807,7 +868,7 @@ impl App {
         let r = ui.max_rect();
         let y = ui.min_rect().top();
         let _ = (r, y);
-        egui::Panel::top("stripe").exact_size(if p.skin == Skin::Gurt { 4.0 } else if matches!(p.skin, Skin::Xp | Skin::Vapor) { 3.0 } else { 1.0 }).frame(egui::Frame::new()).show_separator_line(false).show(ui, |ui| {
+        egui::Panel::top("stripe").exact_size(if p.skin == Skin::Gurt { 4.0 } else if matches!(p.skin, Skin::Xp | Skin::Vapor | Skin::Gold) { 3.0 } else { 1.0 }).frame(egui::Frame::new()).show_separator_line(false).show(ui, |ui| {
             let r = ui.max_rect();
             let pt = ui.painter();
             match p.skin {
@@ -833,6 +894,10 @@ impl App {
                 }
                 Skin::Win11 => {
                     pt.rect_filled(r, CornerRadius::ZERO, p.edge);
+                }
+                Skin::Gold => {
+                    pt.line_segment([r.left_top() + vec2(0.0, 0.5), r.right_top() + vec2(0.0, 0.5)], Stroke::new(1.0, p.accent));
+                    pt.line_segment([r.left_bottom() - vec2(0.0, 0.5), r.right_bottom() - vec2(0.0, 0.5)], Stroke::new(1.0, p.accent));
                 }
             }
         });
@@ -867,7 +932,10 @@ impl App {
                 ui.label(egui::RichText::new("skin").font(mono(12.0)).color(p.muted));
                 let cur = self.skin;
                 egui::ComboBox::from_id_salt("skinsel").selected_text(skin::SKINS.iter().find(|s| s.0 == cur).unwrap().2).width(220.0).show_ui(ui, |ui| {
-                    for (s, _, name) in skin::SKINS {
+                    for (s, id, name) in skin::SKINS {
+                        if s == Skin::Gold && !self.st.has(&format!("skin:{id}")) {
+                            continue; // 🔑
+                        }
                         if ui.selectable_label(cur == s, name).clicked() && cur != s {
                             self.set_skin(s);
                         }
@@ -877,6 +945,9 @@ impl App {
                 let tr = self.sound.track.clone();
                 egui::ComboBox::from_id_salt("tracksel").selected_text(crate::sound::track_name(&tr)).width(220.0).show_ui(ui, |ui| {
                     for (id, name) in crate::sound::TRACKS {
+                        if crate::sound::track_locked(id) && !self.st.has(&format!("track:{id}")) {
+                            continue; // 🔑
+                        }
                         if ui.selectable_label(tr == id, name).clicked() {
                             self.sound.set_track(id);
                         }
@@ -893,6 +964,14 @@ impl App {
                     if w::btn(ui, &p, "setup wizard", Kind::Ghost, true).on_hover_text("walk through setting GURT up").clicked() {
                         self.prefs_open = false;
                         open_wizard_app(&mut *self);
+                    }
+                    if w::btn(ui, &p, "redeem a key", Kind::Ghost, true).on_hover_text("a GURT key unlocks secret apps, skins, music and achievements").clicked() {
+                        self.prefs_open = false;
+                        self.dialog = Some(Dialog::Redeem(String::new(), vec![], false));
+                    }
+                    if self.st.dev == "ok" && w::btn(ui, &p, "make a key", Kind::Primary, true).on_hover_text("dev builds: make a GURT key").clicked() {
+                        self.prefs_open = false;
+                        self.dialog = Some(Dialog::KeyGen(KeyGenView { picks: vec![false; KEY_UNLOCKS.len()], ..Default::default() }));
                     }
                 });
                 ui.horizontal_wrapped(|ui| {
@@ -1056,6 +1135,7 @@ pub fn dialog_box<R>(ui: &mut Ui, p: &Pal, title: &str, add: impl FnOnce(&mut Ui
             ui.painter().rect_stroke(inner.response.rect, CornerRadius::same(p.r), Stroke::new(3.0, hex(0x0a3fb0)), StrokeKind::Inside);
         }
         Skin::Vapor => w::double_rect(ui, inner.response.rect, skin::VAPOR_CYAN),
+        Skin::Gold => w::double_rect(ui, inner.response.rect, p.accent),
         _ => w::box_border(ui, p, inner.response.rect),
     }
     inner.inner

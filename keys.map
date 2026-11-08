@@ -1,0 +1,7 @@
+# keys.map: GURT keys (gurt redeem). one per line: sha256("gurt-key:" + the key) | what it unlocks | a note
+# the keys themselves are never in here. unlocks: app:<secret recipe> skin:gold track:shanty ach:<id>
+e4346b7e9496b0b89dc6d4b42b74c3a3ad7a4922dd0f3925346e6db1644c339a|app:hpa2,ach:quack|easter egg: gurt quack x7
+1b3209d26f1366fbf86b7bbae5d14baa99eac14f66d6e08d517fd1c02aa75916|track:shanty,ach:konami|easter egg: konami code on gurtproject.org
+4d5726e99e722be26b95a18bab92c1eb1851d16bf65d02dfcfb10078b1022f57|skin:gold,ach:golden|handout: golden duck
+4a46e7a56b34b11b395d79ea2ce5d2ad319cb275e964de8d1bc459e585acd951|track:shanty,ach:shanty|handout: pirate
+58b2b526c085527f8c3c2931ca7100c803ea859b17b4792c309e83e719f4784b|app:hpa2,skin:gold,track:shanty,ach:golden,ach:shanty|handout: master key

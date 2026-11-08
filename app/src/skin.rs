@@ -11,14 +11,16 @@ pub enum Skin {
     W95,
     Vapor,
     Hacker,
+    Gold, // 🔑 a GURT key unlocks it
 }
-pub const SKINS: [(Skin, &str, &str); 6] = [
+pub const SKINS: [(Skin, &str, &str); 7] = [
     (Skin::Gurt, "gurt", "GURT"),
     (Skin::Win11, "win11", "Windows 11"),
     (Skin::Xp, "xp", "Windows XP"),
     (Skin::W95, "w95", "Windows 95"),
     (Skin::Vapor, "vapor", "Vaporwave"),
     (Skin::Hacker, "hacker", "Hacker"),
+    (Skin::Gold, "gold", "Golden Duck"),
 ];
 impl Skin {
     pub fn from_id(s: &str) -> Skin {
@@ -31,7 +33,7 @@ impl Skin {
     pub fn fixed_theme(self) -> Option<bool> {
         match self {
             Skin::Xp | Skin::W95 => Some(false),
-            Skin::Vapor | Skin::Hacker => Some(true),
+            Skin::Vapor | Skin::Hacker | Skin::Gold => Some(true),
             _ => None,
         }
     }
@@ -83,7 +85,7 @@ pub fn pal(skin: Skin, dark: bool) -> Pal {
             hl: Color32::TRANSPARENT, hl_ink: None, header: hex(0xfafafa), header_ink: hex(0x111113), logo_ink: hex(0x111113) }
     };
     match skin {
-        Skin::Gurt => {}
+        Skin::Gurt | Skin::Gold => {}
         Skin::Win11 if dark => {
             p = Pal { r: 4, bg: hex(0x202020), panel: hex(0x2b2b2b), ink: hex(0xffffff), muted: hex(0xc5c5c5), line: hex(0x333333), edge: hex(0x3d3d3d),
                 accent: hex(0x60cdff), accent_ink: hex(0x000000), tag: hex(0x323232), code: hex(0x1c1c1c), header: hex(0x2b2b2b), header_ink: hex(0xffffff), ..p };
@@ -115,6 +117,12 @@ pub fn pal(skin: Skin, dark: bool) -> Pal {
                 hl: Color32::from_rgba_unmultiplied(51, 255, 102, 20), header: hex(0x000000), header_ink: hex(0x33ff66), logo_ink: hex(0xf1ede2), ..p };
         }
     }
+    if skin == Skin::Gold {
+        // 🦆✨ black lacquer + gold leaf: everything that isn't black is gold, in three strengths
+        p = Pal { r: 0, bg: hex(0x0b0906), panel: hex(0x13100a), ink: hex(0xf2e6c2), muted: hex(0xb3a06b), line: hex(0x2a2213), edge: hex(0x8c6f2b),
+            accent: hex(0xd4af37), accent_ink: hex(0x0b0906), tag: hex(0x1c170d), code: hex(0x070604), good: hex(0xa8d17f), bad: hex(0xe0614b),
+            hl: Color32::from_rgba_unmultiplied(212, 175, 55, 26), header: hex(0x0b0906), header_ink: hex(0xd4af37), logo_ink: hex(0xf2e6c2), ..p };
+    }
     if p.hl == Color32::TRANSPARENT {
         // GURT: the accent at 18% over the panel
         p.hl = mix(p.panel, p.accent, 0.18);
@@ -145,6 +153,7 @@ pub fn fonts(skin: Skin) -> egui::FontDefinitions {
         Skin::W95 => (&["Microsoft Sans Serif", "Arial", "Liberation Sans", "sans-serif"], &["Courier New", "Liberation Mono", "monospace"]),
         Skin::Vapor => (&["Noto Sans", "DejaVu Sans", "sans-serif"], &["VT323", "DejaVu Sans Mono", "monospace"]),
         Skin::Hacker => (&["JetBrains Mono", "DejaVu Sans Mono", "monospace"], &["JetBrains Mono", "DejaVu Sans Mono", "monospace"]),
+        Skin::Gold => (&["Noto Serif", "DejaVu Serif", "Liberation Serif", "serif"], &["DejaVu Sans Mono", "monospace"]),
     };
     let mut defs = egui::FontDefinitions::default();
     // the first family name fontconfig really has (fc-match falls back by itself; ask for the exact family first)
@@ -153,7 +162,7 @@ pub fn fonts(skin: Skin) -> egui::FontDefinitions {
             let pat = if bold { format!("{n}:bold") } else { format!("{n}:regular") };
             if let Ok(o) = Command::new("fc-match").args(["-f", "%{family}", &pat]).stderr(Stdio::null()).output() {
                 let fam = String::from_utf8_lossy(&o.stdout).to_lowercase();
-                if fam.split(',').any(|f| f.trim() == n.to_lowercase()) || *n == "sans-serif" || *n == "monospace" {
+                if fam.split(',').any(|f| f.trim() == n.to_lowercase()) || *n == "sans-serif" || *n == "monospace" || *n == "serif" {
                     if let Some(b) = fc(&pat) {
                         return Some(b);
                     }

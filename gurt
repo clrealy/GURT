@@ -1197,7 +1197,7 @@ cmd_foss() { # on | off | status
 resolve_and_install() { # name reason
   local name=$1 reason=${2:-dep} real
   if ! is_gurt_pkg "$name" && real=$(alias_lookup "$name"); then msg2 "$name is an alias → $real"; name=$real
-  elif is_gurt_pkg "$name" && grep -qx 'secret = true' "$(repo_info "$name")" && ! is_installed "$(pkey "$TREE_SRC" "$name")"; then
+  elif is_gurt_pkg "$name" && grep -qx 'secret = true' "$(repo_info "$name")" && ! is_installed "$(pkey "$TREE_SRC" "$name")" && ! key_unlocked "app:$name"; then
     no_such_pkg "$name"   # 🤫 only the secret alias works
   fi
   local key; key=$(pkey "$TREE_SRC" "$name")
@@ -4994,6 +4994,106 @@ is_held() { [[ -f $DB/$1/held ]]; }
 # ───────────────────────── export / import ─────────────────────────
 # a plain text list of what you installed on purpose → reinstall it all on another machine
 # ── apps like X: vibes.map turns "photoshop" into apps you can actually install ──
+# ── 🔑 GURT keys: gurt redeem GURT-XXXX-XXXX-XXXX unlocks secret stuff. keys.map holds a salted sha256 of each key (never
+#    the key itself) and what it unlocks: app:<recipe> (a secret recipe shows up + installs by name), skin:<id> + track:<id>
+#    (the app's secret skins + music), ach:<id> (key-only achievements). what you unlocked lives in ~/.config/gurt/keys ──
+KEYS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/keys"
+keys_map() {
+  local f
+  for f in "$GURT_REPO_DIR/keys.map" "$SELF_DIR/keys.map" /usr/local/share/gurt/keys.map /usr/share/gurt/keys.map; do
+    [[ -r $f ]] && { echo "$f"; return 0; }
+  done
+  return 1
+}
+key_norm() { # anything typed → GURT-XXXX-XXXX-XXXX (lowercase, spaces, missing dashes all fine)
+  local k=${1^^}; k=${k//[^A-Z0-9]/}; k=${k#GURT}
+  (( ${#k} == 12 )) || return 1
+  echo "GURT-${k:0:4}-${k:4:4}-${k:8:4}"
+}
+key_hash() { printf 'gurt-key:%s' "$1" | sha256sum | cut -d' ' -f1; }
+key_unlocked() { is_dev || { [[ -f $KEYS_FILE ]] && grep -q "^$1 " "$KEYS_FILE"; }; }   # app:hpa2 · skin:gold · track:shanty · ach:… (🧪 dev builds: all of it)
+key_what() { # unlock → how it reads
+  case $1 in
+    app:*) echo "the secret app ${1#app:} (gurt install ${1#app:})" ;;
+    skin:gold) echo "the Golden Duck skin + its coin sounds (in GURT's app: look → skin)" ;;
+    skin:*) echo "the ${1#skin:} skin (in GURT's app: look → skin)" ;;
+    track:shanty) echo "the shanty music track 🏴‍☠️ (in GURT's app: look → music)" ;;
+    track:*) echo "the ${1#track:} music track (in GURT's app: look → music)" ;;
+    ach:*) local t; t=$(grep "^${1#ach:}|" <<<"$ACH_LIST$ACH_SECRET" | cut -d'|' -f2); echo "the achievement ${t:-${1#ach:}}" ;;
+    *) echo "$1" ;;
+  esac
+}
+cmd_redeem() { # [key | list]
+  local k h line unlocks u new=0 m
+  if [[ -z ${1:-} || $1 == list ]]; then
+    if is_dev; then msg "🧪 dev build: everything GURT keys unlock is already yours"; return 0; fi
+    if [[ ! -s $KEYS_FILE ]]; then msg "no keys redeemed yet 🔑 got one? gurt redeem GURT-XXXX-XXXX-XXXX"; return 0; fi
+    msg "what your GURT keys unlocked 🔑"
+    while read -r u _; do [[ -n $u ]] && msg2 "$(key_what "$u")"; done < "$KEYS_FILE"
+    return 0
+  fi
+  k=$(key_norm "$*") || die "that's not a GURT key (they look like GURT-XXXX-XXXX-XXXX)"
+  m=$(keys_map) || { sync_main >/dev/null; m=$(keys_map) || die "couldn't find GURT's list of keys (try: gurt sync)"; }
+  h=$(key_hash "$k")
+  line=$(grep -v '^#' "$m" | grep "^$h|" | head -n1) || true
+  if [[ -z $line ]]; then sync_main >/dev/null 2>&1 || true; m=$(keys_map) && line=$(grep -v '^#' "$m" | grep "^$h|" | head -n1) || true; fi
+  [[ -n $line ]] || die "$k isn't a GURT key (or it's from a newer gurt: gurt self-update) 🔒"
+  IFS='|' read -r _ unlocks _ <<<"$line"
+  mkdir -p "${KEYS_FILE%/*}"
+  for u in ${unlocks//,/ }; do
+    key_unlocked "$u" && continue
+    echo "$u $(date +%F)" >> "$KEYS_FILE"; new=$((new + 1))
+    [[ $u == ach:* ]] && achieve "${u#ach:}"
+    msg2 "unlocked: $(key_what "$u")"
+  done
+  if (( new == 0 )); then msg "you already have everything $k unlocks 😎"; return 0; fi
+  msg "🔑 $k redeemed!"
+  achieve keymaster
+}
+# 🧪 making keys: dev builds only (the app's "make a key" button runs this). prints key= / line= / unlock= for the app
+#   gurt __keygen <unlock>... [-- note]   a new key + its keys.map line (add the line to keys.map on main and it works)
+#   gurt __keygen check GURT-XXXX-…       what a key redeems
+KEY_UNLOCKS="app:hpa2 skin:gold track:shanty ach:golden ach:quack ach:shanty ach:konami"
+cmd_keygen() {
+  [[ $(dev_state) == ok ]] || die "making GURT keys is a dev build thing 🧪"
+  local k u unlocks=() note="" line m abc=ABCDEFGHJKLMNPQRSTUVWXYZ23456789 i
+  if [[ ${1:-} == check ]]; then
+    shift; k=$(key_norm "$*") || die "that's not a GURT key (they look like GURT-XXXX-XXXX-XXXX)"
+    m=$(keys_map) || die "couldn't find keys.map (gurt sync)"
+    line=$(grep -v '^#' "$m" | grep "^$(key_hash "$k")|" | head -n1) || true
+    [[ -n $line ]] || die "$k isn't in keys.map (made it but its line isn't on main yet? gurt sync after it is)"
+    IFS='|' read -r _ u note <<<"$line"
+    echo "key=$k"; echo "note=$note"
+    for u in ${u//,/ }; do echo "unlock=$u"; echo "what=$(key_what "$u")"; done
+    return 0
+  fi
+  while (( $# )); do
+    if [[ $1 == -- ]]; then shift; note="$*"; break; fi
+    for u in ${1//,/ }; do
+      [[ $u =~ ^(app|skin|track|ach):[a-z0-9._+-]+$ ]] || die "'$u' isn't an unlock (app:<recipe> skin:gold track:shanty ach:<id>)"
+      unlocks+=("$u")
+    done
+    shift
+  done
+  (( ${#unlocks[@]} )) || die "unlock what? ($KEY_UNLOCKS)"
+  k=""; for i in {1..12}; do k+=${abc:$(( $(od -An -N2 -tu2 /dev/urandom) % ${#abc} )):1}; done
+  k="GURT-${k:0:4}-${k:4:4}-${k:8:4}"
+  echo "key=$k"
+  echo "line=$(key_hash "$k")|$(IFS=,; echo "${unlocks[*]}")|${note//|//}"
+  for u in "${unlocks[@]}"; do echo "unlock=$u"; echo "what=$(key_what "$u")"; done
+}
+# 🦆 quack quack (do it 7 times)
+cmd_quack() {
+  local f="${XDG_CACHE_HOME:-$HOME/.cache}/gurt/quacks" n=0
+  mkdir -p "${f%/*}"; n=$(( $(cat "$f" 2>/dev/null || echo 0) + 1 )); echo "$n" > "$f"
+  printf '   __\n<(o )___   quack%s\n ( ._> /\n  `---'"'"'\n' "$( (( n > 1 )) && printf ' x%d' "$n")"
+  if (( n == 7 )); then
+    # you found it. a GURT key, spelled out so a search through the code doesn't spoil it
+    local k; k=$(printf '%b' '\x47\x55\x52\x54\x2d\x51\x55\x34\x43\x2d\x4b\x44\x55\x43\x2d\x4b\x37\x37\x37')
+    printf '\n%s🔑 the duck dropped something: %s%s\n   gurt redeem %s\n' "$B" "$k" "$R0" "$k"
+  fi
+}
+
 vibes_file() {
   local f
   for f in "$GURT_REPO_DIR/vibes.map" "$SELF_DIR/vibes.map" /usr/local/share/gurt/vibes.map /usr/share/gurt/vibes.map; do
@@ -5591,7 +5691,7 @@ cmd_complete() {
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
     commands)  printf '%s\n' sync search info install update upgrade self-update uninstall remove autoremove list files owns lottery sysup \
                  build add srcinfo checksum new repo dirt gui de outsource undo rollback hold unhold export import completions doctor version help yo \
-                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache try dupes hotwyr gh-only ;;
+                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache try dupes hotwyr gh-only redeem ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman apk xbps eopkg gentoo flatpak snap nix gh pip npm cargo appimage brew dirt ;;
   esac
   return 0
@@ -5914,7 +6014,7 @@ search_main() {
     name=$(info_get "$f" pkgname); desc=$(info_get "$f" pkgdesc)
     aka=$(info_get "$f" alias | paste -sd, - | sed 's/,/, /g')
     if grep -qx 'hidden = true' "$f" && [[ ${term,,} != "${name,,}" ]] && ! grep -qxiF "alias = $term" "$f"; then continue; fi
-    if grep -qx 'secret = true' "$f" && ! grep -qxiF "alias = $term" "$f"; then continue; fi
+    if grep -qx 'secret = true' "$f" && ! grep -qxiF "alias = $term" "$f" && ! key_unlocked "app:$name"; then continue; fi
     if [[ -z $term ]] || grep -qiF -- "$term" <<<"$name $desc $aka"; then
       ver=$(repo_ver "$name"); tag=""
       [[ -n $aka ]] && desc+="  (aka $aka)"
@@ -6000,7 +6100,7 @@ cmd_info() {
     gurt)
       ensure_repo
       local real; if ! is_gurt_pkg "$name" && real=$(alias_lookup "$name"); then name=$real; key=$name
-      elif grep -qx 'secret = true' "$(repo_info "$name")" 2>/dev/null && ! is_installed "$key"; then die "no package '$name' in main GURT"; fi
+      elif grep -qx 'secret = true' "$(repo_info "$name")" 2>/dev/null && ! is_installed "$key" && ! key_unlocked "app:$name"; then die "no package '$name' in main GURT"; fi
       if [[ -f $(repo_info "$name") ]]; then awk -F' = ' '{ printf "%-14s: %s\n", $1, substr($0, length($1)+4) }' "$(repo_info "$name")"
       elif is_installed "$key"; then awk -F' = ' '{ printf "%-14s: %s\n", $1, substr($0, length($1)+4) }' "$DB/$key/info"
       else die "no package '$name' in main GURT"; fi ;;
@@ -6514,7 +6614,7 @@ cmd_self_update() {
     [[ -f $f ]] && asroot cp "$GURT_REPO_DIR/deps.map" "$f"
   done
   for f in /usr/local/share/gurt /usr/share/gurt; do
-    for m in vibes.map gh-only.map; do [[ -d $f && -f $GURT_REPO_DIR/$m ]] && asroot cp "$GURT_REPO_DIR/$m" "$f/$m"; done
+    for m in vibes.map gh-only.map keys.map; do [[ -d $f && -f $GURT_REPO_DIR/$m ]] && asroot cp "$GURT_REPO_DIR/$m" "$f/$m"; done
     [[ -d $f && -f $GURT_REPO_DIR/assets/wilhelm.mp3 ]] && asroot cp "$GURT_REPO_DIR/assets/wilhelm.mp3" "$f/wilhelm.mp3"
     [[ -d $f && -f $GURT_REPO_DIR/site/assets/apple-touch-icon.png ]] && asroot cp "$GURT_REPO_DIR/site/assets/apple-touch-icon.png" "$f/gurt.png"
   done
@@ -6553,7 +6653,14 @@ publish|publisher 📡|publish your own signed repo
 profile|save state 💾|save a profile
 compare|indecisive ⚖️|compare apps side by side
 v1|day one 🎂|be there for GURT 1.0
-wizard|you're a wizard 🧙|finish the setup wizard"
+wizard|you're a wizard 🧙|finish the setup wizard
+keymaster|key master 🔑|redeem a GURT key"
+# key-only achievements: hidden (???) until a GURT key unlocks them
+ACH_SECRET="
+golden|golden duck 🦆✨|redeemed a golden key
+quack|duck whisperer 🦆|quacked seven times
+shanty|sea legs 🏴‍☠️|found the pirate's key
+konami|up up down down 🎮|found the key on gurtproject.org"
 is_dev() { [[ $GURT_VERSION == *+dev* ]]; }   # a GURTSetupWizard-dev build
 DEV_URL=https://gurtproject.org/dev   # the dev builds: /dev/rpm/GURTSetupWizard-dev.rpm (an rpm repo too), /dev/GURTSetupWizard-dev.<ext>
 own_pkg_ext() { # → the GURTSetupWizard file ending your package manager takes
@@ -6612,7 +6719,7 @@ achieved() { is_dev || { [[ -f $ACH_FILE ]] && grep -q "^$1 " "$ACH_FILE"; }; } 
 achieve() { # id — unlock it (once), with a little fanfare
   [[ ${GURT_ACHIEVEMENTS:-1} == 0 ]] && return 0
   achieved "$1" && return 0
-  local line; line=$(grep "^$1|" <<<"$ACH_LIST") || return 0
+  local line; line=$(grep "^$1|" <<<"$ACH_LIST$ACH_SECRET") || return 0
   mkdir -p "${ACH_FILE%/*}" 2>/dev/null && echo "$1 $(date +%F)" >> "$ACH_FILE" 2>/dev/null || return 0
   IFS='|' read -r _ title what <<<"$line"
   printf '%s🏆 achievement unlocked: %s%s — %s\n' "$B" "$title" "$R0" "$what" >&2
@@ -6640,7 +6747,17 @@ cmd_achievements() { # [--tsv]
     elif [[ -n $got ]]; then printf '  🏆 %s%s%s — %s  %s(%s)%s\n' "$B" "$title" "$R0" "$what" "$GRN" "$got" "$R0"
     else printf '  🔒 %s — %s\n' "$title" "$what"; fi
   done <<<"$ACH_LIST"
-  [[ ${1:-} == --tsv ]] || msg "$n/$tot unlocked $( (( n == tot )) && echo '— you beat gurt 👑' )"
+  # key-only ones: only the ones you've got show their names
+  while IFS='|' read -r id title what; do
+    [[ -n $id ]] || continue
+    got=""; [[ -f $ACH_FILE ]] && got=$(awk -v i="$id" '$1 == i { print $2 }' "$ACH_FILE")
+    [[ -z $got ]] && is_dev && got="dev build 🧪"
+    [[ -n $got ]] || continue
+    n=$((n + 1)); tot=$((tot + 1))
+    if [[ ${1:-} == --tsv ]]; then printf '%s\t%s\t%s\t%s\n' "$id" "$title" "$what" "$got"
+    else printf '  🔑 %s%s%s — %s  %s(%s)%s\n' "$B" "$title" "$R0" "$what" "$GRN" "$got" "$R0"; fi
+  done <<<"$ACH_SECRET"
+  [[ ${1:-} == --tsv ]] || msg "$n/$tot unlocked $( (( n == tot )) && echo '— you beat gurt 👑' )$( [[ ! -s $KEYS_FILE ]] && echo ' · some secret ones need a GURT key 🔑')"
 }
 
 # ── 🎰 lottery streaks + rarity: spin once a day to keep your streak; the longer it is, the better your odds ──
@@ -7249,6 +7366,7 @@ ${B}misc${R0}
   try <pkg> [-- cmd]   install it, try it in a new shell (or run cmd), and it's gone when you exit 🧪
   dupes                apps you have more than once (your distro + flatpak + gurt…) 👯
   gh-only [category]   free apps that ship on GitHub releases (apps browsers games dev terminal) 🐙
+  redeem <key>         redeem a GURT key: secret apps, skins, music, achievements 🔑 (gurt redeem list: yours)
   export [file]        save the list of stuff you installed
   lottery [category]   🎰 spin for a random app (browsers chat media creative office dev gaming system cli …)
   import <file>        install everything from an export (new PC speedrun)
@@ -7394,6 +7512,9 @@ main() {
     try)               cmd_try "$@" ;;
     dupes|dupe|doubles) cmd_dupes ;;
     gh-only|ghonly|github) cmd_ghonly "$@" ;;
+    redeem|key-redeem)  cmd_redeem "$@" ;;
+    quack)             cmd_quack ;;
+    __keygen)          cmd_keygen "$@" ;;
     unhold|unpin)      (( $# )) || die "unhold what tho"; cmd_unhold "$@" ;;
     export)            cmd_export "$@" ;;
     lottery|lotto|gamble) cmd_lottery "$@" ;;

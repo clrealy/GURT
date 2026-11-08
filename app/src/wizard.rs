@@ -356,7 +356,10 @@ fn page(app: &mut App, ui: &mut Ui, step: usize) {
             h(ui, "Your look");
             para(ui, "pick a skin (every skin has its own sound effects), a music track, and light or dark. try them, it changes right away.");
             ui.horizontal_wrapped(|ui| {
-                for (s, _, name) in skin::SKINS {
+                for (s, id, name) in skin::SKINS {
+                    if s == Skin::Gold && !app.st.has(&format!("skin:{id}")) {
+                        continue; // 🔑
+                    }
                     if choice(ui, app, name, app.skin == s, true).clicked() && app.skin != s {
                         app.set_skin(s);
                     }
@@ -367,6 +370,9 @@ fn page(app: &mut App, ui: &mut Ui, step: usize) {
             ui.horizontal_wrapped(|ui| {
                 let on = app.sound.music_on;
                 for (id, name) in crate::sound::TRACKS {
+                    if crate::sound::track_locked(id) && !app.st.has(&format!("track:{id}")) {
+                        continue; // 🔑
+                    }
                     if choice(ui, app, name, on && app.sound.track == id, true).clicked() {
                         app.sound.set_track(id);
                     }

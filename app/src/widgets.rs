@@ -51,6 +51,7 @@ pub fn box_border(ui: &Ui, p: &Pal, r: Rect) {
     match p.skin {
         Skin::W95 => sunken(ui, r),
         Skin::Vapor => double_rect(ui, r, p.edge),
+        Skin::Gold => double_rect(ui, r, p.accent),
         Skin::Hacker => dashed_rect(ui, r, p.edge),
         _ => {
             ui.painter().rect_stroke(r, CornerRadius::same(p.r), Stroke::new(1.0, p.edge), StrokeKind::Inside);
@@ -61,7 +62,7 @@ pub fn box_border(ui: &Ui, p: &Pal, r: Rect) {
 /// the list box rows sit in (Discover, Installed, Updates…)
 pub fn list_frame<R>(ui: &mut Ui, p: &Pal, add: impl FnOnce(&mut Ui) -> R) -> R {
     let fill = if p.skin == Skin::W95 { hex(0xffffff) } else { p.panel };
-    let pad = if matches!(p.skin, Skin::Vapor) { 3 } else { 1 };
+    let pad = if matches!(p.skin, Skin::Vapor | Skin::Gold) { 3 } else { 1 };
     let inner = egui::Frame::new().fill(fill).corner_radius(CornerRadius::same(p.r)).inner_margin(pad).show(ui, add);
     box_border(ui, p, inner.response.rect);
     inner.inner
@@ -96,7 +97,7 @@ pub fn btn_on(ui: &mut Ui, p: &Pal, text: &str, on: bool, small: bool) -> Respon
 pub fn btn_ex(ui: &mut Ui, p: &Pal, text: &str, kind: Kind, small: bool, pressed: bool, enabled: bool) -> Response {
     let text = label_of(p, text);
     let size = if small { 12.0 } else { 12.5 };
-    let font: FontId = if matches!(p.skin, Skin::Xp | Skin::W95) { crate::skin::sans(size + 0.5) } else if p.skin == Skin::Win11 { crate::skin::sansb(size + 0.5) } else { monob(size) };
+    let font: FontId = if matches!(p.skin, Skin::Xp | Skin::W95) { crate::skin::sans(size + 0.5) } else if matches!(p.skin, Skin::Win11 | Skin::Gold) { crate::skin::sansb(size + 0.5) } else { monob(size) };
     let pad = if small { vec2(8.0, 3.0) } else { vec2(11.0, 6.0) };
     let galley = ui.painter().layout_no_wrap(text.clone(), font.clone(), Color32::WHITE);
     let want = galley.size() + pad * 2.0;
@@ -157,6 +158,19 @@ pub fn btn_ex(ui: &mut Ui, p: &Pal, text: &str, kind: Kind, small: bool, pressed
                 fill = p.panel;
             }
         }
+        Skin::Gold => {
+            // an engraved plate: gold fill (primary) or black with a gold rule, and always a second rule inside
+            let (f, ink2) = match kind {
+                Kind::Primary => (if hov || pressed { hex(0xe8c55a) } else { p.accent }, p.accent_ink),
+                Kind::Danger => (p.bad, hex(0x0b0906)),
+                Kind::Ghost => (if hov { p.tag } else { Color32::TRANSPARENT }, p.accent),
+            };
+            pt.rect_filled(rect, CornerRadius::ZERO, f);
+            pt.rect_stroke(rect, CornerRadius::ZERO, Stroke::new(1.0, p.accent), StrokeKind::Inside);
+            pt.rect_stroke(rect.shrink(2.5), CornerRadius::ZERO, Stroke::new(1.0, if kind == Kind::Ghost { p.edge } else { ink2.gamma_multiply(0.5) }), StrokeKind::Inside);
+            pt.text(rect.center() + if down { vec2(0.0, 1.0) } else { vec2(0.0, 0.0) }, Align2::CENTER_CENTER, &text, font, if enabled { ink2 } else { p.muted });
+            return if enabled { resp.on_hover_cursor(egui::CursorIcon::PointingHand) } else { resp };
+        }
         Skin::Gurt => {}
     }
     if hov && kind == Kind::Ghost && !matches!(p.skin, Skin::Xp) {
@@ -190,6 +204,7 @@ pub fn btn_ex(ui: &mut Ui, p: &Pal, text: &str, kind: Kind, small: bool, pressed
 /// a header tab (Discover, Installed…)
 pub fn tab(ui: &mut Ui, p: &Pal, text: &str, on: bool, badge: Option<usize>) -> Response {
     let font = match p.skin {
+        Skin::Gold => crate::skin::sansb(13.5),
         Skin::Xp => crate::skin::sansb(13.0),
         Skin::W95 => if on { crate::skin::sansb(12.5) } else { crate::skin::sans(12.5) },
         Skin::Win11 => if on { crate::skin::sansb(13.0) } else { crate::skin::sans(13.0) },
@@ -261,6 +276,15 @@ pub fn tab(ui: &mut Ui, p: &Pal, text: &str, on: bool, badge: Option<usize>) -> 
         }
         Skin::Hacker => {
             ink = if on || hov { p.accent } else { p.muted };
+        }
+        Skin::Gold => {
+            ink = if on { p.accent } else if hov { p.ink } else { p.muted };
+            if on {
+                let y = rect.bottom() - 2.0;
+                for dy in [0.0, 3.0] {
+                    pt.line_segment([pos2(rect.left() + 6.0, y - dy), pos2(rect.right() - 6.0, y - dy)], Stroke::new(1.0, p.accent));
+                }
+            }
         }
     }
     let tx = rect.left() + 10.0 + galley.size().x / 2.0 + if p.skin == Skin::Xp && on { 0.0 } else { 0.0 };
@@ -379,6 +403,7 @@ pub fn heading(ui: &mut Ui, p: &Pal, text: &str, size: f32) {
     let font = if p.skin == Skin::Hacker { monob(size) } else { crate::skin::sansb(size) };
     let ink = match p.skin {
         Skin::Vapor => crate::skin::VAPOR_YELLOW,
+        Skin::Gold => p.accent,
         Skin::Xp => hex(0x0a246a),
         Skin::W95 => hex(0xffffff),
         _ => p.ink,
