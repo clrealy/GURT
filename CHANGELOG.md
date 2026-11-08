@@ -1,5 +1,11 @@
 # GURT changelog 🦆
 
+## Not released yet
+
+### Fixed
+- **jacb wouldn't build** (`cd: jacb-0.1.0: No such file or directory`): its recipe cloned into `JACB/` and looked in `jacb-0.1.0/`.
+- Recipes with a git tag as their source printed git's whole "detached HEAD" lecture while building. gurt keeps git quiet about it now.
+
 ## 1.4.0: Oxidized 🦀
 
 GURT's app is rewritten in Rust: a native window, no python, no webview. Plus 39 apps that only ship on GitHub, installable by name.

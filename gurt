@@ -704,7 +704,7 @@ fetch_sources() {
         elif [[ $RECIPE == PKGBUILD && -z $ref ]]; then
           git clone -q "$repo" "$srcdir/$name"     # -git packages need history for pkgver()
         else
-          git clone -q --depth 1 ${ref:+--branch "$ref"} "$repo" "$srcdir/$name"
+          git -c advice.detachedHead=false clone -q --depth 1 ${ref:+--branch "$ref"} "$repo" "$srcdir/$name"   # a tag = detached HEAD: no lecture about it
         fi ;;
       svn+*|hg+*|bzr+*|fossil+*) die "${loc%%+*} sources aren't supported (yet) — only git" ;;
       http://*|https://*|ftp://*)

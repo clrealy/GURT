@@ -9,7 +9,7 @@ maintainer="clrealy"
 arch=(any)
 depends=(python3 python-gobject gtk4 webkit2gtk-4.1)
 makedepends=()
-source=("git+https://github.com/clrealy/JACB.git#tag=v$pkgver")
+source=("$pkgname-$pkgver::git+https://github.com/clrealy/JACB.git#tag=v$pkgver")
 sha256sums=('SKIP')
 
 package() {
