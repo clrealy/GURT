@@ -7,6 +7,7 @@
 - **The GURT infomercial 📼** A 30-second retro ad in `promo/` (16:9 and 9:16), rendered from `promo/src`.
 
 ### Fixed
+- **Debian packages that need Perl or Python modules broke on other distros** (`apt/cowsay` on Void: "Can't locate Text/CharWidth.pm"). Debian keeps those modules where only its own perl/python looks, so gurt now uses your distro's package of the same module (`libtext-charwidth-perl` → Void's `perl-Text-CharWidth`, Arch's `perl-text-charwidth`).
 - **Void programs wouldn't start on Debian, Ubuntu and friends.** Void builds its programs to look for their loader at `/lib/ld-linux-x86-64.so.2`, and those distros keep it in `/lib64`. gurt now points programs from other distros at the loader your system has.
 - **`gh/` crashed** right after handing a release's package to your distro's package manager.
 - **`gurt key trust` on Arch** failed when pacman's keyring had never been set up (fresh installs and containers). gurt sets it up now.

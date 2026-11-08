@@ -1843,6 +1843,30 @@ pm_available() {
     *)      return 1 ;;
   esac
 }
+# your package manager's spelling of a name, whatever its case (Void: perl-Text-CharWidth, Arch: perl-text-charwidth)
+pm_name_ci() { # name
+  local n=$1 l=${1,,} r=""
+  pm_available "$n" && { echo "$n"; return 0; }
+  [[ $l != "$n" ]] && pm_available "$l" && { echo "$l"; return 0; }
+  case $PM in
+    xbps)    r=$(xbps-query -Rs "$n" 2>/dev/null | awk '{ print $2 }' | sed 's/-[^-]*_[0-9]*$//' | grep -ixF -m1 -- "$n" || true) ;;
+    dnf|yum) r=$(dnf -q repoquery --qf '%{name}\n' "${n%%-*}-*" 2>/dev/null | grep -ixF -m1 -- "$n" || true) ;;
+    zypper)  r=$(zypper -q --no-refresh search -x "$n" 2>/dev/null | awk -F'|' 'NR > 2 { gsub(/ /, "", $2); print $2 }' | grep -ixF -m1 -- "$n" || true) ;;
+  esac
+  [[ -n $r ]] && { echo "$r"; return 0; }
+  return 1
+}
+# a Debian Perl / Python module package → your distro's package of the same module
+host_lang_pkg() { # dep
+  local d=$1 m c
+  case $d in
+    lib*-perl) m=${d#lib}; m=${m%-perl}; set -- "perl-$m" ;;
+    python3-*) m=${d#python3-}; set -- "python3-$m" "python-$m" "py3-$m" ;;
+    *) return 1 ;;
+  esac
+  for c; do pm_name_ci "$c" && return 0; done
+  return 1
+}
 # foreign dep name → generic name (reverse deps.map lookup)
 rev_map() {
   local m; m=$(depmap_file); [[ -n $m ]] || return 0
@@ -1888,6 +1912,11 @@ foreign_dep() { # src dep
     fi
   fi
   if pm_available "$dep"; then NATIVE_Q+=("$dep"); return 0; fi
+  # a Perl or Python module from Debian lands where only Debian's perl/python looks (and an XS module only fits
+  # Debian's perl): your distro's own package of the same module is the one that works
+  if [[ $(src_pm "$src") == apt && $PM != apt ]] && nat=$(host_lang_pkg "$dep"); then
+    msg2 "$dep is a $([[ $dep == *-perl ]] && echo Perl || echo Python) module: using your distro's $nat"; NATIVE_Q+=("$nat"); return 0
+  fi
   case $src in
     aur)
       if ( ensure_idx pacman ) >/dev/null 2>&1 && [[ -n $(idx_lookup pacman "$dep") ]]; then
