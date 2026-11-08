@@ -1,5 +1,10 @@
 # GURT changelog 🦆
 
+## Not released yet
+
+### Fixed
+- **"gurt X is out" showed up late.** `gurt update` and `gurt upgrade` now ask GitHub for the newest release, so a new gurt shows up right away, even when your package lists were refreshed a little while ago.
+
 ## 1.2.0: Repomageddon 🌋
 
 NixOS support, and gurt goes from 12 sources to 20: Void, Solus, Alpine and Gentoo repos, GitHub releases, AppImageHub, PyPI, npm, crates.io and Homebrew.
