@@ -183,6 +183,82 @@ jobs:
             fi
           done
 
+  # every other source, for real: Void, Solus, Alpine and Gentoo repos, GitHub releases, PyPI / npm / crates.io,
+  # AppImageHub and Homebrew (runs as a normal user, like people do)
+  sources:
+    if: github.event_name == 'pull_request'
+    needs: lint
+    runs-on: ubuntu-latest
+    env: { GURT_PLAIN: "1", GH_TOKEN: "${{ github.token }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq zstd python3-venv openssl
+      - name: distro repos sync and install
+        run: |
+          for s in xbps eopkg apk gentoo; do ./gurt sync "$s"; done
+          ./gurt search void/figlet | head -n 4
+          ./gurt -y install xbps/figlet && figlet gurt && ./gurt -y remove xbps/figlet
+          ls ~/.config/gurt/keys/void-xbps.pem
+          ./gurt -y install eopkg/figlet && figlet gurt && ./gurt -y remove eopkg/figlet
+          ./gurt -y install apk/neofetch && ./gurt -y remove apk/neofetch   # a shell script, so fine on glibc
+          ! ./gurt -y install apk/figlet   # musl programs on glibc: refused
+          ./gurt search gentoo/bash | head -n 4
+      - name: gh/ GitHub releases
+        run: |
+          ./gurt info gh/clrealy/GURT
+          ./gurt -y --nodeps install gh/clrealy/GURT && ./gurt list | grep -q '^gh/gurt ' && ./gurt -y remove gh/gurt
+      - name: pip/ npm/ cargo/
+        run: |
+          ./gurt -y install pip/cowsay && cowsay -t moo && ./gurt -y remove pip/cowsay
+          ./gurt -y install npm/cowsay && cowthink hi && ./gurt -y remove npm/cowsay
+          ./gurt search cargo/ripgrep | head -n 2
+          [ ! -e /usr/local/lib/gurt-pip/cowsay ] && [ ! -e /usr/local/lib/gurt-npm/cowsay ]
+      - name: appimage/ and brew/ catalogs
+        run: |
+          ./gurt search appimage/obsidian | head -n 4
+          ./gurt search brew/jq | head -n 4
+
+  # gurt running ON Void (xbps is the host's package manager): another distro's package, deps from xbps
+  void:
+    if: github.event_name == 'pull_request'
+    needs: lint
+    runs-on: ubuntu-latest
+    container: ghcr.io/void-linux/void-glibc-full:latest
+    env: { GURT_PLAIN: "1", GURT_ALLOW_ROOT: "1" }
+    steps:
+      - name: bootstrap
+        run: xbps-install -Syu xbps && xbps-install -Syu && xbps-install -y bash git curl sudo tar gzip xz zstd python3 openssl findutils binutils
+      - uses: actions/checkout@v4
+      - name: gurt on Void
+        shell: bash
+        run: |
+          ./gurt doctor | head -n 20
+          ./gurt -y install apt/cowsay && /usr/games/cowsay hi && ./gurt -y remove apt/cowsay
+
+  # nix/ for real, and NixOS mode (GURT_NIXOS=1) on top of it
+  nix:
+    if: github.event_name == 'pull_request'
+    needs: lint
+    runs-on: ubuntu-latest
+    env: { GURT_PLAIN: "1" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - name: nix/
+        run: |
+          ./gurt info nix/hello
+          ./gurt search nix/hello | head -n 4
+          GURT_PM=nix ./gurt -y install nix/hello && hello && ./gurt list | grep -q '^nix/hello' && ./gurt -y remove nix/hello
+      - name: NixOS mode puts /usr on PATH and installs other distros' packages natively
+        run: |
+          mkdir -p /tmp/d/DEBIAN /tmp/d/usr/bin
+          printf 'Package: gurt-nixtest\nVersion: 1.0\nArchitecture: all\nMaintainer: ci\nDescription: test\n' > /tmp/d/DEBIAN/control
+          printf '#!/bin/sh\necho hi nixos\n' > /tmp/d/usr/bin/gurt-nixtest && chmod 755 /tmp/d/usr/bin/gurt-nixtest
+          dpkg-deb -b /tmp/d /tmp/gurt-nixtest.deb
+          GURT_NIXOS=1 GURT_NIXOS_PROFILE=/tmp/profile.local ./gurt -y --nodeps install /tmp/gurt-nixtest.deb
+          grep -q 'gurt: /usr + /usr/local' /tmp/profile.local && sh -n /tmp/profile.local
+          [ "$(/usr/bin/gurt-nixtest)" = "hi nixos" ] && GURT_NIXOS=1 ./gurt -y remove gurt-nixtest
+
   # recipes uploaded from the website don't have .gurtinfo — generate/refresh them on main
   srcinfo:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
