@@ -229,10 +229,10 @@ jobs:
           ./gurt -y remove npm/cowsay
           ./gurt search cargo/ripgrep > /tmp/s.txt; head -n 2 /tmp/s.txt
           [ ! -e /usr/local/lib/gurt-pip/cowsay ] && [ ! -e /usr/local/lib/gurt-npm/cowsay ]
-      - name: gurt hook (apt can't find yay → gurt offers aur/yay; a missing command too)
+      - name: Hotwyr (apt can't find yay → gurt offers aur/yay; a missing command too)
         run: |
           set -uo pipefail
-          ./gurt hook init bash > /tmp/h.bash && bash -n /tmp/h.bash
+          ./gurt hotwyr init bash > /tmp/h.bash && bash -n /tmp/h.bash
           export PATH="$PWD:$PATH"
           echo n | bash -c '. /tmp/h.bash; sudo apt install yay' > /tmp/hook.txt 2>&1 || true
           cat /tmp/hook.txt; grep -q "gurt does: aur/yay" /tmp/hook.txt

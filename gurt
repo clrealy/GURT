@@ -3758,34 +3758,34 @@ for r in sorted(rows)[:40]: print("\t".join([r[1], r[2], "", "", "", r[3]]))
 PY
 }
 
-# ── 🪝 gurt hook: your package manager, with gurt as its backup. `gurt hook on` puts a small snippet in your shell
+# ── ⚡ Hotwyr: your package manager, with gurt as its backup. `gurt hotwyr on` puts a small snippet in your shell
 #    (bash, zsh, fish) that wraps the package manager commands you TYPE (scripts still get the real ones):
 #    - sudo apt install yay → apt can't find it → gurt offers aur/yay
 #    - apt upgrade / pacman -Syu / dnf upgrade → then gurt updates what it installed
 #    - apt search / pacman -Ss → gurt's results underneath
 #    - a command you don't have → gurt offers the package that has it
-#    GURT_HOOK=0 turns it off for a moment, `command apt …` skips it once ──
+#    GURT_HOTWYR=0 turns it off for a moment, `command apt …` skips it once ──
 HOOK_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/gurt"
 HOOK_PMS="apt apt-get dnf yum zypper pacman apk xbps-install xbps-query eopkg"
-HOOK_MARK="# gurt hook (gurt hook off removes this)"
+HOOK_MARK="# gurt Hotwyr (gurt hotwyr off removes this)"
 HOOK_NOTFOUND=200   # __cnf: nothing found, let the shell's own handler talk
 hook_pms() { local p; for p in $HOOK_PMS; do command -v "$p" >/dev/null && printf '%s ' "$p"; done; return 0; }
 hook_script() { # bash | zsh | fish → the snippet
   local sh=$1 p pms; pms=$(hook_pms)
   if [[ $sh == fish ]]; then
     printf '%s\n' "$HOOK_MARK" \
-      'function __gurt_hook; if test "$GURT_HOOK" = 0; or not command -q gurt; command $argv; else; command gurt __pmhook $argv; end; end'
+      'function __gurt_hook; if test "$GURT_HOTWYR" = 0; or not command -q gurt; command $argv; else; command gurt __pmhook $argv; end; end'
     for p in $pms; do printf 'function %s --wraps %s; __gurt_hook %s $argv; end\n' "$p" "$p" "$p"; done
     printf '%s\n' \
       "function sudo --wraps sudo" \
-      "    if test \"\$GURT_HOOK\" != 0; and command -q gurt; and contains -- \"\$argv[1]\" $pms" \
+      "    if test \"\$GURT_HOTWYR\" != 0; and command -q gurt; and contains -- \"\$argv[1]\" $pms" \
       '        command gurt __pmhook --sudo $argv' \
       '    else' \
       '        command sudo $argv' \
       '    end' \
       'end' \
       'function fish_command_not_found' \
-      '    if test "$GURT_HOOK" != 0; and command -q gurt' \
+      '    if test "$GURT_HOTWYR" != 0; and command -q gurt' \
       '        command gurt __cnf $argv' \
       '        set -l rc $status' \
       "        test \$rc -ne $HOOK_NOTFOUND; and return \$rc" \
@@ -3797,13 +3797,13 @@ hook_script() { # bash | zsh | fish → the snippet
   local cnf=command_not_found_handle dflt="printf 'bash: %s: command not found\\n' \"\$1\" >&2"
   [[ $sh == zsh ]] && { cnf=command_not_found_handler; dflt="printf 'zsh: command not found: %s\\n' \"\$1\" >&2"; }
   printf '%s\n' "$HOOK_MARK" \
-    '__gurt_hook() { if [ "${GURT_HOOK:-1}" = 0 ] || ! command -v gurt >/dev/null 2>&1; then command "$@"; else command gurt __pmhook "$@"; fi; }'
+    '__gurt_hook() { if [ "${GURT_HOTWYR:-1}" = 0 ] || ! command -v gurt >/dev/null 2>&1; then command "$@"; else command gurt __pmhook "$@"; fi; }'
   for p in $pms; do printf '%s() { __gurt_hook %s "$@"; }\n' "$p" "$p"; done
   printf '%s\n' \
     'sudo() {' \
     '  case "${1:-}" in' \
     "    $(tr ' ' '|' <<<"${pms% }"))" \
-    '      if [ "${GURT_HOOK:-1}" != 0 ] && command -v gurt >/dev/null 2>&1; then command gurt __pmhook --sudo "$@"; else command sudo "$@"; fi ;;' \
+    '      if [ "${GURT_HOTWYR:-1}" != 0 ] && command -v gurt >/dev/null 2>&1; then command gurt __pmhook --sudo "$@"; else command sudo "$@"; fi ;;' \
     '    *) command sudo "$@" ;;' \
     '  esac' \
     '}'
@@ -3814,7 +3814,7 @@ hook_script() { # bash | zsh | fish → the snippet
   fi
   printf '%s\n' \
     "$cnf() {" \
-    '  if [ "${GURT_HOOK:-1}" != 0 ] && command -v gurt >/dev/null 2>&1; then' \
+    '  if [ "${GURT_HOTWYR:-1}" != 0 ] && command -v gurt >/dev/null 2>&1; then' \
     '    command gurt __cnf "$@"; local rc=$?' \
     "    [ \"\$rc\" -ne $HOOK_NOTFOUND ] && return \"\$rc\"" \
     '  fi' \
@@ -3827,7 +3827,7 @@ hook_rcs() { # shell → its rc file (only shells you have)
   case $1 in
     bash) command -v bash >/dev/null && echo "$HOME/.bashrc" ;;
     zsh)  command -v zsh >/dev/null && echo "${ZDOTDIR:-$HOME}/.zshrc" ;;
-    fish) command -v fish >/dev/null && echo "${XDG_CONFIG_HOME:-$HOME/.config}/fish/conf.d/gurt-hook.fish" ;;
+    fish) command -v fish >/dev/null && echo "${XDG_CONFIG_HOME:-$HOME/.config}/fish/conf.d/gurt-hotwyr.fish" ;;
   esac
   return 0
 }
@@ -3840,29 +3840,29 @@ cmd_hook() { # on | off | status | init <shell>
       for sh in bash zsh fish; do
         rc=$(hook_rcs "$sh"); [[ -n $rc ]] || continue
         if [[ $sh == fish ]]; then mkdir -p "${rc%/*}"; hook_script fish > "$rc"; msg2 "fish: $rc"; continue; fi
-        f="$HOOK_DIR/hook.$sh"; hook_script "$sh" > "$f"
+        f="$HOOK_DIR/hotwyr.$sh"; hook_script "$sh" > "$f"
         grep -qsF "$HOOK_MARK" "$rc" || printf '\n%s\n[ -r "%s" ] && . "%s"\n' "$HOOK_MARK" "$f" "$f" >> "$rc"
         msg2 "$sh: $rc"
       done
-      msg "🪝 gurt is hooked into $(hook_pms | sed 's/ $//; s/ /, /g'). open a new terminal, then try: sudo $(hook_pms | cut -d' ' -f1) install <something your distro doesn't have>"
-      msg2 "GURT_HOOK=0 turns it off for a moment, 'command apt …' skips it once, gurt hook off removes it" ;;
+      msg "⚡ Hotwyr is on: gurt backs up $(hook_pms | sed 's/ $//; s/ /, /g'). open a new terminal, then try: sudo $(hook_pms | cut -d' ' -f1) install <something your distro doesn't have>"
+      msg2 "GURT_HOTWYR=0 turns it off for a moment, 'command apt …' skips it once, gurt hotwyr off removes it" ;;
     off)
       for sh in bash zsh fish; do
         rc=$(hook_rcs "$sh"); [[ -n $rc && -f $rc ]] || continue
         if [[ $sh == fish ]]; then rm -f "$rc"; continue; fi
         sed -i "/^$(sed 's/[][\.*^$/]/\\&/g' <<<"$HOOK_MARK")\$/,+1d" "$rc"
-        rm -f "$HOOK_DIR/hook.$sh"
+        rm -f "$HOOK_DIR/hotwyr.$sh"
       done
-      msg "gurt hook is off (new terminals get your plain package manager)" ;;
+      msg "Hotwyr is off (new terminals get your plain package manager)" ;;
     status)
       local any=false
       for sh in bash zsh fish; do
         rc=$(hook_rcs "$sh"); [[ -n $rc ]] || continue
         if grep -qsF "$HOOK_MARK" "$rc"; then printf '  %s✓%s %s\n' "$GRN" "$R0" "$sh"; any=true; else printf '  %s·%s %s\n' "$YLW" "$R0" "$sh"; fi
       done
-      $any && msg2 "hooked into: $(hook_pms)" || msg2 "not hooked in. gurt hook on: your package manager asks gurt when it can't find something" ;;
-    init) hook_script "${2:?usage: gurt hook init bash|zsh|fish}" ;;
-    *) die "usage: gurt hook [on | off | status]" ;;
+      $any && msg2 "⚡ Hotwyr is on for: $(hook_pms)" || msg2 "Hotwyr is off. gurt hotwyr on: your package manager asks gurt when it can't find something" ;;
+    init) hook_script "${2:?usage: gurt hotwyr init bash|zsh|fish}" ;;
+    *) die "usage: gurt hotwyr [on | off | status]" ;;
   esac
 }
 
@@ -3925,24 +3925,24 @@ cmd_pmhook() { # [--sudo] pm args… — the real package manager first, then gu
       done
       (( ${#specs[@]} )) || return "$rc"
       printf '\n' >&2
-      msg "🪝 $pm doesn't have ${miss[*]}, but gurt does: ${specs[*]}"
+      msg "⚡ Hotwyr: $pm doesn't have ${miss[*]}, but gurt does: ${specs[*]}"
       ask "install with gurt?" || return "$rc"
       for s in "${specs[@]}"; do install_any "$s" explicit || return 1; done
       # anything else you asked for that your distro DOES have: now without the ones gurt got
       for a in "${run[@]}"; do [[ " ${miss[*]} " == *" $a "* ]] || keep+=("$a"); done
-      if (( ${#names[@]} > ${#miss[@]} )); then msg "🪝 and the rest with $pm"; "${keep[@]}" || return $?; fi
+      if (( ${#names[@]} > ${#miss[@]} )); then msg "⚡ and the rest with $pm"; "${keep[@]}" || return $?; fi
       return 0 ;;
     search)
       local t=(); skip=1
       for a; do [[ $a == -* ]] && continue; if (( skip )) && [[ $pm != pacman && $pm != xbps-query ]]; then skip=0; continue; fi; t+=("$a"); done
       (( ${#t[@]} )) || return "$rc"
-      printf '\n%s── 🪝 also with gurt (gurt install <name>) ──%s\n' "$B" "$R0"
+      printf '\n%s── ⚡ Hotwyr: also with gurt (gurt install <name>) ──%s\n' "$B" "$R0"
       { search_main "${t[*]}" 2>/dev/null || true; } | head -n 12
       [[ $PM == pacman ]] || { search_foreign aur "${t[*]}" 2>/dev/null || true; } | head -n 8
       return "$rc" ;;
     upgrade)
       (( rc )) && return "$rc"
-      msg "🪝 $pm is done, now what gurt installed"
+      msg "⚡ Hotwyr: $pm is done, now what gurt installed"
       NO_SYSTEM=true cmd_upgrade || true
       return 0 ;;
   esac
@@ -3952,7 +3952,7 @@ cmd_cnf() { # command args… — a command you don't have: does gurt have its p
   local c=${1:-} s
   [[ -n $c ]] || return "$HOOK_NOTFOUND"
   s=$(hook_find "$c") || return "$HOOK_NOTFOUND"
-  printf '%s: command not found, but gurt has it: %s%s%s\n' "$c" "$B" "$s" "$R0" >&2
+  printf '⚡ %s: command not found, but gurt has it: %s%s%s\n' "$c" "$B" "$s" "$R0" >&2
   [[ -t 0 && -t 2 ]] || { printf '  gurt install %s\n' "$s" >&2; return 127; }
   ask "install $s, then run $c?" || return 127
   install_any "$s" explicit || return 127
@@ -5153,8 +5153,8 @@ cmd_setup() {
     fi
   else msg2 "skipped (more in: gurt search, gurt lottery, or the app)"; fi
   printf '\n%s[4/4] extras%s\n' "$B" "$R0"
-  if hook_on; then msg2 "gurt is already hooked into your package manager 🪝"
-  elif [[ -n $(hook_pms) ]] && ask "🪝 hook gurt into $PM? (when it can't find something, gurt offers it from another source)"; then cmd_hook on || true; fi
+  if hook_on; then msg2 "Hotwyr is already on ⚡"
+  elif [[ -n $(hook_pms) ]] && ask "⚡ turn on Hotwyr? ($PM asks gurt when it can't find something)"; then cmd_hook on || true; fi
   if [[ $(cmd_notify status) == on ]]; then msg2 "update alerts are already on 🔔"
   elif ask "🔔 a desktop notification when updates are waiting?"; then cmd_notify on || true; fi
   if ! $NOCONFIRM && has_display && ask "🖥️ set up the GURT app (its own window + a menu entry)?"; then cmd_gui --setup || warn "the app window didn't set up, gurt gui still opens it in your browser"; fi
@@ -7062,7 +7062,7 @@ ${B}misc${R0}
   notify on|off|now    a desktop notification when updates are waiting (checks every 6 hours) 🔔
   gurtd [config]       GURTd, the background daemon: auto-updates, fresh lists, downloads → install, instant app 🐧
   android [setup|list|open|remove <app>|fdroid]   Android apps through Waydroid 🤖 (gurt install android/<app> = F-Droid)
-  hook on|off          hook gurt into your package manager: sudo apt install yay → apt can't, gurt offers aur/yay 🪝
+  hotwyr on|off        Hotwyr: gurt backs up your package manager. sudo apt install yay → apt can't, gurt offers aur/yay ⚡
   foss on|off          FOSS-only mode: no closed-source apps at all (off: they install with a heads-up) 🔓
   snapshots            the snapshots gurt took before system upgrades (btrfs: snapper/timeshift/plain) 📸
   achievements         🏆 trophies for doing gurt things
@@ -7170,7 +7170,7 @@ main() {
     gurtd|daemon)      cmd_gurtd "$@" ;;
     android|waydroid)  cmd_android "$@" ;;
     foss)              cmd_foss "$@" ;;
-    hook)              cmd_hook "$@" ;;
+    hotwyr|hook)       cmd_hook "$@" ;;
     __pmhook)          cmd_pmhook "$@" ;;
     __cnf)             cmd_cnf "$@" ;;
     snapshots|snaps)   cmd_snapshots ;;

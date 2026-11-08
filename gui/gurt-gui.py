@@ -834,10 +834,10 @@ class H(BaseHTTPRequestHandler):
                     return self._send(400, {"error": "not allowed"})
                 job = start_job([GURT, "-y", "hogs", "clean", arg])
                 return self._send(200, {"job": job.id})
-            if cmd == "hook":   # gurt hook on|off: your package manager asks gurt when it can't find something
+            if cmd == "hook":   # Hotwyr (gurt hotwyr on|off): your package manager asks gurt when it can't find something
                 if arg not in ("on", "off"):
                     return self._send(400, {"error": "on or off"})
-                job = start_job([GURT, "hook", arg])
+                job = start_job([GURT, "hotwyr", arg])
                 return self._send(200, {"job": job.id})
             if cmd == "notify":
                 if arg not in ("on", "off"):
@@ -2049,8 +2049,8 @@ dialog .row{justify-content:flex-end}
     <div id="lottowin2" hidden></div>
     <div class="droidbar"><span><b>Android apps</b><small id="droidtxt">free software from F-Droid, running in Waydroid. gurt sets it up. a .apk that isn't on F-Droid gets a heads-up first</small></span>
       <button class="btn ghost small" data-cmd="android" data-arg="setup">set up Android</button><button class="btn ghost small" data-cmd="android" data-arg="fdroid">get F-Droid</button><button class="btn ghost small" id="droidopen" data-cmd="android" data-arg="open">open Android</button></div>
-    <div class="droidbar"><span><b>Package manager hook</b><small id="hooktxt">your package manager asks GURT when it can't find something: sudo apt install yay → apt can't → GURT offers aur/yay. upgrades and searches include GURT too, and so does command not found</small></span>
-      <button class="btn ghost small" id="hookbtn">hook it in</button></div>
+    <div class="droidbar"><span><b>Hotwyr</b><small id="hooktxt">GURT backs up your package manager. when it can't find something: sudo apt install yay → apt can't → GURT offers aur/yay. upgrades and searches include GURT too, and so does command not found</small></span>
+      <button class="btn ghost small" id="hookbtn">turn on Hotwyr</button></div>
     <div class="bcats" id="bcats"></div>
     <div id="bgroups"></div>
     <div id="cartbar" hidden><span id="cartcount"></span><span class="spacer"></span><button class="btn ghost small" id="cartclear">clear</button><button class="btn" id="cartgo">install them</button></div>
@@ -2430,7 +2430,7 @@ $("#hogbtn").addEventListener("click", async () => {
   if (BYSIZE && !SIZES) { $("#hogbtn").textContent = "measuring…"; SIZES = (await api("/api/sizes").catch(() => ({}))).sizes || {}; $("#hogbtn").textContent = "biggest first"; }
   renderInstalled();
 });
-function renderHook(){ const b = $("#hookbtn"); b.textContent = S.hook ? "hooked in ✓ (turn off)" : "hook it in"; b.classList.toggle("on", !!S.hook); }
+function renderHook(){ const b = $("#hookbtn"); b.textContent = S.hook ? "Hotwyr on ✓ (turn off)" : "turn on Hotwyr"; b.classList.toggle("on", !!S.hook); }
 $("#hookbtn").addEventListener("click", async () => { const r = await run("hook", S.hook ? "off" : "on", {confirm:false, quiet:true}); if (r && r.rc === 0) S.hook = !S.hook; renderHook(); });
 function renderNotify(){ $("#notifybtn").textContent = S.notify ? "alerts on" : "alert me"; $("#notifybtn").classList.toggle("on", !!S.notify); }
 $("#notifybtn").addEventListener("click", async () => { const r = await run("notify", S.notify ? "off" : "on", {confirm:false, quiet:true}); if (r && r.rc === 0) S.notify = !S.notify; renderNotify(); });
@@ -3075,7 +3075,7 @@ function wizTasks(){
   if (miss.length && (W.utils || (W.srcs.has("flatpak") && miss.includes("flatpak")))) t.push({label: `install the utilities apps need (${miss.join(", ")})`, cmd: "utils"});
   for (const s of W.srcs) if (s !== "flatpak") t.push({label: `get the ${WIZ_SRCS.find(x => x[0] === s)[1]} package list`, cmd: "sync-src", arg: s});
   if (W.apps.size) t.push({label: `install ${W.apps.size} app${W.apps.size === 1 ? "" : "s"}: ${[...W.apps].join(", ")}`, cmd: "install-many", arg: [...W.apps].join(" ")});
-  if (W.hook && !(S && S.hook)) t.push({label: "hook GURT into your package manager", cmd: "hook", arg: "on"});
+  if (W.hook && !(S && S.hook)) t.push({label: "turn on Hotwyr (GURT backs up your package manager)", cmd: "hook", arg: "on"});
   if (W.notify && !(wizDoc && wizDoc.notify)) t.push({label: "turn on update alerts", cmd: "notify", arg: "on"});
   if (W.appwin && MODE === "browser") t.push({label: SETUP ? "install the app window (GURT opens as a real app)" : "install the app window (GURT reopens as a real app at the end)", cmd: "gui-setup", relaunch: true});
   return t;
@@ -3119,7 +3119,7 @@ function wizRender(){
       + `<input type="file" id="wizimportin" accept=".txt,.profile,text/plain" hidden>`;
   }
   if (wizStep === 5) pg.innerHTML = `<h3>Extras</h3><p>a couple more things.</p>`
-    + opt("hook", W.hook, `hook GURT into ${esc((d && d.pm) || "your package manager")}`, `when ${esc((d && d.pm) || "it")} can't find something (sudo ${esc((d && d.pm) || "apt")} install yay), GURT offers it from another source. its upgrades, searches and "command not found" include GURT too`)
+    + opt("hook", W.hook, `Hotwyr: GURT backs up ${esc((d && d.pm) || "your package manager")}`, `when ${esc((d && d.pm) || "it")} can't find something (sudo ${esc((d && d.pm) || "apt")} install yay), GURT offers it from another source. its upgrades, searches and "command not found" include GURT too`)
     + opt("notify", W.notify || (d && d.notify), "tell me when updates are waiting", d && d.notify ? "already on" : "a desktop notification, checked every 6 hours", !!(d && d.notify))
     + (MODE === "browser" ? opt("appwin", W.appwin, "install the real app window", "right now GURT is running in your browser. this gives it its own window + a menu entry") : "");
   if (wizStep === 6) {
