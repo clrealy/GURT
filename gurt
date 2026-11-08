@@ -43,10 +43,14 @@ DNF_MIRROR="${DNF_MIRROR:-https://dl.fedoraproject.org/pub/fedora/linux/releases
 ZYPPER_MIRROR="${ZYPPER_MIRROR:-https://download.opensuse.org/tumbleweed/repo/oss}"
 PACMAN_MIRROR="${PACMAN_MIRROR:-https://geo.mirror.pkgbuild.com}"
 PACMAN_REPOS="${PACMAN_REPOS:-core extra}"
+APK_MIRROR="${APK_MIRROR:-https://dl-cdn.alpinelinux.org/alpine}"
+APK_BRANCH="${APK_BRANCH:-latest-stable}"
+APK_REPOS="${APK_REPOS:-main community}"
+GENTOO_BINHOST="${GENTOO_BINHOST:-https://distfiles.gentoo.org/releases/$(case $(uname -m) in aarch64) echo arm64/binpackages/23.0/arm64 ;; *) echo amd64/binpackages/23.0/x86-64 ;; esac)}"
 XBPS_MIRROR="${XBPS_MIRROR:-https://repo-default.voidlinux.org/current}"   # musl systems get its /musl repo (see sync_xbps)
 EOPKG_DEFAULT=https://cdn.getsol.us/repo/polaris
 EOPKG_MIRROR="${EOPKG_MIRROR:-$EOPKG_DEFAULT}"
-FOREIGN_SOURCES="aur apt dnf zypper pacman xbps eopkg flatpak snap"
+FOREIGN_SOURCES="aur apt dnf zypper pacman apk xbps eopkg gentoo flatpak snap"
 IDX_DIR="$GURT_CACHE/index"
 IDX_MAX_AGE="${IDX_MAX_AGE:-86400}"   # re-download foreign indexes after a day
 
@@ -644,6 +648,7 @@ verify() { # file sum [algo]
   local got
   case ${3:-sha256} in
     ck) got=$(cksum < "$1" | awk '{print $1}') ;;
+    apkq1) got=$(apk_q1 "$1") ;;   # Alpine: the control section's sha1, base64
     b2) got=$(b2sum "$1" | awk '{print $1}') ;;
     *)  got=$("${3:-sha256}sum" "$1" | awk '{print $1}') ;;
   esac
@@ -1096,6 +1101,9 @@ remove_pkg() {
                asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
     box-*:*)   box_remove "$key"; return ;;
     android:*) android_remove "$key"; asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
+    gh:*)      gh_remove "$key"; return ;;
+    brew:*)    msg "removing $(pretty "$key")"; if b=$(brew_find); then "$b" uninstall "$name" || warn "brew couldn't remove it (already gone?)"; fi
+               asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
     nix:*)     msg "removing $(pretty "$key") from your nix profile"; nix_remove "$name" || warn "nix couldn't remove it (already gone?)"
                asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
   esac
@@ -1114,6 +1122,7 @@ remove_pkg() {
   LC_ALL=C sort -r "$dbd/dirs" | while IFS= read -r rel; do
     [[ -n $rel ]] && asroot rmdir -- "$R/$rel" 2>/dev/null || true
   done
+  case $key in pip:*|npm:*|cargo:*) asroot rm -rf -- "$R$GURT_PREFIX/lib/gurt-${key%%:*}/$name" ;; esac   # + caches it made while running
   asroot rm -rf -- "$dbd"
   log_hist remove "$key" "$v"
   msg "$(pretty "$key") removed 🗑️"
@@ -1275,6 +1284,10 @@ install_any() { # spec reason
     flatpak) flatpak_install "$name" "$reason" ;;
     snap)    snap_install "$name" "$reason" ;;
     android) android_install "$name" "$reason" ;;
+    gh)      gh_install "$name" "$reason" ;;
+    pip|npm|cargo) lang_install "$src" "$name" "$reason" ;;
+    appimage) appimage_hub_install "$name" "$reason" ;;
+    brew)    brew_install "$name" "$reason" ;;
     crew)    [[ $PM == crew ]] || die "crew/ is Chromebrew, ChromeOS's package manager: it only works on ChromeOS itself (with Chromebrew installed)"
              pm_has "$name" && { msg "$name is already installed (crew)"; return 0; }
              pm_install "$name" || die "crew couldn't install $name" ;;
@@ -1299,11 +1312,19 @@ norm_src() {
     gurt|main)                      echo gurt ;;
     dirt)                           echo dirt ;;
     git|outsource)                  echo git ;;
+    gh|github)                      echo gh ;;
+    pip|pypi|python)                echo pip ;;
+    npm|node)                       echo npm ;;
+    cargo|crates|crate|rust)        echo cargo ;;
     file|local)                     echo file ;;
     apt|deb|debian|ubuntu|mint)     echo apt ;;
     dnf|yum|rpm|fedora)             echo dnf ;;
     zypper|suse|opensuse)           echo zypper ;;
     pacman|arch|archlinux)          echo pacman ;;
+    apk|alpine)                     echo apk ;;
+    gentoo|portage|binpkg)          echo gentoo ;;
+    appimage|appimagehub)           echo appimage ;;
+    brew|homebrew|linuxbrew)        echo brew ;;
     xbps|void|voidlinux)            echo xbps ;;
     eopkg|solus)                    echo eopkg ;;
     aur)                            echo aur ;;
@@ -1328,15 +1349,15 @@ all_sources()  { echo "$FOREIGN_SOURCES $(custom_repos | tr '\n' ' ')"; }
 src_kind() {
   case $1 in
     git|dirt|file|box-*) echo "$1" ;;
-    gurt) echo gurt ;; aur) echo aur ;; apt) echo apt ;; dnf|zypper) echo rpm ;; pacman) echo pacman ;; xbps) echo xbps ;; eopkg) echo eopkg ;;
+    gurt) echo gurt ;; aur) echo aur ;; apt) echo apt ;; dnf|zypper) echo rpm ;; pacman) echo pacman ;; apk) echo apk ;; xbps) echo xbps ;; eopkg) echo eopkg ;; gentoo) echo gentoo ;;
     flatpak) echo flatpak ;; snap) echo snap ;;
     *) if repo_file "$1" >/dev/null; then repo_get "$1" type; else echo unknown; fi ;;
   esac
 }
-is_binary_src() { case $(src_kind "$1") in apt|rpm|pacman|xbps|eopkg) return 0 ;; *) return 1 ;; esac; }
+is_binary_src() { case $(src_kind "$1") in apt|rpm|pacman|apk|xbps|eopkg|gentoo) return 0 ;; *) return 1 ;; esac; }
 src_pm() {
   case $1 in
-    aur|pacman) echo pacman ;; apt|dnf|zypper|xbps|eopkg) echo "$1" ;;
+    aur|pacman) echo pacman ;; apt|dnf|zypper|apk|xbps|eopkg) echo "$1" ;; gentoo) echo emerge ;;
     *) case $(src_kind "$1") in apt) echo apt ;; rpm) echo dnf ;; pacman) echo pacman ;; esac ;;
   esac
 }
@@ -1348,6 +1369,8 @@ src_base() {
     dnf)    echo "${DNF_MIRROR//\$arch/$CARCH}" ;;
     zypper) echo "${ZYPPER_MIRROR//\$arch/$CARCH}" ;;
     pacman) echo "$PACMAN_MIRROR" ;;
+    apk)    echo "$APK_MIRROR/$APK_BRANCH" ;;
+    gentoo) echo "$GENTOO_BINHOST" ;;
     xbps)   if host_musl; then echo "$XBPS_MIRROR/musl"; else echo "$XBPS_MIRROR"; fi ;;
     eopkg)  eopkg_base ;;
     *)      local u; u=$(repo_get "$1" url); echo "${u//\$arch/$CARCH}" ;;
@@ -1386,7 +1409,7 @@ sync_source() {
   case $(src_kind "$s") in
     aur) msg2 "aur is searched live, nothing to sync"; return 0 ;;
     flatpak|snap) msg2 "$s keeps its own index, nothing to sync"; return 0 ;;
-    apt|rpm|pacman|xbps|eopkg) ;;
+    apt|rpm|pacman|apk|xbps|eopkg|gentoo) ;;
     gurt|git|dirt|file|box-*) return 0 ;;   # nothing to download for these
     *) die "unknown source '$s' (have: gurt $(all_sources))" ;;
   esac
@@ -1396,6 +1419,8 @@ sync_source() {
     apt)        sync_apt "$tmp" "$APT_MIRROR" "$APT_SUITE" "$APT_COMPONENTS" "" ;;
     dnf|zypper) sync_rpm "$s" "$tmp" "" ;;
     pacman)     sync_pacman "$tmp" "$PACMAN_MIRROR/\$repo/os/\$arch" "$PACMAN_REPOS" ;;
+    apk)        sync_apk "$tmp" ;;
+    gentoo)     sync_gentoo "$tmp" ;;
     xbps)       XBPS_MIRROR=$(src_base xbps) sync_xbps "$tmp" ;;
     eopkg)      rm -f "$IDX_DIR/eopkg.base"; sync_eopkg "$tmp" ;;
     *) case $(src_kind "$s") in
@@ -1407,6 +1432,106 @@ sync_source() {
   [[ -s $tmp/index.tsv ]] || { rm -rf "$tmp"; die "$s index came back empty (mirror down? check gurt.conf)"; }
   mv "$tmp/index.tsv" "$out"; rm -rf "$tmp"
   msg2 "$(wc -l < "$out") packages in $s"
+}
+
+# Alpine: APKINDEX.tar.gz per repo (main, community). its C: field is "Q1" + base64 sha1 of the package's control
+# section (see apk_q1), packages live at <repo>/<arch>/<name>-<version>.apk
+sync_apk() { # tmp
+  local tmp=$1 r
+  need_tool python3 apk
+  for r in $APK_REPOS; do
+    fetch_quiet "$APK_MIRROR/$APK_BRANCH/$r/$CARCH/APKINDEX.tar.gz" "$tmp/$r.tgz" 2>/dev/null || { warn "couldn't get Alpine's $r index"; continue; }
+    python3 - "$tmp/$r.tgz" "$r/$CARCH" <<'PY'
+import io, re, sys, tarfile
+data = None
+with open(sys.argv[1], "rb") as f: raw = f.read()
+# the index is a signature gzip + the index gzip glued together: read every member
+import zlib
+off = 0
+while off < len(raw):
+    d = zlib.decompressobj(31); part = d.decompress(raw[off:]); used = len(raw) - off - len(d.unused_data)
+    try:
+        with tarfile.open(fileobj=io.BytesIO(part)) as t:
+            for m in t.getmembers():
+                if m.name == "APKINDEX": data = t.extractfile(m).read().decode("utf-8", "replace")
+    except tarfile.ReadError: pass
+    off += used if used > 0 else len(raw)
+def toks(s):
+    out = []
+    for x in s.split():
+        if x.startswith("!"): continue
+        x = re.sub(r"^(so|cmd|pc):", "", x); x = re.split(r"[<>=~]", x, 1)[0]
+        if x and x not in out: out.append(x)
+    return ",".join(out)
+for rec in (data or "").split("\n\n"):
+    f = {}
+    for l in rec.splitlines():
+        if len(l) > 2 and l[1] == ":": f.setdefault(l[0], l[2:])
+    if "P" not in f or "V" not in f: continue
+    print("\t".join([f["P"], f["V"], f"{sys.argv[2]}/{f['P']}-{f['V']}.apk", "apkq1:" + f.get("C", "").removeprefix("Q1"),
+                     toks(f.get("D", "")), f.get("T", "").replace("\t", " "), toks(f.get("p", ""))]))
+PY
+  done
+}
+apk_q1() { # file.apk → base64 sha1 of its control section (what APKINDEX's C: field holds)
+  python3 - "$1" <<'PY'
+import base64, hashlib, io, sys, tarfile, zlib
+raw = open(sys.argv[1], "rb").read(); off = 0
+while off < len(raw):
+    d = zlib.decompressobj(31); part = d.decompress(raw[off:]); used = len(raw) - off - len(d.unused_data)
+    try:
+        if any(m.name == ".PKGINFO" for m in tarfile.open(fileobj=io.BytesIO(part)).getmembers()):
+            print(base64.b64encode(hashlib.sha1(raw[off:off + used]).digest()).decode()); break
+    except tarfile.ReadError: pass
+    off += used if used > 0 else len(raw)
+PY
+}
+
+# Gentoo: its binhost's Packages file lists every binary package (CPV, PATH to the .gpkg.tar, SHA1, RDEPEND atoms)
+sync_gentoo() { # tmp
+  local tmp=$1
+  need_tool python3 gentoo
+  fetch_quiet "$GENTOO_BINHOST/Packages" "$tmp/Packages" || die "can't reach Gentoo's binhost ($GENTOO_BINHOST)"
+  python3 - "$tmp/Packages" <<'PY'
+import re, sys
+VER = re.compile(r"-(\d[^-]*(?:-r\d+)?)$")
+def pn(atom):   # >=dev-libs/glib-2.0:2[foo] → glib
+    a = re.sub(r"\[.*?\]", "", atom); a = a.split(":")[0]; op = re.match(r"^[<>=~]+", a)
+    a = re.sub(r"^[<>=~]+", "", a).rstrip("*"); a = a.split("/")[-1]
+    return VER.sub("", a) if op else a
+def deps(s):
+    out, toks, i = [], s.replace("(", " ( ").replace(")", " ) ").split(), 0
+    while i < len(toks):
+        t = toks[i]
+        if t == "||" and i + 1 < len(toks) and toks[i + 1] == "(":
+            j, alts, depth = i + 2, [], 1
+            while j < len(toks) and depth:
+                if toks[j] == "(": depth += 1
+                elif toks[j] == ")": depth -= 1
+                elif depth == 1 and not toks[j].endswith("?") and not toks[j].startswith("!"): alts.append(pn(toks[j]))
+                j += 1
+            if alts: out.append("|".join(dict.fromkeys(alts)))
+            i = j; continue
+        if t not in ("(", ")") and not t.endswith("?") and not t.startswith("!"):
+            out.append(pn(t))
+        i += 1
+    return ",".join(dict.fromkeys(x for x in out if x))
+pk = {}
+for blk in open(sys.argv[1], encoding="utf-8", errors="replace").read().split("\n\n"):
+    f = {}
+    for l in blk.splitlines():
+        k, _, v = l.partition(": ")
+        if k: f[k] = v
+    cpv = f.get("CPV")
+    if not cpv: continue
+    cat, _, rest = cpv.partition("/"); m = VER.search(rest)
+    if not m: continue
+    name, ver = rest[:m.start()], m.group(1)
+    path = f.get("PATH") or f"{cpv}.tbz2"
+    prov = " ".join(f.get("PROVIDES", "").split()[1:]).replace(" ", ",")
+    pk[name] = "\t".join([name, ver, path, "sha1:" + f.get("SHA1", ""), deps(f.get("RDEPEND", "")), f.get("DESC", "").replace("\t", " "), prov])
+for n in sorted(pk): print(pk[n])
+PY
 }
 
 # Void: <arch>-repodata is a compressed tar with index.plist (every package: pkgver, run_depends, filename-sha256…).
@@ -1844,6 +1969,15 @@ pkgfile_unpack() { # file to-dir scratch-dir
       python3 -c 'import sys, zipfile; open(sys.argv[2], "wb").write(zipfile.ZipFile(sys.argv[1]).read("install.tar.xz"))' "$file" "$x/install.tar.xz" ||
         die "weird .eopkg, no install.tar.xz inside"
       tar -xJf "$x/install.tar.xz" -C "$to" ;;
+    *.gpkg.tar)   # Gentoo: a tar of metadata.tar.* + image.tar.* (the files, under image/)
+      tar -xf "$file" -C "$x" || die "weird .gpkg.tar"
+      data=$(find "$x" -maxdepth 2 -name 'image.tar*' ! -name '*.sig' | head -n1)
+      [[ -n $data ]] || die "weird .gpkg.tar, no image.tar inside"
+      [[ $data == *.zst ]] && need_tool zstd gentoo
+      mkdir -p "$x/img"; tar -xf "$data" -C "$x/img"
+      cp -a "$x/img/image/." "$to/" ;;
+    *.tbz2)       # Gentoo's older format: a bzip2 tarball with metadata glued on the end
+      tar -xjf "$file" -C "$to" 2>/dev/null || [[ -n $(ls -A "$to") ]] || die "couldn't open ${file##*/}" ;;
     *.pkg.tar.*)
       [[ $file == *.zst ]] && need_tool zstd pacman
       tar -xf "$file" -C "$to"
@@ -1904,6 +2038,9 @@ foreign_install() { # src name reason
   # unpack first so we can look inside before touching anything
   repack_foreign "$src" "$name" "$ver" "$path" "$sum" "$deps" "$desc" "$prov"
   local built=$BUILT_PKG
+  if [[ $src == apk ]] && ! host_musl && ! $FORCE && gurt_has_elf "$built"; then
+    die "apk/$name's programs are built for musl (Alpine's C library) and won't run on your glibc system 💀 look for it in apt/ dnf/ pacman/ or xbps/ instead (--force if you know better)"
+  fi
   if [[ $reason == explicit ]] && ! $NOBOX; then
     why=$(box_reason "$src" "$name" "" "$(tar -xzf "$built" -O .FILES 2>/dev/null || true)")
     if [[ -n $why ]]; then NOCONFIRM=true system_route "$src" "$name" "$reason" "$why"; return; fi
@@ -2811,6 +2948,12 @@ file_namever() { # path
   n=${n,,}; n=${n//[^a-z0-9._+-]/-}
   printf '%s\t%s\n' "${n:-app}" "$v"
 }
+gurt_has_elf() { # file.gurt → does it carry any programs/libraries (not just scripts and data)?
+  local t f r=1; t=$(mktemp -d "${TMPDIR:-/tmp}/gurt-elf.XXXXXX")
+  tar -xzf "$1" -C "$t" 2>/dev/null || true
+  while IFS= read -r -d '' f; do is_elf "$f" && { r=0; break; }; done < <(find "$t" -type f -print0)
+  rm -rf "$t"; return "$r"
+}
 is_elf()    { [[ $(head -c4 "$1" 2>/dev/null | od -An -c | tr -d ' ') == 177ELF ]]; }
 is_script() { [[ $(head -c2 "$1" 2>/dev/null) == '#!' ]]; }
 sevenzip()  { # the 7-Zip binary, installing it from your distro if needed
@@ -3225,6 +3368,346 @@ cmd_android() { # setup | list | remove <app> | open | stop | status
   esac
 }
 
+# ── 🐙 gh/: GitHub releases. gurt install gh/owner/repo grabs the newest release, picks the file that fits your
+#    system (your distro's package, an AppImage, or a Linux tarball for your CPU), checks it, installs it, and
+#    gurt upgrade watches for a new release. GITHUB_TOKEN (or GH_TOKEN) lifts GitHub's 60-requests-an-hour limit ──
+GH_API="${GH_API:-https://api.github.com}"
+gh_api() { # path → JSON on stdout
+  local tok=${GITHUB_TOKEN:-${GH_TOKEN:-}} h=(-H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' -A gurt)
+  [[ -n $tok ]] && h+=(-H "Authorization: Bearer $tok")
+  curl -fsSL -m 30 "${h[@]}" "$GH_API/$1"
+}
+gh_repo_ok() { [[ $1 =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; }
+gh_latest() { # owner/repo → the newest release's JSON (the latest one, or the newest pre-release when there's no other)
+  gh_api "repos/$1/releases/latest" 2>/dev/null && return 0
+  gh_api "repos/$1/releases?per_page=10" 2>/dev/null | python3 -c 'import json, sys
+r = [x for x in json.load(sys.stdin) if not x.get("draft")]
+r and print(json.dumps(r[0]))'
+}
+# release JSON on stdin → "tag<TAB>asset name<TAB>url<TAB>sha256 or empty<TAB>checksum-file url or empty<TAB>repo description" for the best file
+GH_PICK_PY='import json, re, sys
+carch, pm, musl, nixos = sys.argv[1], sys.argv[2], sys.argv[3] == "1", sys.argv[4] == "1"
+prefer = sys.argv[5] if len(sys.argv) > 5 else ""
+rel = json.load(sys.stdin); assets = rel.get("assets", [])
+ARCH = {"x86_64": r"x86[-_]?64|amd64|x64|linux64|64bit", "aarch64": r"aarch64|arm64|armv8"}.get(carch, re.escape(carch))
+OTHER = r"i[3-6]86|\b386\b|x86(?![-_]?64)|armv[5-7]|armhf|armel|\barm\b(?!64)|ppc64|powerpc|s390|riscv|mips|loong|aarch64|arm64|x86[-_]?64|amd64|\bx64\b"
+NOPE = r"windows|\bwin(32|64)?\b|darwin|mac(os)?|osx|apple|android|\bios\b|freebsd|netbsd|openbsd|solaris|illumos|dragonfly"
+SKIP = r"\.(sha(1|256|512)(sum)?|md5|sig|asc|pem|crt|sbom|spdx|json|txt|ya?ml|zsync|blockmap|msi|exe|dmg|pkg|vsix|whl|jar|nupkg|ipa|src\.rpm|dsc|sym|pdb)$|sha256sums|checksums|debug|dbgsym|-src\.|\bsource\b"
+NATIVE = {"apt": r"\.deb$", "dnf": r"\.rpm$", "yum": r"\.rpm$", "zypper": r"\.rpm$", "pacman": r"\.pkg\.tar\.(zst|xz)$"}.get(pm)
+def score(n):
+    l = n.lower()
+    if re.search(SKIP, l) or re.search(NOPE, l): return None
+    a = re.search(ARCH, l); o = re.search(OTHER, re.sub(ARCH, "", l))
+    if o and not a: return None
+    s = 20 if a else 0
+    if NATIVE and re.search(NATIVE, l) and not nixos: s += 50
+    elif l.endswith(".appimage"): s += 40
+    elif re.search(r"\.(tar\.(gz|xz|zst|bz2)|tgz|txz|zip)$", l): s += 30 if "linux" in l or a else 5
+    elif re.search(r"\.(deb|rpm|pkg\.tar\.zst)$", l): s += 20
+    elif re.search(r"\.(flatpak|snap)$", l): s += 10
+    elif "." not in l.split("/")[-1] or re.search(r"linux", l): s += 25 if ("linux" in l or a) else 0
+    else: return None
+    if "linux" in l: s += 5
+    if prefer == "appimage" and l.endswith(".appimage"): s += 100
+    if "musl" in l: s += 10 if musl else -2
+    elif musl and not re.search(r"static", l): s -= 40   # glibc builds can not run on a musl system
+    if re.search(r"gnu|glibc", l): s += -20 if musl else 3
+    if re.search(r"static", l): s += 2
+    if re.search(r"\b(dev|devel|headers|lib)\b", l): s -= 5
+    return s
+best = max(((score(a["name"]), a) for a in assets if score(a["name"]) is not None), key=lambda x: x[0], default=(None, None))[1]
+if not best: sys.exit(3)
+sums = next((a["browser_download_url"] for a in assets if re.search(r"sha256|checksums", a["name"].lower()) and best["name"] not in a["name"]), "")
+own = next((a["browser_download_url"] for a in assets if a["name"].lower() in (best["name"].lower() + ".sha256", best["name"].lower() + ".sha256sum")), "")
+dg = (best.get("digest") or "").removeprefix("sha256:")
+print("\t".join([rel.get("tag_name", ""), best["name"], best["browser_download_url"], dg, own or sums, re.sub(r"\s+", " ", rel.get("name") or "").strip()]))'
+gh_pick() { # owner/repo → the pick row (see GH_PICK_PY)
+  local j; need_tool python3 "gh/"
+  j=$(gh_latest "$1") && [[ -n $j ]] || die "no releases on github.com/$1 (or GitHub didn't answer: it allows 60 lookups an hour without a GITHUB_TOKEN)"
+  python3 -c "$GH_PICK_PY" "$CARCH" "$PM" "$(host_musl && echo 1 || echo 0)" "$($NIXOS && echo 1 || echo 0)" "${GH_PREFER:-}" <<<"$j" ||
+    die "github.com/$1's newest release has no file for Linux on $CARCH (only source code? try: gurt outsource https://github.com/$1)"
+}
+gh_key() { local r=${1##*/}; echo "gh:${r,,}"; }
+gh_repo_of() { # spec (owner/repo, or the repo name of one you installed) → owner/repo
+  gh_repo_ok "$1" && { echo "$1"; return; }
+  local r; r=$(info_get "$DB/gh:${1,,}/info" gh_repo 2>/dev/null) || true
+  [[ -n $r ]] || die "gh/ needs owner/repo, like: gurt install gh/neovim/neovim"
+  echo "$r"
+}
+gh_install() { # owner/repo reason
+  local repo reason=${2:-explicit} key row tag asset url dg sums rname f got was="" before after k inner=() old
+  repo=$(gh_repo_of "$1"); key=$(gh_key "$repo")
+  msg2 "asking GitHub about $repo's newest release"
+  row=$(gh_pick "$repo"); IFS=$'\t' read -r tag asset url dg sums rname <<<"$row"
+  if is_installed "$key" && ! $FORCE; then
+    was=$(info_get "$DB/$key/info" pkgver)
+    [[ $was == "$tag" ]] && { [[ $reason == explicit ]] && msg "$(pretty "$key") $tag is the newest release already 👍"; return 0; }
+  fi
+  [[ $reason == explicit || -n $was ]] && msg "github.com/$repo $tag → $asset"
+  if [[ $reason == explicit && -z $was ]]; then ask "install $repo $tag from GitHub ($asset)?" || die "aborted, no cap"; fi
+  mkdir -p "$GURT_CACHE/gh/${repo//\//_}"; f="$GURT_CACHE/gh/${repo//\//_}/$asset"
+  download "$url" "$f.part" && mv "$f.part" "$f" || die "couldn't download $asset"
+  # check it: GitHub's own sha256 for the file, else the release's checksum file
+  if [[ -z $dg && -n $sums ]]; then
+    dg=$(curl -fsSL -m 30 "$sums" 2>/dev/null | awk -v n="$asset" '{ f = $NF; sub(/^\*/, "", f); sub(/.*\//, "", f) } f == n || NF == 1 { print $1; exit }' || true)
+  fi
+  if [[ -n $dg ]]; then
+    got=$(sha256sum "$f" | awk '{print $1}')
+    [[ ${got,,} == "${dg,,}" ]] || { rm -f "$f"; die "🚩 $asset doesn't match its sha256 on GitHub — not installing it"; }
+    msg2 "sha256 matches GitHub's ✅"
+  else warn "$repo's release has no checksum for $asset, so gurt can only trust GitHub's https"; fi
+  old=$(info_get "$DB/$key/info" inner 2>/dev/null || true)
+  before=$(ls -1 "$DB" 2>/dev/null | sort || true)
+  NOCONFIRM=true outsource_file "$f" "$reason"
+  after=$(ls -1 "$DB" 2>/dev/null | sort || true)
+  while IFS= read -r k; do [[ -n $k && $k != "$key" ]] && inner+=("$k"); done < <(comm -13 <(echo "$before") <(echo "$after"))
+  (( ${#inner[@]} )) || [[ -z $old ]] || mapfile -t inner < <(tr ' ' '\n' <<<"$old" | sed '/^$/d')
+  record_meta "$key" "${repo##*/}" "$tag" "${rname:-$repo} (GitHub release)" "$reason" gh
+  { printf 'gh_repo = %s\ngh_asset = %s\n' "$repo" "$asset"; (( ${#inner[@]} )) && printf 'inner = %s\n' "${inner[*]}"; } | asroot tee -a "$DB/$key/info" >/dev/null
+  for k in "${inner[@]}"; do grep -qx "gh_by = $key" "$DB/$k/info" 2>/dev/null || echo "gh_by = $key" | asroot tee -a "$DB/$k/info" >/dev/null; done
+  log_hist install "$key" "$was"
+  msg "$(pretty "$key") $tag installed ✅ (gurt upgrade checks GitHub for new releases)"
+}
+gh_remove() { # key
+  local key=$1 k v; v=$(inst_ver "$key" 2>/dev/null) || v=""
+  for k in $(info_get "$DB/$key/info" inner); do is_installed "$k" && QUIET_YEET=true remove_pkg "$k"; done
+  [[ -n $(info_get "$DB/$key/info" inner) ]] || warn "$(info_get "$DB/$key/info" gh_asset) went to your distro's package manager, so remove it there too"
+  asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"
+}
+gh_newer() { # key → the newer tag on GitHub, if there is one
+  local r t; r=$(info_get "$DB/$1/info" gh_repo); [[ -n $r ]] || return 0
+  t=$(gh_api "repos/$r/releases/latest" 2>/dev/null | python3 -c 'import json, sys; print(json.load(sys.stdin).get("tag_name", ""))' 2>/dev/null) || return 0
+  [[ -n $t && $t != "$(info_get "$DB/$1/info" pkgver)" ]] && echo "$t"
+  return 0
+}
+gh_search() { # term → repos with releases-ish, most stars first
+  need_tool python3 "gh/"
+  gh_api "search/repositories?q=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$1")&sort=stars&per_page=25" | python3 -c '
+import json, sys
+for r in json.load(sys.stdin).get("items", []):
+    print("\t".join([r["full_name"], "★%d" % r.get("stargazers_count", 0), "", "", "", (r.get("description") or "").replace("\t", " ")]))'
+}
+gh_info() { # owner/repo
+  local repo row tag asset url dg sums rname; repo=$(gh_repo_of "$1")
+  row=$(gh_pick "$repo"); IFS=$'\t' read -r tag asset url dg sums rname <<<"$row"
+  printf '%-14s: %s\n' source "gh (GitHub releases)" repo "$repo" release "$tag${rname:+ ($rname)}" "your file" "$asset" sha256 "${dg:-(none on GitHub${sums:+, the release has a checksum file})}" url "https://github.com/$repo/releases"
+  is_installed "$(gh_key "$repo")" && printf '%-14s: %s\n' installed "$(info_get "$DB/$(gh_key "$repo")/info" pkgver)"
+  return 0
+}
+
+# ── 🐍📦🦀 pip/ npm/ cargo/: language package managers, as real gurt packages. each app gets its own folder at
+#    $GURT_PREFIX/lib/gurt-<src>/<name> (a venv for pip, a prefix for npm, a cargo root for cargo), its commands get
+#    linked into $GURT_PREFIX/bin, and the whole thing is a .gurt: list, history, undo, rollback and remove just work ──
+LANG_UA="gurt (https://github.com/clrealy/GURT)"
+is_lang_src() { case $1 in pip|npm|cargo) return 0 ;; *) return 1 ;; esac; }
+lang_meta() { # src name → "name<TAB>version<TAB>license<TAB>description" from the registry (the name comes back as the registry spells it)
+  local src=$1 n=$2 u
+  need_tool python3 "$src/"
+  case $src in
+    pip)   u="https://pypi.org/pypi/$n/json" ;;
+    npm)   u="https://registry.npmjs.org/${n/\//%2F}/latest" ;;
+    cargo) u="https://crates.io/api/v1/crates/$n" ;;
+  esac
+  curl -fsSL -m 30 -A "$LANG_UA" "$u" 2>/dev/null | python3 -c '
+import json, re, sys
+src = sys.argv[1]; d = json.load(sys.stdin); c = lambda s: re.sub(r"\s+", " ", s or "").strip()
+if src == "pip":
+    i = d["info"]; lic = i.get("license_expression") or (i.get("license") or "")[:60]
+    if not lic: lic = next((x.split(" :: ")[-1] for x in i.get("classifiers", []) if x.startswith("License ::")), "")
+    out = [i["name"], i["version"], lic, i.get("summary")]
+elif src == "npm":
+    l = d.get("license"); out = [d["name"], d["version"], l.get("type", "") if isinstance(l, dict) else (l or ""), d.get("description")]
+else:
+    k = d["crate"]; v = k.get("max_stable_version") or k.get("max_version") or ""
+    lic = next((x.get("license") or "" for x in d.get("versions", []) if x.get("num") == v), "")
+    out = [k["name"], v, lic, k.get("description")]
+print("\t".join(c(x) for x in out))' "$src"
+}
+# shellcheck disable=SC2046
+lang_tool() { # src → make sure its toolchain is here
+  case $1 in
+    pip)   need_tool python3 "pip/"
+           python3 -c 'import ensurepip, venv' 2>/dev/null || { msg2 "pip/ needs python's venv module: getting it from your distro"
+             install_native $(map_dep python3-venv); python3 -c 'import ensurepip, venv' 2>/dev/null || die "couldn't get python's venv module (Debian/Ubuntu: python3-venv)"; } ;;
+    npm)   command -v npm >/dev/null || { msg2 "npm/ needs Node.js: getting it from your distro"; install_native $(map_dep nodejs); }
+           command -v npm >/dev/null || die "npm/ needs npm (comes with Node.js)" ;;
+    cargo) command -v cargo >/dev/null || need_tool cargo "cargo/"
+           command -v cc >/dev/null || command -v gcc >/dev/null || { msg2 "cargo/ builds from source and needs a C compiler too"; install_native $(map_dep cc); } ;;
+  esac
+}
+lang_install() { # src name reason
+  local src=$1 want=$2 reason=${3:-explicit} meta name ver lic desc key work app pre stage e b links=0
+  lang_tool "$src"
+  meta=$(lang_meta "$src" "$want") || meta=""
+  [[ -n $meta ]] || die "no $src package called $want (try: gurt search $src/$want)"
+  IFS=$'\t' read -r name ver lic desc <<<"$meta"
+  key="$src:${name,,}"
+  if is_installed "$key" && ! $FORCE && ! vnewer "$(inst_ver "$key")" "$ver"; then
+    [[ $reason == explicit ]] && msg "$(pretty "$key") $(inst_ver "$key") is already installed and up to date 👍"; return 0
+  fi
+  if [[ $reason == explicit ]]; then
+    if [[ -n $lic && $(foss_class "$lic") == closed ]]; then
+      foss_strict && die "$src/$name is closed source ($lic), and FOSS-only mode is on 🔒 (gurt foss off allows it)"
+      warn "$src/$name is closed source 🔒 ($lic)"
+    fi
+    ask "install $src/$name $ver${desc:+ ($desc)}?" || die "aborted, no cap"
+  fi
+  if (( EUID == 0 )) && [[ -z ${GURT_ALLOW_ROOT:-} ]]; then
+    die "don't install $src/ packages as root fr: their install scripts would run as root. run gurt as you (it asks for sudo to put the result in place)"
+  fi
+  work=$(mktemp -d "${TMPDIR:-/tmp}/gurt-$src.XXXXXX"); stage="$work/pkg"
+  pre="$GURT_PREFIX/lib/gurt-$src/${name,,}"; app="$stage$pre"
+  mkdir -p "$app" "$stage$GURT_PREFIX/bin"
+  msg "installing $name $ver with $src 📦"
+  case $src in
+    pip)   python3 -m venv "$app" || { rm -rf "$work"; die "couldn't make a venv for $name"; }
+           "$app/bin/python" -m pip install -q --disable-pip-version-check --no-warn-script-location "$name==$ver" || { rm -rf "$work"; die "pip couldn't install $name"; }
+           # the venv was made in a staging folder: point its scripts at where it really goes
+           grep -rlI --null "$stage" "$app/bin" "$app/pyvenv.cfg" 2>/dev/null | xargs -0r sed -i "s#$stage##g"
+           ls -1 "$app/bin" > "$work/before" 2>/dev/null || true ;;
+    npm)   npm install -g --silent --no-fund --no-audit --prefix "$app" "$name@$ver" || { rm -rf "$work"; die "npm couldn't install $name"; } ;;
+    cargo) cargo install --quiet --locked --root "$app" --version "$ver" "$name" || cargo install --quiet --root "$app" --version "$ver" "$name" ||
+             { rm -rf "$work"; die "cargo couldn't build $name"; }
+           rm -f "$app/.crates.toml" "$app/.crates2.json" ;;
+  esac
+  # its own commands → $GURT_PREFIX/bin (pip: not python/pip/activate, the venv's own bits)
+  for e in "$app"/bin/*; do
+    b=${e##*/}
+    [[ -x $e && ! -d $e ]] || continue
+    if [[ $src == pip ]]; then case $b in python|python3|python3.*|pip|pip3|pip3.*|activate*|Activate*|*.py|*.pyc) continue ;; esac; fi
+    ln -s "$pre/bin/$b" "$stage$GURT_PREFIX/bin/$b"; links=$((links + 1))
+  done
+  (( links )) || warn "$name has no commands to run (it's a library?). it's in $pre"
+  {
+    printf 'pkgname = %s\npkgver = %s\npkgrel = 1\npkgdesc = %s\narch = %s\nlicense = %s\n' "${name,,}" "$ver" "${desc:-$src package}" "$CARCH" "${lic:-unknown}"
+    printf 'builddate = %s\nprefix = %s\ngurtsource = %s\n' "$(date +%s)" "$GURT_PREFIX" "$src"
+  } > "$work/.PKGINFO"
+  mkdir -p "$GURT_CACHE/pkg"; BUILT_PKG="$GURT_CACHE/pkg/$src-${name,,}-$ver.gurt"
+  ( cd "$stage" && pack_pkgdir "$work" "$BUILT_PKG" ) || { rm -rf "$work"; die "couldn't pack $name"; }
+  rm -rf "$work"
+  install_file "$BUILT_PKG" "$reason"
+}
+lang_newer() { # key → a newer version from the registry, if there is one
+  local src=${1%%:*} m v; m=$(lang_meta "$src" "${1#*:}" 2>/dev/null) || return 0
+  v=$(cut -f2 <<<"$m"); [[ -n $v ]] && vnewer "$(inst_ver "$1" | sed 's/-1$//')" "$v" && echo "$v"
+  return 0
+}
+lang_search() { # src term → index-style rows
+  local src=$1 t=$2 v
+  need_tool python3 "$src/"
+  case $src in
+    npm)   curl -fsSL -m 30 "https://registry.npmjs.org/-/v1/search?text=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$t")&size=25" |
+             python3 -c 'import json, sys
+for o in json.load(sys.stdin).get("objects", []):
+    p = o["package"]; print("\t".join([p["name"], p.get("version", ""), "", "", "", (p.get("description") or "").replace("\t", " ")]))' ;;
+    cargo) curl -fsSL -m 30 -A "$LANG_UA" "https://crates.io/api/v1/crates?per_page=25&q=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$t")" |
+             python3 -c 'import json, sys
+for c in json.load(sys.stdin).get("crates", []):
+    print("\t".join([c["name"], c.get("max_stable_version") or c.get("max_version") or "", "", "", "", (c.get("description") or "").replace("\t", " ").replace("\n", " ").strip()]))' ;;
+    pip)   # PyPI has no search API: try the name and the usual spellings of it
+           for v in "$t" "python-$t" "py$t" "$t-cli" "${t}py" "py-$t"; do
+             lang_meta pip "$v" 2>/dev/null | awk -F'\t' '{ print $1 "\t" $2 "\t\t\t\t" $4 }' || true
+           done | awk -F'\t' '!s[tolower($1)]++' ;;
+  esac
+}
+
+# ── 🖼️ appimage/: AppImageHub's catalog. most of its apps ship their AppImage as a GitHub release, so gurt finds the
+#    app in the catalog and installs it as gh/ (AppImage preferred), which also keeps it updated ──
+APPIMAGEHUB_FEED="${APPIMAGEHUB_FEED:-https://appimage.github.io/feed.json}"
+appimagehub_rows() { # → name<TAB>github owner/repo or download page<TAB>description (cached for a day)
+  local f="$IDX_DIR/appimagehub.tsv"
+  if [[ ! -s $f ]] || (( $(date +%s) - $(stat -c %Y "$f") > IDX_MAX_AGE )); then
+    need_tool python3 "appimage/"; mkdir -p "$IDX_DIR"
+    curl -fsSL -m 60 "$APPIMAGEHUB_FEED" 2>/dev/null | python3 -c '
+import json, re, sys
+for it in json.load(sys.stdin).get("items", []):
+    links = {l.get("type", "").lower(): l.get("url", "") for l in it.get("links") or []}
+    gh = links.get("github", "")
+    gh = re.sub(r"^https?://github\.com/", "", gh).strip("/") if gh else ""
+    where = gh if re.fullmatch(r"[\w.-]+/[\w.-]+", gh or "") else links.get("download", "")
+    if it.get("name"): print("\t".join([it["name"], where, re.sub(r"\s+", " ", it.get("description") or "").strip()[:200]]))' > "$f.part" &&
+      [[ -s $f.part ]] && mv "$f.part" "$f" || { rm -f "$f.part"; [[ -s $f ]] || die "couldn't get AppImageHub's catalog"; warn "couldn't refresh AppImageHub's catalog, using the old one"; }
+  fi
+  cat "$f"
+}
+appimage_hub_install() { # name reason
+  local row where
+  row=$(appimagehub_rows | awk -F'\t' -v n="${1,,}" 'tolower($1) == n { print; exit }')
+  [[ -n $row ]] || die "AppImageHub has no app called $1 (try: gurt search appimage/$1)"
+  where=$(cut -f2 <<<"$row")
+  gh_repo_ok "$where" || die "AppImageHub lists $(cut -f1 <<<"$row") without a GitHub release to fetch from: ${where:-no download link}. download it, then: gurt install ./that.AppImage"
+  msg2 "AppImageHub: $(cut -f1 <<<"$row") comes from github.com/$where, so it installs (and updates) as gh/$where"
+  GH_PREFER=appimage gh_install "$where" "${2:-explicit}"
+}
+appimagehub_search() { # term → index-style rows
+  appimagehub_rows | awk -F'\t' -v t="${1,,}" 'index(tolower($1 " " $3), t) { n = tolower($1)
+      print (n == t ? 0 : index(n, t) == 1 ? 1 : index(n, t) ? 2 : 3) "\t" $1 "\t" (($2 ~ /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/) ? "gh:" $2 : "web") "\t\t\t\t" $3 }' |
+    sort -t$'\t' -k1,1n -k2,2 | cut -f2- | head -n 40
+}
+
+# ── 🍺 brew/: Homebrew on Linux. it installs as you into /home/linuxbrew, so it works on locked-down and immutable
+#    systems too. gurt drives it and remembers what it put there, like flatpak/ and snap/ ──
+BREW_API="${BREW_API:-https://formulae.brew.sh/api}"
+brew_find() { local b; command -v brew 2>/dev/null && return 0
+  for b in /home/linuxbrew/.linuxbrew/bin/brew "$HOME/.linuxbrew/bin/brew"; do [[ -x $b ]] && { echo "$b"; return 0; }; done; return 1; }
+ensure_brew() {
+  local b
+  if b=$(brew_find); then BREW=$b; return 0; fi
+  (( EUID == 0 )) && die "Homebrew doesn't run as root: run gurt as you"
+  cros_native_no "Homebrew"
+  ask "brew/ needs Homebrew, and it isn't here. install it with Homebrew's own installer (everything goes in /home/linuxbrew)?" || die "no Homebrew, no brew/"
+  need_tool git "Homebrew"; need_tool curl "Homebrew"
+  NONINTERACTIVE=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || die "Homebrew's installer failed (scroll up)"
+  b=$(brew_find) || die "Homebrew installed, but gurt can't find its brew command"
+  BREW=$b
+  local rc line="eval \"\$($b shellenv)\""
+  for rc in "$HOME/.bashrc" "$HOME/.profile"; do grep -qsF "$b shellenv" "$rc" || printf '\n# Homebrew (added by gurt)\n%s\n' "$line" >> "$rc"; done
+  msg2 "Homebrew's commands are on your PATH from your next terminal (gurt added it to ~/.bashrc and ~/.profile)"
+}
+brew_meta() { # formula → "version<TAB>license<TAB>description"
+  need_tool python3 "brew/"
+  curl -fsSL -m 30 "$BREW_API/formula/$1.json" 2>/dev/null | python3 -c 'import json, sys
+d = json.load(sys.stdin); print("\t".join([d.get("versions", {}).get("stable") or "", d.get("license") or "", (d.get("desc") or "").replace("\t", " ")]))'
+}
+brew_install() { # formula reason
+  local name=$1 reason=${2:-explicit} key="brew:$1" meta ver lic desc
+  if is_installed "$key" && ! $FORCE; then
+    [[ $reason == explicit ]] && msg "$(pretty "$key") is already installed (gurt upgrade runs brew upgrade) 👍"; return 0
+  fi
+  meta=$(brew_meta "$name") || meta=""; IFS=$'\t' read -r ver lic desc <<<"$meta"
+  [[ -n $meta ]] || brew_find >/dev/null || die "Homebrew has no formula called $name (try: gurt search brew/$name)"
+  if [[ $reason == explicit ]]; then
+    if [[ -n $lic && $(foss_class "$lic") == closed ]]; then
+      foss_strict && die "brew/$name is closed source ($lic), and FOSS-only mode is on 🔒 (gurt foss off allows it)"
+      warn "brew/$name is closed source 🔒 ($lic)"
+    fi
+  fi
+  ensure_brew
+  [[ $reason == explicit ]] && { ask "install brew/$name ${ver:-}${desc:+ ($desc)}?" || die "aborted, no cap"; }
+  msg "installing $name with Homebrew 🍺"
+  "$BREW" install "$name" || die "brew couldn't install $name"
+  [[ -n $ver ]] || ver=$("$BREW" list --versions "$name" 2>/dev/null | awk '{print $NF}')
+  record_meta "$key" "$name" "${ver:-latest}" "${desc:-Homebrew formula}" "$reason" brew
+  log_hist install "$key"
+  msg "$(pretty "$key") installed ✅"
+}
+brew_search() { # term → index-style rows, from Homebrew's formula list (cached for a day)
+  local f="$IDX_DIR/brew.json"
+  need_tool python3 "brew/"; mkdir -p "$IDX_DIR"
+  if [[ ! -s $f ]] || (( $(date +%s) - $(stat -c %Y "$f") > IDX_MAX_AGE )); then
+    curl -fsSL -m 120 "$BREW_API/formula.json" -o "$f.part" 2>/dev/null && mv "$f.part" "$f" || { rm -f "$f.part"; [[ -s $f ]] || return 1; }
+  fi
+  python3 - "$f" "${1,,}" <<'PY'
+import json, sys
+t = sys.argv[2]; rows = []
+for d in json.load(open(sys.argv[1])):
+    n = d.get("name", ""); s = (n + " " + (d.get("desc") or "")).lower()
+    if t not in s: continue
+    rows.append((0 if n == t else 1 if n.startswith(t) else 2 if t in n else 3, n, d.get("versions", {}).get("stable") or "", (d.get("desc") or "").replace("\t", " ")))
+for r in sorted(rows)[:40]: print("\t".join([r[1], r[2], "", "", "", r[3]]))
+PY
+}
+
 outsource_file() { # file-or-url reason
   local f reason=${2:-explicit} l nv name ver
   f=$(fetch_arg "$1"); l=${f,,}
@@ -3569,7 +4052,7 @@ scan_sources() { # name
   row=$(aur_info "$q" 2>/dev/null | head -n1 || true)
   [[ -n $row ]] && { tsv "$row"; scan_add 4 aur "$q" "${F[1]}" "AUR — built from source"; }
   # 5/6. binary repos (same family as you first) + your custom repos
-  for s in apt dnf zypper pacman xbps eopkg $(custom_repos); do
+  for s in apt dnf zypper pacman apk xbps eopkg gentoo $(custom_repos); do
     is_binary_src "$s" || continue
     ( ensure_idx "$s" ) >/dev/null 2>&1 || continue
     row=$(idx_lookup "$s" "$q" || true)
@@ -3578,7 +4061,7 @@ scan_sources() { # name
     if [[ $(src_pm "$s") == "$PM" ]]; then
       printf '%s\n' "${SCAN_HITS[@]}" | grep -q '^2|native|' && continue   # same thing as "your distro"
       scan_add 5 "$s" "$q" "${F[1]}" "binary, same family as your distro"
-    elif [[ " apt dnf zypper pacman xbps eopkg " == *" $s "* ]]; then scan_add 6 "$s" "$q" "${F[1]}" "binary from another distro"
+    elif [[ " apt dnf zypper pacman apk xbps eopkg gentoo " == *" $s "* ]]; then scan_add 6 "$s" "$q" "${F[1]}" "binary from another distro"
     else scan_add 5 "$s" "$q" "${F[1]}" "your custom repo"; fi
   done
   # 7. Snap Store
@@ -4016,7 +4499,7 @@ stash_pkg() { # key file → prints the stashed path
 cmd_rollback() {
   local k cur d f pick="" list=()
   k=$(resolve_key "${1:?usage: gurt rollback <pkg>}") || die "$1 isn't installed"
-  case $k in flatpak:*|snap:*|nix:*|box-*) die "$(pretty "$k") is managed by ${k%%:*} — roll it back there" ;; esac
+  case $k in flatpak:*|snap:*|nix:*|gh:*|brew:*|box-*) die "$(pretty "$k") is managed by ${k%%:*} — roll it back there" ;; esac
   d="$GURT_CACHE/rollback/${k//\//_}"
   cur=$(cat "$DB/$k/pkgfile" 2>/dev/null || true)
   # shellcheck disable=SC2012
@@ -4304,7 +4787,10 @@ trust_label() { # src [info-file]
             elif info_get "$2" source | grep -q '://'; then echo "official download ✅"
             else echo "Main GURT"; fi
           else echo "Main GURT"; fi ;;
-    apt|dnf|zypper|pacman|xbps|eopkg) echo "distro repo 🔏" ;;
+    apt|dnf|zypper|pacman|apk|xbps|eopkg|gentoo) echo "distro repo 🔏" ;;
+    brew) echo "Homebrew 🍺" ;;
+    gh) echo "GitHub release ✅" ;;
+    pip|npm|cargo) echo "$1 registry ⚠️" ;;
     flatpak) echo "Flathub 📦" ;; snap) echo "Snap Store" ;;
     aur) echo "user upload ⚠️" ;; git) echo "random repo ⚠️" ;; file) echo "your file" ;; *) echo "$1" ;;
   esac
@@ -4396,8 +4882,8 @@ cmd_setup() {
   else msg2 "every utility apps need is here ✅"; fi
   printf '\n%s[2/4] app sources%s\n' "$B" "$R0"
   msg2 "your distro's repos ($PM) and Main GURT always work. Flathub came with the utilities."
-  if ! $NOCONFIRM && ask "download the package lists for other distros' repos (apt dnf zypper pacman xbps eopkg), so searching them is instant?"; then
-    for p in apt dnf zypper pacman xbps eopkg; do ( sync_source "$p" ) || warn "$p didn't sync (no internet?), skipped"; done
+  if ! $NOCONFIRM && ask "download the package lists for other distros' repos (apt dnf zypper pacman apk xbps eopkg gentoo), so searching them is instant?"; then
+    for p in apt dnf zypper pacman apk xbps eopkg gentoo; do ( sync_source "$p" ) || warn "$p didn't sync (no internet?), skipped"; done
   fi
   printf '\n%s[3/4] starter apps%s\n' "$B" "$R0"
   for p in $SETUP_PICKS; do
@@ -4693,7 +5179,7 @@ cmd_complete() {
     commands)  printf '%s\n' sync search info install update upgrade self-update uninstall remove autoremove list files owns lottery sysup \
                  build add srcinfo checksum new repo dirt gui de outsource undo rollback hold unhold export import completions doctor version help yo \
                  convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache ;;
-    sources)   printf '%s/\n' aur apt dnf zypper pacman xbps eopkg flatpak snap nix dirt ;;
+    sources)   printf '%s/\n' aur apt dnf zypper pacman apk xbps eopkg gentoo flatpak snap nix gh pip npm cargo appimage brew dirt ;;
   esac
   return 0
 }
@@ -4983,7 +5469,7 @@ cmd_sync() { # [source...|all]
   for s in "$@"; do
     s=$(norm_src "$s")
     case $s in
-      all) sync_main; local x; for x in apt dnf zypper pacman xbps eopkg $(custom_repos); do ( sync_source "$x" ) || warn "$x didn't sync, skipping"; done ;;
+      all) sync_main; local x; for x in apt dnf zypper pacman apk xbps eopkg gentoo $(custom_repos); do ( sync_source "$x" ) || warn "$x didn't sync, skipping"; done ;;
       gurt) sync_main ;;
       *) sync_source "$s" ;;
     esac
@@ -5026,6 +5512,14 @@ search_foreign() { # src term
     crew search "$term"; return
   elif [[ $src == nix ]]; then
     nix_search "$term"; return
+  elif is_lang_src "$src"; then
+    rows=$(lang_search "$src" "$term") || { warn "couldn't search $src"; return 1; }
+  elif [[ $src == appimage ]]; then
+    rows=$(appimagehub_search "$term")
+  elif [[ $src == brew ]]; then
+    rows=$(brew_search "$term") || { warn "couldn't get Homebrew's formula list"; return 1; }
+  elif [[ $src == gh ]]; then
+    rows=$(gh_search "$term") || { warn "couldn't search GitHub (60 searches an hour without a GITHUB_TOKEN)"; return 1; }
   elif [[ $src == android ]]; then
     fdroid_sync
     rows=$(awk -F'\t' -v t="${term,,}" 'index(tolower($1 "\t" $6), t) { n = tolower($6); sub(/ — .*/, "", n)
@@ -5065,7 +5559,7 @@ cmd_search() { # [-a] [src/]term
     else search_main "$term" && found=1; fi
   elif [[ $src == dirt ]]; then dirt_on || die "DIRT is off 🔒 (gurt dirt on — 18+ only)"; PKG_TREE=dirt TREE_SRC=dirt search_main "$term" && found=1
   else search_foreign "$src" "$term" && found=1; fi
-  (( found )) || { echo "nothing matched '$term' 😔 womp womp"; [[ $src == gurt ]] && ! $ALLSRC && echo "try: gurt search -a $term   (searches aur, apt, dnf, zypper, pacman, xbps, eopkg too)"; return 1; }
+  (( found )) || { echo "nothing matched '$term' 😔 womp womp"; [[ $src == gurt ]] && ! $ALLSRC && echo "try: gurt search -a $term   (searches aur, apt, dnf, zypper, pacman, apk, xbps, eopkg, gentoo too)"; return 1; }
 }
 
 cmd_info() {
@@ -5089,6 +5583,23 @@ cmd_info() {
     flatpak)
       ensure_flatpak; local id; id=$(flatpak_resolve "$name"); [[ -n $id ]] || die "nothing on Flathub matches '$name'"
       key="flatpak:$id"; flatpak remote-info --user flathub "$id" 2>/dev/null || flatpak remote-info flathub "$id" 2>/dev/null || die "couldn't get info for $id" ;;
+    gh) gh_info "$name" ;;
+    appimage)
+      local w; w=$(appimagehub_rows | awk -F'\t' -v n="${name,,}" 'tolower($1) == n { print; exit }')
+      [[ -n $w ]] || die "AppImageHub has no app called $name"
+      printf '%-14s: %s\n' source "appimage (AppImageHub)" pkgname "$(cut -f1 <<<"$w")" pkgdesc "$(cut -f3 <<<"$w")" from "$(cut -f2 <<<"$w")"
+      return 0 ;;
+    brew)
+      local m v l d; m=$(brew_meta "$name") || m=""; [[ -n $m ]] || die "Homebrew has no formula called $name"
+      IFS=$'\t' read -r v l d <<<"$m"
+      printf '%-14s: %s\n' source "brew (Homebrew)" pkgname "$name" version "$v" pkgdesc "$d" license "${l:-?}"
+      return 0 ;;
+    pip|npm|cargo)
+      local m n v l d; m=$(lang_meta "$src" "$name") || m=""; [[ -n $m ]] || die "no $src package called $name"
+      IFS=$'\t' read -r n v l d <<<"$m"
+      printf '%-14s: %s\n' source "$src" pkgname "$n" version "$v" pkgdesc "$d" license "${l:-?}"
+      is_installed "$src:${n,,}" && printf '%-14s: %s\n' installed "$(inst_ver "$src:${n,,}")"
+      return 0 ;;
     nix)
       local m v l d; m=$(nix_meta "$name") || m=""; [[ -n $m ]] || die "nixpkgs has no package called $name (try: gurt search nix/$name)"
       IFS=$'\t' read -r v l d <<<"$m"
@@ -5144,7 +5655,8 @@ recipe_of() { # key → the Main GURT recipe it came from (works for installs fr
 cmd_list() {
   local d k r
   for d in "$DB"/*/; do
-    k=$(basename "$d"); r=$(recipe_of "$k")
+    k=$(basename "$d"); grep -q '^gh_by = ' "$d/info" 2>/dev/null && continue   # shows up as its gh/ entry
+    r=$(recipe_of "$k")
     if [[ -n $r ]]; then printf '%s %s  (from GURT · via %s)\n' "$r" "$(inst_ver "$k")" "$(pretty "$k")"
     else printf '%s %s\n' "$(pretty "$k")" "$(inst_ver "$k")"; fi
   done
@@ -5165,7 +5677,9 @@ find_outdated() {
       gurt) is_gurt_pkg "$name" && new=$(repo_ver "$name") ;;
       dirt) if PKG_TREE=dirt is_gurt_pkg "$name"; then new=$(PKG_TREE=dirt repo_ver "$name"); fi ;;
       aur)  dir=$(aur_clone "$name" 2>/dev/null) && new=$(aur_srcinfo_ver "$dir/.SRCINFO") ;;
-      flatpak|snap|nix|box-*) ;;   # they update themselves (see upgrade_containers, system_upgrade)
+      flatpak|snap|nix|brew|box-*) ;;   # they update themselves (see upgrade_containers, system_upgrade)
+      pip|npm|cargo) new=$(lang_newer "$k") ;;
+      gh)   new=$(gh_newer "$k"); [[ -n $new ]] && { msg2 "gh/$name  $(inst_ver "$k") -> $new"; TODO+=("$k"); }; continue ;;
       file) ;;                 # came from a file you had — install a newer file to update it
       git)  local u c h; u=$(info_get "$d/info" outsource_url); c=$(info_get "$d/info" outsource_commit)
             h=$( [[ -n $u ]] && git ls-remote "$u" HEAD 2>/dev/null | cut -f1 || true)
@@ -5183,7 +5697,7 @@ find_outdated() {
 used_sources() {
   local d k seen=" "
   for d in "$DB"/*:*/; do k=$(basename "$d"); k=${k%%:*}; [[ $seen == *" $k "* ]] || { seen+="$k "; echo "$k"; }; done
-  for k in apt dnf zypper pacman xbps eopkg $(custom_repos); do [[ -f $(idx_file "$k") && $seen != *" $k "* ]] && { seen+="$k "; echo "$k"; }; done
+  for k in apt dnf zypper pacman apk xbps eopkg gentoo $(custom_repos); do [[ -f $(idx_file "$k") && $seen != *" $k "* ]] && { seen+="$k "; echo "$k"; }; done
   return 0
 }
 
@@ -5197,7 +5711,7 @@ refresh_all() {
   fi
   sync_main
   for s in $(used_sources); do
-    [[ $s == aur || $s == flatpak || $s == snap || $s == nix || $s == git || $s == dirt || $s == file || $s == box-* ]] && continue
+    [[ $s == aur || $s == flatpak || $s == snap || $s == nix || $s == gh || $s == brew || $s == appimage || $s == pip || $s == npm || $s == cargo || $s == git || $s == dirt || $s == file || $s == box-* ]] && continue
     ( sync_source "$s" ) || warn "couldn't refresh $s, skipping"
   done
   mkdir -p "$GURT_CACHE" && touch "$stamp"
@@ -5365,6 +5879,7 @@ upgrade_containers() {   # flatpak + snap update their own apps
   local d
   d=("$DB"/flatpak:*/); if (( ${#d[@]} )) && command -v flatpak >/dev/null; then msg "updating flatpaks"; flatpak update --user -y --noninteractive || warn "flatpak update had problems"; fi
   d=("$DB"/snap:*/);    if (( ${#d[@]} )) && command -v snap >/dev/null;    then msg "updating snaps";    asroot snap refresh || warn "snap refresh had problems"; fi
+  d=("$DB"/brew:*/);    if (( ${#d[@]} )) && b=$(brew_find); then msg "updating Homebrew's apps"; "$b" update && "$b" upgrade || warn "brew upgrade had problems"; fi
   local s; for s in apt dnf zypper pacman xbps; do
     d=("$DB"/box-"$s":*/)
     if (( ${#d[@]} )) && command -v distrobox >/dev/null; then
@@ -5388,7 +5903,7 @@ _gurt() {
       [[ ${#COMPREPLY[@]} == 1 && ${COMPREPLY[0]} != */ ]] && COMPREPLY[0]+=" " ;;
     dirt) COMPREPLY=($(compgen -W "on off status list" -- "$cur")) ;;
     repo|repos) COMPREPLY=($(compgen -W "add list remove" -- "$cur")) ;;
-    sync) COMPREPLY=($(compgen -W "all aur apt dnf zypper pacman xbps eopkg" -- "$cur")) ;;
+    sync) COMPREPLY=($(compgen -W "all aur apt dnf zypper pacman apk xbps eopkg gentoo" -- "$cur")) ;;
     import|add|export|build) COMPREPLY=($(compgen -f -- "$cur")) ;;
     completions) COMPREPLY=($(compgen -W "bash zsh fish" -- "$cur")) ;;
   esac
@@ -5405,7 +5920,7 @@ _gurt() {
     install|i|get|info|search|s) compadd -- ${(f)"$(gurt __complete available)"}; compadd -S '' -- ${(f)"$(gurt __complete sources)"} ;;
     dirt) compadd on off status list ;;
     repo|repos) compadd add list remove ;;
-    sync) compadd all aur apt dnf zypper pacman xbps eopkg ;;
+    sync) compadd all aur apt dnf zypper pacman apk xbps eopkg gentoo ;;
     import|add|export|build) _files ;;
     completions) compadd bash zsh fish ;;
   esac
@@ -5420,7 +5935,7 @@ complete -c gurt -n '__fish_seen_subcommand_from remove rm yeet files rollback u
 complete -c gurt -n '__fish_seen_subcommand_from install i get info search s' -a '(gurt __complete available; gurt __complete sources)'
 complete -c gurt -n '__fish_seen_subcommand_from dirt' -a 'on off status list'
 complete -c gurt -n '__fish_seen_subcommand_from repo repos' -a 'add list remove'
-complete -c gurt -n '__fish_seen_subcommand_from sync' -a 'all aur apt dnf zypper pacman xbps eopkg'
+complete -c gurt -n '__fish_seen_subcommand_from sync' -a 'all aur apt dnf zypper pacman apk xbps eopkg gentoo'
 complete -c gurt -n '__fish_seen_subcommand_from import add export build' -F
 complete -c gurt -n '__fish_seen_subcommand_from completions' -a 'bash zsh fish'
 EOF
@@ -5864,7 +6379,7 @@ repo_list() {
   local r f
   printf '%s%-22s %-7s %s%s\n' "$B" "name" "type" "url" "$R0"
   printf '%-22s %-7s %s\n' gurt main "$GURT_REPO_URL" aur build "$AUR_URL" apt apt "$APT_MIRROR ($APT_SUITE)" \
-    dnf rpm "$(src_base dnf)" zypper rpm "$(src_base zypper)" pacman pacman "$PACMAN_MIRROR" xbps xbps "$(src_base xbps)" eopkg eopkg "$(src_base eopkg)"
+    dnf rpm "$(src_base dnf)" zypper rpm "$(src_base zypper)" pacman pacman "$PACMAN_MIRROR" apk apk "$(src_base apk)" gentoo gentoo "$(src_base gentoo)" xbps xbps "$(src_base xbps)" eopkg eopkg "$(src_base eopkg)"
   for r in $(custom_repos); do
     f=$(repo_file "$r")
     printf '%-22s %-7s %s%s%s\n' "$r" "$(repo_get "$r" type)" "$(repo_get "$r" url)" \
@@ -6166,7 +6681,7 @@ cmd_version() {
     "${c3}arch${r}     $CARCH"
     "${c4}packages${r} $n installed${breakdown:+ ($breakdown)}"
     "${c2}recipes${r}  $recipes"
-    "${c3}sources${r}  gurt aur apt dnf zypper pacman xbps eopkg flatpak snap nix"
+    "${c3}sources${r}  gurt aur apt dnf zypper pacman apk xbps eopkg gentoo flatpak snap nix gh pip npm cargo appimage brew"
     "${c4}DIRT${r}     $dirt"
     "${c2}site${r}     https://gurtproject.org"
     ""
@@ -6197,10 +6712,18 @@ ${B}sources${R0}   (no prefix = main GURT · write it as aur/yay OR  yay --repo 
   dnf/htop             Fedora binary packages             (aliases: fedora/ yum/ rpm/)
   zypper/htop          openSUSE binary packages           (aliases: suse/ opensuse/)
   pacman/htop          Arch official binary packages      (aliases: arch/)
+  apk/htop             Alpine binary packages (musl)      (aliases: alpine/)
   xbps/htop            Void Linux binary packages         (aliases: void/)
   eopkg/htop           Solus binary packages              (aliases: solus/)
+  gentoo/htop          Gentoo binary packages (its binhost)
+  appimage/obsidian    AppImageHub's catalog (installs + updates through gh/)
+  brew/jq              Homebrew on Linux (gurt sets it up for you, as you)  (alias: homebrew/)
   flatpak/gimp         Flathub apps (gurt sets up flatpak for you)  (alias: flathub/)
   snap/spotify         Snap Store apps (gurt sets up snapd for you)
+  pip/httpie           Python apps from PyPI, each in its own venv            (aliases: pypi/)
+  npm/cowsay           Node.js apps from npm
+  cargo/ripgrep        Rust apps from crates.io, built on your PC            (aliases: crates/)
+  gh/neovim/neovim     GitHub releases: the newest one, the right file for your system  (alias: github/)
   nix/hello            nixpkgs, into your own nix profile (NixOS, or anywhere nix is)  (alias: nixpkgs/)
 
 ${B}DIRT${R0}   (the mature section — off by default, 18+, never on the website)
@@ -6310,7 +6833,7 @@ main() {
       --box|--container) BOX=true ;;
       --no-box)       NOBOX=true ;;
       --scanrepos|--scan) SCAN=true ;;
-      -r|--repo|--from) shift; REPO=${1:?--repo needs a source (gurt aur apt dnf zypper pacman xbps eopkg)} ;;
+      -r|--repo|--from) shift; REPO=${1:?--repo needs a source (gurt aur apt dnf zypper pacman apk xbps eopkg gentoo)} ;;
       --repo=*|--from=*)  REPO=${1#*=} ;;
       --key)          shift; KEYSRC=${1:?--key needs a url or file} ;;
       --key=*)        KEYSRC=${1#*=} ;;
