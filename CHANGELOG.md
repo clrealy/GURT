@@ -2,6 +2,10 @@
 
 ## Not released yet
 
+### New
+- **Hook gurt into your package manager 🪝** `gurt hook on` (or the setup wizard): when `sudo apt install yay` can't find yay, gurt offers aur/yay. `apt upgrade`, `pacman -Syu` and friends also update what gurt installed, `apt search` / `pacman -Ss` show gurt's results too, and a command you don't have gets an "install it with gurt?". Works in bash, zsh and fish, only for what you type, never in scripts.
+- **The GURT infomercial 📼** A 30-second retro ad in `promo/` (16:9 and 9:16), rendered from `promo/src`.
+
 ### Fixed
 - **Void programs wouldn't start on Debian, Ubuntu and friends.** Void builds its programs to look for their loader at `/lib/ld-linux-x86-64.so.2`, and those distros keep it in `/lib64`. gurt now points programs from other distros at the loader your system has.
 - **`gh/` crashed** right after handing a release's package to your distro's package manager.
