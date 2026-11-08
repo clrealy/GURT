@@ -23,11 +23,24 @@ fi
 $SUDO install -Dm755 "$tmp/gurt/gurt" "$BIN/gurt"
 $SUDO install -Dm644 "$tmp/gurt/deps.map" "$SHARE/deps.map"
 $SUDO install -Dm644 "$tmp/gurt/vibes.map" "$SHARE/vibes.map"
-$SUDO install -Dm644 "$tmp/gurt/gui/gurt-gui.py" "$SHARE/gurt-gui.py"
+$SUDO install -Dm644 "$tmp/gurt/gh-only.map" "$SHARE/gh-only.map"
 $SUDO install -Dm644 "$tmp/gurt/assets/wilhelm.mp3" "$SHARE/wilhelm.mp3"
 $SUDO install -Dm644 "$tmp/gurt/site/assets/apple-touch-icon.png" "$SHARE/gurt.png"
 [ -n "$CROS" ] || [ -f /etc/gurt.conf ] || $SUDO install -Dm644 "$tmp/gurt/gurt.conf" /etc/gurt.conf   # ChromeOS: /etc is read-only
 say "gurt installed to $BIN/gurt 🦆"
+# GURT's app (a native window) for your CPU, from the latest release, checked against the release's SHA256SUMS.
+# no luck (offline, an unusual CPU)? gurt gui gets it later
+LIB="${GURT_LIB:-$(dirname "$BIN")/lib/gurt}"
+case $(uname -m) in x86_64|amd64) A=x86_64 ;; aarch64|arm64) A=aarch64 ;; *) A="" ;; esac
+if [ -n "$A" ] && command -v curl >/dev/null && command -v sha256sum >/dev/null; then
+  u=https://github.com/clrealy/GURT/releases/latest/download
+  if curl -fsSL -o "$tmp/app" "$u/gurt-app-$A" 2>/dev/null && curl -fsSL -o "$tmp/sums" "$u/SHA256SUMS" 2>/dev/null &&
+     [ "$(sha256sum "$tmp/app" | cut -d' ' -f1)" = "$(awk -v f="gurt-app-$A" '$2 == f { print $1 }' "$tmp/sums")" ]; then
+    $SUDO install -Dm755 "$tmp/app" "$LIB/gurt-app-$A" && say "GURT's app installed too 🖥️"
+  else
+    say "couldn't grab GURT's app right now (gurt gui gets it later)"
+  fi
+fi
 # NixOS only finds programs in its profiles: gurt's /usr/local and /usr (other distros' packages), plus the library
 # folders nix-ld hands those programs, go in /etc/profile.local, which NixOS's own /etc/profile reads
 if [ -e /etc/NIXOS ] && ! grep -qs 'gurt: /usr + /usr/local' /etc/profile.local; then
@@ -50,7 +63,7 @@ case "${GURT_WIZARD:-1}" in 0|no|off|false)
 esac
 if [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] && [ "$(id -u)" -ne 0 ]; then
   say "🧙 setting up the GURT app (its own window + a menu entry)"
-  "$BIN/gurt" gui --setup </dev/tty || say "no app window this time, so GURT opens in your browser instead"
+  "$BIN/gurt" gui --setup </dev/tty || say "GURT's app didn't set up this time (gurt gui --setup tries again)"
   say "🧙 opening the GURT Setup Wizard"
   if command -v setsid >/dev/null; then setsid "$BIN/gurt" gui --wizard >/dev/null 2>&1 &
   else nohup "$BIN/gurt" gui --wizard >/dev/null 2>&1 & fi

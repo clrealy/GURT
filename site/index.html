@@ -96,6 +96,8 @@ header{padding:34px 0 18px;position:relative}
 .pkg:last-child{border-bottom:0}
 .pkg:hover,.pkg:focus-visible{background:var(--hl);outline:none}
 .pkg::-moz-focus-inner{border:0}
+.ghcat{font:700 13px var(--mono);color:var(--ink);background:var(--tag);margin:0;padding:5px 10px;border-bottom:1px solid var(--line)}
+#slist .pkg a.ver{color:var(--muted);overflow-wrap:anywhere}#slist .pkg a.ver:hover{color:var(--ink)}
 .pkg>.row{grid-column:1}.pkg>.desc{grid-column:2;margin:0}.pkg>.chips{grid-column:3;margin:0;justify-content:flex-end}
 @media (max-width:720px){.pkg{grid-template-columns:minmax(0,1fr)}.pkg>*{grid-column:1!important}.pkg>.chips{justify-content:flex-start;margin-top:4px}}
 .row{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px}
@@ -891,6 +893,25 @@ function srcUpdate() {
   $("#slink").innerHTML = t ? `or browse it on <a href="${esc(c.web(t))}" target="_blank" rel="noopener">${esc(c.webName)} ↗</a>` : "";
   $("#slist").innerHTML = "";
   if (CUR === "aur") { clearTimeout(aurTimer); if (t.length >= 2) aurTimer = setTimeout(() => aurSearch(t), 300); }
+  if (CUR === "gh") ghShelf(t);
+}
+// the gh/ tab: free apps that ship their Linux builds on GitHub releases (gh-only.map, copied here by CI), by category
+let GHONLY = null;
+async function ghShelf(t) {
+  if (!GHONLY) {
+    try { GHONLY = (await (await fetch("gh-only.map")).text()).split("\n").filter(l => l && l[0] !== "#").map(l => l.split("|")).filter(p => p.length >= 4)
+            .map(([cat, repo, name, ...d]) => ({cat, repo, name, desc: d.join("|")})); } catch { GHONLY = []; }
+    if (CUR !== "gh") return;
+  }
+  t = (t || "").toLowerCase();
+  const list = GHONLY.filter(a => !t || (a.name + " " + a.repo + " " + a.desc).toLowerCase().includes(t));
+  let last = "";
+  $("#slist").innerHTML = list.map(a => (a.cat !== last ? `<h3 class="ghcat">${t ? "" : "only on GitHub: "}${esc((last = a.cat))}</h3>` : "") + `
+      <div class="pkg" style="cursor:default">
+        <div class="row"><span class="name">${esc(a.name)}</span><a class="ver mono" href="https://github.com/${esc(a.repo)}" target="_blank" rel="noopener">${esc(a.repo)} ↗</a></div>
+        <div class="desc">${esc(a.desc)}</div>
+        <div class="chips"><span class="chip mono">gurt install gh/${esc(a.name)}</span></div>
+      </div>`).join("");
 }
 async function aurSearch(t) {
   const seq = ++aurSeq;

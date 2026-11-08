@@ -5,10 +5,13 @@
 #   tools/make-setup-wizard.sh [out-dir] --dev[=N]     → GURTSetupWizard-dev.<every ext>: version <ver>+dev.N. the .rpm adds
 #     the gurt-dev repo to zypper/dnf, so every new dev build arrives with zypper up / dnf upgrade (elsewhere: gurt self-update)
 #   --only=deb,rpm,…  just those formats (deb rpm pacman apk xbps eopkg)
+#   --app=DIR         where GURT's app binaries are: DIR/gurt-app-x86_64 + DIR/gurt-app-aarch64 (tools/build-app.sh makes them;
+#                     default: dist-app/). a missing one is built for this PC with cargo, if it can
+
 set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
-out=$root/dist sign=() dev="" only=""
-for a; do case $a in --no-sign) sign=(--no-sign) ;; --dev) dev=$(date -u +%Y%m%d%H%M) ;; --dev=*) dev=${a#--dev=} ;; --only=*) only=${a#--only=} ;; *) out=$a ;; esac; done
+out=$root/dist sign=() dev="" only="" appdir=$root/dist-app
+for a; do case $a in --no-sign) sign=(--no-sign) ;; --dev) dev=$(date -u +%Y%m%d%H%M) ;; --dev=*) dev=${a#--dev=} ;; --only=*) only=${a#--only=} ;; --app=*) appdir=${a#--app=} ;; *) out=$a ;; esac; done
 ver=$(sed -n 's/^GURT_VERSION="\(.*\)"/\1/p' "$root/gurt")
 [[ -n $ver ]] || { echo "couldn't read GURT_VERSION" >&2; exit 1; }
 [[ -z $dev || $dev =~ ^[0-9]+$ ]] || { echo "--dev=N takes a number" >&2; exit 1; }
@@ -22,7 +25,18 @@ mkdir -p "$out"; out=$(cd "$out" && pwd)
 install -Dm755 "$root/gurt"                             "$t/usr/bin/gurt"
 install -Dm644 "$root/deps.map"                         "$t/usr/share/gurt/deps.map"
 install -Dm644 "$root/vibes.map"                        "$t/usr/share/gurt/vibes.map"
-install -Dm644 "$root/gui/gurt-gui.py"                  "$t/usr/share/gurt/gurt-gui.py"
+install -Dm644 "$root/gh-only.map"                      "$t/usr/share/gurt/gh-only.map"
+# GURT's app (a native window, app/): both CPUs ride along, gurt gui picks yours
+apps=0
+for arch in x86_64 aarch64; do
+  f=$appdir/gurt-app-$arch
+  if [[ ! -f $f && $arch == "$(uname -m)" ]] && command -v cargo >/dev/null; then
+    echo "no $f: building it for this PC with cargo" >&2
+    ( cd "$root/app" && cargo build --release --locked >&2 ) && f=$root/app/target/release/gurt-app
+  fi
+  if [[ -f $f ]]; then install -Dm755 "$f" "$t/usr/lib/gurt/gurt-app-$arch"; apps=$((apps + 1)); else echo "heads up: no GURT app for $arch in the package" >&2; fi
+done
+(( apps )) || { echo "no GURT app binaries (tools/build-app.sh makes them)" >&2; exit 1; }
 install -Dm644 "$root/assets/wilhelm.mp3"               "$t/usr/share/gurt/wilhelm.mp3"
 install -Dm644 "$root/site/assets/apple-touch-icon.png" "$t/usr/share/gurt/gurt.png"
 install -Dm644 "$root/site/assets/apple-touch-icon.png" "$t/usr/share/icons/hicolor/256x256/apps/gurt.png"
@@ -134,7 +148,6 @@ depends = bash
 depends = git
 depends = tar
 depends = curl
-depends = python3
 INFO
 ( cd "$t" && tar -czf "$tmp/gurt-$ver-1-any.gurt" .PKGINFO usr etc )
 
