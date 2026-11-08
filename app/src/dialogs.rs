@@ -387,6 +387,130 @@ impl App {
                     None => {}
                 }
             }
+            Dialog::Redeem(ref mut input, ref out, ok) => {
+                let mut go = false;
+                let (_, closed) = modal(ctx, &p, "redeem", "redeem a GURT key", 440.0, |ui| {
+                    ui.add(egui::Label::new(egui::RichText::new("a GURT key unlocks secret apps, skins, music and achievements. they look like GURT-XXXX-XXXX-XXXX").color(p.muted)).wrap());
+                    ui.add_space(4.0);
+                    let te = ui.add(egui::TextEdit::singleline(input).hint_text("GURT-XXXX-XXXX-XXXX").font(mono(15.0)).desired_width(f32::INFINITY).char_limit(24));
+                    if input.is_empty() && out.is_empty() && !te.has_focus() {
+                        te.request_focus();
+                    }
+                    if te.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                        go = true;
+                    }
+                    for l in out {
+                        ui.add(egui::Label::new(egui::RichText::new(l).font(mono(12.5)).color(if ok { p.good } else { p.bad })).wrap());
+                    }
+                    ui.add_space(4.0);
+                    crate::app::right(ui, |ui| {
+                        if w::btn_ex(ui, &p, "redeem", Kind::Primary, false, false, !self.busy()).clicked() {
+                            go = true;
+                        }
+                        if w::btn(ui, &p, "done", Kind::Ghost, false).clicked() {
+                            keep = false;
+                        }
+                    });
+                });
+                keep &= !closed;
+                let k = input.trim().to_string();
+                if go && !k.is_empty() {
+                    if k.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == ' ') && k.len() <= 24 {
+                        then = Some(Act::new(&["redeem", &k]).quiet().then(After::Redeem));
+                    }
+                }
+            }
+            Dialog::KeyGen(ref mut v) => {
+                let mut make = false;
+                let mut check = false;
+                let (_, closed) = modal(ctx, &p, "keygen", "make a GURT key", 520.0, |ui| {
+                    egui::ScrollArea::vertical().max_height(ctx.content_rect().height() - 200.0).show(ui, |ui| {
+                        ui.label(egui::RichText::new("dev builds only. tick what it unlocks, add a note (who it's for), make it.").color(p.muted));
+                        ui.add_space(4.0);
+                        for (i, (_, what)) in crate::app::KEY_UNLOCKS.iter().enumerate() {
+                            ui.checkbox(&mut v.picks[i], egui::RichText::new(*what).color(p.ink));
+                        }
+                        ui.add(egui::TextEdit::singleline(&mut v.note).hint_text("note (only you see it): discord giveaway #1").desired_width(f32::INFINITY));
+                        ui.add_space(4.0);
+                        crate::app::right(ui, |ui| {
+                            if w::btn_ex(ui, &p, "make a key", Kind::Primary, false, false, !self.busy() && v.picks.iter().any(|x| *x)).clicked() {
+                                make = true;
+                            }
+                        });
+                        let key = v.made.iter().find(|(k, _)| k == "key").map(|x| x.1.clone());
+                        if let Some(key) = key {
+                            ui.separator();
+                            ui.label(egui::RichText::new(&key).font(monob(22.0)).color(p.accent));
+                            ui.label(egui::RichText::new("it redeems:").color(p.muted));
+                            for (_, w) in v.made.iter().filter(|(k, _)| k == "what") {
+                                ui.label(egui::RichText::new(format!("→ {w}")).color(p.ink));
+                            }
+                            ui.add(egui::Label::new(egui::RichText::new("it works once its line is in keys.map on main: copy the line, open keys.map, paste it at the end, commit. the key isn't saved anywhere else, so copy it too").font(sans(12.0)).color(p.muted)).wrap());
+                            ui.horizontal_wrapped(|ui| {
+                                if w::btn(ui, &p, "copy key", Kind::Primary, true).clicked() {
+                                    ui.ctx().copy_text(key.clone());
+                                    self.toast("copied the key");
+                                }
+                                if let Some((_, line)) = v.made.iter().find(|(k, _)| k == "line") {
+                                    if w::btn(ui, &p, "copy keys.map line", Kind::Ghost, true).clicked() {
+                                        ui.ctx().copy_text(line.clone());
+                                        self.toast("copied the keys.map line");
+                                    }
+                                }
+                                if w::btn(ui, &p, "open keys.map on GitHub", Kind::Ghost, true).clicked() {
+                                    ui.ctx().open_url(egui::OpenUrl::new_tab("https://github.com/clrealy/GURT/edit/main/keys.map"));
+                                }
+                            });
+                        }
+                        ui.separator();
+                        ui.label(egui::RichText::new("what does a key redeem?").font(sansb(13.5)).color(p.ink));
+                        ui.horizontal(|ui| {
+                            let te = ui.add(egui::TextEdit::singleline(&mut v.check).hint_text("GURT-XXXX-XXXX-XXXX").font(mono(14.0)).desired_width(ui.available_width() - 90.0));
+                            if (te.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter))) || w::btn_ex(ui, &p, "check", Kind::Ghost, true, false, !self.busy()).clicked() {
+                                check = true;
+                            }
+                        });
+                        for (k, val) in &v.checked {
+                            match k.as_str() {
+                                "note" if !val.is_empty() => { ui.label(egui::RichText::new(format!("note: {val}")).font(mono(12.0)).color(p.muted)); }
+                                "what" => { ui.label(egui::RichText::new(format!("→ {val}")).color(p.ink)); }
+                                _ => {}
+                            }
+                        }
+                        if !v.err.is_empty() {
+                            ui.label(egui::RichText::new(&v.err).color(p.bad));
+                        }
+                    });
+                    ui.add_space(4.0);
+                    crate::app::right(ui, |ui| {
+                        if w::btn(ui, &p, "done", Kind::Ghost, false).clicked() {
+                            keep = false;
+                        }
+                    });
+                });
+                keep &= !closed;
+                if make {
+                    let mut a: Vec<String> = vec!["__keygen".into()];
+                    a.extend(crate::app::KEY_UNLOCKS.iter().zip(&v.picks).filter(|(_, on)| **on).map(|((u, _), _)| u.to_string()));
+                    let note: String = v.note.chars().filter(|c| !c.is_control() && *c != '|').take(80).collect();
+                    if !note.trim().is_empty() {
+                        a.push("--".into());
+                        a.push(note);
+                    }
+                    let refs: Vec<&str> = a.iter().map(|s| s.as_str()).collect();
+                    v.made.clear();
+                    v.err.clear();
+                    then = Some(Act::new(&refs).quiet().then(After::KeyGen));
+                }
+                if check {
+                    let k = v.check.trim().to_string();
+                    if !k.is_empty() && k.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == ' ') {
+                        v.checked.clear();
+                        v.err.clear();
+                        then = Some(Act::new(&["__keygen", "check", &k]).quiet().then(After::KeyCheck));
+                    }
+                }
+            }
             Dialog::DevLock(ref mut pw, ref mut msg) => {
                 let mut go = false;
                 modal(ctx, &p, "dev", "dev build", 420.0, |ui| {

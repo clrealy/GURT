@@ -199,6 +199,8 @@ pub struct State {
     pub cache: String,
     #[allow(dead_code)]
     pub repo: String,
+    pub unlocks: HashSet<String>, // what GURT keys unlocked: app:… skin:… track:… ach:…
+    pub all_unlocked: bool,       // 🧪 dev builds
 }
 
 pub const FLATHUB_ICON: &str = "https://dl.flathub.org/repo/appstream/x86_64/icons/128x128/";
@@ -222,7 +224,7 @@ fn recipe_trust(info: &HashMap<String, Vec<String>>) -> String {
     }
 }
 
-fn read_tree(dir: &Path, full: bool) -> Vec<Pkg> {
+fn read_tree(dir: &Path, full: bool, unlocked: &dyn Fn(&str) -> bool) -> Vec<Pkg> {
     let mut names: Vec<String> = fs::read_dir(dir)
         .map(|rd| rd.filter_map(|e| e.ok()).map(|e| e.file_name().to_string_lossy().into_owned()).collect())
         .unwrap_or_default();
@@ -230,7 +232,8 @@ fn read_tree(dir: &Path, full: bool) -> Vec<Pkg> {
     let mut out = Vec::new();
     for name in names {
         let info = kv(&dir.join(&name).join(".gurtinfo"));
-        if info.is_empty() || one(&info, "hidden") == "true" || one(&info, "secret") == "true" {
+        // hidden + secret recipes stay out of sight, unless a GURT key unlocked them
+        if info.is_empty() || ((one(&info, "hidden") == "true" || one(&info, "secret") == "true") && !unlocked(&format!("app:{name}"))) {
             continue;
         }
         let (vt, vp, vr) = (one(&info, "via_type"), one(&info, "via_pkg"), one(&info, "via_repo"));
@@ -448,10 +451,14 @@ pub fn load_state() -> State {
     let repo = g("repo");
     let db = PathBuf::from(g("db"));
     let strict = foss_strict();
-    let mut main = read_tree(&Path::new(&repo).join("packages"), true);
+    let dev = { let d = g("dev"); if d.is_empty() { "no".to_string() } else { d } };
+    let unlocks = key_unlocks();
+    let all = dev != "no"; // 🧪 dev builds have everything keys unlock
+    let unlocked = |u: &str| all || unlocks.contains(u);
+    let mut main = read_tree(&Path::new(&repo).join("packages"), true, &unlocked);
     main.retain(|m| !(strict && m.foss != "foss"));
     main.sort_by_key(|m| m.foss == "closed"); // stable: free ones first, A–Z inside each
-    let dirtpkgs = read_tree(&Path::new(&repo).join("dirt"), false);
+    let dirtpkgs = read_tree(&Path::new(&repo).join("dirt"), false, &unlocked);
     let by_ikey: HashMap<&str, &str> = main.iter().filter(|m| m.ikey != m.name).map(|m| (m.ikey.as_str(), m.name.as_str())).collect();
     let mut installed = Vec::new();
     let mut keys: Vec<String> = fs::read_dir(&db).map(|rd| rd.filter_map(|e| e.ok()).map(|e| e.file_name().to_string_lossy().into_owned()).collect()).unwrap_or_default();
@@ -488,13 +495,22 @@ pub fn load_state() -> State {
         .collect();
     State {
         version: g("version"), pm: g("pm"), dirt: g("dirt") == "on", wsl: g("wsl") == "yes", cros: g("cros") == "yes",
-        nix: g("nix") == "yes", nixos: g("nixos") == "yes", hook: g("hook") == "on", dev: { let d = g("dev"); if d.is_empty() { "no".into() } else { d } },
+        nix: g("nix") == "yes", nixos: g("nixos") == "yes", hook: g("hook") == "on", dev, unlocks, all_unlocked: all,
         fossonly: strict, notify: notify_on(), vibes: vibes(&repo), ghonly: ghonly(&repo),
         main, dirtpkgs, installed, outside, cache: g("cache"), repo,
     }
 }
 
+/// ~/.config/gurt/keys: "skin:gold 2026-11-08" lines, written by gurt redeem
+pub fn key_unlocks() -> HashSet<String> {
+    fs::read_to_string(config_dir().join("gurt/keys")).unwrap_or_default().lines().filter_map(|l| l.split_whitespace().next().map(str::to_string)).collect()
+}
+
 impl State {
+    /// did a GURT key unlock this? (skin:gold, track:shanty…) dev builds: yes, always
+    pub fn has(&self, u: &str) -> bool {
+        self.all_unlocked || self.unlocks.contains(u)
+    }
     /// is it installed? (by gurt, or another way for Main GURT apps) → Some(how) where "gurt" = by gurt
     pub fn inst(&self, spec: &str) -> Option<InstHit> {
         let m = self.main.iter().find(|p| p.name == spec);

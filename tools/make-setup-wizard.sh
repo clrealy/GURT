@@ -26,6 +26,7 @@ install -Dm755 "$root/gurt"                             "$t/usr/bin/gurt"
 install -Dm644 "$root/deps.map"                         "$t/usr/share/gurt/deps.map"
 install -Dm644 "$root/vibes.map"                        "$t/usr/share/gurt/vibes.map"
 install -Dm644 "$root/gh-only.map"                      "$t/usr/share/gurt/gh-only.map"
+install -Dm644 "$root/keys.map"                         "$t/usr/share/gurt/keys.map"
 # GURT's app (a native window, app/): both CPUs ride along, gurt gui picks yours
 apps=0
 for arch in x86_64 aarch64; do

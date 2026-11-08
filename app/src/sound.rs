@@ -8,7 +8,11 @@ use std::sync::Arc;
 
 const SR: f32 = 44100.0;
 
-pub const TRACKS: [(&str, &str); 5] = [("auto", "auto"), ("shop", "shop"), ("lofi", "lofi"), ("chip", "chiptune"), ("synth", "synthwave")];
+pub const TRACKS: [(&str, &str); 6] = [("auto", "auto"), ("shop", "shop"), ("lofi", "lofi"), ("chip", "chiptune"), ("synth", "synthwave"), ("shanty", "shanty")];
+/// tracks a GURT key unlocks
+pub fn track_locked(id: &str) -> bool {
+    id == "shanty"
+}
 pub fn track_name(id: &str) -> &'static str {
     TRACKS.iter().find(|t| t.0 == id).map(|t| t.1).unwrap_or("auto")
 }
@@ -316,6 +320,33 @@ fn sfx(skin: Skin, name: &str) -> Option<Vec<f32>> {
             m.arp(&[262., 330., 392., 523., 659.], t, 0.11, 0.25, Square, 0.03);
             m.pad(&[523., 659., 784.], t + 0.6, 1.2, Saw, 0.015, 0.1);
         }
+        // 🪙 Golden Duck: everything is a coin
+        (Skin::Gold, "click") => m.tone(1976., t, 0.03, Square, 0.02, 0., 0.002),
+        (Skin::Gold, "tick") => m.tone(1568. + rnd(400.), t, 0.04, Square, 0.02, 0., 0.002),
+        (Skin::Gold, "pick") | (Skin::Gold, "pop") => {
+            m.tone(988., t, 0.06, Square, 0.035, 0., 0.002);
+            m.tone(1319., t + 0.06, 0.28, Square, 0.035, 0., 0.002);
+        }
+        (Skin::Gold, "unpick") => m.tone(659., t, 0.08, Square, 0.03, 0., 0.002),
+        (Skin::Gold, "ok") | (Skin::Gold, "jackpot") => {
+            for i in 0..6 {
+                let k = i as f32 * 0.07;
+                m.tone(988., t + k, 0.05, Square, 0.03, 0., 0.002);
+                m.tone(1319., t + k + 0.05, 0.12, Square, 0.03, 0., 0.002);
+            }
+            m.pad(&[523., 659., 784., 1047.], t + 0.45, 0.8, Tri, 0.02, 0.02);
+        }
+        (Skin::Gold, "err") => {
+            m.tone(330., t, 0.15, Square, 0.035, 220., 0.002);
+            m.tone(220., t + 0.15, 0.3, Square, 0.035, 110., 0.002);
+        }
+        (Skin::Gold, "theme") => m.tone(660., t, 0.3, Tri, 0.04, 1320., 0.01),
+        (Skin::Gold, "startup") => {
+            m.arp(&[523., 659., 784., 1047., 1319.], t, 0.06, 0.12, Square, 0.025);
+            for i in 0..3 {
+                m.tone(1976. + i as f32 * 220., t + 0.4 + i as f32 * 0.09, 0.2, Square, 0.02, 0., 0.002);
+            }
+        }
         _ => return None,
     }
     // trim the silence at the end
@@ -351,6 +382,10 @@ fn track(id: &str) -> Track {
         "synth" => Track { bpm: 100.0, swing: 0.0, arp: false, comp: &[0], chord: (Saw, 0.0, 0.008, 1.9), bass: Saw, octbass: true, lead: (Saw, 2.0, 0.02, 0.5), drums: "synth",
             chords: [&[57, 60, 64], &[53, 57, 60], &[55, 60, 64], &[55, 59, 62], &[57, 60, 64], &[53, 57, 60], &[55, 60, 64], &[56, 59, 64]], roots: [45, 41, 48, 43, 45, 41, 48, 40],
             mel: [69,0,0,72,0,0,76,0, 74,0,72,0,69,0,0,0, 72,0,0,76,0,0,79,0, 79,0,76,0,74,0,72,0, 69,0,0,72,0,0,76,0, 77,0,76,0,72,0,0,0, 76,0,74,0,72,0,71,0, 68,0,0,0,71,0,0,0] },
+        // 🏴‍☠️ unlocked with a GURT key: a rolling D-minor shanty, squeezebox lead, stomp + clap
+        "shanty" => Track { bpm: 124.0, swing: 0.12, arp: false, comp: &[0, 2, 4, 6], chord: (Square, 2.0, 0.009, 0.22), bass: Tri, octbass: false, lead: (Square, 2.0, 0.026, 0.26), drums: "chip",
+            chords: [&[62, 65, 69], &[62, 65, 69], &[60, 64, 67], &[60, 64, 67], &[62, 65, 69], &[58, 62, 65], &[57, 61, 64], &[62, 65, 69]], roots: [38, 38, 36, 36, 38, 34, 33, 38],
+            mel: [74,0,74,74,74,0,74,74, 74,0,69,0,72,0,74,0, 72,0,72,72,72,0,72,72, 72,0,67,0,70,0,72,0, 74,0,74,74,77,0,76,74, 70,0,69,0,67,0,65,0, 64,0,67,0,69,0,73,0, 74,0,0,0,74,0,0,0] },
         _ => Track { bpm: 116.0, swing: 0.1, arp: false, comp: &[0, 3, 6], chord: (Sine, 2.0, 0.018, 0.55), bass: Tri, octbass: false, lead: (Sine, 4.0, 0.045, 0.45), drums: "shaker",
             chords: [&[53, 57, 60, 64], &[50, 53, 57, 60], &[55, 58, 62, 65], &[48, 52, 55, 58], &[57, 60, 64, 67], &[50, 54, 57, 60], &[55, 58, 62, 65], &[48, 52, 55, 58]], roots: [41, 38, 43, 36, 45, 38, 43, 36],
             mel: [72,0,76,0,79,77,76,0, 74,0,0,72,69,0,72,0, 70,0,74,0,77,0,76,74, 72,0,0,0,67,0,70,72, 76,0,79,0,81,79,76,0, 78,0,76,74,72,0,0,74, 70,0,72,74,77,76,74,0, 72,0,0,0,0,0,0,0] },
@@ -518,7 +553,7 @@ impl Sound {
         .into()
     }
     /// start / stop / switch the music to match the settings
-    fn sync_music(&mut self) {
+    pub fn sync_music(&mut self) {
         let want = (self.music_on && !Self::silent() && player().is_some()).then(|| self.want());
         if self.playing.as_ref().map(|p| &p.0) == want.as_ref() {
             return;

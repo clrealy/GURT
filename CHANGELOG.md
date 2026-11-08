@@ -2,6 +2,10 @@
 
 ## Not released yet
 
+### New
+- **GURT keys 🔑** Got a key like `GURT-XXXX-XXXX-XXXX`? Redeem it with `gurt redeem <key>` or in the app (look → redeem a key). What it unlocks? That's for you to find out 👀 Some keys get handed out, some are hidden. `gurt redeem list` shows what yours unlocked.
+- Dev builds have everything a key unlocks, plus a **make a key** button (look → make a key) that makes a key, says what it redeems, gives you its `keys.map` line, and checks what any key redeems.
+
 ### Fixed
 - **jacb wouldn't build** (`cd: jacb-0.1.0: No such file or directory`): its recipe cloned into `JACB/` and looked in `jacb-0.1.0/`.
 - Recipes with a git tag as their source printed git's whole "detached HEAD" lecture while building. gurt keeps git quiet about it now.
