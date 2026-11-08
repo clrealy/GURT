@@ -6330,15 +6330,24 @@ cmd_self_update() {
     msg "you're on $(/usr/bin/gurt version 2>/dev/null || echo "the newest dev build") ✅"
     return 0
   fi
-  # installed from a GURTSetupWizard package: your package manager owns gurt, so it does the updating
+  # installed from a GURTSetupWizard package: grab the newest release's package and let your package manager swap it in.
+  # (pacman has no repo drop-in folder and unsigned .debs get no apt repo, so "just run your system updates" can loop forever)
   if [[ $self == /usr/bin/gurt && -f /usr/share/gurt/gurt-gui.py ]] && ! $FORCE; then
-    case $PM in
-      apt) msg "gurt came with your system updates 📦 run: sudo apt update && sudo apt upgrade" ;;
-      dnf|yum) msg "gurt came with your system updates 📦 run: sudo dnf upgrade gurt" ;;
-      zypper) msg "gurt came with your system updates 📦 run: sudo zypper up gurt" ;;
-      pacman) msg "gurt came with your system updates 📦 run: sudo pacman -Syu" ;;
-      *) msg "gurt came from a GURTSetupWizard package 📦 grab the newest one: https://github.com/clrealy/GURT/releases/latest" ;;
-    esac
+    local ext r url
+    new=$(latest_gurt_ver)
+    if [[ -n $new ]] && ! vnewer "$GURT_VERSION" "$new"; then
+      msg "gurt $GURT_VERSION is already the newest 😎"; return 0
+    fi
+    ext=$(own_pkg_ext) || { msg "gurt came from a GURTSetupWizard package 📦 grab the newest one: https://github.com/clrealy/GURT/releases/latest"; return 0; }
+    r=${GURT_REPO_URL%.git}; [[ $r == https://github.com/*/* ]] || r=https://github.com/clrealy/GURT
+    url="$r/releases/latest/download/GURTSetupWizard.$ext"
+    ask "update gurt $GURT_VERSION -> ${new:-the newest release} with $PM?" || die "aborted"
+    tmp=$(mktemp -d)
+    msg "grabbing GURTSetupWizard.$ext ${new:+($new) }📦"
+    curl -fsSL -o "$tmp/GURTSetupWizard.$ext" "$url" || { rm -rf "$tmp"; die "couldn't download $url"; }
+    own_pkg_install "$tmp/GURTSetupWizard.$ext" || { rm -rf "$tmp"; die "$PM couldn't install $url"; }
+    rm -rf "$tmp"
+    msg "you're on $(/usr/bin/gurt version 2>/dev/null || echo "the newest gurt") ✅"
     return 0
   fi
   sync_main

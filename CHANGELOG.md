@@ -12,6 +12,7 @@
 - **`gh/` crashed** right after handing a release's package to your distro's package manager.
 - **`gurt key trust` on Arch** failed when pacman's keyring had never been set up (fresh installs and containers). gurt sets it up now.
 - Gentoo search showed "(no description)": it shows the package's category now when Gentoo leaves the description out.
+- **`gurt self-update` looped on Arch, CachyOS and friends** (and on unsigned .deb installs): it said "run `sudo pacman -Syu`", pacman said "nothing to do", and `gurt update` said a new gurt was out. pacman never had a gurt repo to update from. Now `gurt self-update` grabs the newest GURTSetupWizard package from the latest release and has your package manager install it.
 - **"gurt X is out" showed up late.** `gurt update` and `gurt upgrade` now ask GitHub for the newest release, so a new gurt shows up right away, even when your package lists were refreshed a little while ago.
 
 ## 1.2.0: Repomageddon 🌋
