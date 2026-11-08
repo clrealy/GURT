@@ -55,6 +55,21 @@ It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine,
 
 Mirrors and releases are set in [`gurt.conf`](gurt.conf), so apt can point at Ubuntu instead of Debian, for example.
 
+### Hotwyr: gurt backs up your package manager ⚡
+
+```sh
+gurt hotwyr on      # bash, zsh and fish (gurt hotwyr off takes it back out)
+```
+
+Then your package manager has gurt as its backup:
+
+- `sudo apt install yay` → apt can't find it → "apt doesn't have yay, but gurt does: aur/yay. install with gurt?"
+- `sudo apt upgrade` / `sudo pacman -Syu` / `sudo dnf upgrade` → when it's done, gurt updates what it installed
+- `apt search` / `pacman -Ss` → gurt's results underneath
+- a command you don't have (`yazi`) → "gurt has it: pacman/yazi. install it, then run yazi?" (your distro's own "command not found" suggestions still work for what gurt doesn't know)
+
+It only wraps the commands you type in a terminal (apt, apt-get, dnf, yum, zypper, pacman, apk, xbps-install, xbps-query, eopkg, and `sudo` in front of them). Scripts still get the real package manager. `GURT_HOTWYR=0` turns it off for a moment, `command apt …` skips it once. The setup wizard asks about it too.
+
 ### GitHub releases: `gh/` 🐙
 
 ```sh
