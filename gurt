@@ -1541,7 +1541,7 @@ sync_xbps() { # tmp
   need_tool python3 xbps
   fetch_quiet "$XBPS_MIRROR/$a-repodata" "$tmp/repodata" || die "can't reach Void's repo ($XBPS_MIRROR/$a-repodata)"
   head -c 4 "$tmp/repodata" | od -An -tx1 | grep -q '28 b5 2f fd' && need_tool zstd xbps
-  python3 - "$tmp/repodata" <<'PY'
+  python3 - "$tmp/repodata" "$tmp/xbps.pub" <<'PY'
 import io, lzma, gzip, plistlib, re, subprocess, sys, tarfile
 raw = open(sys.argv[1], "rb").read()
 if raw[:4] == b"\x28\xb5\x2f\xfd": raw = subprocess.run(["zstd", "-dc"], input=raw, capture_output=True, check=True).stdout
@@ -1549,6 +1549,10 @@ elif raw[:2] == b"\x1f\x8b": raw = gzip.decompress(raw)
 elif raw[:6] == b"\xfd7zXZ\x00": raw = lzma.decompress(raw)
 with tarfile.open(fileobj=io.BytesIO(raw)) as t:
     idx = plistlib.loads(t.extractfile("index.plist").read())
+    try:   # the key Void signs its packages with (.sig2 files): sync_xbps keeps it
+        meta = plistlib.loads(t.extractfile("index-meta.plist").read())
+        open(sys.argv[2], "wb").write(meta["public-key"] if isinstance(meta.get("public-key"), bytes) else b"")
+    except Exception: open(sys.argv[2], "wb").write(b"")
 def bare(d):   # "libX11>=1.6_1" / "foo-1.0_1" (an exact pkgver) → the name
     n = re.split(r"[<>=]", d, 1)[0]
     return re.sub(r"-[^-]+_[0-9]+$", "", n) if n == d else n
@@ -1561,6 +1565,28 @@ for name, p in sorted(idx.items()):
     desc = re.sub(r"\s+", " ", p.get("short_desc", ""))
     print("\t".join([name, ver, f"{pv}.{p.get('architecture', 'noarch')}.xbps", "sha256:" + sha, deps, desc, prov]))
 PY
+  xbps_key_keep "$tmp/xbps.pub" >&2
+}
+# Void's signing key, trust on first use: the first sync keeps it in ~/.config/gurt/keys, and a different key later
+# stops gurt cold (someone between you and the mirror, or a key change you should hear about from Void first)
+XBPS_KEY="$KEY_DIR/void-xbps.pem"
+xbps_key_fp() { md5sum < "$1" | awk '{ print $1 }' | sed 's/../&:/g; s/:$//'; }
+xbps_key_keep() { # the key the repo's index-meta.plist names
+  local new=$1
+  [[ -s $new ]] || { warn "Void's repo didn't name a signing key, so its packages can't be signature-checked"; return 0; }
+  mkdir -p "$KEY_DIR"
+  if [[ ! -s $XBPS_KEY ]]; then
+    cp "$new" "$XBPS_KEY"; msg2 "remembered Void's signing key 🔏 (fingerprint $(xbps_key_fp "$XBPS_KEY"))"
+  elif ! cmp -s "$new" "$XBPS_KEY"; then
+    die "🚩 Void's repo is signing with a DIFFERENT key than last time ($(xbps_key_fp "$new"), you trusted $(xbps_key_fp "$XBPS_KEY")). if Void really changed keys, delete $XBPS_KEY and sync again"
+  fi
+}
+xbps_sig_check() { # file.xbps url → its .sig2 against Void's key
+  [[ -s $XBPS_KEY ]] || { warn "no Void signing key yet (gurt sync xbps), so ${1##*/} isn't signature-checked"; return 0; }
+  need_tool openssl "Void's signatures"
+  fetch_quiet "$2.sig2" "$1.sig2" 2>/dev/null || die "🚩 ${1##*/} has no .sig2 signature on the mirror — not trusting it"
+  openssl dgst -sha256 -verify "$XBPS_KEY" -signature "$1.sig2" "$1" >/dev/null 2>&1 || { rm -f "$1" "$1.sig2"; die "🚩 ${1##*/}'s signature is NOT from Void's key — not installing it"; }
+  msg2 "signed by Void's key 🔏"
 }
 xbps_arch() { if host_musl; then echo "$CARCH-musl"; else echo "$CARCH"; fi; }
 
@@ -1942,6 +1968,7 @@ repack_foreign() { # src name ver path sum deps desc provides
     download "$src_url" "$file.part" && mv "$file.part" "$file"
   fi
   verify "$file" "$hash" "$algo" || { rm -f "$file"; die "checksum mismatch on ${path##*/} 🚩 (mirror out of sync? run: gurt sync $src)"; }
+  if [[ $src == xbps ]]; then local u="$path"; [[ $path =~ ^[a-z]+:// ]] || u="$(src_base "$src")/$path"; xbps_sig_check "$file" "$u"; fi
   repack_file "$src" "$name" "$ver" "$file" "$deps" "$desc" "$prov"
 }
 

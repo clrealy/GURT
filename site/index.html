@@ -375,7 +375,7 @@ footer.site .cicada{color:#e7e7ea}
     <h2 class="bandtitle">What GURT does</h2>
     <div class="fgrid">
       <article class="feat"><h3>Main GURT</h3><p>2,500+ community recipes, built for your distro: official vendor repos, prebuilt downloads with pinned checksums, Flathub apps.</p><a href="#packages">browse packages →</a></article>
-      <article class="feat"><h3>Every distro's repos</h3><p>The AUR, apt, dnf, zypper, pacman, Void's xbps, Solus' eopkg, Flathub and the Snap Store, on whatever distro you run. <code>gurt install aur/yay</code> on Mint just works.</p><a href="https://github.com/clrealy/GURT#readme">how it works →</a></article>
+      <article class="feat"><h3>Every distro's repos</h3><p>The AUR, apt, dnf, zypper, pacman, Alpine, Void, Solus and Gentoo repos, Flathub, the Snap Store, GitHub releases, AppImageHub, PyPI, npm, crates.io and Homebrew, on whatever distro you run. <code>gurt install aur/yay</code> on Mint just works.</p><a href="https://github.com/clrealy/GURT#readme">how it works →</a></article>
       <article class="feat"><h3>The GURT app</h3><p>Search, install and update everything in one window, with an update count, history, your app list and six skins.</p><a href="#get">get the app →</a></article>
       <article class="feat"><h3>Convert anything</h3><p>Turn a .deb into an .rpm, an AppImage into a pacman package, or a folder into a signed repo. Every file comes out signed.</p><a href="https://github.com/clrealy/GURT#readme">gurt convert →</a></article>
       <article class="feat"><h3>Safe by default</h3><p>Signatures get checked, build scripts get a sus check before anything runs, and btrfs systems get a snapshot before big upgrades.</p><a href="https://github.com/clrealy/GURT#readme">trust + safety →</a></article>
@@ -407,6 +407,14 @@ gurt outsource user/repo   <span class="c"># any git repo: clone + build + insta
       <button class="src" role="tab" aria-selected="false" data-src="pacman">pacman/ <small>Arch</small></button>
       <button class="src" role="tab" aria-selected="false" data-src="xbps">xbps/ <small>Void</small></button>
       <button class="src" role="tab" aria-selected="false" data-src="eopkg">eopkg/ <small>Solus</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="apk">apk/ <small>Alpine</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="gentoo">gentoo/ <small>Gentoo</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="gh">gh/ <small>GitHub releases</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="appimage">appimage/ <small>AppImageHub</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="pip">pip/ <small>PyPI</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="npm">npm/ <small>npm</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="cargo">cargo/ <small>crates.io</small></button>
+      <button class="src" role="tab" aria-selected="false" data-src="brew">brew/ <small>Homebrew</small></button>
       <button class="src" role="tab" aria-selected="false" data-src="flatpak">flatpak/ <small>Flathub</small></button>
       <button class="src" role="tab" aria-selected="false" data-src="snap">snap/ <small>Snap Store</small></button>
       <button class="src dirtbtn" role="tab" aria-selected="false" data-src="dirt">dirt/ <small>18+</small></button>
@@ -718,6 +726,22 @@ const SRC = {
             web: t => `https://voidlinux.org/packages/?arch=x86_64&q=${encodeURIComponent(t)}`, webName: "voidlinux.org" },
   eopkg:  { title: "eopkg · Solus", blurb: "Solus's binary packages, installable on non-Solus distros (x86_64 only).",
             web: t => `https://github.com/search?q=${encodeURIComponent("repo:getsolus/packages path:packages/ " + t)}&type=code`, webName: "Solus's package recipes on GitHub" },
+  apk:    { title: "apk · Alpine", blurb: "Alpine's binary packages. They're built for musl, so on a glibc distro only scripts and data install (programs need a musl system).",
+            web: t => `https://pkgs.alpinelinux.org/packages?name=${encodeURIComponent("*" + t + "*")}`, webName: "pkgs.alpinelinux.org" },
+  gentoo: { title: "gentoo · Gentoo", blurb: "Gentoo's official binary packages (its binhost), installable on non-Gentoo distros.",
+            web: t => `https://packages.gentoo.org/packages/search?q=${encodeURIComponent(t)}`, webName: "packages.gentoo.org" },
+  gh:     { title: "gh · GitHub releases", blurb: "Any project's newest GitHub release: gurt picks the file for your system (your distro's package, an AppImage, or a Linux build for your CPU), checks its sha256 and keeps it updated. Use owner/repo: gurt install gh/neovim/neovim.",
+            web: t => `https://github.com/search?q=${encodeURIComponent(t)}&type=repositories`, webName: "github.com" },
+  appimage:{ title: "appimage · AppImageHub", blurb: "AppImageHub's catalog. Apps with a GitHub release install and update through gh/.",
+            web: t => `https://appimage.github.io/apps/`, webName: "appimage.github.io" },
+  pip:    { title: "pip · PyPI", blurb: "Python apps, each in its own venv, with their commands on your PATH. Removing one takes all of it.",
+            web: t => `https://pypi.org/search/?q=${encodeURIComponent(t)}`, webName: "pypi.org" },
+  npm:    { title: "npm · npm", blurb: "Node.js command-line apps, each in its own folder, with their commands on your PATH.",
+            web: t => `https://www.npmjs.com/search?q=${encodeURIComponent(t)}`, webName: "npmjs.com" },
+  cargo:  { title: "cargo · crates.io", blurb: "Rust apps, built on your PC with cargo (gurt gets Rust for you).",
+            web: t => `https://crates.io/search?q=${encodeURIComponent(t)}`, webName: "crates.io" },
+  brew:   { title: "brew · Homebrew", blurb: "Homebrew on Linux: it installs as you into /home/linuxbrew, so it works on immutable and locked-down systems. gurt sets it up the first time.",
+            web: t => `https://formulae.brew.sh/formula/${encodeURIComponent(t)}`, webName: "formulae.brew.sh" },
   flatpak:{ title: "flatpak · Flathub", blurb: "Flathub apps, sandboxed. gurt installs flatpak + adds Flathub for you the first time. Use the app id or just the name (gurt install flatpak/gimp).",
             web: t => `https://flathub.org/apps/search?q=${encodeURIComponent(t)}`, webName: "flathub.org" },
   dirt:   { title: "DIRT · mature section" },

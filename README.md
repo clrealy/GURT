@@ -39,13 +39,39 @@ It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine,
 | `dnf/` `fedora/` | **Fedora** repos | downloads the `.rpm`, checks it, unpacks it |
 | `zypper/` `suse/` | **openSUSE Tumbleweed** repos | downloads the `.rpm`, checks it, unpacks it |
 | `pacman/` `arch/` | **Arch** official repos | downloads the `.pkg.tar.zst`, checks it, unpacks it |
-| `xbps/` `void/` | **Void Linux** repos (musl systems get Void's musl repo) | downloads the `.xbps`, checks it, unpacks it |
+| `xbps/` `void/` | **Void Linux** repos (musl systems get Void's musl repo) | downloads the `.xbps`, checks its signature, unpacks it |
 | `eopkg/` `solus/` | **Solus** repos | downloads the `.eopkg`, checks it, unpacks it |
+| `apk/` `alpine/` | **Alpine** repos (main + community) | downloads the `.apk`, checks it, unpacks it. Alpine is musl, so on glibc only scripts and data install (`--force` to override) |
+| `gentoo/` | **Gentoo**'s official binary packages | downloads the `.gpkg.tar`, checks it, unpacks it |
+| `gh/` `github/` | **GitHub releases**: `gh/owner/repo` | picks the file that fits your system, checks its sha256, installs it, updates on new releases |
+| `appimage/` | **AppImageHub**'s catalog | installs through `gh/`, AppImage first |
+| `pip/` `pypi/` | **PyPI** (Python apps) | its own venv in `/usr/local/lib/gurt-pip/<name>`, commands in `/usr/local/bin` |
+| `npm/` | **npm** (Node.js apps) | its own folder in `/usr/local/lib/gurt-npm/<name>`, commands in `/usr/local/bin` |
+| `cargo/` `crates/` | **crates.io** (Rust apps) | builds it with cargo into `/usr/local/lib/gurt-cargo/<name>` |
+| `brew/` `homebrew/` | **Homebrew** on Linux | runs `brew install` for you, as you (sets up Homebrew the first time) |
 | `flatpak/` `flathub/` | **Flathub** | runs `flatpak install` for you (sets up flatpak + Flathub the first time) |
 | `snap/` | **Snap Store** | runs `snap install` for you (sets up snapd the first time; asks before `--classic`) |
 | `nix/` `nixpkgs/` | **nixpkgs** (on NixOS, or anywhere nix is installed) | installs into your own nix profile, no sudo |
 
 Mirrors and releases are set in [`gurt.conf`](gurt.conf), so apt can point at Ubuntu instead of Debian, for example.
+
+### GitHub releases: `gh/` 🐙
+
+```sh
+gurt install gh/neovim/neovim      # the newest release, the right file for your system
+gurt info gh/BurntSushi/ripgrep    # which file gurt would pick, and its sha256
+gurt search gh/terminal            # repos, most stars first
+```
+
+gurt picks your distro's own package if the release has one, else an AppImage, else a Linux tarball for your CPU (musl systems skip glibc builds). It checks GitHub's sha256 for the file (or the release's checksum file), and `gurt upgrade` installs new releases. GitHub allows 60 lookups an hour; set `GITHUB_TOKEN` (or `GH_TOKEN`) for more.
+
+### pip, npm and cargo apps 🐍
+
+`pip/`, `npm/` and `cargo/` apps become real gurt packages: each one gets its own folder (a venv, an npm prefix or a cargo root), its commands go on your PATH, and `list`, `history`, `undo`, `rollback` and `remove` work like for anything else. `gurt upgrade` checks PyPI, npm and crates.io. Their install scripts would run as root, so gurt won't do these as root; run it as you.
+
+### Signed Void packages 🔏
+
+Void signs every package. The first `gurt sync xbps` remembers the key from Void's repo (`~/.config/gurt/keys/void-xbps.pem`), every `.xbps` gets checked against it, and if the repo ever shows a different key gurt stops cold.
 
 ### System tools go in a box automatically 📦
 
