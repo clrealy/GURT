@@ -299,7 +299,7 @@ body.carted{padding-bottom:74px}
 .pick .smartscreen{margin-top:0}
 @media (max-width:760px){.choose{grid-template-columns:1fr}.pick.is-mine{order:-1}.headline{font-size:26px}.hero .logo .lg-gurt svg{height:72px}}
 /* hero: what gurt does on the left (the demo terminal), getting it on the right */
-.herogrid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+.herogrid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-items:start}
 .heromain{min-width:0}
 .demo{margin-top:18px;border:1px solid var(--edge);border-radius:var(--r);background:#0b0c0e}
 .demobar{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:6px 8px;border-bottom:1px solid var(--edge)}
@@ -313,10 +313,10 @@ body.carted{padding-bottom:74px}
 @keyframes blink{50%{opacity:0}}
 @media (max-width:600px){.demoscreen{height:21em;font-size:12px;padding:10px}}
 @media (prefers-reduced-motion:reduce){.demoscreen .cur{animation:none}}
-.getbox{margin-top:4px;background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.getbox{background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .gethead{font:800 18px var(--sans);margin:0;color:#fff}
 .getsub{margin:0;color:var(--muted);font-size:13px}
-.getbox .choose{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0;align-items:start}
+.getbox .choose{display:flex;flex-direction:column;gap:6px;margin:0}
 .getbox .pick{padding:0;gap:0;background:var(--bg-hero,#101114)}
 .getbox .pick>summary{list-style:none;cursor:pointer;padding:9px 10px;gap:8px}
 .getbox .pick>summary::-webkit-details-marker{display:none}
@@ -336,7 +336,9 @@ body.carted{padding-bottom:74px}
 .srclabel{font:700 12px var(--mono);color:var(--muted);margin-right:6px}
 .srcchip{font:600 12px var(--mono);color:#e7e7ea;text-decoration:none;border:1px solid var(--edge);border-radius:var(--r);padding:3px 7px;background:var(--panel)}
 .srcchip:hover,.srcchip:focus-visible{border-color:var(--accent);outline:none}
-@media (max-width:900px){.getbox .choose{grid-template-columns:minmax(0,1fr)}}
+.linuxdl{margin-top:16px}
+.linuxdl.is-mine{border-color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
+@media (max-width:900px){.herogrid{grid-template-columns:minmax(0,1fr)}}
 /* features as dense rows: name | what it does | where to go */
 .frows{border:1px solid var(--edge);border-radius:var(--r);background:var(--bg)}
 .frow{display:grid;grid-template-columns:190px minmax(0,1fr) auto;gap:14px;align-items:baseline;padding:9px 12px;border-top:1px solid var(--edge);text-decoration:none;color:var(--ink)}
@@ -378,7 +380,7 @@ footer.site .cicada{color:#e7e7ea}
   </div>
 </nav>
 <section class="hero" id="top">
-  <div class="wrap herogrid">
+  <div class="wrap herogrid" id="get">
   <div class="heromain">
     <h1 class="logo"><span class="srh">GURT, the GURT Universal Repository Thingy</span><span class="lg-gurt"><!--logo--><svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -1223 3791 1805" role="img" aria-label="gurt"><path transform="translate(70 70) rotate(-4 529 -300) translate(0 0) scale(1 -1)" d="M257 347Q79 422 79 640Q79 796 188.0 880.5Q297 965 500 965Q543 965 610.5 957.5Q678 950 709 940L934 1051L969 1008L855 846Q917 770 917 640Q917 481 809.5 395.5Q702 310 496 310Q417 310 343 322L319 246Q321 217 356.0 191.5Q391 166 442 166H661Q1004 166 1004 -98Q1004 -207 944.5 -285.5Q885 -364 769.5 -408.0Q654 -452 482 -452Q278 -452 166.0 -393.5Q54 -335 54 -233Q54 -188 90.5 -146.0Q127 -104 232 -43Q173 -20 131.5 37.0Q90 94 90 157ZM785 -166Q785 -71 658 -71H341Q253 -135 253 -216Q253 -280 314.5 -312.0Q376 -344 483 -344Q628 -344 706.5 -297.0Q785 -250 785 -166ZM494 410Q568 410 601.0 467.5Q634 525 634 640Q634 755 601.5 809.5Q569 864 494 864Q425 864 393.5 809.5Q362 755 362 640Q362 525 393.0 467.5Q424 410 494 410Z" fill="#ffc629"/><path transform="translate(70 70) rotate(3 1552 -418) translate(994 40) scale(1 -1)" d="M705 82 637 47Q497 -25 385 -25Q125 -25 125 252V850L31 874V940H414V291Q414 207 449.5 160.0Q485 113 551 113Q627 113 703 147V850L617 874V940H992V90L1084 66V0H719Z" fill="#141414"/><path transform="translate(70 70) rotate(-5 2563 -555) translate(2103 -70) scale(1 -1)" d="M461 745Q569 865 654.5 917.5Q740 970 811 970H865V627H809L750 753Q687 753 607.0 725.5Q527 698 466 661V90L617 66V0H55V66L177 90V850L55 874V940H450Z" fill="#141414"/><path transform="translate(70 70) rotate(4 3335 -556) translate(2982 10) scale(1 -1)" d="M438 -20Q303 -20 229.5 41.0Q156 102 156 217V836H33V901L178 940L295 1153H445V940H643V836H445V235Q445 170 472.0 137.0Q499 104 543 104Q596 104 673 120V35Q643 14 570.5 -3.0Q498 -20 438 -20Z" fill="#141414"/><path class="logo-g" transform="rotate(-4 529 -300) translate(0 0) scale(1 -1)" d="M257 347Q79 422 79 640Q79 796 188.0 880.5Q297 965 500 965Q543 965 610.5 957.5Q678 950 709 940L934 1051L969 1008L855 846Q917 770 917 640Q917 481 809.5 395.5Q702 310 496 310Q417 310 343 322L319 246Q321 217 356.0 191.5Q391 166 442 166H661Q1004 166 1004 -98Q1004 -207 944.5 -285.5Q885 -364 769.5 -408.0Q654 -452 482 -452Q278 -452 166.0 -393.5Q54 -335 54 -233Q54 -188 90.5 -146.0Q127 -104 232 -43Q173 -20 131.5 37.0Q90 94 90 157ZM785 -166Q785 -71 658 -71H341Q253 -135 253 -216Q253 -280 314.5 -312.0Q376 -344 483 -344Q628 -344 706.5 -297.0Q785 -250 785 -166ZM494 410Q568 410 601.0 467.5Q634 525 634 640Q634 755 601.5 809.5Q569 864 494 864Q425 864 393.5 809.5Q362 755 362 640Q362 525 393.0 467.5Q424 410 494 410Z" fill="var(--logo-ink)" stroke="#141414" stroke-width="18"/><path transform="rotate(3 1552 -418) translate(994 40) scale(1 -1)" d="M705 82 637 47Q497 -25 385 -25Q125 -25 125 252V850L31 874V940H414V291Q414 207 449.5 160.0Q485 113 551 113Q627 113 703 147V850L617 874V940H992V90L1084 66V0H719Z" fill="#e8302a" stroke="#141414" stroke-width="18"/><path transform="rotate(-5 2563 -555) translate(2103 -70) scale(1 -1)" d="M461 745Q569 865 654.5 917.5Q740 970 811 970H865V627H809L750 753Q687 753 607.0 725.5Q527 698 466 661V90L617 66V0H55V66L177 90V850L55 874V940H450Z" fill="#1fa64a" stroke="#141414" stroke-width="18"/><path transform="rotate(4 3335 -556) translate(2982 10) scale(1 -1)" d="M438 -20Q303 -20 229.5 41.0Q156 102 156 217V836H33V901L178 940L295 1153H445V940H643V836H445V235Q445 170 472.0 137.0Q499 104 543 104Q596 104 673 120V35Q643 14 570.5 -3.0Q498 -20 438 -20Z" fill="#2456e0" stroke="#141414" stroke-width="18"/></svg><!--/logo--></span><img class="lg-dirt" src="assets/dirt-logo.png?v=2" alt="dirt." width="1024" height="449"></h1>
     <div class="stripe" aria-hidden="true"></div>
@@ -390,17 +392,17 @@ footer.site .cicada{color:#e7e7ea}
       <pre class="demoscreen" id="demoscreen" aria-live="off"></pre>
     </div>
     <div class="srcstrip" aria-label="the sources gurt installs from"><span class="srclabel">20 sources</span><a class="srcchip" href="#packages" data-go="gurt">gurt/</a><a class="srcchip" href="#packages" data-go="aur">aur/</a><a class="srcchip" href="#packages" data-go="apt">apt/</a><a class="srcchip" href="#packages" data-go="dnf">dnf/</a><a class="srcchip" href="#packages" data-go="zypper">zypper/</a><a class="srcchip" href="#packages" data-go="pacman">pacman/</a><a class="srcchip" href="#packages" data-go="apk">apk/</a><a class="srcchip" href="#packages" data-go="xbps">xbps/</a><a class="srcchip" href="#packages" data-go="eopkg">eopkg/</a><a class="srcchip" href="#packages" data-go="gentoo">gentoo/</a><a class="srcchip" href="https://github.com/clrealy/GURT#nixos-">nix/</a><a class="srcchip" href="#packages" data-go="flatpak">flatpak/</a><a class="srcchip" href="#packages" data-go="snap">snap/</a><a class="srcchip" href="#packages" data-go="gh">gh/</a><a class="srcchip" href="#packages" data-go="appimage">appimage/</a><a class="srcchip" href="#packages" data-go="pip">pip/</a><a class="srcchip" href="#packages" data-go="npm">npm/</a><a class="srcchip" href="#packages" data-go="cargo">cargo/</a><a class="srcchip" href="#packages" data-go="brew">brew/</a><a class="srcchip" href="https://github.com/clrealy/GURT#android-apps-waydroid-">android/</a></div>
+    <section class="pick linuxdl" id="pick-linux" aria-labelledby="pl-h">
+      <div class="pickhead"><div><h2 id="pl-h">GURT for Linux</h2><small>the GURT Setup Wizard as your distro's own package</small></div><span class="mine" hidden>your system</span></div>
+      <p>Open it like any package: it installs GURT and the app, then the setup wizard runs. Updates come with your system's.</p>
+      <div class="dlbtns" id="dl-linux"></div>
+      <p class="nixnote">NixOS: no package for it, so run <code>curl -fsSL https://gurtproject.org/install.sh | sh</code>. nixpkgs becomes <code>nix/</code>, and other distros' packages run through nix-ld, no box.</p>
+    </section>
   </div>
-  <aside class="getbox" id="get" aria-labelledby="get-h">
-    <h2 class="gethead" id="get-h">Get GURT</h2>
-    <p class="getsub" id="getsub">free and open source (MIT). pick your system:</p>
+  <aside class="getbox" id="other-os" aria-labelledby="get-h">
+    <h2 class="gethead" id="get-h">Other Operating Systems</h2>
+    <p class="getsub" id="getsub">GURT on Windows (through WSL) and on Chromebooks.</p>
     <div class="choose">
-      <details class="pick" id="pick-linux">
-        <summary class="pickhead"><div><h2 id="pl-h">GURT for Linux</h2><small>the GURT Setup Wizard as your distro's own package</small></div><span class="mine" hidden>your system</span></summary>
-        <p>Open it like any package: it installs GURT and the app, then the setup wizard runs. Updates come with your system's.</p>
-        <div class="dlbtns" id="dl-linux"></div>
-        <p class="nixnote">NixOS: no package for it, so run <code>curl -fsSL https://gurtproject.org/install.sh | sh</code>. nixpkgs becomes <code>nix/</code>, and other distros' packages run through nix-ld, no box.</p>
-      </details>
       <details class="pick" id="pick-win">
         <summary class="pickhead"><div><h2 id="pw-h">GURT for Windows</h2><small>Windows 10 / 11, through WSL</small></div><span class="mine" hidden>your system</span></summary>
         <p>Sets up WSL if you don't have it, installs GURT inside it, and puts a <code>gurt</code> command and the GURT app in your Start menu. Linux apps you install show up there too.</p>
@@ -648,11 +650,8 @@ const $ = s => document.querySelector(s);
   $("#dl-cros").innerHTML = btn(["deb", "GURTSetupWizard.deb", "for Linux on ChromeOS"], false);
   const mine = isWin ? "#pick-win" : isCros ? "#pick-cros" : isLinux ? "#pick-linux" : "";   // your system's card gets marked (and goes first on phones)
   if (mine) { $(mine).classList.add("is-mine"); $(mine + " .mine").hidden = false; }
-  $(mine || "#pick-linux").open = true;   // your system's download is open; side by side on a wide screen, all of them are
-  if (matchMedia("(min-width: 901px)").matches) document.querySelectorAll(".getbox .pick").forEach(d => { d.open = true; });
-  $("#getsub").textContent = isWin ? "you're on Windows, so that one's open. free and open source (MIT)."
-    : isCros ? "you're on a Chromebook, so that one's open. free and open source (MIT)."
-    : isLinux ? "you're on Linux, so that one's open. free and open source (MIT)." : "free and open source (MIT). pick your system:";
+  if (isWin || isCros) $(mine).open = true;   // on Windows or a Chromebook, that panel opens in the "other" card
+  if (isWin || isCros) $("#getsub").textContent = `you're on ${isWin ? "Windows" : "a Chromebook"}, so that one's open.`;
   // Windows people get the "it's not malware" note right away; everyone else when they grab the .exe
   const showNote = () => { $("#smartscreen").hidden = false; };
   if (isWin) showNote();
