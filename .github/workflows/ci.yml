@@ -78,6 +78,8 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: windows-latest
     steps:
+      - name: long paths (the site has a deeply nested folder Windows' 260-character limit can't hold)
+        run: git config --system core.longpaths true
       - uses: actions/checkout@v4
       - name: install.ps1 parses + passes PSScriptAnalyzer
         shell: pwsh
@@ -127,7 +129,7 @@ jobs:
           g="$GITHUB_WORKSPACE/gurt"
           if command -v apt-get; then "$g" -y convert gurt-cvtest-1.0.tar.gz deb && grep -qa _gpgorigin ./gurt-cvtest_*.deb && dpkg -i ./gurt-cvtest_*.deb
           elif command -v dnf; then "$g" -y convert gurt-cvtest-1.0.tar.gz rpm && "$g" -y key trust && rpm -Kv ./gurt-cvtest-*.rpm | tee /tmp/k.txt &&
-            grep -q 'Header V4 RSA/SHA256 Signature, key ID .*: OK' /tmp/k.txt && dnf install -y ./gurt-cvtest-*.rpm
+            grep -qE 'Header (OpenPGP )?V4 RSA/SHA256 [Ss]ignature.*: OK' /tmp/k.txt && dnf install -y ./gurt-cvtest-*.rpm
           elif command -v pacman; then "$g" -y convert gurt-cvtest-1.0.tar.gz pacman && [ -f ./gurt-cvtest-*.pkg.tar.zst.sig ] && "$g" -y key trust &&
             pacman -U --noconfirm ./gurt-cvtest-*.pkg.tar.zst
           elif command -v apk; then "$g" -y convert gurt-cvtest-1.0.tar.gz apk && "$g" -y key trust && apk verify ./gurt-cvtest-*.apk && apk add ./gurt-cvtest-*.apk
@@ -195,28 +197,42 @@ jobs:
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq zstd python3-venv openssl
       - name: distro repos sync and install
         run: |
+          set -euo pipefail   # every line has to work, not just the last one
           for s in xbps eopkg apk gentoo; do ./gurt sync "$s"; done
-          ./gurt search void/figlet | head -n 4
-          ./gurt -y install xbps/figlet && figlet gurt && ./gurt -y remove xbps/figlet
+          ./gurt search void/figlet > /tmp/s.txt; head -n 4 /tmp/s.txt
+          ./gurt -y install xbps/figlet
+          figlet gurt   # Void's programs ask for /lib/ld-linux…, Ubuntu keeps it in /lib64: gurt has to point them there
+          ./gurt -y remove xbps/figlet
           ls ~/.config/gurt/keys/void-xbps.pem
-          ./gurt -y install eopkg/figlet && figlet gurt && ./gurt -y remove eopkg/figlet
-          ./gurt -y install apk/neofetch && ./gurt -y remove apk/neofetch   # a shell script, so fine on glibc
-          ! ./gurt -y install apk/figlet   # musl programs on glibc: refused
-          ./gurt search gentoo/bash | head -n 4
+          ./gurt -y install eopkg/figlet
+          figlet gurt
+          ./gurt -y remove eopkg/figlet
+          ./gurt -y install apk/alpine-keys   # just data, so fine on glibc
+          ./gurt -y remove apk/alpine-keys
+          if ./gurt -y install apk/figlet; then echo "::error::a musl program installed on glibc"; exit 1; fi
+          ./gurt search gentoo/bash > /tmp/s.txt; head -n 4 /tmp/s.txt
       - name: gh/ GitHub releases
         run: |
+          set -euo pipefail
           ./gurt info gh/clrealy/GURT
-          ./gurt -y --nodeps install gh/clrealy/GURT && ./gurt list | grep -q '^gh/gurt ' && ./gurt -y remove gh/gurt
+          ./gurt -y --nodeps install gh/clrealy/GURT
+          ./gurt list | grep -q '^gh/gurt '
+          ./gurt -y remove gh/gurt
       - name: pip/ npm/ cargo/
         run: |
-          ./gurt -y install pip/cowsay && cowsay -t moo && ./gurt -y remove pip/cowsay
-          ./gurt -y install npm/cowsay && cowthink hi && ./gurt -y remove npm/cowsay
-          ./gurt search cargo/ripgrep | head -n 2
+          set -euo pipefail
+          ./gurt -y install pip/cowsay
+          cowsay -t moo
+          ./gurt -y remove pip/cowsay
+          ./gurt -y install npm/cowsay
+          cowthink hi
+          ./gurt -y remove npm/cowsay
+          ./gurt search cargo/ripgrep > /tmp/s.txt; head -n 2 /tmp/s.txt
           [ ! -e /usr/local/lib/gurt-pip/cowsay ] && [ ! -e /usr/local/lib/gurt-npm/cowsay ]
       - name: appimage/ and brew/ catalogs
         run: |
-          ./gurt search appimage/obsidian | head -n 4
-          ./gurt search brew/jq | head -n 4
+          ./gurt search appimage/obsidian > /tmp/s.txt; head -n 4 /tmp/s.txt
+          ./gurt search brew/jq > /tmp/s.txt; head -n 4 /tmp/s.txt
 
   # gurt running ON Void (xbps is the host's package manager): another distro's package, deps from xbps
   void:
@@ -232,8 +248,10 @@ jobs:
       - name: gurt on Void
         shell: bash
         run: |
-          ./gurt doctor | head -n 20
-          ./gurt -y install apt/cowsay && /usr/games/cowsay hi && ./gurt -y remove apt/cowsay
+          ./gurt doctor > /tmp/doctor.txt || true; head -n 20 /tmp/doctor.txt
+          ./gurt -y install apt/cowsay
+          /usr/games/cowsay hi
+          ./gurt -y remove apt/cowsay
 
   # nix/ for real, and NixOS mode (GURT_NIXOS=1) on top of it
   nix:
