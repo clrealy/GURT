@@ -2,7 +2,7 @@
 # makes the gurt wordmark: g u r t traced from Liberation Serif Bold (SIL OFL), each letter its color,
 # a solid offset shadow (no blur, no glow), and a little bounce. writes:
 #   assets/gurt-logo.svg, site/assets/gurt-logo.svg   → the logo
-#   gui/gurt-gui.py + site/index.html (between <!--logo--> markers) → the same, themeable (the g follows the text color)
+#   site/index.html (between <!--logo--> markers) → the same, themeable (the g follows the text color); app/assets/logo.svg for the app
 #   site/assets/favicon.svg                           → the icon (g + the color stripe)
 # then tools/render-logo.js turns them into the PNGs.  needs: pip install fonttools
 import os
@@ -51,11 +51,14 @@ def svg(ink=INK, themed=False):
 
 for p in ("assets/gurt-logo.svg", "site/assets/gurt-logo.svg"):
     open(os.path.join(ROOT, p), "w").write(svg() + "\n")
-# the app has the logo inline (between <!--logo--> markers) so the g can follow the app's text color
-for page in ("gui/gurt-gui.py", "site/index.html"):   # both have it inline, so the g follows light/dark
+# the site has the logo inline (between <!--logo--> markers) so the g can follow its text color
+for page in ("site/index.html",):
     path = os.path.join(ROOT, page); g = open(path).read()
     a, b = g.index("<!--logo-->") + len("<!--logo-->"), g.index("<!--/logo-->")
     open(path, "w").write(g[:a] + svg("var(--logo-ink)", themed=True) + g[b:])
+# the app swaps var(--logo-ink) for the skin's ink when it draws it (app/src/icons.rs)
+app_svg = svg("var(--logo-ink)", themed=True).replace(' role="img" aria-label="gurt"', "").replace("<svg ", '<svg width="3791" height="1805" ', 1)
+open(os.path.join(ROOT, "app/assets/logo.svg"), "w").write(app_svg)
 
 # the icon: a big g with the red/green/blue stripe under it, in a cream box with a dark outline. it has to read at
 # 16px (a browser tab), so the box fills the square, the outline is thin and the g is as big as it fits.

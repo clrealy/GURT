@@ -57,6 +57,7 @@ pub struct Pal {
     pub hl: Color32,        // hover / selected row
     pub hl_ink: Option<Color32>, // XP + 95: rows go navy with white text on hover
     pub header: Color32,
+    #[allow(dead_code)]
     pub header_ink: Color32,
     pub logo_ink: Color32,
 }

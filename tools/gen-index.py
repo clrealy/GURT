@@ -3,7 +3,7 @@
 import json, pathlib, subprocess, time
 root = pathlib.Path(__file__).resolve().parent.parent
 LIST = {"arch", "depends", "makedepends", "source", "alias"}
-FLATHUB_ICON = "https://dl.flathub.org/repo/appstream/x86_64/icons/128x128/{}.png"   # also in gui/gurt-gui.py
+FLATHUB_ICON = "https://dl.flathub.org/repo/appstream/x86_64/icons/128x128/{}.png"   # also in app/src/data.rs
 def collect(tree):
     pkgs = []
     for info in sorted(root.glob(f"{tree}/*/.gurtinfo")):

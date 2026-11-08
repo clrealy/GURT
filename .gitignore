@@ -3,3 +3,4 @@ site/dirt.json
 dist/
 __pycache__/
 app/target/
+dist-app/

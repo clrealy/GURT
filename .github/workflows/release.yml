@@ -24,14 +24,23 @@ jobs:
             mkdir -p "$HOME/.local/share/gurt" && echo "$KEY" | base64 -d | tar xzf - -C "$HOME/.local/share/gurt"
             chmod -R go-rwx "$HOME/.local/share/gurt/signing"; echo "SIGN=" >> "$GITHUB_ENV"
           else echo "::warning::no GURT_SIGNING_KEY secret, so the packages are unsigned"; echo "SIGN=--no-sign" >> "$GITHUB_ENV"; fi
+      # GURT's app (app/, Rust) for x86_64 + aarch64: inside every package, and on the release on its own for install.sh
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: app }
+      - name: GURT's app
+        run: |
+          python3 -m pip install -q --user --break-system-packages cargo-zigbuild ziglang
+          export PATH="$HOME/.local/bin:$PATH"
+          tools/build-app.sh dist-app
+          mkdir -p dist && cp dist-app/gurt-app-* dist/
       - name: GURTSetupWizard for every distro
-        run: tools/make-setup-wizard.sh dist $SIGN
+        run: tools/make-setup-wizard.sh dist $SIGN --app=dist-app
       - name: GURTSetupWizard.exe
         run: tools/win/build-exe.sh dist
       - name: the public key + checksums
         run: |
           if [ -z "$SIGN" ]; then ./gurt key export dist; fi
-          ( cd dist && sha256sum GURTSetupWizard.* > SHA256SUMS )
+          ( cd dist && sha256sum GURTSetupWizard.* gurt-app-* > SHA256SUMS )
       - name: publish the release
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |

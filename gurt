@@ -5314,7 +5314,7 @@ cmd_setup() {
   elif [[ -n $(hook_pms) ]] && ask "⚡ turn on Hotwyr? ($PM asks gurt when it can't find something)"; then cmd_hook on || true; fi
   if [[ $(cmd_notify status) == on ]]; then msg2 "update alerts are already on 🔔"
   elif ask "🔔 a desktop notification when updates are waiting?"; then cmd_notify on || true; fi
-  if ! $NOCONFIRM && has_display && ask "🖥️ set up the GURT app (its own window + a menu entry)?"; then cmd_gui --setup || warn "the app window didn't set up, gurt gui still opens it in your browser"; fi
+  if ! $NOCONFIRM && has_display && ask "🖥️ set up the GURT app (its own window + a menu entry)?"; then cmd_gui --setup || warn "GURT's app didn't set up this time (gurt gui --setup tries again)"; fi
   printf '\n'; achieve wizard; wizard_mark_done
   msg "you're all set 🦆 try: gurt search like photoshop · gurt lottery · gurt gui"
 }
@@ -5369,7 +5369,7 @@ cmd_profile() { # save|load|list|show|rm [name|file]
 # ── GURTd: gurt's background daemon. fresh package lists, update checks (+ auto-update if you want), "install it with
 #    GURT?" for new downloads, and GURT opens instantly. gurt gurtd config = a little menu for all of it ──
 GURTD_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/daemon.conf"
-GURTD_URL="${XDG_RUNTIME_DIR:-$HOME/.cache/gurt}/gurt-gui.url"
+GURTD_PID="${XDG_RUNTIME_DIR:-$HOME/.cache/gurt}/gurtd.pid"   # GURTd writes its pid here while it runs
 gurtd_get() { local v; v=$(sed -n "s/^$1=//p" "$GURTD_CONF" 2>/dev/null | tail -n1); [[ $v == on || $v == off ]] && echo "$v" || echo "$2"; }
 gurtd_quiet() { local v; v=$(sed -n "s/^quiet=//p" "$GURTD_CONF" 2>/dev/null | tail -n1); [[ $v =~ ^([01]?[0-9]|2[0-3])-([01]?[0-9]|2[0-3])$ ]] && echo "$v" || echo off; }
 gurtd_set() { # key on|off (quiet: 22-8|off)
@@ -5378,7 +5378,8 @@ gurtd_set() { # key on|off (quiet: 22-8|off)
 }
 gurtd_running() {
   systemctl --user is-active --quiet gurtd 2>/dev/null && return 0
-  [[ -f $GURTD_URL ]] && command -v curl >/dev/null && curl -fs -o /dev/null --max-time 2 "$(head -n1 "$GURTD_URL")"
+  local pid; pid=$(head -n1 "$GURTD_PID" 2>/dev/null) || return 1
+  [[ $pid =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null
 }
 gurtd_onoff() { if [[ $1 == on ]]; then printf '%son%s' "$GRN" "$R0"; else printf '%soff%s' "$DIM" "$R0"; fi; }
 gurtd_row() { printf '  %s  %-22s %s%s  %s%s%s\n' "$1" "$2" "$(gurtd_onoff "$3")" "$([[ $3 == on ]] && echo ' ')" "$DIM" "$4" "$R0"; }
@@ -5411,18 +5412,17 @@ gurtd_tui() {
   done
 }
 cmd_gurtd() { # config|on|off|status|log|run|autoupdate|watch|fresh|saver [on|off] | quiet 22-8|off
-  local unit_dir="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user" self py
+  local unit_dir="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user" self app
   self=$(readlink -f "$0")
   case ${1:-config} in
     config|menu|tui)
       if [[ -t 0 && -t 1 ]]; then gurtd_tui; else cmd_gurtd status; fi ;;
     on|enable|start)
-      py=$(gui_script) || { sync_main >/dev/null; py=$(gui_script) || die "couldn't find gurt-gui.py (try: gurt sync)"; }
-      command -v python3 >/dev/null || die "GURTd needs python3"
+      app=$(gui_app)
       if command -v systemctl >/dev/null && systemctl --user show-environment >/dev/null 2>&1; then
         mkdir -p "$unit_dir"
         printf '%s\n' "[Unit]" "Description=GURTd btw (Linus sees you)" "After=graphical-session.target" "" \
-          "[Service]" "ExecStart=$(command -v python3) $py --gurt $self --daemon" "Restart=on-failure" "RestartSec=10" "Nice=5" "" \
+          "[Service]" "ExecStart=$app --gurt $self --daemon" "Restart=on-failure" "RestartSec=10" "Nice=5" "" \
           "[Install]" "WantedBy=default.target" > "$unit_dir/gurtd.service"
         systemctl --user daemon-reload && systemctl --user enable --now gurtd.service >/dev/null 2>&1 || die "systemd wouldn't start GURTd"
       elif $CROS_NATIVE; then   # ChromeOS itself starts nothing of yours at login: start it now
@@ -5440,7 +5440,8 @@ cmd_gurtd() { # config|on|off|status|log|run|autoupdate|watch|fresh|saver [on|of
     off|disable|stop)
       systemctl --user disable --now gurtd.service >/dev/null 2>&1 || true
       rm -f "$unit_dir/gurtd.service" "${XDG_CONFIG_HOME:-$HOME/.config}/autostart/gurtd.desktop"
-      if [[ -f $GURTD_URL ]]; then pkill -f -- "gurt-gui.py .*--daemon" 2>/dev/null || true; rm -f "$GURTD_URL"; fi
+      if gurtd_running; then kill "$(head -n1 "$GURTD_PID")" 2>/dev/null || true; fi
+      rm -f "$GURTD_PID"
       msg "GURTd is off" ;;
     status)
       if gurtd_running; then echo "running: on"; else echo "running: off"; fi
@@ -5449,8 +5450,8 @@ cmd_gurtd() { # config|on|off|status|log|run|autoupdate|watch|fresh|saver [on|of
     log)
       if [[ -f $HOME/.cache/gurt/gurtd.log ]]; then tail -n "${2:-30}" "$HOME/.cache/gurt/gurtd.log"; else echo "GURTd hasn't run yet"; fi ;;
     run)
-      py=$(gui_script) || { sync_main >/dev/null; py=$(gui_script) || die "couldn't find gurt-gui.py (try: gurt sync)"; }
-      exec python3 "$py" --gurt "$self" --daemon ;;
+      app=$(gui_app)
+      exec "$app" --gurt "$self" --daemon ;;
     quiet)
       local q=${2:-}; q=${q//:00/}; q=${q// /}
       [[ $q == off || $q =~ ^([01]?[0-9]|2[0-3])-([01]?[0-9]|2[0-3])$ ]] || die "usage: gurt gurtd quiet 22-8 (hours, 24h clock) | off"
@@ -5597,14 +5598,57 @@ cmd_complete() {
 }
 
 # ───────────────────────── gurt gui ─────────────────────────
-# a local app window (python3 + your browser, nothing else to install). server only listens on 127.0.0.1
-gui_script() {
-  local self d f
-  self=$(readlink -f "$0"); d=$(dirname "$self")
-  for f in "$d/../share/gurt/gurt-gui.py" /usr/local/share/gurt/gurt-gui.py /usr/share/gurt/gurt-gui.py "$d/gui/gurt-gui.py" "$GURT_REPO_DIR/gui/gurt-gui.py"; do
-    [[ -f $f ]] && { echo "$f"; return 0; }
+# GURT's app: a native window (gurt-app, written in Rust, app/ in the repo). the GURTSetupWizard packages bring it for
+# x86_64 + aarch64; otherwise gurt downloads the one for your CPU from GURT's GitHub release (sha256-checked against the
+# release's SHA256SUMS), or builds it with cargo when there's no release file for this version
+GURT_APP_URL="${GURT_APP_URL:-https://github.com/clrealy/GURT/releases}"
+app_arch() { case $(uname -m) in x86_64|amd64) echo x86_64 ;; aarch64|arm64) echo aarch64 ;; *) return 1 ;; esac; }
+gui_bin() { # → the gurt-app to run, if there's one here
+  local self d a f; self=$(readlink -f "$0"); d=$(dirname "$self"); a=$(app_arch 2>/dev/null || echo none)
+  for f in "${GURT_APP:-}" "$d/gurt-app" "$d/../lib/gurt/gurt-app-$a" "$d/../lib/gurt/gurt-app" "/usr/local/lib/gurt/gurt-app-$a" "/usr/lib/gurt/gurt-app-$a" \
+           /usr/local/lib/gurt/gurt-app /usr/lib/gurt/gurt-app "$d/app/target/release/gurt-app" "$GURT_CACHE/app/gurt-app-$GURT_VERSION-$a"; do
+    if [[ -n $f && -f $f && -x $f ]]; then echo "$f"; return 0; fi
   done
   return 1
+}
+gui_fetch() { # download (or build) gurt-app into gurt's cache → its path
+  local a out tmp want got tag
+  a=$(app_arch) || die "GURT's app is built for x86_64 and aarch64, not $(uname -m) (gurt itself works fine in a terminal: gurt help)"
+  out="$GURT_CACHE/app/gurt-app-$GURT_VERSION-$a"; mkdir -p "${out%/*}"
+  tmp=$(mktemp -d)
+  for tag in "download/v$GURT_VERSION" "latest/download"; do
+    curl -fsSL -o "$tmp/app" "$GURT_APP_URL/$tag/gurt-app-$a" 2>/dev/null && curl -fsSL -o "$tmp/sums" "$GURT_APP_URL/$tag/SHA256SUMS" 2>/dev/null || continue
+    want=$(awk -v f="gurt-app-$a" '$2 == f || $2 == "*" f { print $1 }' "$tmp/sums")
+    got=$(sha256sum "$tmp/app" | cut -d' ' -f1)
+    if [[ -n $want && $want == "$got" ]]; then
+      chmod 755 "$tmp/app"; mv -f "$tmp/app" "$out"; rm -rf "$tmp"; echo "$out"; return 0
+    fi
+    warn "the downloaded app didn't match the release's checksum, not using it"
+  done
+  rm -rf "$tmp"
+  # no release file for this version (a dev checkout): build it, if Rust is here
+  [[ -f $GURT_REPO_DIR/app/Cargo.toml ]] || sync_main >/dev/null
+  if command -v cargo >/dev/null && [[ -f $GURT_REPO_DIR/app/Cargo.toml ]]; then
+    msg "building GURT's app from source (once, a few minutes) 🦀"
+    ( cd "$GURT_REPO_DIR/app" && cargo build --release --locked >&2 ) || return 1
+    install -m755 "$GURT_REPO_DIR/app/target/release/gurt-app" "$out" && echo "$out" && return 0
+  fi
+  return 1
+}
+gui_app() { # → gurt-app, downloading it the first time if it has to
+  local b
+  if b=$(gui_bin); then echo "$b"; return 0; fi
+  msg "getting GURT's app for your PC 🖥️"
+  b=$(gui_fetch) || die "couldn't get GURT's app (no internet?). gurt works in a terminal too: gurt help · gurt setup"
+  echo "$b"
+}
+# the libraries a window needs (desktops have them; Crostini, WSL and minimal installs might not)
+gui_libs_ok() {
+  command -v ldconfig >/dev/null || return 0
+  local have; have=$(ldconfig -p 2>/dev/null) || return 0
+  grep -q 'libEGL.so.1\|libGL.so.1' <<<"$have" || return 1
+  if [[ -n ${WAYLAND_DISPLAY:-} ]]; then grep -q 'libwayland-client.so.0' <<<"$have" && grep -q 'libxkbcommon.so.0' <<<"$have"
+  else grep -q 'libxkbcommon-x11.so.0' <<<"$have" && grep -q 'libX11.so.6' <<<"$have"; fi
 }
 gui_desktop_entry() { # add "GURT" to your app menu (just for you, no sudo)
   (( EUID == 0 )) && return 0
@@ -5659,27 +5703,16 @@ gui_mime_types() { # data-dir icon-png
   fi
   return 0
 }
-gui_pkgs() { # the distro packages a real app window needs (python GObject + WebKit2GTK)
+gui_setup() { # get GURT's app + the libraries its window needs (no questions: you asked for the app)
   local pkgs
+  gui_app >/dev/null || return 1
+  if gui_libs_ok; then msg "GURT's app is ready 🖥️ (gurt gui, or GURT in your app menu)"; return 0; fi
   # shellcheck disable=SC2207
-  pkgs=($(map_dep gui-webview))
-  if [[ ${pkgs[*]} == gui-webview ]]; then   # older deps.map → built-in list
-    case $PM in
-      pacman) pkgs=(python-gobject webkit2gtk-4.1 gst-plugins-good) ;;  apt) pkgs=(python3-gi gir1.2-webkit2-4.1 gstreamer1.0-plugins-good) ;;
-      dnf|yum) pkgs=(python3-gobject webkit2gtk4.1 gstreamer1-plugins-good) ;; zypper) pkgs=(python3-gobject-Gdk typelib-1_0-WebKit2-4_1 gstreamer-plugins-good) ;;
-      *) pkgs=() ;;
-    esac
-  fi
-  echo "${pkgs[*]}"
-}
-gui_setup() { # py-script — install the app window bits (no questions: you asked for the app)
-  local pkgs
-  read -ra pkgs <<<"$(gui_pkgs)"
-  (( ${#pkgs[@]} )) || { warn "don't know the app-window packages for $PM yet — install python GObject + WebKit2GTK yourself (or pywebview)"; return 1; }
-  msg "installing what GURT needs to be a real app: ${pkgs[*]}"
+  pkgs=($(map_dep gui-app))
+  [[ ${pkgs[*]} == gui-app ]] && { warn "don't know which packages give $PM the EGL + xkbcommon libraries GURT's window needs"; return 1; }
+  msg "installing what GURT's window needs: ${pkgs[*]}"
   install_native "${pkgs[@]}" || return 1
-  if python3 "$1" --probe >/dev/null 2>&1; then msg "done ✅ GURT opens as a real app now 🖥️"; return 0; fi
-  warn "installed, but python still can't open an app window — log out and back in, then try gurt gui again"; return 1
+  msg "done ✅ GURT opens as an app now 🖥️"
 }
 has_display() { [[ -n ${DISPLAY:-} || -n ${WAYLAND_DISPLAY:-} ]]; }
 cmd_gui() {
@@ -5687,30 +5720,15 @@ cmd_gui() {
     grep -qs '"wizard": *"done"' "${XDG_CONFIG_HOME:-$HOME/.config}/gurt/gui.json" && return 0
     shift; set -- --wizard "$@"
   fi
-  if ! command -v python3 >/dev/null; then   # step 1: python itself
-    msg "GURT's app needs python3 — installing it from $PM"
-    # shellcheck disable=SC2046
-    install_native $(map_dep python3) || die "couldn't install python3 — install it yourself, then run gurt gui again"
-  fi
-  local py
   (( $# == 0 )) && ! wizard_done && set -- --wizard   # the GURT Setup Wizard comes first
-  if (( $# == 0 )) && [[ -f $GURTD_URL ]] && gurtd_running && py=$(gui_script); then   # GURTd keeps GURT ready: instant
-    exec python3 "$py" --attach
-  fi
   [[ -d $GURT_REPO_DIR/.git ]] || sync_main >/dev/null
-  py=$(gui_script) || { sync_main >/dev/null; py=$(gui_script) || die "couldn't find gurt-gui.py (try: gurt sync)"; }
   gui_desktop_entry
-  if [[ ${1:-} == --setup ]]; then gui_setup "$py"; return; fi
-  # step 2: the app window. first time from a terminal → just install it. from the app menu → the app offers a button
-  local tried="$GURT_CACHE/gui-setup-tried"
-  if has_display && ! python3 "$py" --probe >/dev/null 2>&1; then
-    if [[ -t 0 && -t 1 && ! -f $tried ]]; then
-      mkdir -p "$GURT_CACHE"; touch "$tried"
-      gui_setup "$py" || warn "no app window this time — opening GURT in your browser instead"
-    fi
-  fi
+  if [[ ${1:-} == --setup ]]; then gui_setup; return; fi
+  local app; app=$(gui_app)
+  has_display || die "there's no desktop here (no DISPLAY or WAYLAND_DISPLAY) for GURT's window. the terminal setup: gurt setup"
+  if ! gui_libs_ok; then gui_setup || warn "GURT's window might not open without those libraries"; fi
   msg "opening GURT 🦆 (close the window to quit)"
-  exec python3 "$py" --gurt "$(readlink -f "$0")" "$@"
+  exec "$app" --gurt "$(readlink -f "$0")" "$@"
 }
 
 # ───────────────────────── outsource: build any git repo ─────────────────────────
@@ -6116,7 +6134,7 @@ used_sources() {
 refresh_all() {
   local s stamp="$GURT_CACHE/refreshed" max=30 age
   # refreshed a moment ago (GURTd does it every 3 hours)? then the lists are fresh: skip the slow part
-  [[ -f ${XDG_RUNTIME_DIR:-$HOME/.cache/gurt}/gurt-gui.url ]] && max=200
+  gurtd_running && max=200
   if [[ -z ${GURT_REFRESH:-} ]] && ! $FORCE && [[ -f $stamp ]]; then
     age=$(( $(date +%s) - $(stat -c %Y "$stamp" 2>/dev/null || echo 0) ))
     if (( age < max * 60 )); then msg2 "package lists are fresh (refreshed $(( age / 60 )) min ago)"; return 0; fi
@@ -6460,7 +6478,7 @@ cmd_self_update() {
   fi
   # installed from a GURTSetupWizard package: grab the newest release's package and let your package manager swap it in.
   # (pacman has no repo drop-in folder and unsigned .debs get no apt repo, so "just run your system updates" can loop forever)
-  if [[ $self == /usr/bin/gurt && -f /usr/share/gurt/gurt-gui.py ]] && ! $FORCE; then
+  if [[ $self == /usr/bin/gurt && -f /usr/share/gurt/vibes.map ]] && ! $FORCE; then
     local ext r url
     new=$(latest_gurt_ver)
     if [[ -n $new ]] && ! vnewer "$GURT_VERSION" "$new"; then
@@ -6496,9 +6514,17 @@ cmd_self_update() {
     [[ -f $f ]] && asroot cp "$GURT_REPO_DIR/deps.map" "$f"
   done
   for f in /usr/local/share/gurt /usr/share/gurt; do
-    [[ -d $f && -f $GURT_REPO_DIR/gui/gurt-gui.py ]] && asroot cp "$GURT_REPO_DIR/gui/gurt-gui.py" "$f/gurt-gui.py"
+    for m in vibes.map gh-only.map; do [[ -d $f && -f $GURT_REPO_DIR/$m ]] && asroot cp "$GURT_REPO_DIR/$m" "$f/$m"; done
     [[ -d $f && -f $GURT_REPO_DIR/assets/wilhelm.mp3 ]] && asroot cp "$GURT_REPO_DIR/assets/wilhelm.mp3" "$f/wilhelm.mp3"
     [[ -d $f && -f $GURT_REPO_DIR/site/assets/apple-touch-icon.png ]] && asroot cp "$GURT_REPO_DIR/site/assets/apple-touch-icon.png" "$f/gurt.png"
+  done
+  # GURT's app, for the new version (the old one keeps working if there's no release file for it yet)
+  local a lib; a=$(app_arch 2>/dev/null || true)
+  for lib in /usr/local/lib/gurt "$dir/../lib/gurt"; do
+    if [[ -n $a && -f $lib/gurt-app-$a ]]; then
+      local nb; nb=$(GURT_VERSION=$new gui_fetch 2>/dev/null) && asroot install -m755 "$nb" "$lib/gurt-app-$a" && msg2 "GURT's app updated too"
+      break
+    fi
   done
   msg "gurt updated to $new ✅"
   if is_donk; then msg2 "Donk OS 🫏 making sure the utilities apps need are here"; "$self" -y utils || true; fi
@@ -7237,7 +7263,7 @@ ${B}misc${R0}
   achievements         🏆 trophies for doing gurt things
   completions <shell>  print tab completion for bash/zsh/fish (bash+fish set themselves up)
   gui                  open the GURT app 🖥️ (also in your app menu after the first run)
-  gui --setup          install what's needed for a real app window (instead of a browser tab)
+  gui --setup          get GURT's app (a native window) + the libraries it needs
   version              the gurt banner + your setup (also just: gurt)
   yo                   gurt
 

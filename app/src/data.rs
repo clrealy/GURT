@@ -151,6 +151,7 @@ pub struct Pkg {
     pub license: String,
     pub foss: &'static str,
     pub url: String,
+    #[allow(dead_code)] // DIRT + Main GURT recipes carry it; the app doesn't show it yet
     pub maintainer: String,
     pub search: String,   // name + desc + aliases, lowercase, for filtering
 }
@@ -196,6 +197,7 @@ pub struct State {
     pub vibes: HashMap<String, Vec<String>>,
     pub ghonly: Vec<GhApp>,
     pub cache: String,
+    #[allow(dead_code)]
     pub repo: String,
 }
 

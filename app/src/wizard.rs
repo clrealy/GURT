@@ -192,7 +192,7 @@ pub fn show_app(app: &mut App, ui: &mut Ui) {
             if state == "edit" && w::btn(ui, &p, "Cancel", Kind::Ghost, false).clicked() {
                 nav = Some("cancel");
             }
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            crate::app::right(ui, |ui| {
                 let wz = app.wiz.as_ref().unwrap();
                 let next = if step < 6 { "Next >" } else if state == "edit" { if wz.tasks(app).is_empty() { "Finish" } else { "Install" } } else { "Finish" };
                 if w::btn_ex(ui, &p, next, Kind::Primary, false, false, state != "running").clicked() {
@@ -229,7 +229,7 @@ pub fn show_app(app: &mut App, ui: &mut Ui) {
         let (_, closed) = crate::app::modal(&ctx, &p, "wizquit", "Quit the setup wizard?", 420.0, |ui| {
             ui.add(egui::Label::new(egui::RichText::new("GURT opens once the setup wizard is finished. It'll be here next time.").color(p.muted)).wrap());
             ui.add_space(8.0);
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            crate::app::right(ui, |ui| {
                 if w::btn(ui, &p, "Yeah", Kind::Primary, false).clicked() {
                     ans = Some(true);
                 }

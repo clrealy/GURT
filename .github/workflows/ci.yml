@@ -12,15 +12,43 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       - name: shellcheck gurt
-        run: shellcheck -S warning gurt install.sh tools/lint.sh
+        run: shellcheck -S warning gurt install.sh tools/lint.sh tools/build-app.sh
       - name: lint recipes
         run: ./tools/lint.sh
 
-  # the GURTSetupWizard installers build, and the .deb really installs (this runner is Ubuntu)
-  installers:
+  # GURT's app (app/, Rust): built for x86_64 + aarch64 against glibc 2.28, then the x86_64 one really opens a window
+  app:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: app }
+      - name: tools
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libxkbcommon-x11-0 libegl1 libgl1 libgl1-mesa-dri >/dev/null
+          python3 -m pip install -q --user --break-system-packages cargo-zigbuild ziglang
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: build for x86_64 + aarch64
+        run: tools/build-app.sh dist-app
+      - name: it opens (and stays open) under a virtual display
+        run: |
+          file dist-app/gurt-app-aarch64 | grep -q 'ARM aarch64'
+          ./dist-app/gurt-app-x86_64 --version
+          mkdir -p "$HOME/.config/gurt" && echo '{"wizard":"done"}' > "$HOME/.config/gurt/gui.json"
+          set +e; GURT_APP_SILENT=1 timeout 15 xvfb-run -a ./dist-app/gurt-app-x86_64 --gurt ./gurt; rc=$?; set -e
+          [ "$rc" = 124 ] || { echo "::error::the app quit by itself (exit $rc)"; exit 1; }
+      - uses: actions/upload-artifact@v4
+        with: { name: gurt-app, path: dist-app/ }
+
+  # the GURTSetupWizard installers build, and the .deb really installs (this runner is Ubuntu)
+  installers:
+    needs: app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: gurt-app, path: dist-app }
+      - run: chmod +x dist-app/*
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq nsis zstd openssl python3 desktop-file-utils
       - name: build every GURTSetupWizard
         run: |
@@ -34,6 +62,7 @@ jobs:
           sudo apt-get install -y ./dist/GURTSetupWizard.deb
           [ "$(gurt version)" = "gurt $(sed -n 's/^GURT_VERSION="\(.*\)"/\1/p' gurt)" ]
           desktop-file-validate /usr/share/applications/gurt.desktop /usr/share/applications/gurt-setup.desktop /etc/xdg/autostart/gurt-setup-wizard.desktop
+          test -x /usr/lib/gurt/gurt-app-x86_64 && test -x /usr/lib/gurt/gurt-app-aarch64
           mkdir -p ~/.config/gurt && echo '{"wizard": "done"}' > ~/.config/gurt/gui.json && timeout 20 gurt gui --first-run
           sudo apt-get remove -y gurt && ! command -v gurt
       - name: the dev .deb installs, and a wrong dev password swaps in the normal GURT from the latest release
@@ -49,6 +78,7 @@ jobs:
   # the dev build: install dev build 1 from the gurt-dev repo, publish dev build 2, and the distro's own update picks it up
   dev-rpm:
     if: github.event_name == 'pull_request'
+    needs: app
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -58,6 +88,9 @@ jobs:
       - name: tools
         run: if command -v dnf; then dnf install -y git tar gzip python3 zstd gnupg2 findutils; else zypper -n install git tar gzip python3 zstd gpg2 findutils; fi
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: gurt-app, path: dist-app }
+      - run: chmod +x dist-app/*
       - name: dev build 1 → install → dev build 2 → update
         shell: bash
         run: |
@@ -317,7 +350,7 @@ jobs:
 
   pages:
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-    needs: lint
+    needs: [lint, app]
     runs-on: ubuntu-latest
     environment: { name: github-pages, url: "${{ steps.deploy.outputs.page_url }}" }
     steps:
@@ -337,8 +370,11 @@ jobs:
             mkdir -p "$HOME/.local/share/gurt" && echo "$KEY" | base64 -d | tar xzf - -C "$HOME/.local/share/gurt"
             chmod -R go-rwx "$HOME/.local/share/gurt/signing"; echo "SIGN=" >> "$GITHUB_ENV"
           else echo "SIGN=--no-sign" >> "$GITHUB_ENV"; fi
+      - uses: actions/download-artifact@v4
+        with: { name: gurt-app, path: dist-app }
       - name: GURTSetupWizard-dev.* + the gurt-dev repo
         run: |
+          chmod +x dist-app/*
           sudo apt-get install -y -qq zstd gnupg python3 >/dev/null
           mkdir -p site/dev/rpm
           tools/make-setup-wizard.sh site/dev --dev=${{ github.run_number }} $SIGN

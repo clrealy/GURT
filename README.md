@@ -430,15 +430,13 @@ gurt gui
 
 Opens GURT as an app: browse Main GURT, search every source, install or remove with one click, and see updates, holds and rollbacks, with gurt's output live at the bottom. When something needs sudo, it asks for your password in the app. After the first run, **GURT** is in your app menu (with its icon 🦆). The ☀️/🌙 button up top flips between light and dark. It starts on your system theme and remembers what you pick (`~/.config/gurt/gui.json`).
 
-Run `gurt gui --setup` once and it opens in its own real app window (GTK + WebKit, or Qt WebEngine if you have it on KDE). Without that it still works, it just uses a browser window.
-
-It only needs python3 and a browser. It runs a tiny server that only your own machine can reach (127.0.0.1, with a random secret token), opens it in a Chromium-style app window if you have one (otherwise your default browser), and quits by itself after you close the window.
+It's a native app written in Rust (`app/`, with egui): one ~10 MB program, no browser, no python, no server. The GURTSetupWizard packages bring it for x86_64 and aarch64. Installed with `install.sh` or from a git checkout? `gurt gui` downloads the one for your CPU from GURT's GitHub release and checks it against the release's `SHA256SUMS` (no release file for your version yet: it builds it with cargo). `gurt gui --setup` also installs the few libraries a window needs (EGL and xkbcommon) if your system doesn't have them. It runs X11 and Wayland, and on Windows it opens through WSLg.
 
 **Sound effects 🔊**: clicks, lottery ticks + a jackpot jingle, a chime when something finishes (a buzz if it fails). The 🔊 button mutes them, and the app and the website both remember it. In the app, every skin has its own sound set: Windows 11 is soft and round, XP gets bells and a big swelly startup-style chord, and 95 is chunky square waves with a brassy ta-da. Switching skins plays its "startup" sound. They're all homemade synth lookalikes, not Microsoft's actual sound files. The website has its own 🌙/☀️ dark mode button too.
 
 **Background music 🎵**: a chill, original shop-style bossa loop (chords, walking bass, a vibraphone-ish tune and shakers), synthesized live, no audio files. The 🎵 button pauses it and GURT remembers. It's on by default in the app and off by default on the website.
 
-**No sound?** The app window plays audio through GStreamer. If its audio plugins are missing, GURT shows a 🔇 banner with a **fix sound** button that installs them (or run `gurt gui-setup`), then reopen GURT.
+**No sound?** The app plays its sounds through `paplay` (PulseAudio / PipeWire), `pw-cat` or `aplay`, whichever you have.
 
 **Drop in files 📥**: drag a `.deb`, `.rpm`, `.pkg.tar.zst`, AppImage, `.tar.gz`, `.zip`, `.flatpak`, `.exe` or `.dmg` anywhere onto the app (or open the **📥 Install a file** tab and click the big box) and gurt installs it, same as `gurt outsource <file>`. It asks first. On a narrow window the tab hides itself and a 📥 button shows up next to the Discover search instead.
 
@@ -684,6 +682,8 @@ packages/<name>/      Main GURT, one folder per package
   GURTBUILD           the recipe
   .gurtinfo           generated metadata (so search/info never run recipe code)
 site/                 the package-browser website (GitHub Pages)
+app/                  GURT's app (Rust + egui): gurt gui, the setup wizard, GURTd
+tools/build-app.sh    builds the app for x86_64 + aarch64 (glibc 2.28, cargo-zigbuild)
 tools/lint.sh         recipe checks (CI runs these on every PR)
 tools/gen-index.py    builds site/packages.json
 ```

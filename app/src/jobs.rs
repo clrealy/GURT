@@ -25,6 +25,7 @@ pub struct JobState {
 }
 
 pub struct Job {
+    #[allow(dead_code)]
     pub id: String,
     pub title: String,
     pub st: Mutex<JobState>,
@@ -41,9 +42,6 @@ impl Job {
     }
     pub fn done(&self) -> bool {
         self.st.lock().unwrap().done
-    }
-    pub fn rc(&self) -> i32 {
-        self.st.lock().unwrap().rc
     }
     pub fn ask(&self) -> Option<String> {
         self.st.lock().unwrap().ask.clone()
@@ -80,10 +78,6 @@ fn repaint() {
     if let Some(r) = REPAINT.get() {
         r();
     }
-}
-
-pub fn any_running() -> bool {
-    jobs().lock().unwrap().values().any(|j| !j.done())
 }
 
 /// start gurt with these args (and maybe something on its stdin)

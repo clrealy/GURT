@@ -1,10 +1,10 @@
 //! GURT, the app: everything it does runs the real `gurt` CLI
 use crate::data::{self, State};
 use crate::jobs::{self, Job};
-use crate::skin::{self, hex, mono, monob, sans, sansb, Pal, Skin};
+use crate::skin::{self, hex, mono, monob, sansb, Pal, Skin};
 use crate::widgets::{self as w, Kind};
-use egui::{pos2, vec2, Align2, Color32, CornerRadius, Rect, Sense, Stroke, StrokeKind, Ui, UiBuilder};
-use std::collections::{HashMap, HashSet};
+use egui::{pos2, vec2, Align2, Color32, CornerRadius, Rect, Sense, Stroke, StrokeKind, Ui};
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
@@ -27,7 +27,6 @@ pub enum After {
     SearchSrc(String),
     SearchAll(String),
     Check,
-    CheckThenNothing,
     Desktops,
     Convert(String),
     Wizard(usize),
@@ -84,7 +83,6 @@ pub enum Dialog {
     Compare,
     DirtGate,
     DevLock(String, String),
-    Welcome,
 }
 pub struct GurtdView {
     pub running: bool,
@@ -397,7 +395,7 @@ impl App {
 
     fn finish(&mut self, act: Act, rc: i32, lines: Vec<String>) {
         match act.after {
-            After::Nothing | After::CheckThenNothing => {}
+            After::Nothing => {}
             After::Upgrade => self.check(false, false),
             After::SearchSrc(t) => {
                 let res = parse_search(&lines);
@@ -711,7 +709,7 @@ impl eframe::App for App {
         });
         if hovering && !self.setup_app {
             let r = ctx.content_rect().shrink(18.0);
-            let pt = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("dropzone")));
+            let pt = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::unique("dropzone")));
             pt.rect_filled(r, CornerRadius::same(p.r), p.panel.gamma_multiply(0.92));
             pt.rect_stroke(r, CornerRadius::same(p.r), Stroke::new(2.0, p.accent), StrokeKind::Inside);
             pt.text(r.center() - vec2(0.0, 12.0), Align2::CENTER_CENTER, "drop it to install", sansb(20.0), p.ink);
@@ -861,7 +859,7 @@ impl App {
     fn prefs_popup(&mut self, ui: &mut Ui, anchor: Rect) {
         let p = self.pal;
         let ctx = ui.ctx().clone();
-        let area = egui::Area::new(egui::Id::new("prefpop")).order(egui::Order::Foreground).fixed_pos(pos2((anchor.right() - 250.0).max(8.0), anchor.bottom() + 6.0));
+        let area = egui::Area::new(egui::Id::unique("prefpop")).order(egui::Order::Foreground).fixed_pos(pos2((anchor.right() - 250.0).max(8.0), anchor.bottom() + 6.0));
         let resp = area.show(&ctx, |ui| {
             w::panel(ui, &p, |ui| {
                 ui.set_width(230.0);
@@ -955,7 +953,9 @@ impl App {
                 ui.painter().line_segment([pos2(r.left(), r.top()), pos2(ui.max_rect().right(), r.top())], Stroke::new(1.0, p.line));
                 egui::ScrollArea::vertical().id_salt("cout").stick_to_bottom(true).auto_shrink([false, false]).show(ui, |ui| {
                     ui.add_space(4.0);
+                    ui.spacing_mut().item_spacing.y = 1.0;
                     for l in &self.console {
+                        let l = &data::no_emoji(l);
                         ui.horizontal(|ui| {
                             ui.add_space(12.0);
                             ui.add(egui::Label::new(egui::RichText::new(l).font(mono(12.0)).color(ink)).wrap());
@@ -975,7 +975,7 @@ impl App {
         ctx.request_repaint_after(Duration::from_millis(250));
         let p = self.pal;
         let t = t.clone();
-        egui::Area::new(egui::Id::new("toast")).order(egui::Order::Tooltip).anchor(Align2::CENTER_BOTTOM, vec2(0.0, -48.0)).show(ctx, |ui| {
+        egui::Area::new(egui::Id::unique("toast")).order(egui::Order::Tooltip).anchor(Align2::CENTER_BOTTOM, vec2(0.0, -48.0)).show(ctx, |ui| {
             w::panel(ui, &p, |ui| {
                 ui.set_max_width(420.0);
                 ui.label(egui::RichText::new(t).font(monob(12.5)).color(p.ink));
@@ -1010,6 +1010,11 @@ impl App {
             });
         });
     }
+}
+
+/// a row of buttons on the right (one row high: a bare right-to-left layout would take all the height there is)
+pub fn right<R>(ui: &mut Ui, add: impl FnOnce(&mut Ui) -> R) -> R {
+    ui.horizontal(|ui| ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), add).inner).inner
 }
 
 /// the setup wizard is its own app window
@@ -1058,7 +1063,7 @@ pub fn dialog_box<R>(ui: &mut Ui, p: &Pal, title: &str, add: impl FnOnce(&mut Ui
 
 /// a modal window in GURT's style; returns (content's value, closed by Esc / clicking outside)
 pub fn modal<R>(ctx: &egui::Context, p: &Pal, id: &str, title: &str, width: f32, add: impl FnOnce(&mut Ui) -> R) -> (R, bool) {
-    let m = egui::Modal::new(egui::Id::new(id)).frame(egui::Frame::new()).backdrop_color(Color32::from_black_alpha(110)).show(ctx, |ui| {
+    let m = egui::Modal::new(egui::Id::unique(id)).frame(egui::Frame::new()).backdrop_color(Color32::from_black_alpha(110)).show(ctx, |ui| {
         let maxw = (ctx.content_rect().width() - 24.0).min(width);
         ui.set_width(maxw);
         dialog_box(ui, p, title, |ui| {
@@ -1071,9 +1076,6 @@ pub fn modal<R>(ctx: &egui::Context, p: &Pal, id: &str, title: &str, width: f32,
 }
 
 impl App {
-    pub fn all_rows_ui(&mut self, ui: &mut Ui, rows: &[crate::tabs::Row], id: &str) {
-        crate::tabs::rows(self, ui, rows, id);
-    }
     pub fn icon(&mut self, ui: &Ui, r: Rect, name: &str) {
         let p = self.pal;
         let st = self.st.clone();
@@ -1124,6 +1126,3 @@ impl App {
     }
 }
 
-pub fn installed_set(st: &State) -> HashSet<String> {
-    st.installed.iter().map(|i| i.key.clone()).collect()
-}

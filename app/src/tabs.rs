@@ -385,7 +385,7 @@ pub fn card_ui(app: &mut App, ui: &mut Ui, c: &Card, rect: Rect, sep: bool) -> O
             let eg = elide(ui, &c.extra, mono(11.0), sub, dw, 1);
             let er = Rect::from_min_size(pos2(dx, cy - dh / 2.0 + dg.size().y + 2.0), eg.size());
             ui.painter().galley(er.min, eg, sub);
-            let r = ui.interact(er, ui.id().with(("link", &c.extra)), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
+            let r = ui.interact(er, ui.scope_id().with(("link", &c.extra)), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
             if r.clicked() {
                 ui.ctx().open_url(egui::OpenUrl::new_tab(format!("https://{}", c.extra)));
             }
@@ -447,7 +447,7 @@ pub fn discover(app: &mut App, ui: &mut Ui) {
     let mut enter = false;
     let narrow = app.width < 720.0;
     let hint = if main { "search Main GURT… (Enter searches every source)".to_string() } else if app.src == "dirt" { "search DIRT…".to_string() } else { format!("search {}/… and hit Enter", app.src) };
-    let mut field = |app: &mut App, ui: &mut Ui, wdt: f32, enter: &mut bool| {
+    let field = |app: &mut App, ui: &mut Ui, wdt: f32, enter: &mut bool| {
         let te = egui::TextEdit::singleline(&mut app.q).hint_text(hint.clone()).font(mono(14.0)).margin(vec2(10.0, 7.0)).desired_width(wdt);
         let r = ui.add(te);
         if r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
@@ -602,7 +602,7 @@ fn more_menu(app: &mut App, ui: &mut Ui, id: &'static str, items: &[(&str, u8)])
     }
     let ctx = ui.ctx().clone();
     let mut pick = None;
-    let a = egui::Area::new(egui::Id::new(("more", id))).order(egui::Order::Foreground).fixed_pos(pos2((r.rect.right() - 190.0).max(8.0), r.rect.bottom() + 4.0)).show(&ctx, |ui| {
+    let a = egui::Area::new(egui::Id::unique(("more", id))).order(egui::Order::Foreground).fixed_pos(pos2((r.rect.right() - 190.0).max(8.0), r.rect.bottom() + 4.0)).show(&ctx, |ui| {
         w::panel(ui, &p, |ui| {
             ui.set_width(170.0);
             for (label, k) in items {
@@ -1228,7 +1228,7 @@ fn congurter(app: &mut App, ui: &mut Ui, r: Rect, narrow: bool) {
         (h, Rect::from_min_max(pos2(h.right() + 12.0, r.top() + 10.0), r.max - vec2(10.0, 10.0)))
     };
     // the hopper
-    let hresp = ui.interact(hop, ui.id().with("hopper"), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
+    let hresp = ui.interact(hop, ui.scope_id().with("hopper"), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
     app.cg_hover = ui.ctx().pointer_hover_pos().is_some_and(|pos| hop.contains(pos)) || hresp.hovered();
     let hot = app.cg_hover && ui.ctx().input(|i| !i.raw.hovered_files.is_empty());
     ui.painter().rect_filled(hop, CornerRadius::same(p.r), if hot { p.hl } else { p.tag });

@@ -2,9 +2,10 @@
 
 ## 1.3.0: Hotwyred ⚡
 
-gurt hooks into the package manager you already type, tries apps without keeping them, finds the ones you have twice, and `gurt self-update` stops looping on Arch.
+GURT's app goes native (Rust), gurt hooks into the package manager you already type, tries apps without keeping them, finds the ones you have twice, and `gurt self-update` stops looping on Arch.
 
 ### New
+- **GURT's app is a native app now 🦀** Rewritten in Rust: one ~10 MB program instead of python + a webview + a local web server. Every tab, all six skins (each still with its own fonts, borders and controls), the setup wizard, the sounds and music, sudo's password asked right in the window, and GURTd too. It opens instantly, runs on X11 and Wayland (and WSLg on Windows), and the GURTSetupWizard packages don't need python anymore. Installed another way? `gurt gui` downloads it for your CPU (x86_64 or aarch64) from the release and checks its sha256.
 - **Hotwyr ⚡: gurt backs up your package manager.** `gurt hotwyr on` (or the setup wizard): when `sudo apt install yay` can't find yay, gurt offers aur/yay. `apt upgrade`, `pacman -Syu` and friends also update what gurt installed, `apt search` / `pacman -Ss` show gurt's results too, and a command you don't have gets an "install it with gurt?". Works in bash, zsh and fish, only for what you type, never in scripts.
 - **`gurt try` 🧪** Install something, try it in a new shell, type `exit` and it's gone again, deps and all (it asks if you want to keep it). `gurt try pip/cowsay -- cowsay hi` runs one command instead.
 - **`gurt dupes` 👯** Finds apps you have more than once: from your distro, Flatpak (user and system), Snap and gurt, like Firefox from pacman *and* Flathub *and* `apt/firefox`.

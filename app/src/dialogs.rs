@@ -43,7 +43,7 @@ impl App {
                     let enter = te.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
                     ui.add_space(6.0);
                     ui.horizontal(|ui| {
-                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        crate::app::right(ui, |ui| {
                             if w::btn(ui, &p, "ok", Kind::Primary, false).clicked() || enter {
                                 answer = Some(Some(std::mem::take(self.pw_mut())));
                             }
@@ -70,7 +70,7 @@ impl App {
             let (_, closed) = modal(ctx, &p, "confirm", &t, 420.0, |ui| {
                 ui.add(egui::Label::new(egui::RichText::new(&b).color(p.muted)).wrap());
                 ui.add_space(8.0);
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                crate::app::right(ui, |ui| {
                     if w::btn(ui, &p, "Yeah", Kind::Primary, false).clicked() || ui.input(|i| i.key_pressed(egui::Key::Enter)) {
                         yes = Some(true);
                     }
@@ -113,7 +113,7 @@ impl App {
                                     let what = if i.what != "install" { "removed".to_string() } else if i.ver.is_empty() { "installed".into() } else { format!("installed · {}", i.ver) };
                                     ui.label(egui::RichText::new(what).font(sans(12.0)).color(p.muted));
                                 });
-                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                crate::app::right(ui, |ui| {
                                     ui.label(egui::RichText::new(&i.when).font(mono(11.0)).color(p.muted));
                                 });
                             });
@@ -125,7 +125,7 @@ impl App {
                             then = Some(Act::new(&["-y", "undo"]).ask("Undo the last thing gurt did?", "Undo again puts it back."));
                             keep = false;
                         }
-                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        crate::app::right(ui, |ui| {
                             if w::btn(ui, &p, "done", Kind::Primary, false).clicked() {
                                 keep = false;
                             }
@@ -157,7 +157,7 @@ impl App {
                             });
                         }
                     }
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    crate::app::right(ui, |ui| {
                         if w::btn(ui, &p, "nice", Kind::Primary, false).clicked() {
                             keep = false;
                         }
@@ -186,7 +186,7 @@ impl App {
                                             ui.label(egui::RichText::new(&j.what).font(monob(12.5)).color(p.ink));
                                             ui.add(egui::Label::new(egui::RichText::new(format!("{}{}", data::no_emoji(&j.desc), if j.root { ", asks for your password" } else { "" })).font(sans(12.0)).color(p.muted)).wrap());
                                         });
-                                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                        crate::app::right(ui, |ui| {
                                             if w::btn(ui, &p, "toss", Kind::Danger, true).clicked() {
                                                 then = Some(Act::new(&["-y", "hogs", "clean", &j.what]));
                                                 keep = false;
@@ -206,7 +206,7 @@ impl App {
                                         ui.label(egui::RichText::new(n).font(monob(12.5)).color(p.ink));
                                         w::chip(ui, &p, from, ChipKind::Plain);
                                         if keys.contains(name) {
-                                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                            crate::app::right(ui, |ui| {
                                                 if w::btn(ui, &p, "remove", Kind::Ghost, true).clicked() {
                                                     then = Some(verb(&["-y", "remove", name], "Remove", name));
                                                     keep = false;
@@ -218,7 +218,7 @@ impl App {
                             }
                         }
                     });
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    crate::app::right(ui, |ui| {
                         if w::btn(ui, &p, "done", Kind::Primary, false).clicked() {
                             keep = false;
                         }
@@ -253,7 +253,7 @@ impl App {
                                         let s = if k == "saver" && on && !v.holding.is_empty() { format!("holding off right now: {}", v.holding) } else { sub.to_string() };
                                         ui.add(egui::Label::new(egui::RichText::new(s).font(sans(12.0)).color(p.muted)).wrap());
                                     });
-                                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                    crate::app::right(ui, |ui| {
                                         if w::btn_on(ui, &p, if on { "on" } else { "off" }, on, true).clicked() {
                                             let arg = if k == "running" { vec![if on { "off" } else { "on" }] } else { vec![k, if on { "off" } else { "on" }] };
                                             let mut a = vec!["gurtd"];
@@ -270,7 +270,7 @@ impl App {
                                     ui.label(egui::RichText::new("quiet hours").font(sansb(13.5)).color(p.ink));
                                     ui.label(egui::RichText::new("no popups then, they wait till it's over").font(sans(12.0)).color(p.muted));
                                 });
-                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                crate::app::right(ui, |ui| {
                                     let cur = v.c.get("quiet").cloned().unwrap_or_else(|| "off".into());
                                     let show = |q: &str| if q == "off" { "off".to_string() } else { format!("{}:00 – {}:00", q.split('-').next().unwrap_or(""), q.split('-').nth(1).unwrap_or("")) };
                                     egui::ComboBox::from_id_salt("quiet").selected_text(show(&cur)).show_ui(ui, |ui| {
@@ -291,7 +291,7 @@ impl App {
                         }
                     }
                     ui.add_space(6.0);
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    crate::app::right(ui, |ui| {
                         if w::btn(ui, &p, "done", Kind::Primary, false).clicked() {
                             keep = false;
                         }
@@ -343,7 +343,7 @@ impl App {
                             ui.end_row();
                         });
                     });
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    crate::app::right(ui, |ui| {
                         if w::btn(ui, &p, "done", Kind::Primary, false).clicked() {
                             keep = false;
                         }
@@ -361,7 +361,7 @@ impl App {
                     ui.label(egui::RichText::new("18+").font(monob(34.0)).color(crate::skin::hex(0xe0314b)));
                     ui.add(egui::Label::new(egui::RichText::new("This section of the GURT Repository is 18+ ONLY. Explore at your own risk.").color(p.ink)).wrap());
                     ui.add_space(8.0);
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    crate::app::right(ui, |ui| {
                         if w::btn(ui, &p, "Yeah", Kind::Danger, false).clicked() {
                             yes = Some(true);
                         }
@@ -398,7 +398,7 @@ impl App {
                     if !msg.is_empty() {
                         ui.label(egui::RichText::new(msg.as_str()).font(mono(12.0)).color(p.muted));
                     }
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    crate::app::right(ui, |ui| {
                         if w::btn(ui, &p, "unlock", Kind::Primary, false).clicked() {
                             go = true;
                         }
@@ -412,9 +412,6 @@ impl App {
                     then = Some(a);
                 }
                 // the dev password comes first: no closing it any other way
-            }
-            Dialog::Welcome => {
-                keep = false;
             }
         }
         if keep && self.dialog.is_none() {
