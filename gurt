@@ -5746,8 +5746,20 @@ refresh_all() {
 
 # is there a newer gurt in the main repo?
 repo_gurt_ver() { [[ -f $GURT_REPO_DIR/gurt ]] && sed -n 's/^GURT_VERSION="\(.*\)"$/\1/p' "$GURT_REPO_DIR/gurt" | head -n1; }
+# the newest gurt that's out: GitHub's latest release (asked fresh, so it's right even when the package lists were
+# refreshed a while ago), else what the downloaded Main GURT repo says (offline, or not on GitHub)
+latest_gurt_ver() {
+  local r=${GURT_REPO_URL#https://github.com/} v=""
+  r=${r%.git}
+  if [[ $r =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+    v=$(curl -fsSL -m 6 -A gurt -H 'Accept: application/vnd.github+json' "$GH_API/repos/$r/releases/latest" 2>/dev/null |
+        grep -o '"tag_name": *"[^"]*"' | head -n1 | sed 's/.*"v\{0,1\}\([^"]*\)"$/\1/') || v=""
+  fi
+  [[ -n $v ]] || v=$(repo_gurt_ver)
+  echo "$v"
+}
 check_self() {
-  local v; v=$(repo_gurt_ver)
+  local v; v=$(latest_gurt_ver)
   if [[ -n $v ]] && vnewer "$GURT_VERSION" "$v"; then
     printf '%s==> gurt %s is out (you have %s) — run: gurt self-update 🦆%s\n' "$MAG" "$v" "$GURT_VERSION" "$R0" >&2
   fi
@@ -5759,7 +5771,7 @@ cmd_update() {   # like apt update: refresh everything, install nothing
   find_outdated
   local n sys=false v; n=$(system_updates_count); [[ -n $n && $n != 0 ]] && sys=true
   $sys && msg "🐧 $n system update(s) waiting from $PM — gurt upgrade installs them too"
-  v=$(repo_gurt_ver)
+  v=$(latest_gurt_ver)
   if (( ${#TODO[@]} )); then msg "${#TODO[@]} package(s) can be upgraded — run: gurt upgrade"
   elif [[ -n $v ]] && vnewer "$GURT_VERSION" "$v"; then msg "your apps are up to date — but gurt itself has an update 👇"
   elif $sys; then msg "everything gurt installed is up to date — just your system has updates 👆"
