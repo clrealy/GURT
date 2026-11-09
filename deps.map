@@ -73,3 +73,5 @@ gui-webview  apt=python3-gi,gir1.2-webkit2-4.1,gstreamer1.0-plugins-good  dnf=py
 gui-app  apt=libegl1,libgl1,libxkbcommon-x11-0,libwayland-client0  dnf=mesa-libEGL,mesa-libGL,libxkbcommon-x11,libwayland-client  pacman=libglvnd,libxkbcommon-x11,wayland  zypper=libEGL1,libGL1,libxkbcommon-x11-0,libwayland-client0  apk=-  xbps=libglvnd,libxkbcommon-x11,wayland  eopkg=libglvnd,libxkbcommon,wayland  emerge=media-libs/libglvnd,x11-libs/libxkbcommon,dev-libs/wayland  nix=-
 # python GObject + GTK 3 (native GTK3 apps written in python)
 gui-gtk3  apt=python3-gi,gir1.2-gtk-3.0  dnf=python3-gobject,gtk3  pacman=python-gobject,gtk3  zypper=python3-gobject-Gdk,typelib-1_0-Gtk-3_0  apk=py3-gobject3,gtk+3.0  xbps=python3-gobject,gtk+3  eopkg=python-gobject,libgtk-3  emerge=dev-python/pygobject,x11-libs/gtk+:3  nix=-
+# poppler's command line tools (pdftoppm, pdfunite, pdfinfo)
+poppler     apt=poppler-utils  dnf=poppler-utils  pacman=poppler  zypper=poppler-tools  apk=poppler-utils  xbps=poppler-utils  emerge=app-text/poppler  nix=poppler_utils
