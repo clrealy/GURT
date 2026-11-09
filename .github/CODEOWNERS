@@ -45,7 +45,6 @@
 /packages/akizip/  @clrealy
 /packages/akkhara/  @clrealy
 /packages/akregator/  @clrealy
-/packages/al-quran-tafsir-by-word/  @clrealy
 /packages/albion-online/  @clrealy
 /packages/alexandria/  @clrealy
 /packages/alien-arena/  @clrealy
@@ -67,7 +66,6 @@
 /packages/anagramarama/  @clrealy
 /packages/anarch-re/  @clrealy
 /packages/android-studio/  @clrealy
-/packages/android-virtual-pen/  @clrealy
 /packages/angelfish/  @clrealy
 /packages/angry-ip-scanner/  @clrealy
 /packages/animatch/  @clrealy
@@ -195,7 +193,6 @@
 /packages/bittorrent-tracker-editor/  @clrealy
 /packages/bitwarden/  @clrealy
 /packages/bitwig-studio/  @clrealy
-/packages/black-box/  @clrealy
 /packages/blanket/  @clrealy
 /packages/blastem/  @clrealy
 /packages/bleachbit/  @clrealy
@@ -381,7 +378,6 @@
 /packages/color-profile-viewer/  @clrealy
 /packages/colorsmith/  @clrealy
 /packages/colorwall/  @clrealy
-/packages/colorway/  @clrealy
 /packages/comaps/  @clrealy
 /packages/commander-genius/  @clrealy
 /packages/commit/  @clrealy
@@ -419,7 +415,6 @@
 /packages/cosmicding/  @clrealy
 /packages/coulomb/  @clrealy
 /packages/coulr/  @clrealy
-/packages/countdown/  @clrealy
 /packages/counters/  @clrealy
 /packages/cozy/  @clrealy
 /packages/cpod/  @clrealy
@@ -536,7 +531,6 @@
 /packages/dosbox-staging/  @clrealy
 /packages/dosbox-x/  @clrealy
 /packages/dosbox/  @clrealy
-/packages/dot-matrix/  @clrealy
 /packages/doukutsu-rs/  @clrealy
 /packages/dprint/  @clrealy
 /packages/dr-robotnik-s-ring-racers/  @clrealy
@@ -580,7 +574,6 @@
 /packages/easykiconverter/  @clrealy
 /packages/easyroam/  @clrealy
 /packages/easyrpg-player/  @clrealy
-/packages/easyssh/  @clrealy
 /packages/easytag/  @clrealy
 /packages/echo/  @clrealy
 /packages/eclipse-ide-for-java-developers/  @clrealy
@@ -1194,7 +1187,6 @@
 /packages/kget/  @clrealy
 /packages/kgoldrunner/  @clrealy
 /packages/khangman/  @clrealy
-/packages/khronos/  @clrealy
 /packages/khushu/  @clrealy
 /packages/kicad/  @clrealy
 /packages/kid3/  @clrealy
@@ -1327,7 +1319,6 @@
 /packages/limo/  @clrealy
 /packages/lincity-ng/  @clrealy
 /packages/lingot/  @clrealy
-/packages/linux-assistant/  @clrealy
 /packages/linux-qq/  @clrealy
 /packages/linux-show-player/  @clrealy
 /packages/linux-theme-store/  @clrealy
@@ -1368,7 +1359,6 @@
 /packages/luminance/  @clrealy
 /packages/lumoria/  @clrealy
 /packages/lumux/  @clrealy
-/packages/luna/  @clrealy
 /packages/lunacy/  @clrealy
 /packages/lunar-client/  @clrealy
 /packages/lutris/  @clrealy
@@ -1417,7 +1407,6 @@
 /packages/mcomix/  @clrealy
 /packages/mdbook/  @clrealy
 /packages/measure/  @clrealy
-/packages/mecalin/  @clrealy
 /packages/media-downloader/  @clrealy
 /packages/mediaharbor/  @clrealy
 /packages/mediainfo/  @clrealy
@@ -1600,7 +1589,6 @@
 /packages/nostalgia/  @clrealy
 /packages/not-tetris-2/  @clrealy
 /packages/notebook/  @clrealy
-/packages/notejot/  @clrealy
 /packages/notepad-next/  @clrealy
 /packages/notepadng/  @clrealy
 /packages/notepadqq/  @clrealy
@@ -1751,7 +1739,6 @@
 /packages/pdf-chain/  @clrealy
 /packages/pdf-metadata-editor/  @clrealy
 /packages/pdf-mix-tool/  @clrealy
-/packages/pdf-slicer/  @clrealy
 /packages/pdf-tinkerer/  @clrealy
 /packages/pdf-tricks/  @clrealy
 /packages/pdf4qt/  @clrealy
@@ -1772,7 +1759,6 @@
 /packages/phoenicis-playonlinux/  @clrealy
 /packages/photobooth/  @clrealy
 /packages/photocollage/  @clrealy
-/packages/photocrea/  @clrealy
 /packages/photoflare/  @clrealy
 /packages/photoqt/  @clrealy
 /packages/photos/  @clrealy
@@ -1867,7 +1853,6 @@
 /packages/previewqt/  @clrealy
 /packages/primehack/  @clrealy
 /packages/prismlauncher/  @clrealy
-/packages/processing-ide/  @clrealy
 /packages/procs/  @clrealy
 /packages/progress/  @clrealy
 /packages/project-starfighter/  @clrealy
@@ -2348,6 +2333,7 @@
 /packages/teams-for-linux/  @clrealy
 /packages/teamspeak-new/  @clrealy
 /packages/teamspeak/  @clrealy
+/packages/teclas/  @clrealy
 /packages/teeworlds/  @clrealy
 /packages/telegram/  @clrealy
 /packages/telegraph/  @clrealy
@@ -2421,7 +2407,6 @@
 /packages/total-chaos-retro-edition/  @clrealy
 /packages/total-chaos/  @clrealy
 /packages/touch/  @clrealy
-/packages/tradesim/  @clrealy
 /packages/tradingview/  @clrealy
 /packages/traefik/  @clrealy
 /packages/transcribe/  @clrealy
@@ -2578,7 +2563,6 @@
 /packages/vscode/  @clrealy
 /packages/vscodium-insiders/  @clrealy
 /packages/vscodium/  @clrealy
-/packages/vserver/  @clrealy
 /packages/vuescan/  @clrealy
 /packages/vvave/  @clrealy
 /packages/vym/  @clrealy
