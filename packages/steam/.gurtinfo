@@ -10,3 +10,7 @@ arch = x86_64
 via_repo = flathub
 via_type = flatpak
 via_pkg = com.valvesoftware.Steam
+native_apt = steam-installer
+native_dnf = steam
+native_zypper = steam
+native_pacman = steam
