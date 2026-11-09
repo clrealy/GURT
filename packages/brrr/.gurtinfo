@@ -1,5 +1,5 @@
 pkgname = brrr
-pkgver = 0.2.0
+pkgver = 0.2.1
 pkgrel = 1
 pkgdesc = Printing on Linux without CUPS or drivers: find the printer and print
 url = https://github.com/clrealy/brrr
@@ -12,6 +12,6 @@ depends = poppler
 makedepends = rust
 makedepends = git
 makedepends = cc
-source = git+https://github.com/clrealy/brrr.git#commit=b61cc3cb33e3e7ade6e23119fa17dd8a1cfdd35b
+source = git+https://github.com/clrealy/brrr.git#commit=63337440f420de80ad87be1c233a72e1e3f8befb
 alias = printer
 alias = printez
