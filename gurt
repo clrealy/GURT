@@ -535,6 +535,7 @@ load_recipe() {
   RECIPE=$f
   pkgname="" pkgbase="" pkgver="" pkgrel=1 epoch="" pkgdesc="" url="" license="" maintainer="" install=""
   via_repo="" via_type="" via_url="" via_suite="" via_components="" via_key="" via_fingerprint="" via_pkg=""
+  native="" native_apt="" native_dnf="" native_zypper="" native_pacman="" native_apk="" native_xbps="" native_eopkg=""
   aliases=() hidden="" desktop_icon="" secret="" category="" icon=""
   arch=() depends=() makedepends=() checkdepends=() source=() noextract=() sums=() SUMALGO=sha256
   local a v fn
@@ -609,7 +610,7 @@ print_srcinfo() {
   case ${hidden,,} in 1|true|yes) printf 'hidden = true\n' ;; esac
   case ${desktop_icon,,} in 1|true|yes) printf 'desktop_icon = true\n' ;; esac
   case ${secret,,} in 1|true|yes) printf 'secret = true\n' ;; esac
-  for x in via_repo via_type via_url via_suite via_components via_key via_fingerprint via_pkg; do
+  for x in via_repo via_type via_url via_suite via_components via_key via_fingerprint via_pkg native native_apt native_dnf native_zypper native_pacman native_apk native_xbps native_eopkg; do
     [[ -n ${!x} ]] && printf '%s = %s\n' "$x" "${!x}"
   done
   return 0
@@ -1021,7 +1022,7 @@ fix_rpaths() { # key
 }
 
 resolve_key() { # user spec (name or src/name) -> installed db key
-  local spec=$1 src name k
+  local spec=$1 src name k d
   if [[ $spec == */* ]]; then src=$(norm_src "${spec%%/*}"); name=${spec#*/}; k=$(pkey "$src" "$name")
     is_installed "$k" && { echo "$k"; return; }
     if [[ $src == gh ]]; then   # gh/zen-browser (a gh-only.map name) is installed as gh:desktop (its repo's name)
@@ -1036,6 +1037,7 @@ resolve_key() { # user spec (name or src/name) -> installed db key
     local vt vp vr; vt=$(info_get "$ri" via_type); vp=$(info_get "$ri" via_pkg); vr=$(info_get "$ri" via_repo)
     case $vt in flatpak|snap) k="$vt:$vp" ;; *) k=${vr:+$vr:${vp:-$spec}} ;; esac
     [[ -n $k ]] && is_installed "$k" && { echo "$k"; return; }
+    for d in "$DB"/distro:*/; do grep -qxF "recipe = $spec" "$d/info" 2>/dev/null && { basename "$d"; return; }; done
   fi
   local hits=() d
   for d in "$DB"/*:"$spec"/; do hits+=("$(basename "$d")"); done
@@ -1109,6 +1111,8 @@ remove_pkg() {
     gh:*)      gh_remove "$key"; return ;;
     brew:*)    msg "removing $(pretty "$key")"; if b=$(brew_find); then "$b" uninstall "$name" || warn "brew couldn't remove it (already gone?)"; fi
                asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
+    distro:*)  msg "removing $(pretty "$key") ($PM removes it)"; pm_remove "$name" || { pm_has "$name" && die "$PM couldn't remove $name"; }
+               asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
     nix:*)     msg "removing $(pretty "$key") from your nix profile"; nix_remove "$name" || warn "nix couldn't remove it (already gone?)"
                asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
   esac
@@ -1157,6 +1161,80 @@ no_such_pkg() { # name
   local s; s=$(suggest_names "$1")
   [[ $TREE_SRC == dirt ]] && die "no package '$1' in DIRT${s:+ — did you mean: ${s// /, }?}"
   die "no package '$1' in main GURT${s:+ — did you mean: ${s// /, }?} (or try: gurt search $1, gurt search -a $1 for every source)"
+}
+# ── native first: a Main GURT app that installs from Flathub / Snap comes from your distro instead when your
+#    distro has the same app (GIMP from apt, Steam from pacman…). gurt native off: always the Flathub / Snap build ──
+NATIVE_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/native"
+native_first() { [[ ${GURT_NATIVE:-1} != 0 && $(cat "$NATIVE_CONF" 2>/dev/null) != off ]]; }
+cmd_native() { # on | off | status
+  case ${1:-status} in
+    on)  rm -f "$NATIVE_CONF"; msg "native first 🐧 apps your distro has come from your distro, Flathub / Snap only when it doesn't" ;;
+    off) mkdir -p "${NATIVE_CONF%/*}"; echo off > "$NATIVE_CONF"; msg "native first off: Main GURT apps install their Flathub / Snap build (gurt native on undoes it)" ;;
+    status) if native_first; then echo "native first: on (apps your distro has come from $PM)"; else echo "native first: off (Main GURT apps use their Flathub / Snap build)"; fi ;;
+    *) die "usage: gurt native [on | off | status]" ;;
+  esac
+}
+url_host() { local h=${1#*://}; h=${h%%/*}; h=${h%%:*}; h=${h,,}; echo "${h#www.}"; }
+pm_homepage() { # name → the homepage your distro's package says it's from
+  case $PM in
+    apt)     apt-cache show "$1" 2>/dev/null | awk '/^Homepage:/ { print $2; exit }' ;;
+    dnf|yum) dnf -q repoquery --qf '%{url}\n' "$1" 2>/dev/null | awk 'NF { print; exit }' ;;
+    pacman)  pacman -Si "$1" 2>/dev/null | awk -F': ' '/^URL/ { print $2; exit }' ;;
+    zypper)  zypper -q --no-refresh info "$1" 2>/dev/null | awk -F': *' '/URL/ { print $2; exit }' ;;
+    apk)     apk info -w "$1" 2>/dev/null | awk 'NF && !/webpage/ { print $1; exit }' ;;
+    xbps)    xbps-query -R -p homepage "$1" 2>/dev/null ;;
+    eopkg)   eopkg info "$1" 2>/dev/null | awk -F': *' '/^Homepage/ { print $2; exit }' ;;
+  esac
+}
+appstream_pkg() { # flatpak app id → the package your distro ships that app in (its AppStream catalog says)
+  command -v appstreamcli >/dev/null || return 1
+  local id p
+  for id in "$1" "$1.desktop"; do
+    p=$(appstreamcli get --details "$id" 2>/dev/null | awk -F': *' '/^Package:/ { print $2; exit }') || p=""
+    [[ -n $p ]] && { echo "$p"; return 0; }
+  done
+  return 1
+}
+native_for() { # recipe-name info → your distro's package of the same app (nothing: your distro doesn't have it)
+  local name=$1 info=$2 p rh h
+  native_first && [[ -z $R ]] || return 1
+  case $PM in apt|dnf|yum|pacman|zypper|apk|xbps|eopkg) ;; *) return 1 ;; esac
+  # 1. the recipe says (native_apt=steam-installer, native=no when your distro's build is broken)
+  p=$(info_get "$info" "native_${PM/yum/dnf}"); [[ -n $p ]] || p=$(info_get "$info" native)
+  case $p in no) return 1 ;; ?*) pm_available "$p" && { echo "$p"; return 0; }; return 1 ;; esac
+  # 2. your distro's AppStream catalog lists the same Flathub app id
+  if [[ $(info_get "$info" via_type) == flatpak ]] && p=$(appstream_pkg "$(info_get "$info" via_pkg)") && pm_available "$p"; then
+    echo "$p"; return 0
+  fi
+  # 3. the same name, from the same project (its homepage matches the recipe's), so it's not some other app called that
+  pm_available "$name" || return 1
+  rh=$(url_host "$(info_get "$info" url)"); h=$(url_host "$(pm_homepage "$name" || true)")
+  [[ -n $rh && $rh != flathub.org && $rh != snapcraft.io && $rh == "$h" ]] && { echo "$name"; return 0; }
+  return 1
+}
+native_install() { # recipe-name native-pkg reason → 0 when your distro installed it
+  local name=$1 p=$2 reason=$3 v key="distro:$2"
+  if pm_has "$p"; then msg "you already have $name from your distro ($PM/$p) 👍"
+  else
+    msg "🐧 your distro has $name ($PM/$p), so that's the one gurt installs (gurt native off: the $(info_get "$(repo_info "$name")" via_type) build instead)"
+    ( pm_install "$p" ) && pm_has "$p" || { warn "$PM couldn't install $p, using the $(info_get "$(repo_info "$name")" via_type) build"; return 1; }
+  fi
+  is_installed "$key" || { v=$(pm_version "$p" || true); record_meta "$key" "$p" "${v:-$PM}" "$(info_get "$(repo_info "$name")" pkgdesc)" "$reason" distro; log_hist install "$key" "${v:-$PM}"; }
+  mark_origin "$key" "$name"
+  msg "$name installed from $PM ✅"
+}
+pm_remove() { # name → your package manager removes it
+  case $PM in
+    apt)     asroot apt-get remove -y "$1" ;;
+    dnf)     asroot dnf remove -y "$1" ;;
+    yum)     asroot yum remove -y "$1" ;;
+    pacman)  asroot pacman -Rns --noconfirm "$1" ;;
+    zypper)  asroot zypper --non-interactive remove "$1" ;;
+    apk)     asroot apk del "$1" ;;
+    xbps)    asroot xbps-remove -y "$1" ;;
+    eopkg)   asroot eopkg remove -y "$1" ;;
+    *)       return 1 ;;
+  esac
 }
 # ── main GURT repo ──
 # ── FOSS first: gurt is mostly free software. closed-source apps get labeled and a heads-up (with free ones like it),
@@ -1211,7 +1289,10 @@ resolve_and_install() { # name reason
   foss_gate "$name" "$info" "$reason"
 
   # official-repo recipe → add the vendor's repo (key fingerprint pinned by the recipe), install from it
-  local via; via=$(info_get "$info" via_repo)
+  local via nat; via=$(info_get "$info" via_repo)
+  case $(info_get "$info" via_type) in
+    flatpak|snap) if nat=$(native_for "$name" "$info") && native_install "$name" "$nat" "$reason"; then return; fi ;;
+  esac
   case $(info_get "$info" via_type) in
     flatpak) flatpak_install "$(info_get "$info" via_pkg)" "$reason"; mark_origin "flatpak:$(info_get "$info" via_pkg)" "$name"; return ;;
     snap)    snap_install "$(info_get "$info" via_pkg)" "$reason"; mark_origin "snap:$(info_get "$info" via_pkg)" "$name"; return ;;
@@ -4815,7 +4896,7 @@ stash_pkg() { # key file → prints the stashed path
 cmd_rollback() {
   local k cur d f pick="" list=()
   k=$(resolve_key "${1:?usage: gurt rollback <pkg>}") || die "$1 isn't installed"
-  case $k in flatpak:*|snap:*|nix:*|gh:*|brew:*|box-*) die "$(pretty "$k") is managed by ${k%%:*} — roll it back there" ;; esac
+  case $k in flatpak:*|snap:*|nix:*|gh:*|brew:*|box-*|distro:*) die "$(pretty "$k") is managed by ${k%%:*} — roll it back there" ;; esac
   d="$GURT_CACHE/rollback/${k//\//_}"
   cur=$(cat "$DB/$k/pkgfile" 2>/dev/null || true)
   # shellcheck disable=SC2012
@@ -5691,7 +5772,7 @@ cmd_complete() {
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
     commands)  printf '%s\n' sync search info install update upgrade self-update uninstall remove autoremove list files owns lottery sysup \
                  build add srcinfo checksum new repo dirt gui de outsource undo rollback hold unhold export import completions doctor version help yo \
-                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache try dupes hotwyr gh-only redeem ;;
+                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache try dupes hotwyr gh-only redeem native foss ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman apk xbps eopkg gentoo flatpak snap nix gh pip npm cargo appimage brew dirt ;;
   esac
   return 0
@@ -6207,7 +6288,7 @@ find_outdated() {
       gurt) is_gurt_pkg "$name" && new=$(repo_ver "$name") ;;
       dirt) if PKG_TREE=dirt is_gurt_pkg "$name"; then new=$(PKG_TREE=dirt repo_ver "$name"); fi ;;
       aur)  dir=$(aur_clone "$name" 2>/dev/null) && new=$(aur_srcinfo_ver "$dir/.SRCINFO") ;;
-      flatpak|snap|nix|brew|box-*) ;;   # they update themselves (see upgrade_containers, system_upgrade)
+      flatpak|snap|nix|brew|box-*|distro) ;;   # they update themselves (distro: with your system updates) (see upgrade_containers, system_upgrade)
       pip|npm|cargo) new=$(lang_newer "$k") ;;
       gh)   new=$(gh_newer "$k"); [[ -n $new ]] && { msg2 "gh/$name  $(inst_ver "$k") -> $new"; TODO+=("$k"); }; continue ;;
       file) ;;                 # came from a file you had — install a newer file to update it
@@ -6241,7 +6322,7 @@ refresh_all() {
   fi
   sync_main
   for s in $(used_sources); do
-    [[ $s == aur || $s == flatpak || $s == snap || $s == nix || $s == gh || $s == brew || $s == appimage || $s == pip || $s == npm || $s == cargo || $s == git || $s == dirt || $s == file || $s == box-* ]] && continue
+    [[ $s == distro || $s == aur || $s == flatpak || $s == snap || $s == nix || $s == gh || $s == brew || $s == appimage || $s == pip || $s == npm || $s == cargo || $s == git || $s == dirt || $s == file || $s == box-* ]] && continue
     ( sync_source "$s" ) || warn "couldn't refresh $s, skipping"
   done
   mkdir -p "$GURT_CACHE" && touch "$stamp"
@@ -7376,6 +7457,7 @@ ${B}misc${R0}
   gurtd [config]       GURTd, the background daemon: auto-updates, fresh lists, downloads → install, instant app 🐧
   android [setup|list|open|remove <app>|fdroid]   Android apps through Waydroid 🤖 (gurt install android/<app> = F-Droid)
   hotwyr on|off        Hotwyr: gurt backs up your package manager. sudo apt install yay → apt can't, gurt offers aur/yay ⚡
+  native on|off        apps your distro has come from your distro, not Flathub / Snap (on by default) 🐧
   foss on|off          FOSS-only mode: no closed-source apps at all (off: they install with a heads-up) 🔓
   snapshots            the snapshots gurt took before system upgrades (btrfs: snapper/timeshift/plain) 📸
   achievements         🏆 trophies for doing gurt things
@@ -7483,6 +7565,7 @@ main() {
     gurtd|daemon)      cmd_gurtd "$@" ;;
     android|waydroid)  cmd_android "$@" ;;
     foss)              cmd_foss "$@" ;;
+    native)            cmd_native "$@" ;;
     hotwyr|hook)       cmd_hook "$@" ;;
     __pmhook)          cmd_pmhook "$@" ;;
     __cnf)             cmd_cnf "$@" ;;

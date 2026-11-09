@@ -13,3 +13,8 @@ arch=(x86_64)
 via_repo=flathub
 via_type=flatpak
 via_pkg=com.valvesoftware.Steam
+# your distro's own Steam when it has one (Ubuntu multiverse, Arch multilib, RPM Fusion, openSUSE non-oss)
+native_apt=steam-installer
+native_pacman=steam
+native_dnf=steam
+native_zypper=steam
