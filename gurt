@@ -1175,6 +1175,17 @@ cmd_native() { # on | off | status
   esac
 }
 url_host() { local h=${1#*://}; h=${h%%/*}; h=${h%%:*}; h=${h,,}; echo "${h#www.}"; }
+appid_home() { # flatpak app id, homepage → 0 when the homepage is that app id's project (org.gimp.GIMP ↔ gimp.org)
+  local id=${1,,} u=${2,,} h p c host owner
+  id=${id//_/-}; IFS=. read -ra c <<<"$id"; (( ${#c[@]} >= 3 )) || return 1
+  h=$(url_host "$u"); p=${u#*://}; p=/${p#*/}; [[ $u == */*/* ]] || p=/
+  case ${c[1]} in
+    github|gitlab|codeberg|sourceforge|framagit)   # io.github.someone.App → someone.github.io or github.com/someone/…
+      host=${c[1]}.${c[0]}; owner=${c[2]}
+      [[ $h == "$owner.$host" || $h == "$owner.sourceforge.io" || ( $h == "$host" && ( $p == "/$owner/"* || $p == "/projects/$owner"* ) ) ]] ;;
+    *) [[ $h == "${c[1]}.${c[0]}" || $h == *".${c[1]}.${c[0]}" ]] ;;
+  esac
+}
 pm_homepage() { # name → the homepage your distro's package says it's from
   case $PM in
     apt)     apt-cache show "$1" 2>/dev/null | awk '/^Homepage:/ { print $2; exit }' ;;
@@ -1206,10 +1217,13 @@ native_for() { # recipe-name info → your distro's package of the same app (not
   if [[ $(info_get "$info" via_type) == flatpak ]] && p=$(appstream_pkg "$(info_get "$info" via_pkg)") && pm_available "$p"; then
     echo "$p"; return 0
   fi
-  # 3. the same name, from the same project (its homepage matches the recipe's), so it's not some other app called that
+  # 3. the same name from the same project, so it's not some other app called that: your distro's homepage for it
+  #    is the Flathub id's (org.gimp.GIMP ↔ gimp.org), or the recipe's own homepage
   pm_available "$name" || return 1
-  rh=$(url_host "$(info_get "$info" url)"); h=$(url_host "$(pm_homepage "$name" || true)")
-  [[ -n $rh && $rh != flathub.org && $rh != snapcraft.io && $rh == "$h" ]] && { echo "$name"; return 0; }
+  h=$(pm_homepage "$name" || true); [[ -n $h ]] || return 1
+  [[ $(info_get "$info" via_type) == flatpak ]] && appid_home "$(info_get "$info" via_pkg)" "$h" && { echo "$name"; return 0; }
+  rh=$(url_host "$(info_get "$info" url)")
+  [[ -n $rh && $rh != flathub.org && $rh != snapcraft.io && $rh == "$(url_host "$h")" ]] && { echo "$name"; return 0; }
   return 1
 }
 native_install() { # recipe-name native-pkg reason → 0 when your distro installed it
@@ -1217,7 +1231,8 @@ native_install() { # recipe-name native-pkg reason → 0 when your distro instal
   if pm_has "$p"; then msg "you already have $name from your distro ($PM/$p) 👍"
   else
     msg "🐧 your distro has $name ($PM/$p), so that's the one gurt installs (gurt native off: the $(info_get "$(repo_info "$name")" via_type) build instead)"
-    ( pm_install "$p" ) && pm_has "$p" || { warn "$PM couldn't install $p, using the $(info_get "$(repo_info "$name")" via_type) build"; return 1; }
+    ( pm_install "$p" ) || true   # it can complain about something else (a half-set-up package) and still install it
+    pm_has "$p" || { warn "$PM couldn't install $p, using the $(info_get "$(repo_info "$name")" via_type) build"; return 1; }
   fi
   is_installed "$key" || { v=$(pm_version "$p" || true); record_meta "$key" "$p" "${v:-$PM}" "$(info_get "$(repo_info "$name")" pkgdesc)" "$reason" distro; log_hist install "$key" "${v:-$PM}"; }
   mark_origin "$key" "$name"
