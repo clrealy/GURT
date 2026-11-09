@@ -358,8 +358,10 @@ impl App {
         &mut self.pw
     }
 
+    /// is gurt doing something your click has to wait for? the quiet update check doesn't count:
+    /// it stops for your click (start) and picks back up after
     pub fn busy(&self) -> bool {
-        self.run.is_some()
+        self.run.as_ref().is_some_and(|r| !r.act.bg)
     }
 
     /// run gurt (asks first when it changes your system)

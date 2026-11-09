@@ -7,6 +7,7 @@
 - Dev builds have everything a key unlocks, plus a **make a key** button (look → make a key) that makes a key, says what it redeems, gives you its `keys.map` line, and checks what any key redeems.
 
 ### Fixed
+- **Install buttons in the app went grey for minutes** right after opening it: the quiet update check it runs in the background counted as "busy". It still stops for your click like it should, so the buttons stay on now.
 - **jacb wouldn't build** (`cd: jacb-0.1.0: No such file or directory`): its recipe cloned into `JACB/` and looked in `jacb-0.1.0/`.
 - Recipes with a git tag as their source printed git's whole "detached HEAD" lecture while building. gurt keeps git quiet about it now.
 
