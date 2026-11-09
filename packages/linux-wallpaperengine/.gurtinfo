@@ -27,6 +27,7 @@ makedepends = cc
 makedepends = cmake
 makedepends = git
 makedepends = pkg-config
+makedepends = binutils
 makedepends = glm
 makedepends = wayland-protocols
 source = git+https://github.com/Almamu/linux-wallpaperengine.git#commit=a0ddce586e9ff12e9d31ca6b103f6036cc1b68fe
