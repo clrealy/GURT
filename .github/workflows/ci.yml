@@ -197,7 +197,9 @@ jobs:
           export GURT_ALLOW_ROOT=1 GURT_REPO_DIR="$PWD" GURT_ROOT=/tmp/gurtroot
           for p in $changed; do
             [ -d packages/$p ] || continue
-            if grep -q '^via_type=flatpak' packages/$p/GURTBUILD; then
+            if [ -f /etc/alpine-release ] && grep -q '^glibc_only=true' packages/$p/GURTBUILD; then
+              echo "⏭️  $p is glibc only, skipping it on Alpine"
+            elif grep -q '^via_type=flatpak' packages/$p/GURTBUILD; then
               # a Flathub app: check its id really exists (downloading every app + runtime on 5 distros would fill the runner).
               # the first one sets up flatpak through gurt, then one Flathub listing checks the rest fast
               id=$(sed -n 's/^via_pkg=//p' packages/$p/GURTBUILD)

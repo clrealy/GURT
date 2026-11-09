@@ -1,0 +1,16 @@
+pkgname = wallpaperx
+pkgver = 0.4.12
+pkgrel = 1
+pkgdesc = Browse and apply your Steam Wallpaper Engine wallpapers on Linux, no terminal needed (you need to own Wallpaper Engine)
+url = https://github.com/jagrat7/linux-wallpaper-engine
+license = MIT
+maintainer = clrealy
+category = system
+arch = x86_64
+depends = linux-wallpaperengine
+depends = electron-libs
+source = wallpaperx-0.4.12.zip::https://github.com/jagrat7/linux-wallpaper-engine/releases/download/v0.4.12/Linux.Wallpaper.Engine-linux-x64-0.4.12.zip
+alias = wallpaper-engine
+alias = linux-wallpaper-engine
+alias = linux-wallpaper-engine-ux
+alias = wpe

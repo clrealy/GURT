@@ -1,0 +1,30 @@
+# wallpaperX: browse, apply and playlist your Wallpaper Engine wallpapers (official prebuilt release).
+# It installs the backend for you. You still need Wallpaper Engine on Steam, opened once so the wallpapers download.
+pkgname=wallpaperx
+pkgver=0.4.12
+pkgrel=1
+pkgdesc="Browse and apply your Steam Wallpaper Engine wallpapers on Linux, no terminal needed (you need to own Wallpaper Engine)"
+url="https://github.com/jagrat7/linux-wallpaper-engine"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64)
+glibc_only=true     # prebuilt Electron, glibc only
+aliases=(wallpaper-engine linux-wallpaper-engine linux-wallpaper-engine-ux wpe)
+depends=(linux-wallpaperengine electron-libs)
+source=("wallpaperx-$pkgver.zip::https://github.com/jagrat7/linux-wallpaper-engine/releases/download/v$pkgver/Linux.Wallpaper.Engine-linux-x64-$pkgver.zip")
+sha256sums=(9355fa0c5423f5c09c70f326acedb5fe936f87ddc60f74792d08760f3f582883)
+
+package() {
+  local dir="$prefix/lib/wallpaperx" app="Linux Wallpaper Engine-linux-x64"
+  mkdir -p "$pkgdir$dir"
+  cp -a "$app/." "$pkgdir$dir/"
+  # the zip's folders are 0700, which would lock everyone but root out
+  find "$pkgdir$dir" -type d -exec chmod 755 {} +
+  # chrome-sandbox would need to be setuid root, so run without it (like the AppImage does)
+  printf '#!/bin/sh\nexec "%s/linux-wallpaper-engine" --no-sandbox "$@"\n' "$dir" > launcher
+  install -Dm755 launcher "$pkgdir$prefix/bin/wallpaperx"
+  install -Dm644 "$app/resources/assets/transparent-logo.png" "$pkgdir$prefix/share/icons/hicolor/512x512/apps/wallpaperx.png"
+  printf '[Desktop Entry]\nType=Application\nName=wallpaperX\nComment=Browse and apply Wallpaper Engine wallpapers\nExec=%s/bin/wallpaperx\nIcon=wallpaperx\nTerminal=false\nCategories=Utility;\nKeywords=wallpaper;live;animated;steam;\nStartupWMClass=Linux Wallpaper Engine\n' "$prefix" > wallpaperx.desktop
+  install -Dm644 wallpaperx.desktop "$pkgdir$prefix/share/applications/wallpaperx.desktop"
+}

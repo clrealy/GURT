@@ -1,0 +1,48 @@
+# Plays your Steam Wallpaper Engine wallpapers on Linux. Wants wlr-layer-shell on Wayland, or XRandr on X11.
+# Want buttons instead of flags? gurt install wallpaperx
+pkgname=linux-wallpaperengine
+_commit=a0ddce586e9ff12e9d31ca6b103f6036cc1b68fe
+pkgver=0.20261030   # no upstream releases, so this is the pinned commit's date
+pkgrel=1
+pkgdesc="Plays your Steam Wallpaper Engine wallpapers as your Linux desktop background (you need to own Wallpaper Engine)"
+url="https://github.com/Almamu/linux-wallpaperengine"
+license="GPL-3.0-only"
+maintainer="clrealy"
+category="system"
+arch=(x86_64)
+glibc_only=true     # CEF only ships for glibc, so no Alpine
+aliases=(wallpaperengine lwpe)
+_cef=135.0.17+gcbc1c5b+chromium-135.0.7049.52
+depends=(gl-libs x11-gl-extras sdl2 glew glfw freeglut lz4 libmpv ffmpeg-libs libpulse fftw3 freetype zlib dbus wayland cef-libs)
+makedepends=(cc cmake git pkg-config binutils glm wayland-protocols)
+source=("git+https://github.com/Almamu/linux-wallpaperengine.git#commit=$_commit"
+        "cef_binary_${_cef}_linux64_minimal.tar.bz2::https://cef-builds.spotifycdn.com/cef_binary_${_cef}_linux64_minimal.tar.bz2")
+sha256sums=(SKIP
+            24ac1980e62be7b1aea2c337d6bd4bc770dccd8b37e47c6db94b397f13ec4dc6)
+
+prepare() {
+  git -C linux-wallpaperengine submodule update --init --recursive --depth 1
+}
+
+build() {
+  # CEF is a source up there so it's checksummed. it's already where cmake looks, so cmake won't download it again
+  mkdir -p build/cef
+  mv "cef_binary_${_cef}_linux64_minimal" build/cef/
+  cmake -S linux-wallpaperengine -B build -Wno-dev \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX="$prefix/lib/linux-wallpaperengine"
+  cmake --build build --parallel "$(nproc)"
+}
+
+package() {
+  local dir="$prefix/lib/linux-wallpaperengine"
+  DESTDIR="$pkgdir" cmake --install build
+  cd "$pkgdir$dir"
+  # it also installs the dev tools, tests and headers of its bundled libs, and nobody runs those
+  rm -rf include share bin lib/cmake lib/pkgconfig lib/*.a ./*-float api-test function_source \
+    glslang glslangValidator qjs qjsc run-test262 spirv-cross spirv-remap
+  strip --strip-unneeded libcef.so   # 1.4 GB down to 230 MB
+  # the binary finds its libs through $ORIGIN, so a symlink is all it needs
+  mkdir -p "$pkgdir$prefix/bin"
+  ln -s "$dir/linux-wallpaperengine" "$pkgdir$prefix/bin/linux-wallpaperengine"
+}
