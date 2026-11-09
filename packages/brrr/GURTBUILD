@@ -1,0 +1,32 @@
+# Printing on Linux without CUPS or drivers
+pkgname=brrr
+pkgver=0.2.0
+pkgrel=1
+pkgdesc="Printing on Linux without CUPS or drivers: find the printer and print"
+url="https://github.com/clrealy/brrr"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+aliases=(printer printez)
+depends=(poppler)
+makedepends=(rust git cc)
+source=("git+https://github.com/clrealy/brrr.git#commit=b61cc3cb33e3e7ade6e23119fa17dd8a1cfdd35b")
+sha256sums=(SKIP)
+
+build() {
+  cd brrr
+  cargo build --release --locked
+}
+
+check() {
+  cd brrr
+  cargo test --release --locked
+}
+
+package() {
+  cd brrr
+  install -Dm755 target/release/brrr "$pkgdir$prefix/bin/brrr"
+  install -Dm644 LICENSE "$pkgdir$prefix/share/licenses/$pkgname/LICENSE"
+  install -Dm644 README.md "$pkgdir$prefix/share/doc/$pkgname/README.md"
+}
