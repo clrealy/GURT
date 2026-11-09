@@ -1,12 +1,13 @@
 # Printing on Linux without CUPS or drivers
 pkgname=brrr
 pkgver=0.2.1
-pkgrel=1
+pkgrel=2
 pkgdesc="Printing on Linux without CUPS or drivers: find the printer and print"
 url="https://github.com/clrealy/brrr"
 license="MIT"
 maintainer="clrealy"
 category="system"
+icon="https://raw.githubusercontent.com/clrealy/brrr/main/assets/logo.png"
 arch=(x86_64 aarch64)
 aliases=(printer printez)
 depends=(poppler)
