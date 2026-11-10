@@ -13,3 +13,4 @@ arch=(x86_64 aarch64)
 via_repo=flathub
 via_type=flatpak
 via_pkg=com.github.jeromerobert.pdfarranger
+aliases=(pdf-slicer)   # PDF Slicer left Flathub and points to PDF Arranger
