@@ -1,0 +1,31 @@
+# Tweak a Linux kernel from a GUI and build it for your own machine
+pkgname=kertweaker
+pkgver=0.2.0
+pkgrel=1
+pkgdesc="Tweak a Linux kernel from a GUI and build it for your own machine"
+url="https://github.com/clrealy/kertweaker"
+license="MIT"
+maintainer="clrealy"
+category="system"
+arch=(x86_64 aarch64)
+depends=(make curl)
+makedepends=(rust git cc)
+source=("git+https://github.com/clrealy/kertweaker.git#commit=d7a855dae70e1e2127639f7181241f46d5c4ad3b")
+sha256sums=(SKIP)
+
+build() {
+  cd kertweaker
+  cargo build --release --locked
+}
+
+check() {
+  cd kertweaker
+  cargo test --release --locked
+}
+
+package() {
+  cd kertweaker
+  install -Dm755 target/release/kertweaker "$pkgdir$prefix/bin/kertweaker"
+  install -Dm644 LICENSE "$pkgdir$prefix/share/licenses/$pkgname/LICENSE"
+  install -Dm644 README.md "$pkgdir$prefix/share/doc/$pkgname/README.md"
+}
