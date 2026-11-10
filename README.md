@@ -719,6 +719,8 @@ Fork it, then set `GURT_REPO_URL` in `/etc/gurt.conf` to your fork. Turn on GitH
 
 Got an app in Main GURT? Put the badge on your site or README, like "Get it on Flathub". Swap `YOURAPP` for your package's name: the link opens gurtproject.org right on your app's card, with its install command.
 
+Easiest way: open your app's card on [gurtproject.org](https://gurtproject.org) and hit **embed a "Get now on GURT" button**. Pick light, dark or follows light/dark, HTML or Markdown, and copy the code, already filled in with your app.
+
 <a href="https://gurtproject.org/?app=firefox"><img src="site/assets/get-on-gurt.svg" alt="Get now on GURT" width="240"></a>
 
 ```html

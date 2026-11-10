@@ -3,6 +3,7 @@
 ## Not released yet
 
 ### New
+- **Embed button on every app card** 🏷️ gurtproject.org's app cards have **embed a "Get now on GURT" button**: pick light, dark or follows light/dark, HTML or Markdown, see it, copy it. The code's already filled in with that app.
 - **Native first 🐧** Main GURT apps that come from Flathub or Snap (GIMP, Steam…) install from your distro instead when it has the same app: apt's GIMP on Ubuntu, pacman's Steam on Arch. Flathub / Snap is the fallback, and if your package manager can't install it, gurt uses that build. `gurt native off` always uses the Flathub / Snap build.
 - **GURT keys 🔑** Got a key like `GURT-XXXX-XXXX-XXXX`? Redeem it with `gurt redeem <key>` or in the app (look → redeem a key). What it unlocks? That's for you to find out 👀 Some keys get handed out, some are hidden. `gurt redeem list` shows what yours unlocked.
 - Dev builds have everything a key unlocks, plus a **make a key** button (look → make a key) that makes a key, says what it redeems, gives you its `keys.map` line, and checks what any key redeems.
