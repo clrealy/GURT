@@ -136,21 +136,6 @@ pre{background:var(--code);border:1px solid var(--edge);border-radius:var(--r);p
 .pkg:focus{outline:none}
 .up .dbody{display:grid;gap:12px}
 .tabs{display:flex;gap:2px}
-#dbadge{border:1px solid var(--edge);border-radius:var(--r);margin:0 0 10px}
-#dbadge>summary{cursor:pointer;padding:7px 10px;font:600 12.5px var(--mono);color:var(--ink)}
-#dbadge[open]>summary{border-bottom:1px solid var(--edge)}
-#dbadge .bbody{padding:8px 10px;display:grid;gap:8px}
-#dbadge .row2{gap:10px}
-#dbadge .tab{padding:4px 8px;font-size:11.5px}
-#dbadge .tab:disabled{opacity:.45;cursor:default}
-#dbadge .bprev{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-#dbadge .bprev a{display:inline-flex;padding:8px;border:1px solid var(--edge);border-radius:var(--r)}
-#dbadge .bprev a.light{background:#fff}#dbadge .bprev a.dark{background:#0d1117}
-#dbadge .bprev img{display:block;width:200px;height:auto}
-#dbadge pre{white-space:pre-wrap;word-break:break-all;max-height:none;font:12px var(--mono)}
-#dbadge .bcode{display:flex;gap:6px;align-items:flex-start}#dbadge .bcode pre{flex:1;min-width:0}
-#dbadge .tabs{flex-wrap:wrap}
-@media (max-width:520px){#dbadge .bcode{flex-direction:column;align-items:stretch}#dbadge .bprev img{width:170px}}
 .tab{white-space:nowrap;background:transparent;border:1px solid var(--edge);color:var(--ink);border-radius:var(--r);padding:5px 10px;font:600 12px var(--mono);cursor:pointer}
 .tab.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
@@ -604,17 +589,6 @@ gurt hotwyr on             <span class="c"># your package manager asks gurt when
   <div class="dhead"><span id="dicon"></span><div><h2 id="dname"></h2><div class="desc" id="ddesc"></div></div><button class="x" onclick="dlg.close()" aria-label="Close">×</button></div>
   <div class="dbody">
     <div class="cmd"><code id="dcmd"></code><button class="btn" id="copy">copy</button><button class="btn ghost" id="dcmp" title="see it side by side with up to 3 others">compare</button></div>
-    <details id="dbadge">
-      <summary>embed a "Get now on GURT" button</summary>
-      <div class="bbody">
-        <div class="row2">
-          <span class="tabs" role="group" aria-label="badge colors"><button class="tab on" data-bs="light" aria-pressed="true">for light pages</button><button class="tab" data-bs="dark" aria-pressed="false">for dark pages</button><button class="tab" data-bs="auto" aria-pressed="false">follows light/dark</button></span>
-          <span class="tabs" role="group" aria-label="code"><button class="tab on" data-bf="html" aria-pressed="true">HTML</button><button class="tab" data-bf="md" aria-pressed="false">Markdown</button></span>
-        </div>
-        <div class="bprev" id="bprev"></div>
-        <div class="bcode"><pre id="bcode"></pre><button class="btn" id="bcopy">copy</button></div>
-      </div>
-    </details>
     <table id="dtable"></table>
     <pre id="dsrc">loading GURTBUILD…</pre>
     <div class="social">
@@ -793,7 +767,6 @@ async function showPkg(name){
   $("#ddesc").textContent = noEmoji(p.pkgdesc); $("#dicon").outerHTML = pkgIcon(p).replace('<span class="ico', '<span id="dicon" class="ico');
   $("#dcmd").textContent = "gurt install " + pre + p.pkgname;
   $("#dcmp").dataset.n = p.pkgname; cmpLabel();
-  $("#dbadge").hidden = tree === "dirt"; BADGE.app = p.pkgname; renderBadge();
   const row = (k,v) => v && (Array.isArray(v) ? v.length : true) ? `<tr><td>${k}</td><td>${v}</td></tr>` : "";
   $("#dtable").innerHTML =
     row("upstream", p.url ? `<a href="${esc(p.url)}" rel="noopener">${esc(p.url)}</a>` : "") +
@@ -817,27 +790,6 @@ async function showPkg(name){
     $("#dsrc").textContent = r.ok ? await r.text() : "couldn't load the GURTBUILD (repo not pushed yet?)";
   } catch { $("#dsrc").textContent = "couldn't load the GURTBUILD"; }
 }
-
-// ── the "Get now on GURT" button for an app's own site or README: pick colors + HTML/Markdown, copy ──
-const BADGE = { app: "", style: "light", fmt: "html" };
-const BADGE_SVG = { light: "https://gurtproject.org/assets/get-on-gurt.svg", dark: "https://gurtproject.org/assets/get-on-gurt-dark.svg" };
-function badgeCode({ app, style, fmt }) {
-  const link = "https://gurtproject.org/?app=" + encodeURIComponent(app), alt = "Get now on GURT";
-  if (style === "auto")   // a <picture> follows the page's light/dark mode (GitHub READMEs take it in Markdown too)
-    return `<a href="${link}"><picture>\n  <source media="(prefers-color-scheme: dark)" srcset="${BADGE_SVG.dark}">\n  <img src="${BADGE_SVG.light}" alt="${alt}" width="200">\n</picture></a>`;
-  return fmt === "md" ? `[![${alt}](${BADGE_SVG[style]})](${link})` : `<a href="${link}"><img src="${BADGE_SVG[style]}" alt="${alt}" width="200"></a>`;
-}
-function renderBadge() {
-  if (!BADGE.app) return;
-  const prev = c => `<a class="${c}" href="?app=${encodeURIComponent(BADGE.app)}" title="on a ${c} page"><img src="assets/get-on-gurt${c === "dark" ? "-dark" : ""}.svg" alt="Get now on GURT" width="200"></a>`;
-  $("#bprev").innerHTML = BADGE.style === "auto" ? prev("light") + prev("dark") : prev(BADGE.style);
-  $("#bcode").textContent = badgeCode(BADGE);
-  document.querySelectorAll("#dbadge [data-bs]").forEach(b => { const on = b.dataset.bs === BADGE.style; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
-  document.querySelectorAll("#dbadge [data-bf]").forEach(b => { const on = b.dataset.bf === BADGE.fmt; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); b.disabled = BADGE.style === "auto"; });
-}
-document.querySelectorAll("#dbadge [data-bs]").forEach(b => b.addEventListener("click", () => { BADGE.style = b.dataset.bs; renderBadge(); }));
-document.querySelectorAll("#dbadge [data-bf]").forEach(b => b.addEventListener("click", () => { BADGE.fmt = b.dataset.bf; renderBadge(); }));
-$("#bcopy").addEventListener("click", async () => { try { await navigator.clipboard.writeText($("#bcode").textContent); $("#bcopy").textContent = "copied ✓"; setTimeout(() => $("#bcopy").textContent = "copy", 1200); } catch {} });
 
 // ── accounts: GitHub is your GURT account ──
 // votes + comments = giscus (GitHub Discussions). fill in categoryId after turning on Discussions + installing giscus (see README)
