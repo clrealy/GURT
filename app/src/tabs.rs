@@ -937,6 +937,29 @@ pub fn setup(app: &mut App, ui: &mut Ui) {
             });
         });
         ui.add_space(10.0);
+        // package packs: one click ticks a whole bunch (gurt pack <id> on the command line)
+        if !st.packs.is_empty() {
+            w::heading(ui, &p, "Packs", 14.0);
+            w::hint(ui, &p, "a bunch of apps for one thing. click one to tick its apps, untick any you don't want, then install them");
+            ui.add_space(2.0);
+            ui.horizontal_wrapped(|ui| {
+                ui.spacing_mut().item_spacing = vec2(4.0, 4.0);
+                for pk in &st.packs {
+                    // the pack's apps you could still add (in Main GURT, not installed, not closed source in FOSS-only mode)
+                    let want: Vec<&String> = pk.apps.iter().filter(|a| st.pkg(a).is_some_and(|m| !(st.fossonly && m.foss == "closed")) && st.inst(a).is_none()).collect();
+                    let on = !want.is_empty() && want.iter().all(|a| app.picked.contains(*a));
+                    let label = if want.is_empty() { format!("{} ✓", pk.name) } else { format!("{} ({})", pk.name, want.len()) };
+                    let tip = format!("{}\n{}\n(command line: gurt pack {})", pk.desc, pk.apps.join(" "), pk.id);
+                    if w::btn_ex(ui, &p, &label, if on { Kind::Primary } else { Kind::Ghost }, true, on, !want.is_empty()).on_hover_text(tip).clicked() {
+                        for a in want {
+                            if on { app.picked.remove(a); } else { app.picked.insert(a.clone()); }
+                        }
+                        app.sound.play(if on { "unpick" } else { "pick" });
+                    }
+                }
+            });
+            ui.add_space(10.0);
+        }
         // categories
         let mut have: Vec<&str> = st.main.iter().map(cat_of).collect();
         have.sort_by_key(|c| CATS.iter().position(|x| x.0 == *c));

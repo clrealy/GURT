@@ -25,6 +25,7 @@ $SUDO install -Dm644 "$tmp/gurt/deps.map" "$SHARE/deps.map"
 $SUDO install -Dm644 "$tmp/gurt/vibes.map" "$SHARE/vibes.map"
 $SUDO install -Dm644 "$tmp/gurt/gh-only.map" "$SHARE/gh-only.map"
 $SUDO install -Dm644 "$tmp/gurt/keys.map" "$SHARE/keys.map"
+$SUDO install -Dm644 "$tmp/gurt/packs.map" "$SHARE/packs.map"
 $SUDO install -Dm644 "$tmp/gurt/assets/wilhelm.mp3" "$SHARE/wilhelm.mp3"
 $SUDO install -Dm644 "$tmp/gurt/site/assets/apple-touch-icon.png" "$SHARE/gurt.png"
 [ -n "$CROS" ] || [ -f /etc/gurt.conf ] || $SUDO install -Dm644 "$tmp/gurt/gurt.conf" /etc/gurt.conf   # ChromeOS: /etc is read-only

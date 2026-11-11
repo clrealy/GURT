@@ -1,0 +1,14 @@
+# packs.map: package packs, a bunch of Main GURT apps for one thing, installed together (gurt pack <id>)
+# id|name|what it's for|apps (Main GURT names, space separated). CI checks every app is a real recipe.
+gaming|Gaming|your Steam, Epic and GOG games, Windows games, mods and Minecraft|steam heroic lutris bottles protonup-qt goverlay vesktop prismlauncher
+retro|Retro gaming|emulators for the old consoles, Atari to Switch|retroarch dolphin-emu pcsx2 ppsspp rpcs3 cemu melonds ryujinx-ryubing
+streaming|Streaming|go live, record, clean up your mic, read chat|obs-studio easyeffects chatterino vesktop audacity kdenlive
+coding|Coding|an editor, git, databases and API testing|vscodium neovim lazygit gh dbeaver bruno fzf ripgrep bat
+art|Art and design|paint, draw, edit photos, lay out pages, 3D|krita gimp inkscape blender darktable scribus
+music|Music production|make beats, record, mix, write sheet music|ardour lmms hydrogen musescore carla qpwgraph audacity
+video|Video editing|cut, convert, trim and upscale videos|kdenlive shotcut handbrake losslesscut upscayl
+school|School and office|documents, email, notes, sources, flashcards|libreoffice thunderbird obsidian zotero anki xournalpp
+privacy|Privacy|private browsers, passwords, private chat and syncing|librewolf mullvad-browser torbrowser keepassxc signal syncthing
+media|Watch and listen|movies, shows and your music library|vlc mpv strawberry jellyfin-desktop kodi
+terminal|Terminal setup|a nicer terminal and shell, and better everyday tools|wezterm fish starship fzf eza bat btop fastfetch
+makers|3D printing and making|slicers, CAD and circuit boards|prusa-slicer orcaslicer cura freecad openscad kicad
