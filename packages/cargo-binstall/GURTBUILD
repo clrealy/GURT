@@ -1,6 +1,6 @@
 # Install Rust tools as binaries instead of compiling them
 pkgname=cargo-binstall
-pkgver=1.25.0
+pkgver=1.27.0
 pkgrel=1
 pkgdesc="Install Rust tools as binaries instead of compiling them"
 url="https://github.com/cargo-bins/cargo-binstall"
@@ -12,8 +12,8 @@ _tag=v$pkgver
 # official prebuilt release binary
 source_x86_64=("https://github.com/cargo-bins/cargo-binstall/releases/download/${_tag}/cargo-binstall-x86_64-unknown-linux-musl.tgz")
 source_aarch64=("https://github.com/cargo-bins/cargo-binstall/releases/download/${_tag}/cargo-binstall-aarch64-unknown-linux-musl.tgz")
-sha256sums_x86_64=(6d864dd99e63386b54c7ca1808eb000571a9e00f530ed86a2c0016d0290083b9)
-sha256sums_aarch64=(4d3cc6e0308d2f76b7de7f69d1d316a2749917bb6c1a9c69cea803400460e5a6)
+sha256sums_x86_64=('b2e4b70fcddc5bd6fd90c5cf8dc17b4cf0ea54a3db16c65ee0307f42c9bd3187')
+sha256sums_aarch64=('84f2afefd325e52c92702a1f2a396902301ccdafd7614270cbbf46b9cff3accf')
 
 package() {
   local f
