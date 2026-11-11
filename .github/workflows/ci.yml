@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       - name: shellcheck gurt
-        run: shellcheck -S warning gurt install.sh tools/lint.sh tools/build-app.sh
+        run: shellcheck -S warning gurt install.sh tools/lint.sh tools/build-app.sh tools/onion.sh
       - name: lint recipes
         run: ./tools/lint.sh
       - name: packs.map (every app in a pack is a Main GURT recipe)

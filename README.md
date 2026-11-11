@@ -717,6 +717,16 @@ Then trust the key: `curl -sO https://gurtproject.org/repo/gurt-key.asc && sudo 
 
 Fork it, then set `GURT_REPO_URL` in `/etc/gurt.conf` to your fork. Turn on GitHub Pages with the source set to "GitHub Actions" and the site deploys every time you push to `main`.
 
+## gurtproject.org on Tor 🧅
+
+`tools/onion.sh` puts the site on Tor as a `gurtpm….onion` address. Run it once, as root, on a computer that stays on (a VPS, a Raspberry Pi, a home server; Debian, Ubuntu, Fedora, Arch or openSUSE):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/clrealy/GURT/main/tools/onion.sh | sudo bash
+```
+
+It installs Tor, mines an address that starts with `gurtpm` (a few minutes, once), builds the site from this repo, serves it to Tor and rebuilds it every 6 hours. It prints the address and an install line for Tor (`torsocks curl -fsSL http://<address>/install.sh | sh`). The address's secret key stays on that computer (`/var/lib/tor/gurt-onion`): back it up, never commit it. Running it again keeps the address and updates everything.
+
 ## "Get now on GURT" badge 🏷️
 
 Got an app in Main GURT? Put the badge on your site or README, like "Get it on Flathub". Swap `YOURAPP` for your package's name: the link opens gurtproject.org right on your app's card, with its install command.
