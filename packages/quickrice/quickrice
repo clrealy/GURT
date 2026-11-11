@@ -6,7 +6,7 @@ A .qrice is a gzipped tarball with a rice.toml manifest at its root.
 import argparse, datetime, json, os, shutil, subprocess, sys, tarfile, tempfile, tomllib
 from pathlib import Path
 
-VERSION = "0.4.3"
+VERSION = "0.4.4"
 # openSUSE (and others) keep admin tools like plymouth-set-default-theme and grub2-mkconfig in
 # /usr/sbin, which isn't in a normal user's PATH, so look there too
 for _d in ("/usr/local/sbin", "/usr/sbin", "/sbin"):
@@ -240,6 +240,12 @@ def apply_grub(root, sec, rice):
 def apply_plymouth(root, sec, rice):
     src = root / sec["dir"]
     if not have("plymouth-set-default-theme"): warn("plymouth not installed, skipping"); return
+    if (root / sec["dir"] / f"{src.name}.plymouth").exists() and "ModuleName=script" in (root / sec["dir"] / f"{src.name}.plymouth").read_text():
+        libs = ("/usr/lib64/plymouth", "/usr/lib/plymouth", "/usr/lib/x86_64-linux-gnu/plymouth", "/usr/lib/aarch64-linux-gnu/plymouth")
+        if not any(Path(d, "script.so").exists() for d in libs):
+            hint = install_hint({"zypper": "plymouth-plugin-script", "dnf": "plymouth-plugin-script", "apt": "plymouth-themes",
+                                 "pacman": "plymouth"})
+            warn("plymouth's script plugin is missing" + (f", get it with: {hint}" if hint else "") + " then apply again"); return
     copy_into(src, Path("/usr/share/plymouth/themes") / src.name, sudo=True)
     say("  rebuilding initrd for plymouth, this takes a minute...", "d")
     run(["plymouth-set-default-theme", "-R", src.name], sudo=True)
