@@ -81,11 +81,10 @@ impl Wiz {
             let name = SRCS.iter().find(|x| x.0 == src).map(|x| x.1).unwrap_or(src);
             t.push(Task { label: format!("get the {name} package list"), args: s(&["sync", src]), st: "", log: String::new() });
         }
-        if !self.apps.is_empty() {
-            let n = self.apps.len();
-            let mut a = s(&["-y", "install"]);
-            a.extend(self.apps.iter().cloned());
-            t.push(Task { label: format!("install {n} app{}: {}", if n == 1 { "" } else { "s" }, self.apps.iter().cloned().collect::<Vec<_>>().join(", ")), args: a, st: "", log: String::new() });
+        // one app at a time: you see each one finish, and one that fails doesn't stop the rest
+        let n = self.apps.len();
+        for (i, a) in self.apps.iter().enumerate() {
+            t.push(Task { label: format!("install {a} ({} of {n})", i + 1), args: s(&["-y", "install", a]), st: "", log: String::new() });
         }
         if self.hook && !app.st.hook {
             t.push(Task { label: "turn on Hotwyr (GURT backs up your package manager)".into(), args: s(&["hotwyr", "on"]), st: "", log: String::new() });
@@ -509,6 +508,15 @@ fn page(app: &mut App, ui: &mut Ui, step: usize) {
                             ui.label(egui::RichText::new("didn't work").font(mono(12.0)).color(p.bad));
                         }
                     });
+                    // what it's doing right now (big apps take a while: Flatpak runtimes are a few hundred MB each)
+                    if t.st == "run" {
+                        if let Some(l) = app.run.as_ref().and_then(|r| r.job.last_line()) {
+                            ui.horizontal(|ui| {
+                                ui.add_space(18.0);
+                                ui.add(egui::Label::new(egui::RichText::new(data::no_emoji(&l)).font(mono(11.5)).color(p.muted)).truncate());
+                            });
+                        }
+                    }
                     if t.st == "bad" && !t.log.is_empty() {
                         egui::Frame::new().fill(p.code).inner_margin(6).show(ui, |ui| {
                             ui.add(egui::Label::new(egui::RichText::new(&t.log).font(mono(11.0)).color(p.ink)).wrap());

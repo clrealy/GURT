@@ -1,5 +1,11 @@
 # GURT changelog 🦆
 
+## Not released yet
+
+### Fixed
+- **The setup wizard's app install looked stuck.** It installed every app you picked as one long step (a Gaming pack is a few GB of Flathub runtimes). Now it's one app at a time ("install steam (7 of 8)"), the bar moves with each one, and the line under it shows what's happening right now, download % included. One app failing doesn't stop the rest anymore.
+- `gurt install a b c` stopped at the first app that failed. Each one installs on its own now, and at the end gurt tells you which didn't work.
+
 ## 1.4.1: Packed 📦
 
 Whole bunches of apps in one go, your distro's own GIMP and Steam instead of Flathub's, and GURT keys 🔑

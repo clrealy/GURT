@@ -7629,9 +7629,18 @@ main() {
     search|s)          cmd_search "$@" ;;
     info)              cmd_info "$@" ;;
     install|i|get)     (( $# )) || die "install what tho"
-                       for p; do if is_pkgfile "$p"; then pkgfile_install "$p" explicit
-                                 elif [[ ${p,,} == *.gurt && -f $p ]]; then install_file "$p" explicit
-                                 elif $SCAN && [[ $p != */* ]]; then scan_install "$p"; else install_any "$p" explicit; fi; done
+                       install_one() { if is_pkgfile "$1"; then pkgfile_install "$1" explicit
+                                       elif [[ ${1,,} == *.gurt && -f $1 ]]; then install_file "$1" explicit
+                                       elif $SCAN && [[ $1 != */* ]]; then scan_install "$1"; else install_any "$1" explicit; fi; }
+                       if (( $# == 1 )); then install_one "$1"
+                       else   # a few at once: each on its own, so one that fails doesn't stop the rest
+                         local failed=() p
+                         for p; do ( install_one "$p" ) || failed+=("$p"); done
+                         if (( ${#failed[@]} )); then
+                           ach_installs
+                           die "$(( $# - ${#failed[@]} )) of $# installed. these didn't: ${failed[*]} (scroll up for why)"
+                         fi
+                       fi
                        ach_installs ;;
     update|refresh)    cmd_update ;;
     upgrade|up)        cmd_upgrade ;;
