@@ -1,12 +1,20 @@
 # GURT changelog 🦆
 
-## Not released yet
+## 1.4.1: Packed 📦
+
+Whole bunches of apps in one go, your distro's own GIMP and Steam instead of Flathub's, and GURT keys 🔑
 
 ### New
 - **Package packs 📦** `gurt pack gaming` installs a whole bunch of apps for one thing. 12 packs: gaming, retro gaming, streaming, coding, art and design, music production, video editing, school and office, privacy, watch and listen, terminal setup, 3D printing and making. `gurt pack` lists them, `gurt pack show <name>` shows what's in one, `--skip app,app` leaves some out. The app's Setup tab, the setup wizard's starter apps and the site's Build your setup get pack buttons that tick the whole pack. New achievement: packed up.
 - **Native first 🐧** Main GURT apps that come from Flathub or Snap (GIMP, Steam…) install from your distro instead when it has the same app: apt's GIMP on Ubuntu, pacman's Steam on Arch. Flathub / Snap is the fallback, and if your package manager can't install it, gurt uses that build. `gurt native off` always uses the Flathub / Snap build.
 - **GURT keys 🔑** Got a key like `GURT-XXXX-XXXX-XXXX`? Redeem it with `gurt redeem <key>` or in the app (look → redeem a key). What it unlocks? That's for you to find out 👀 Some keys get handed out, some are hidden. `gurt redeem list` shows what yours unlocked.
 - Dev builds have everything a key unlocks, plus a **make a key** button (look → make a key) that makes a key, says what it redeems, gives you its `keys.map` line, and checks what any key redeems.
+- **New in Main GURT:** brrr (printing without CUPS or drivers), Wallpaper Engine on Linux (linux-wallpaperengine + wallpaperx, you need to own it on Steam), nah (nano with normal keys) and yoink (curl that talks like a person).
+- `tools/onion.sh` puts gurtproject.org on Tor, as a gurtpm….onion address 🧅
+
+### Removed
+- 16 apps Flathub stopped carrying (Notejot, Khronos, Colorway, Countdown, Dot Matrix, Black Box, EasySSH, Luna, Linux Assistant, Processing IDE, PDF Slicer, the Photopea wrapper, TradeSim, vServer, Android Virtual Pen, Al-Quran Tafsir). `gurt install pdf-slicer` gets PDF Arranger now. Already installed one? It keeps working, it just won't get updates.
+- Mecalin is called Teclas now: `gurt install teclas` (mecalin still works).
 
 ### Fixed
 - **Install buttons in the app went grey for minutes** right after opening it: the quiet update check it runs in the background counted as "busy". It still stops for your click like it should, so the buttons stay on now.
