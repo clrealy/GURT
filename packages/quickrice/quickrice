@@ -6,7 +6,7 @@ A .qrice is a gzipped tarball with a rice.toml manifest at its root.
 import argparse, datetime, json, os, shutil, subprocess, sys, tarfile, tempfile, tomllib
 from pathlib import Path
 
-VERSION = "0.4.2"
+VERSION = "0.4.3"
 # openSUSE (and others) keep admin tools like plymouth-set-default-theme and grub2-mkconfig in
 # /usr/sbin, which isn't in a normal user's PATH, so look there too
 for _d in ("/usr/local/sbin", "/usr/sbin", "/sbin"):
@@ -24,6 +24,13 @@ def step(msg): print(f"  {C['g']}✓{C['x']} {msg}")
 def warn(msg): print(f"  {C['y']}!{C['x']} {msg}")
 def fail(msg): print(f"{C['r']}✗ {msg}{C['x']}"); sys.exit(1)
 def have(cmd): return shutil.which(cmd) is not None
+
+class NeedsPassword(Exception): pass
+
+def can_sudo():
+    """True if sudo can ask for (or skip) the password right now."""
+    if os.geteuid() == 0 or os.environ.get("SUDO_ASKPASS") or sys.stdin.isatty(): return True
+    return subprocess.run(["sudo", "-n", "true"], capture_output=True).returncode == 0
 
 def run(cmd, sudo=False, check=True, capture=False):
     if sudo and os.geteuid() != 0:
@@ -160,6 +167,25 @@ def apply_sounds(root, sec, rice):
     kwrite("kdeglobals", "Sounds", "Theme", src.name)
     step(f"sound theme {src.name} installed + selected")
 
+def theme_dirs(name):
+    """Every place an icon/cursor theme called `name` can live."""
+    bases = [HOME / ".local/share/icons", HOME / ".icons", Path("/usr/share/icons"), Path("/usr/local/share/icons")]
+    xdg = os.environ.get("XDG_DATA_DIRS", "")
+    bases += [Path(d) / "icons" for d in xdg.split(":") if d]
+    found = []
+    for b in bases:
+        try:
+            if (b / name).is_dir(): found.append(b / name)
+        except OSError: pass   # a folder we can't read
+    return found
+
+def install_hint(pkgs):
+    """pkgs: {manager: package}. Returns the install command for this system, or ''."""
+    for pm, cmd in (("pacman", "sudo pacman -S"), ("zypper", "sudo zypper in"), ("dnf", "sudo dnf install"),
+                    ("apt", "sudo apt install"), ("xbps-install", "sudo xbps-install"), ("apk", "sudo apk add")):
+        if have(pm) and pkgs.get(pm): return f"{cmd} {pkgs[pm]}"
+    return pkgs.get("any", "")
+
 def apply_icons(root, sec, rice):
     theme = sec.get("theme")
     if sec.get("papirus_folders") and theme and theme.startswith("Papirus"):
@@ -168,20 +194,36 @@ def apply_icons(root, sec, rice):
             run([pf, "-C", sec["papirus_folders"], "--theme", theme], sudo=True, check=False)
             step(f"papirus folders -> {sec['papirus_folders']}")
         else:
-            warn("papirus-folders not installed, skipping folder color")
+            warn("papirus-folders not installed, skipping folder color (" +
+                 (install_hint({"pacman": "papirus-folders"}) or "github.com/PapirusDevelopmentTeam/papirus-folders") + ")")
+    if theme and not theme_dirs(theme):
+        hint = install_hint({"pacman": "papirus-icon-theme", "zypper": "papirus-icon-theme", "dnf": "papirus-icon-theme",
+                             "apt": "papirus-icon-theme", "xbps-install": "papirus-icons"}) if theme.startswith("Papirus") else ""
+        warn(f"icon theme {theme} isn't installed" + (f", get it with: {hint}" if hint else "") + " then apply again"); return
     tool = find_libexec("plasma-changeicons")
     if theme and tool:
         run([tool, theme], check=False); step(f"icons: {theme}")
     elif theme:
-        warn(f"set icon theme {theme} manually (is it installed?)")
+        warn(f"set icon theme {theme} manually in System Settings → Icons")
 
 def apply_cursor(root, sec, rice):
     theme = sec.get("theme")
-    if theme and have("plasma-apply-cursortheme"):
-        run(["plasma-apply-cursortheme", theme], check=False); step(f"cursor: {theme} (needs to be installed)")
+    if not theme: return
+    def has_cursors(d):
+        try: return (d / "cursors").is_dir()
+        except OSError: return False
+    if not any(has_cursors(d) for d in theme_dirs(theme)):
+        hint = install_hint({"pacman": "bibata-cursor-theme-bin  (AUR, use paru/yay)", "zypper": "bibata-cursor-theme",
+                             "dnf": "bibata-cursor-theme"}) if theme.lower().startswith("bibata") else ""
+        warn(f"cursor {theme} isn't installed" + (f", get it with: {hint}" if hint else ", get it from System Settings → Cursors → Get New") + " then apply again")
+        return
+    if have("plasma-apply-cursortheme"):
+        run(["plasma-apply-cursortheme", theme], check=False); step(f"cursor: {theme}")
 
 def apply_grub(root, sec, rice):
     gdir, mk = grub_info()
+    if not (have(mk[0]) and Path("/etc/default/grub").exists()):
+        warn("this system doesn't boot with GRUB (systemd-boot or Limine?), skipping the GRUB theme"); return
     src = root / sec["dir"]
     dst = gdir / "themes" / src.name
     copy_into(src, dst, sudo=True)
@@ -296,12 +338,26 @@ def cmd_apply(a):
             ans = input(f"  this rice changes system stuff ({', '.join(k for k, _ in sys_parts)}) and needs sudo. continue? [y/N] ")
             if ans.lower() not in ("y", "yes"): sys_parts = []; warn("skipping system parts")
         b, _ = make_backup(m); step(f"backup saved ({b.name}) — undo with: quickrice undo")
-        if sys_parts and have("snapper") and not a.no_snapshot:
+        if sys_parts and have("snapper") and not a.no_snapshot and (DRY or can_sudo()):
             run(["snapper", "create", "-d", f"quickrice before {name}"], sudo=True, check=False); step("snapper snapshot taken")
+        failed = []
+        def attempt(k, f):
+            try: f(root, m[k], name)
+            except subprocess.CalledProcessError as e:
+                failed.append(k); warn(f"{k} failed: `{' '.join(map(str, e.cmd))}` exited with {e.returncode}")
+            except Exception as e:
+                failed.append(k); warn(f"{k} failed: {e}")
         for k, f in USER_PARTS:
-            if pick(k): f(root, m[k], name)
-        for k, f in sys_parts: f(root, m[k], name)
-    say(f"\n✨ {r.get('display_name', name)} applied! log out + back in for everything to refresh", "g")
+            if pick(k): attempt(k, f)
+        if sys_parts and not DRY and not can_sudo():
+            warn(f"{', '.join(k for k, _ in sys_parts)} need your password, but there's no terminal to type it in.")
+            warn("run this from a terminal, or install ksshaskpass6 so the app can ask: quickrice apply FILE --only " + ",".join(k for k, _ in sys_parts))
+            failed += [k for k, _ in sys_parts]; sys_parts = []
+        for k, f in sys_parts: attempt(k, f)
+    if failed:
+        say(f"\n🍮 {r.get('display_name', name)} mostly applied, these didn't: {', '.join(failed)}", "y")
+    else:
+        say(f"\n✨ {r.get('display_name', name)} applied! log out + back in for everything to refresh", "g")
 
 def cmd_pack(a):
     src = Path(a.folder).resolve()

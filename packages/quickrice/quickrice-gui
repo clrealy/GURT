@@ -86,6 +86,26 @@ def palette_from_image(data):
                 afg="#111111" if lum(a) > 140 else "#FFFFFF", log=hexc(mix(bg, [0, 0, 0], .35)))
 
 
+def askpass_path():
+    """sudo -A runs this to get the password. Use the desktop's helper if there is one, else our own dialog."""
+    for ask in ("ksshaskpass", "ksshaskpass6", "ssh-askpass", "lxqt-openssh-askpass"):
+        p = shutil.which(ask)
+        if p: return p
+    import tempfile
+    f = Path(tempfile.gettempdir()) / f"quickrice-askpass-{os.getuid()}"
+    f.write_text(f'#!/bin/sh\nexec "{sys.executable}" "{Path(__file__).resolve()}" --askpass "$@"\n')
+    f.chmod(0o700)
+    return str(f)
+
+def askpass_dialog():
+    from PySide6.QtWidgets import QInputDialog, QLineEdit
+    app = QApplication(sys.argv[:1]); app.setStyle("Fusion"); app.setStyleSheet(style_for(BNW))
+    prompt = " ".join(sys.argv[2:]).strip() or "Password"
+    text, ok = QInputDialog.getText(None, "quickrice needs your password",
+                                    "GRUB, boot splash and login screen are system files.\n" + prompt, QLineEdit.Password)
+    if not ok: sys.exit(1)
+    print(text); sys.exit(0)
+
 def cli_path():
     here = Path(__file__).resolve().parent / "quickrice"
     return str(here) if here.exists() else (shutil.which("quickrice") or "quickrice")
@@ -241,9 +261,7 @@ class Main(QWidget):
         target = target or self.log; target.clear()
         self.proc = QProcess(self)
         env = QProcessEnvironment.systemEnvironment()
-        for ask in ("ksshaskpass", "ssh-askpass", "lxqt-openssh-askpass"):
-            p = shutil.which(ask)
-            if p: env.insert("SUDO_ASKPASS", p); break
+        env.insert("SUDO_ASKPASS", askpass_path())
         env.insert("NO_COLOR", "1"); self.proc.setProcessEnvironment(env)
         self.proc.setProcessChannelMode(QProcess.MergedChannels)
         clean = lambda s: __import__("re").sub(r"\x1b\[[0-9;]*m", "", s)
@@ -258,6 +276,7 @@ class Main(QWidget):
         self.load(e.mimeData().urls()[0].toLocalFile())
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "--askpass": askpass_dialog()
     app = QApplication(sys.argv); app.setApplicationName("quickrice"); app.setDesktopFileName("quickrice")
     # Fusion so buttons look the same whatever app style the system uses (Kvantum, Breeze...)
     app.setStyle("Fusion")
