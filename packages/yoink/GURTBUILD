@@ -1,0 +1,30 @@
+# curl, but it talks like a person
+pkgname=yoink
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="curl, but it talks like a person"
+url="https://github.com/clrealy/yoink"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+makedepends=(rust git cc)
+source=("git+https://github.com/clrealy/yoink.git#commit=e3bed3f5c09c7d98ff4c7bb907203dc3daa5c630")
+sha256sums=(SKIP)
+
+build() {
+  cd yoink
+  cargo build --release --locked
+}
+
+check() {
+  cd yoink
+  cargo test --release --locked
+}
+
+package() {
+  cd yoink
+  install -Dm755 target/release/yoink "$pkgdir$prefix/bin/yoink"
+  install -Dm644 LICENSE "$pkgdir$prefix/share/licenses/$pkgname/LICENSE"
+  install -Dm644 README.md "$pkgdir$prefix/share/doc/$pkgname/README.md"
+}

@@ -1,0 +1,30 @@
+# nano, but with the keys every other app uses
+pkgname=nah
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="nano, but with the keys every other app uses"
+url="https://github.com/clrealy/nah"
+license="MIT"
+maintainer="clrealy"
+category="cli"
+arch=(x86_64 aarch64)
+makedepends=(rust git cc)
+source=("git+https://github.com/clrealy/nah.git#commit=a194c55eb829bf67412f5cbc6c745b4682a0504d")
+sha256sums=(SKIP)
+
+build() {
+  cd nah
+  cargo build --release --locked
+}
+
+check() {
+  cd nah
+  cargo test --release --locked
+}
+
+package() {
+  cd nah
+  install -Dm755 target/release/nah "$pkgdir$prefix/bin/nah"
+  install -Dm644 LICENSE "$pkgdir$prefix/share/licenses/$pkgname/LICENSE"
+  install -Dm644 README.md "$pkgdir$prefix/share/doc/$pkgname/README.md"
+}
