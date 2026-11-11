@@ -6,7 +6,7 @@ A .qrice is a gzipped tarball with a rice.toml manifest at its root.
 import argparse, datetime, json, os, shutil, subprocess, sys, tarfile, tempfile, tomllib
 from pathlib import Path
 
-VERSION = "0.4.4"
+VERSION = "0.4.5"
 # openSUSE (and others) keep admin tools like plymouth-set-default-theme and grub2-mkconfig in
 # /usr/sbin, which isn't in a normal user's PATH, so look there too
 for _d in ("/usr/local/sbin", "/usr/sbin", "/sbin"):
@@ -213,8 +213,7 @@ def apply_cursor(root, sec, rice):
         try: return (d / "cursors").is_dir()
         except OSError: return False
     if not any(has_cursors(d) for d in theme_dirs(theme)):
-        hint = install_hint({"pacman": "bibata-cursor-theme-bin  (AUR, use paru/yay)", "zypper": "bibata-cursor-theme",
-                             "dnf": "bibata-cursor-theme"}) if theme.lower().startswith("bibata") else ""
+        hint = install_hint({"pacman": "bibata-cursor-theme-bin  (AUR, use paru/yay)", "zypper": "bibata-cursor-theme"}) if theme.lower().startswith("bibata") else ""
         warn(f"cursor {theme} isn't installed" + (f", get it with: {hint}" if hint else ", get it from System Settings → Cursors → Get New") + " then apply again")
         return
     if have("plasma-apply-cursortheme"):
@@ -233,7 +232,9 @@ def apply_grub(root, sec, rice):
         # replace an existing (even commented) line, otherwise append
         run(["sed", "-i", "-E", f"/^#?{k}=/d", "/etc/default/grub"], sudo=True)
         run(["sh", "-c", f"echo '{k}={v}' >> /etc/default/grub"], sudo=True)
-    run(["sed", "-i", "-E", 's/^GRUB_TERMINAL=.*console.*/GRUB_TERMINAL="gfxterm"/', "/etc/default/grub"], sudo=True)
+    # Fedora ships GRUB_TERMINAL_OUTPUT="console", which hides any theme
+    run(["sed", "-i", "-E", '-e', 's/^GRUB_TERMINAL=.*console.*/GRUB_TERMINAL="gfxterm"/',
+         '-e', 's/^GRUB_TERMINAL_OUTPUT=.*console.*/GRUB_TERMINAL_OUTPUT="gfxterm"/', "/etc/default/grub"], sudo=True)
     run(mk, sudo=True)
     step(f"GRUB theme {src.name} installed")
 
