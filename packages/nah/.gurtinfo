@@ -1,0 +1,14 @@
+pkgname = nah
+pkgver = 0.1.0
+pkgrel = 1
+pkgdesc = nano, but with the keys every other app uses
+url = https://github.com/clrealy/nah
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = rust
+makedepends = git
+makedepends = cc
+source = git+https://github.com/clrealy/nah.git#commit=a194c55eb829bf67412f5cbc6c745b4682a0504d

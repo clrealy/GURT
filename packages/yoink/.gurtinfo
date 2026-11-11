@@ -1,0 +1,14 @@
+pkgname = yoink
+pkgver = 0.1.0
+pkgrel = 1
+pkgdesc = curl, but it talks like a person
+url = https://github.com/clrealy/yoink
+license = MIT
+maintainer = clrealy
+category = cli
+arch = x86_64
+arch = aarch64
+makedepends = rust
+makedepends = git
+makedepends = cc
+source = git+https://github.com/clrealy/yoink.git#commit=e3bed3f5c09c7d98ff4c7bb907203dc3daa5c630
