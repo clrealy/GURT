@@ -5190,6 +5190,75 @@ cmd_quack() {
   fi
 }
 
+# ── package packs: a bunch of Main GURT apps for one thing (gaming, coding…), installed together ──
+packs_file() {
+  local f
+  for f in "$GURT_REPO_DIR/packs.map" "$SELF_DIR/packs.map" /usr/local/share/gurt/packs.map /usr/share/gurt/packs.map; do
+    [[ -r $f ]] && { echo "$f"; return 0; }
+  done
+  return 1
+}
+pack_rows() { local f; f=$(packs_file) || return 0; grep -v '^#' "$f" | grep '|' || true; }   # id|name|what it's for|apps
+pack_row() { pack_rows | awk -F'|' -v i="${1,,}" '$1 == i { print; exit }'; }
+cmd_pack() { # [list | show <id> | <id> [--skip app,app]]
+  local a=${1:-list} row id name desc apps x k skip=" " todo=() have=() closed=() gone=() failed=()
+  ensure_repo >/dev/null 2>&1 || true
+  case $a in
+    list|ls)
+      [[ -n $(pack_rows) ]] || die "couldn't find packs.map (gurt sync fetches it)"
+      msg "package packs 📦 a bunch of apps for one thing. install one: gurt pack <name>"
+      while IFS='|' read -r id name desc apps; do
+        read -ra x <<<"$apps"
+        printf '  %s%-10s%s %s · %d apps · %s\n             %s%s%s\n' "$B" "$id" "$R0" "$name" "${#x[@]}" "$desc" "$DIM" "$apps" "$R0"
+      done < <(pack_rows)
+      return 0 ;;
+    show|info)
+      row=$(pack_row "${2:-}"); [[ -n $row ]] || die "no pack called '${2:-}' (gurt pack list shows them)"
+      IFS='|' read -r id name desc apps <<<"$row"
+      msg "$name 📦 $desc"
+      for x in $apps; do
+        if resolve_key "$x" >/dev/null 2>&1; then printf '  %s✓ %s%s\n' "$GRN" "$x" "$R0"
+        elif [[ -f $(repo_info "$x") ]]; then printf '    %-18s %s%s%s\n' "$x" "$DIM" "$(info_get "$(repo_info "$x")" pkgdesc)" "$R0"
+        else printf '    %-18s %s(not in Main GURT anymore)%s\n' "$x" "$DIM" "$R0"; fi
+      done
+      msg2 "install it: gurt pack $id   (leave some out: gurt pack $id --skip app,app)"
+      return 0 ;;
+    install|add|get) shift; cmd_pack "$@"; return ;;
+  esac
+  row=$(pack_row "$a"); [[ -n $row ]] || die "no pack called '$a' (gurt pack list shows them)"
+  IFS='|' read -r id name desc apps <<<"$row"; shift
+  while (( $# )); do
+    case $1 in --skip=*) skip+="${1#--skip=} " ;; --skip) skip+="${2:-} "; shift ;; *) skip+="$1 " ;; esac; shift
+  done
+  skip=" ${skip//,/ } "
+  for x in $apps; do
+    [[ $skip == *" $x "* ]] && continue
+    if resolve_key "$x" >/dev/null 2>&1; then have+=("$x")
+    elif [[ ! -f $(repo_info "$x") ]]; then gone+=("$x")
+    elif foss_strict && [[ $(foss_class "$(info_get "$(repo_info "$x")" license)") != foss ]]; then closed+=("$x")
+    else todo+=("$x"); fi
+  done
+  msg "$name pack 📦 $desc"
+  (( ${#have[@]} )) && msg2 "already have: ${have[*]}"
+  (( ${#closed[@]} )) && msg2 "leaving out (FOSS-only mode is on): ${closed[*]}"
+  (( ${#gone[@]} )) && msg2 "not in Main GURT anymore: ${gone[*]}"
+  (( ${#todo[@]} )) || { msg "you already have the whole $name pack 👍"; return 0; }
+  for x in "${todo[@]}"; do [[ $(foss_class "$(info_get "$(repo_info "$x")" license)") == closed ]] && msg2 "$x is closed source 🔒"; done
+  ask "install ${#todo[@]} apps: ${todo[*]}?" || die "aborted"
+  # one app failing doesn't stop the rest
+  local i=0
+  for x in "${todo[@]}"; do
+    i=$(( i + 1 )); msg "📦 $x ($i of ${#todo[@]})"
+    ( NOCONFIRM=true install_any "$x" explicit ) || failed+=("$x")
+  done
+  ach_installs
+  if (( ${#failed[@]} )); then
+    warn "$name pack: $(( ${#todo[@]} - ${#failed[@]} )) of ${#todo[@]} installed. these didn't: ${failed[*]} (try them one at a time: gurt install ${failed[0]})"
+    return 1
+  fi
+  msg "$name pack installed ✅ (${#todo[@]} apps)"
+  achieve packed
+}
 vibes_file() {
   local f
   for f in "$GURT_REPO_DIR/vibes.map" "$SELF_DIR/vibes.map" /usr/local/share/gurt/vibes.map /usr/share/gurt/vibes.map; do
@@ -5787,7 +5856,7 @@ cmd_complete() {
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
     commands)  printf '%s\n' sync search info install update upgrade self-update uninstall remove autoremove list files owns lottery sysup \
                  build add srcinfo checksum new repo dirt gui de outsource undo rollback hold unhold export import completions doctor version help yo \
-                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache try dupes hotwyr gh-only redeem native foss ;;
+                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache try dupes hotwyr gh-only redeem native foss pack ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman apk xbps eopkg gentoo flatpak snap nix gh pip npm cargo appimage brew dirt ;;
   esac
   return 0
@@ -6710,7 +6779,7 @@ cmd_self_update() {
     [[ -f $f ]] && asroot cp "$GURT_REPO_DIR/deps.map" "$f"
   done
   for f in /usr/local/share/gurt /usr/share/gurt; do
-    for m in vibes.map gh-only.map keys.map; do [[ -d $f && -f $GURT_REPO_DIR/$m ]] && asroot cp "$GURT_REPO_DIR/$m" "$f/$m"; done
+    for m in vibes.map gh-only.map keys.map packs.map; do [[ -d $f && -f $GURT_REPO_DIR/$m ]] && asroot cp "$GURT_REPO_DIR/$m" "$f/$m"; done
     [[ -d $f && -f $GURT_REPO_DIR/assets/wilhelm.mp3 ]] && asroot cp "$GURT_REPO_DIR/assets/wilhelm.mp3" "$f/wilhelm.mp3"
     [[ -d $f && -f $GURT_REPO_DIR/site/assets/apple-touch-icon.png ]] && asroot cp "$GURT_REPO_DIR/site/assets/apple-touch-icon.png" "$f/gurt.png"
   done
@@ -6750,7 +6819,8 @@ profile|save state 💾|save a profile
 compare|indecisive ⚖️|compare apps side by side
 v1|day one 🎂|be there for GURT 1.0
 wizard|you're a wizard 🧙|finish the setup wizard
-keymaster|key master 🔑|redeem a GURT key"
+keymaster|key master 🔑|redeem a GURT key
+packed|packed up 📦|install a whole package pack"
 # key-only achievements: hidden (???) until a GURT key unlocks them
 ACH_SECRET="
 golden|golden duck 🦆✨|redeemed a golden key
@@ -7467,6 +7537,7 @@ ${B}misc${R0}
   lottery [category]   🎰 spin for a random app (browsers chat media creative office dev gaming system cli …)
   import <file>        install everything from an export (new PC speedrun)
   setup [--terminal]   the GURT Setup Wizard 🧙 its own app: system check, sources, starter apps, extras
+  pack [<name>]        package packs: a bunch of apps for one thing (gaming, coding, music…), installed together 📦
   profile save|load|list <name>   your apps + gurt settings + the app's look, under a name (gaming, work…) 📁
   notify on|off|now    a desktop notification when updates are waiting (checks every 6 hours) 🔔
   gurtd [config]       GURTd, the background daemon: auto-updates, fresh lists, downloads → install, instant app 🐧
@@ -7575,6 +7646,7 @@ main() {
     hogs|sizes|du)     cmd_hogs "$@" ;;
     compare|vs)        cmd_compare "$@" && achieve compare ;;
     profile|profiles)  cmd_profile "$@" ;;
+    pack|packs)        cmd_pack "$@" ;;
     setup|wizard)      cmd_setup "$@" ;;
     notify|alerts)     cmd_notify "$@" ;;
     gurtd|daemon)      cmd_gurtd "$@" ;;

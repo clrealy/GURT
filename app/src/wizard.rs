@@ -400,6 +400,23 @@ fn page(app: &mut App, ui: &mut Ui, step: usize) {
             h(ui, "Starter apps");
             para(ui, &format!("tick a few to install now, or skip this. there are {} more in Discover.", app.st.main.len()));
             let st = app.st.clone();
+            if !st.packs.is_empty() {
+                ui.label(egui::RichText::new("packs: a bunch at once").font(monob(13.0)).color(p.ink));
+                ui.horizontal_wrapped(|ui| {
+                    for pk in &st.packs {
+                        let want: Vec<&String> = pk.apps.iter().filter(|a| st.pkg(a).is_some() && st.inst(a).is_none()).collect();
+                        let on = !want.is_empty() && want.iter().all(|a| app.wiz.as_ref().unwrap().apps.contains(*a));
+                        if choice(ui, app, &pk.name, on, !want.is_empty()).on_hover_text(format!("{}\n{}", pk.desc, pk.apps.join(" "))).clicked() {
+                            let wz = app.wiz.as_mut().unwrap();
+                            for a in want {
+                                if on { wz.apps.remove(a); } else { wz.apps.insert(a.clone()); }
+                            }
+                            app.sound.play(if on { "unpick" } else { "pick" });
+                        }
+                    }
+                });
+                ui.add_space(6.0);
+            }
             for (g, names) in STARTER {
                 let names: Vec<&str> = names.iter().copied().filter(|n| st.pkg(n).is_some()).collect();
                 if names.is_empty() {

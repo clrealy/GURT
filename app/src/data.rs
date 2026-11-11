@@ -195,6 +195,7 @@ pub struct State {
     pub installed: Vec<Installed>,
     pub outside: HashMap<String, String>, // Main GURT apps on this computer, not from gurt → how
     pub vibes: HashMap<String, Vec<String>>,
+    pub packs: Vec<Pack>,
     pub ghonly: Vec<GhApp>,
     pub cache: String,
     #[allow(dead_code)]
@@ -277,6 +278,33 @@ pub fn ghonly(repo: &str) -> Vec<GhApp> {
                 .filter_map(|l| {
                     let p: Vec<&str> = l.splitn(4, '|').collect();
                     (p.len() == 4).then(|| GhApp { cat: p[0].into(), repo: p[1].into(), name: p[2].into(), desc: p[3].into() })
+                })
+                .collect();
+        }
+    }
+    Vec::new()
+}
+
+/// a package pack (packs.map): a bunch of Main GURT apps for one thing, installed together
+#[derive(Clone, Debug)]
+pub struct Pack {
+    pub id: String,
+    pub name: String,
+    pub desc: String,
+    pub apps: Vec<String>,
+}
+pub fn packs(repo: &str) -> Vec<Pack> {
+    let mut cands = vec![PathBuf::from(repo).join("packs.map")];
+    cands.extend(share_dirs().into_iter().map(|d| d.join("packs.map")));
+    for f in cands {
+        if let Ok(s) = fs::read_to_string(&f) {
+            return s
+                .lines()
+                .filter(|l| !l.starts_with('#'))
+                .filter_map(|l| {
+                    let mut it = l.splitn(4, '|');
+                    let (id, name, desc, apps) = (it.next()?, it.next()?, it.next()?, it.next()?);
+                    Some(Pack { id: id.into(), name: name.into(), desc: desc.into(), apps: apps.split_whitespace().map(str::to_string).collect() })
                 })
                 .collect();
         }
@@ -496,7 +524,7 @@ pub fn load_state() -> State {
     State {
         version: g("version"), pm: g("pm"), dirt: g("dirt") == "on", wsl: g("wsl") == "yes", cros: g("cros") == "yes",
         nix: g("nix") == "yes", nixos: g("nixos") == "yes", hook: g("hook") == "on", dev, unlocks, all_unlocked: all,
-        fossonly: strict, notify: notify_on(), vibes: vibes(&repo), ghonly: ghonly(&repo),
+        fossonly: strict, notify: notify_on(), vibes: vibes(&repo), packs: packs(&repo), ghonly: ghonly(&repo),
         main, dirtpkgs, installed, outside, cache: g("cache"), repo,
     }
 }

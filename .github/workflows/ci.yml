@@ -15,6 +15,13 @@ jobs:
         run: shellcheck -S warning gurt install.sh tools/lint.sh tools/build-app.sh
       - name: lint recipes
         run: ./tools/lint.sh
+      - name: packs.map (every app in a pack is a Main GURT recipe)
+        run: |
+          bad=0
+          while IFS='|' read -r id name desc apps; do
+            for a in $apps; do [ -f "packages/$a/GURTBUILD" ] || { echo "::error file=packs.map::pack $id: $a isn't in Main GURT"; bad=1; }; done
+          done < <(grep -v '^#' packs.map | grep '|')
+          exit $bad
 
   # GURT's app (app/, Rust): built for x86_64 + aarch64 against glibc 2.28, then the x86_64 one really opens a window
   app:
@@ -361,7 +368,7 @@ jobs:
       - run: for d in packages/*/ dirt/*/; do if [ -d "$d" ]; then ./gurt srcinfo "$d" > "$d/.gurtinfo"; fi; done
       - run: python3 tools/gen-index.py
       - name: serve the installer + script from the site too
-        run: cp install.sh gurt deps.map vibes.map gh-only.map keys.map site/
+        run: cp install.sh gurt deps.map vibes.map gh-only.map keys.map packs.map site/
       # 🧪 the dev build, for every distro: /dev/GURTSetupWizard-dev.<ext>, and the .rpm + an rpm repo at /dev/rpm, rebuilt on
       # every push to main. the dev rpm adds that repo to zypper / dnf, so zypper up / dnf upgrade bring each new dev build.
       # everywhere else, gurt self-update grabs the newest one

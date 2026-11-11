@@ -223,6 +223,9 @@ footer a{color:inherit}
 #builder:not([open])>summary::after{content:"▸"}
 .bbody{padding:10px 12px 12px}
 .bcats{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.bpacks{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.bpacks .hint{font:12px var(--mono);margin-right:4px}
+.bpack small{color:var(--muted);font-weight:400;margin-left:6px}.bpack.on small{color:inherit}
 .bcat{font:600 12px var(--mono);background:transparent;border:1px solid var(--edge);color:var(--ink);border-radius:var(--r);padding:3px 9px;cursor:pointer}
 .bcat.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .bgroup h3{font:700 13px var(--mono);color:var(--ink);margin:12px 0 6px}
@@ -495,6 +498,7 @@ gurt hotwyr on             <span class="c"># your package manager asks gurt when
   <details id="builder" open>
     <summary><h2>Build your setup</h2><span class="hint">tick the apps you want → copy one command → done. same command on every distro.</span><button class="btn ghost small" id="lotto" type="button">app lottery</button></summary>
     <div class="bbody">
+      <div class="bpacks" id="bpacks" hidden></div>
       <div class="bcats" id="bcats"></div>
       <div id="lottowin" hidden></div>
       <div id="bgroups"></div>
@@ -1055,7 +1059,31 @@ function renderBuilder() {
       return `<label class="bapp${PICKED.has(p.pkgname) ? " on" : ""}" title="${esc(noEmoji(p.pkgdesc))}"><input type="checkbox" data-n="${esc(p.pkgname)}"${PICKED.has(p.pkgname) ? " checked" : ""}>${pkgIcon(p)}<span><b>${esc(p.pkgname)}${isClosed(p) ? ` <i class="closedmark" title="closed source">closed</i>` : ""}</b><small>${esc(desc)}</small></span></label>`;
     }).join("")}</div></div>`;
   }).join("");
+  renderPacks();
 }
+// package packs (packs.map): a bunch of apps for one thing; a click ticks them all (gurt pack <id> does the same)
+let PACKS = [];
+const packApps = k => k.apps.filter(a => { const p = PKGS.find(x => x.pkgname === a); return p && !($("#fossonly").checked && isClosed(p)); });
+function renderPacks() {
+  const box = $("#bpacks");
+  box.hidden = !PACKS.length || !PKGS.length; if (box.hidden) return;
+  box.innerHTML = `<span class="hint">packs</span>` + PACKS.map(k => {
+    const apps = packApps(k), on = apps.length > 0 && apps.every(a => PICKED.has(a));
+    return `<button class="bcat bpack${on ? " on" : ""}" data-pack="${esc(k.id)}" aria-pressed="${on}" title="${esc(k.desc + ": " + apps.join(" ") + "  (gurt pack " + k.id + ")")}">${esc(k.name)}<small>${apps.length}</small></button>`;
+  }).join("");
+}
+fetch("packs.map").then(r => r.ok ? r.text() : "").then(t => {
+  PACKS = t.split("\n").filter(l => l && !l.startsWith("#") && l.includes("|")).map(l => {
+    const [id, name, desc, apps] = l.split("|"); return { id, name, desc, apps: (apps || "").trim().split(/\s+/).filter(Boolean) };
+  });
+  renderPacks();
+}).catch(() => {});
+$("#bpacks").addEventListener("click", e => {
+  const b = e.target.closest("[data-pack]"); if (!b) return;
+  const k = PACKS.find(x => x.id === b.dataset.pack), apps = packApps(k), on = apps.every(a => PICKED.has(a));
+  apps.forEach(a => on ? PICKED.delete(a) : PICKED.add(a));
+  renderBuilder(); renderCart();
+});
 function renderCart() {
   const names = [...PICKED].sort();
   $("#cart").hidden = !names.length; document.body.classList.toggle("carted", names.length > 0); layoutTrays();
@@ -1065,7 +1093,7 @@ function renderCart() {
 $("#bcats").addEventListener("click", e => { const b = e.target.closest(".bcat"); if (!b) return; BCAT = b.dataset.c; renderBuilder(); });
 $("#bgroups").addEventListener("change", e => {
   const n = e.target.dataset.n; if (!n) return;
-  e.target.checked ? PICKED.add(n) : PICKED.delete(n); e.target.closest(".bapp").classList.toggle("on", e.target.checked); renderCart();
+  e.target.checked ? PICKED.add(n) : PICKED.delete(n); e.target.closest(".bapp").classList.toggle("on", e.target.checked); renderCart(); renderPacks();
 });
 // no GURT yet? save the picks as a list: the setup wizard's import puts them in its install
 $("#cartsave").addEventListener("click", () => {

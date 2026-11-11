@@ -396,6 +396,8 @@ Main GURT has **2,500+ apps**: 280+ that GURT installs itself (official prebuilt
 
 The [website](https://gurtproject.org/) has a **Build your setup** picker (like tuxmate, but gurt): tick the apps you want, grouped by category, and copy one `gurt install …` command that works on every distro. Tick "I don't have gurt yet" and the command installs gurt first.
 
+**Package packs 📦** A bunch of apps for one thing, in one go: `gurt pack gaming` installs Steam, Heroic, Lutris, Bottles, ProtonUp-Qt, GOverlay, Vesktop and Prism Launcher. `gurt pack` lists them all (gaming, retro, streaming, coding, art, music, video, school, privacy, media, terminal, makers), `gurt pack show coding` shows what's inside, and `gurt pack music --skip reaper` leaves some out. Apps you already have get skipped, and one app failing doesn't stop the rest. In the app and on the site, the packs sit at the top of Build your setup: one click ticks the whole pack. Want a new pack? Add a line to `packs.map` and open a PR.
+
 Can't decide? Spin for one:
 
 ```sh
@@ -580,7 +582,7 @@ On gurtproject.org: **compare** on an app's card adds it to the compare tray (up
 
 ## Fun 🎮
 
-- **Achievements 🏆:** 21 of them (and maybe a few more 👀), like baby steps, night owl, time traveler, why tho (turning a Windows .exe into a .deb) and legendary pull. `gurt achievements`, or 🏆 on the Installed tab. They pop up as you unlock them.
+- **Achievements 🏆:** 22 of them (and maybe a few more 👀), like baby steps, night owl, time traveler, why tho (turning a Windows .exe into a .deb) and legendary pull. `gurt achievements`, or 🏆 on the Installed tab. They pop up as you unlock them.
 - **Lottery streaks:** spin once a day to keep your 🔥 streak. Every spin rolls a rarity (⚪ common, 💙 rare, 💜 epic, 🌈 legendary), and legendary pulls come from a pool of extra weird apps. Legendary odds start at 1% and go up 0.5% per streak day, up to 5%. The app and `gurt lottery` share one streak.
 - **Skins + music:** 🌴 Vaporwave and 💻 Hacker skins join GURT, Windows 11, XP and 95, each with its own sound effects. The 🎵 picker next to them has 4 tracks (🛍️ shop, 🌧️ lofi, 👾 chiptune, 🌆 synthwave), or auto, which matches the skin. Every track is synthesized live, no audio files.
 - **GURT keys 🔑:** got a key (`GURT-XXXX-XXXX-XXXX`)? `gurt redeem <key>`, or look → redeem a key in the app. What it unlocks? That's for you to find out 👀 Some keys get handed out, some are hidden. `gurt redeem list` shows what you've unlocked.

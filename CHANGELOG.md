@@ -3,6 +3,7 @@
 ## Not released yet
 
 ### New
+- **Package packs 📦** `gurt pack gaming` installs a whole bunch of apps for one thing. 12 packs: gaming, retro gaming, streaming, coding, art and design, music production, video editing, school and office, privacy, watch and listen, terminal setup, 3D printing and making. `gurt pack` lists them, `gurt pack show <name>` shows what's in one, `--skip app,app` leaves some out. The app's Setup tab, the setup wizard's starter apps and the site's Build your setup get pack buttons that tick the whole pack. New achievement: packed up.
 - **Native first 🐧** Main GURT apps that come from Flathub or Snap (GIMP, Steam…) install from your distro instead when it has the same app: apt's GIMP on Ubuntu, pacman's Steam on Arch. Flathub / Snap is the fallback, and if your package manager can't install it, gurt uses that build. `gurt native off` always uses the Flathub / Snap build.
 - **GURT keys 🔑** Got a key like `GURT-XXXX-XXXX-XXXX`? Redeem it with `gurt redeem <key>` or in the app (look → redeem a key). What it unlocks? That's for you to find out 👀 Some keys get handed out, some are hidden. `gurt redeem list` shows what yours unlocked.
 - Dev builds have everything a key unlocks, plus a **make a key** button (look → make a key) that makes a key, says what it redeems, gives you its `keys.map` line, and checks what any key redeems.
