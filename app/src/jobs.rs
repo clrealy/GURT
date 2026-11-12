@@ -18,6 +18,7 @@ pub struct JobState {
     pub done: bool,
     pub rc: i32,
     pub ask: Option<String>,        // sudo's prompt, waiting for you
+    pub live: String,               // a progress line that's still updating (downloads redraw it with \r)
     answer: Option<Option<String>>, // Some(Some(pw)) = typed, Some(None) = cancel
     pw: Option<String>,             // the password you typed, remembered until the job ends (sudo runs more than once)
     pw_sudo: i64,                   // …and which sudo it was for
@@ -39,6 +40,14 @@ impl Job {
     }
     pub fn lines(&self) -> Vec<String> {
         self.st.lock().unwrap().lines.clone()
+    }
+    /// what it's doing right now: its newest line (a progress line's newest update, after its last \r)
+    pub fn last_line(&self) -> Option<String> {
+        let s = self.st.lock().unwrap();
+        if !s.live.trim().is_empty() {
+            return Some(s.live.trim().to_string());
+        }
+        s.lines.iter().skip(1).rev().map(|l| l.rsplit('\r').find(|x| !x.trim().is_empty()).unwrap_or("").trim().to_string()).find(|l| !l.is_empty())
     }
     pub fn done(&self) -> bool {
         self.st.lock().unwrap().done
@@ -139,28 +148,46 @@ fn pump(j: &Arc<Job>, child: &mut Child) {
     let j2 = j.clone();
     let t = std::thread::spawn(move || {
         if let Some(e) = err {
-            for line in BufReader::new(e).lines().map_while(Result::ok) {
-                j2.st.lock().unwrap().lines.push(crate::data::strip_ansi(&line));
-                repaint();
-            }
+            read_lines(e, &j2);
         }
     });
     if let Some(o) = out {
-        let mut r = BufReader::new(o);
-        let mut buf = Vec::new();
-        loop {
-            buf.clear();
-            match r.read_until(b'\n', &mut buf) {
-                Ok(0) | Err(_) => break,
-                Ok(_) => {
-                    let line = String::from_utf8_lossy(&buf);
-                    j.st.lock().unwrap().lines.push(crate::data::strip_ansi(line.trim_end_matches('\n')));
-                    repaint();
-                }
-            }
-        }
+        read_lines(o, j);
     }
     let _ = t.join();
+}
+/// a line ends at \n. a progress bar redraws itself with \r: its newest look is `live` until the line ends
+fn read_lines(mut r: impl Read, j: &Arc<Job>) {
+    let (mut cur, mut last_cr, mut chunk) = (Vec::new(), Vec::new(), [0u8; 4096]);
+    loop {
+        let n = match r.read(&mut chunk) {
+            Ok(0) | Err(_) => break,
+            Ok(n) => n,
+        };
+        for &b in &chunk[..n] {
+            match b {
+                b'\n' => {
+                    let line = if cur.is_empty() { std::mem::take(&mut last_cr) } else { std::mem::take(&mut cur) };
+                    let mut s = j.st.lock().unwrap();
+                    s.lines.push(crate::data::strip_ansi(&String::from_utf8_lossy(&line)));
+                    s.live.clear();
+                    last_cr.clear();
+                }
+                b'\r' => {
+                    if !cur.is_empty() {
+                        j.st.lock().unwrap().live = crate::data::strip_ansi(&String::from_utf8_lossy(&cur));
+                        last_cr = std::mem::take(&mut cur);
+                    }
+                }
+                _ => cur.push(b),
+            }
+        }
+        repaint();
+    }
+    if !cur.is_empty() {
+        j.st.lock().unwrap().lines.push(crate::data::strip_ansi(&String::from_utf8_lossy(&cur)));
+    }
+    j.st.lock().unwrap().live.clear();
 }
 
 // ── 🔑 the password bridge ──
