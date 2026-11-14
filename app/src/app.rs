@@ -816,7 +816,7 @@ impl App {
                 (Tab::Files, "Install a file"),
             ]
             .into_iter()
-            .filter(|(t, _)| *t != Tab::Desktops || !(self.st.wsl || self.st.cros || self.st.nixos))
+            .filter(|(t, _)| *t != Tab::Desktops || !(self.st.wsl || self.st.cros))
             .filter(|(t, _)| *t != Tab::Files || self.width > 900.0)
             .collect();
             let logo_row = |this: &mut App, ui: &mut Ui| {
@@ -828,8 +828,6 @@ impl App {
                         v += " · Windows";
                     } else if this.st.cros {
                         v += " · ChromeOS";
-                    } else if this.st.nixos {
-                        v += " · NixOS";
                     }
                     ui.label(egui::RichText::new(v).font(mono(11.0)).color(if matches!(p.skin, Skin::Xp) { hex(0xc9dbff) } else if p.skin == Skin::W95 { hex(0xffffff) } else { p.muted }));
                 });

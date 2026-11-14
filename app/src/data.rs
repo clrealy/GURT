@@ -185,7 +185,6 @@ pub struct State {
     pub wsl: bool,
     pub cros: bool,
     pub nix: bool,
-    pub nixos: bool,
     pub hook: bool,
     pub dev: String,
     pub fossonly: bool,
@@ -523,7 +522,7 @@ pub fn load_state() -> State {
         .collect();
     State {
         version: g("version"), pm: g("pm"), dirt: g("dirt") == "on", wsl: g("wsl") == "yes", cros: g("cros") == "yes",
-        nix: g("nix") == "yes", nixos: g("nixos") == "yes", hook: g("hook") == "on", dev, unlocks, all_unlocked: all,
+        nix: g("nix") == "yes", hook: g("hook") == "on", dev, unlocks, all_unlocked: all,
         fossonly: strict, notify: notify_on(), vibes: vibes(&repo), packs: packs(&repo), ghonly: ghonly(&repo),
         main, dirtpkgs, installed, outside, cache: g("cache"), repo,
     }
