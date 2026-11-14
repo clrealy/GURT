@@ -1,12 +1,5 @@
 # GURT changelog 🦆
 
-## Not released yet
-
-### Fixed
-- **"destination path '…/gurt/repo' already exists" on every sync** when gurt was installed before `git` was (a fresh Gentoo, a tiny container): its copy of Main GURT was downloaded as a plain folder, and gurt kept trying to `git clone` over it. It swaps the folder for a real clone now. If that folder belongs to root (gurt ran with sudo once), it tells you the `chown` that fixes it.
-- **Update alerts on systems without systemd or cron** (Gentoo with OpenRC, Void with runit…): `gurt notify on` said "no systemd user session or cron here". Your desktop starts the check at login now (an autostart entry), and it starts right away too.
-- The app knows what Gentoo's Portage installed (for "installed ✓" on apps you got with emerge).
-
 ## 1.4.2: Swap 🔄
 
 One distro in, one out: gurt runs on Gentoo now, and NixOS support is gone. Plus a setup wizard that shows you what it's doing.
@@ -20,6 +13,9 @@ One distro in, one out: gurt runs on Gentoo now, and NixOS support is gone. Plus
 - **NixOS support.** gurt doesn't do anything special on NixOS anymore (no nixpkgs-first installs, no /etc/profile.local, no nix-ld checks, no `nixos-rebuild` in `gurt sysup`). The `nix/` source stays: `gurt install nix/hello` works on any distro that has nix, and `gurt upgrade` now updates your nix profile too.
 
 ### Fixed
+- **"destination path '…/gurt/repo' already exists" on every sync** when gurt was installed before `git` was (a fresh Gentoo, a tiny container): its copy of Main GURT was downloaded as a plain folder, and gurt kept trying to `git clone` over it. It swaps the folder for a real clone now. If that folder belongs to root (gurt ran with sudo once), it tells you the `chown` that fixes it.
+- **Update alerts on systems without systemd or cron** (Gentoo with OpenRC, Void with runit…): `gurt notify on` said "no systemd user session or cron here". Your desktop starts the check at login now (an autostart entry), and it starts right away too.
+- The app knows what Gentoo's Portage installed (for "installed ✓" on apps you got with emerge).
 - **The setup wizard's app install looked stuck.** It installed every app you picked as one long step (a Gaming pack is a few GB of Flathub runtimes). Now it's one app at a time ("install steam (7 of 8)"), the bar moves with each one, and the line under it shows what's happening right now, download % included. One app failing doesn't stop the rest anymore.
 - `gurt install a b c` stopped at the first app that failed. Each one installs on its own now, and at the end gurt tells you which didn't work.
 
