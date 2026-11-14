@@ -6,7 +6,6 @@ One distro in, one out: gurt runs on Gentoo now, and NixOS support is gone. Plus
 
 ### New
 - **Gentoo 🐧** gurt works on Gentoo like on any other distro now. Portage does deps, `gurt utils`, `gurt sysup` (`emaint sync` + `emerge -uDN @world`), `gurt remove` (`--deselect` + `--depclean`) and native first (`gurt install gimp` emerges `media-gfx/gimp`). `gurt hogs --all`, `gurt dupes`, `gurt why` and the junk cleaner know your Portage packages, Hotwyr wraps `emerge`, and the Updates tab counts what `emerge -uDN @world` would update. Install it with `curl -fsSL https://gurtproject.org/install.sh | sh`.
-
 - quickrice 0.4.5: GRUB themes show on Fedora, and it checks for Plymouth's script plugin before using it.
 
 ### Removed
