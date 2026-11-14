@@ -260,6 +260,16 @@ LFS has no package manager on purpose, so gurt fills in: it spots LFS (`/etc/lfs
 
 Before you start, build `git`, `curl` (or `wget`) and `sudo` from BLFS. Then download [install.sh](https://gurtproject.org/install.sh) and run `sh install.sh`.
 
+### Gentoo 🐧
+
+gurt runs on Gentoo like on any distro: `curl -fsSL https://gurtproject.org/install.sh | sh` (there's no ebuild for it yet).
+
+- **Portage is your package manager** for everything gurt knows: deps, `gurt utils`, `gurt sysup` (`emaint sync` + `emerge -uDN @world`), `gurt remove` (`emerge --deselect` + `--depclean`, so nothing another package needs goes), and native first (`gurt install gimp` emerges `media-gfx/gimp` instead of the Flathub build). Bare names become `category/name` for you.
+- **Fast:** gurt reads `/var/db/pkg` and `/var/db/repos` directly to see what's installed and what your repos have, so it never waits on `equery`.
+- **`gurt hogs --all`, `gurt dupes`, `gurt why` and `gurt hogs junk`** (old distfiles, through `eclean-dist` if you have gentoolkit) know your Portage packages too.
+- **Hotwyr** wraps `emerge`: `sudo emerge -av yay` can't find it → gurt offers aur/yay; `emerge -s` shows gurt's results too; `emerge -uDN @world` updates what gurt installed after.
+- Heads up: anything from your own repos compiles unless you've set up the [binary package host](https://wiki.gentoo.org/wiki/Gentoo_Binary_Host_Quickstart), so a big app can take a while. Other distros' packages and Flathub apps install prebuilt.
+
 ### NixOS ❄️
 
 NixOS has no `/usr` or `/lib` the way other distros do, so gurt runs it differently. Install with the one-liner (there's no GURTSetupWizard package for NixOS):

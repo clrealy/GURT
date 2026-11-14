@@ -2,6 +2,9 @@
 
 ## Not released yet
 
+### New
+- **Gentoo 🐧** gurt works on Gentoo like on any other distro now. Portage does deps, `gurt utils`, `gurt sysup` (`emaint sync` + `emerge -uDN @world`), `gurt remove` (`--deselect` + `--depclean`) and native first (`gurt install gimp` emerges `media-gfx/gimp`). `gurt hogs --all`, `gurt dupes`, `gurt why` and the junk cleaner know your Portage packages, Hotwyr wraps `emerge`, and the Updates tab counts what `emerge -uDN @world` would update. Install it with `curl -fsSL https://gurtproject.org/install.sh | sh`.
+
 ### Fixed
 - **The setup wizard's app install looked stuck.** It installed every app you picked as one long step (a Gaming pack is a few GB of Flathub runtimes). Now it's one app at a time ("install steam (7 of 8)"), the bar moves with each one, and the line under it shows what's happening right now, download % included. One app failing doesn't stop the rest anymore.
 - `gurt install a b c` stopped at the first app that failed. Each one installs on its own now, and at the end gurt tells you which didn't work.

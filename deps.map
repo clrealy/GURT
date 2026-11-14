@@ -31,7 +31,7 @@ nvim        apt=neovim  dnf=neovim  pacman=neovim  zypper=neovim  apk=neovim  xb
 # gio: apps use it to move files to the trash
 glib-bin    apt=libglib2.0-bin  dnf=glib2  pacman=glib2  zypper=glib2-tools  apk=glib  xbps=glib  eopkg=glib2  emerge=dev-libs/glib  nix=glib
 bsdtar      apt=libarchive-tools  dnf=bsdtar  pacman=libarchive  zypper=bsdtar  apk=libarchive-tools  xbps=bsdtar  emerge=app-arch/libarchive  nix=libarchive
-rpm2cpio    apt=rpm2cpio,cpio  dnf=rpm,cpio  pacman=rpm-tools,cpio  zypper=rpm,cpio  apk=rpm2cpio,cpio  xbps=rpm2cpio,cpio  nix=rpm,cpio
+rpm2cpio    apt=rpm2cpio,cpio  dnf=rpm,cpio  pacman=rpm-tools,cpio  zypper=rpm,cpio  apk=rpm2cpio,cpio  xbps=rpm2cpio,cpio  emerge=app-arch/rpm,app-arch/cpio  nix=rpm,cpio
 7zip        apt=7zip  dnf=7zip  pacman=7zip  zypper=7zip  apk=7zip  xbps=7zip  eopkg=p7zip  emerge=app-arch/7zip  nix=_7zz
 wine        apt=wine  dnf=wine  pacman=wine  zypper=wine  apk=wine  xbps=wine  eopkg=wine  emerge=app-emulation/wine-vanilla  nix=wineWowPackages.stable
 
@@ -60,7 +60,7 @@ libcurl     apt=libcurl4-openssl-dev  dnf=libcurl-devel  pacman=curl  zypper=lib
 sqlite      apt=libsqlite3-dev  dnf=sqlite-devel  pacman=sqlite  zypper=sqlite3-devel  apk=sqlite-dev  xbps=sqlite-devel  emerge=dev-db/sqlite  nix=sqlite
 sdl2        apt=libsdl2-dev  dnf=SDL2-devel  pacman=sdl2  zypper=SDL2-devel  apk=sdl2-dev  xbps=SDL2-devel  emerge=media-libs/libsdl2  nix=SDL2
 gtk3        apt=libgtk-3-dev  dnf=gtk3-devel  pacman=gtk3  zypper=gtk3-devel  apk=gtk+3.0-dev  xbps=gtk+3-devel  emerge=x11-libs/gtk+:3  nix=gtk3
-gtk-layer-shell  apt=libgtk-layer-shell-dev  dnf=gtk-layer-shell-devel  pacman=gtk-layer-shell  zypper=gtk-layer-shell-devel  apk=gtk-layer-shell-dev  xbps=gtk-layer-shell-devel  nix=gtk-layer-shell
+gtk-layer-shell  apt=libgtk-layer-shell-dev  dnf=gtk-layer-shell-devel  pacman=gtk-layer-shell  zypper=gtk-layer-shell-devel  apk=gtk-layer-shell-dev  xbps=gtk-layer-shell-devel  emerge=gui-libs/gtk-layer-shell  nix=gtk-layer-shell
 json-c      apt=libjson-c-dev  dnf=json-c-devel  pacman=json-c  zypper=libjson-c-devel  apk=json-c-dev  xbps=json-c-devel  emerge=dev-libs/json-c  nix=json_c
 x11         apt=libx11-dev  dnf=libX11-devel  pacman=libx11  zypper=libX11-devel  apk=libx11-dev  xbps=libX11-devel  emerge=x11-libs/libX11  nix=xorg.libX11
 wayland     apt=libwayland-dev  dnf=wayland-devel  pacman=wayland  zypper=wayland-devel  apk=wayland-dev  xbps=wayland-devel  emerge=dev-libs/wayland  nix=wayland

@@ -403,6 +403,7 @@ footer.site .cicada{color:#e7e7ea}
       <p>Open it like any package: it installs GURT and the app, then the setup wizard runs. Updates come with your system's.</p>
       <div class="dlbtns" id="dl-linux"></div>
       <p class="nixnote">NixOS: no package for it, so run <code>curl -fsSL https://gurtproject.org/install.sh | sh</code>. nixpkgs becomes <code>nix/</code>, and other distros' packages run through nix-ld, no box.</p>
+      <p class="nixnote">Gentoo: same command. gurt uses Portage for deps, updates and your distro's own apps.</p>
     </section>
   </div>
   <aside class="getbox" id="other-os" aria-labelledby="get-h">
@@ -449,7 +450,7 @@ footer.site .cicada{color:#e7e7ea}
       <a class="frow" href="https://github.com/clrealy/GURT#convert-packages-gurt-convert-"><b>Convert anything</b><span>A .deb into an .rpm, an AppImage into a pacman package, a folder into a signed repo. Every file comes out signed.</span><i>gurt convert →</i></a>
       <a class="frow" href="https://github.com/clrealy/GURT#trust--safety-"><b>Safe by default</b><span>Signatures get checked, build scripts get a sus check before anything runs, btrfs systems get a snapshot before big upgrades.</span><i>trust + safety →</i></a>
       <a class="frow" href="https://github.com/clrealy/GURT#oops-buttons-undo-rollback-hold-exportimport-"><b>Oops buttons</b><span>Undo, roll back an update, hold a version, see your history, and take your whole app list to a new PC.</span><i>undo + rollback →</i></a>
-      <a class="frow" href="#get"><b>Runs everywhere</b><span>Every Linux distro (NixOS and ChromeOS included) and Windows through WSL. Android apps through Waydroid or your Chromebook's own Android.</span><i>download →</i></a>
+      <a class="frow" href="#get"><b>Runs everywhere</b><span>Every Linux distro (Gentoo, NixOS and ChromeOS included) and Windows through WSL. Android apps through Waydroid or your Chromebook's own Android.</span><i>download →</i></a>
     </div>
   </div>
 </section>

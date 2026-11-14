@@ -148,13 +148,49 @@ pm_has() {
     pacman)         pacman -T "$1" >/dev/null 2>&1 || pacman -Qg "$1" >/dev/null 2>&1 ;;
     apk)            apk info -e "$1" >/dev/null 2>&1 ;;
     xbps)           xbps-query "$1" >/dev/null 2>&1 ;;
-    emerge)         portageq has_version / "$1" >/dev/null 2>&1 ;;
+    emerge)         [[ -n $(gentoo_installed "$1") ]] ;;
     eopkg)          eopkg li 2>/dev/null | awk '{print $1}' | grep -qxF "$1" ;;
     lfs)            lfs_has "$1" ;;
     crew)           [[ -f /usr/local/etc/crew/meta/$1.filelist ]] ;;
     nix)            nix_has "$1" ;;
     *)              return 1 ;;
   esac
+}
+
+# ── Gentoo: what's installed is /var/db/pkg/<category>/<name>-<version>/, the ebuilds are in /var/db/repos/<repo>/.
+#    reading those directly is instant (portageq / equery take seconds) and needs nothing extra installed ──
+GENTOO_DB=${GENTOO_DB:-/var/db/pkg}
+GENTOO_VER_RE='^[0-9][0-9.]*[a-z]?(_(alpha|beta|pre|rc|p)[0-9]*)*(-r[0-9]+)?$'
+gentoo_repos() { # the ebuild repos (gentoo + overlays)
+  local d
+  for d in "${GENTOO_REPOS:-}" /var/db/repos/* /usr/portage /var/lib/layman/*; do [[ -n $d && -d $d/profiles ]] && echo "$d"; done
+  return 0
+}
+gentoo_atom() { # name or category/name → category/name an ebuild repo has (the first one), nothing if none
+  local n=$1 r d c
+  [[ $n == */* ]] && { for r in $(gentoo_repos); do [[ -d $r/$n ]] && { echo "$n"; return 0; }; done; return 1; }
+  for r in $(gentoo_repos); do
+    for d in "$r"/*-*/"$n" "$r"/virtual/"$n"; do
+      c=${d%/*}; c=${c##*/}
+      [[ -d $d && $c != metadata && $c != profiles ]] && { echo "$c/$n"; return 0; }
+    done
+  done
+  return 1
+}
+gentoo_installed() { # name or category/name → category/name-version of each installed one
+  local n=$1 d b c
+  if [[ $n == */* ]]; then set -- "$GENTOO_DB/$n"-[0-9]*; else set -- "$GENTOO_DB"/*/"$n"-[0-9]*; fi
+  for d; do
+    [[ -d $d ]] || continue
+    b=${d##*/}; c=${d%/*}; c=${c##*/}
+    [[ ${b#"${n##*/}"-} =~ $GENTOO_VER_RE ]] && echo "$c/$b"   # foo-2.1, not foo-bar-2.1
+  done
+  return 0
+}
+gentoo_split() { # category/name-version → "name<TAB>version"
+  local b=${1##*/} v
+  v=$(sed -E 's/^.*-([0-9][0-9.]*[a-z]?(_(alpha|beta|pre|rc|p)[0-9]*)*(-r[0-9]+)?)$/\1/' <<<"$b")
+  printf '%s\t%s\n' "${b%-"$v"}" "$v"
 }
 
 # ── ❄️ NixOS (and nix anywhere): nixpkgs is a source (nix/<attr>), and on NixOS it's the package manager. installs go
@@ -428,7 +464,9 @@ pm_install() {
             fancy "${zn[0]}" asroot zypper --non-interactive install "${zn[@]}" ;;
     apk)    asroot apk add "$@" ;;
     xbps)   asroot xbps-install -Sy "$@" ;;
-    emerge) asroot emerge --noreplace "$@" ;;
+    emerge) local a at=(); for a; do if [[ $a == */* ]]; then at+=("$a"); else at+=("$(gentoo_atom "$a" || echo "$a")"); fi; done
+            if $NOCONFIRM; then asroot emerge --noreplace --ask=n --quiet-build "${at[@]}"
+            else asroot emerge --noreplace --ask --quiet-build "${at[@]}"; fi ;;
     eopkg)  asroot eopkg install -y "$@" ;;
     lfs)    lfs_install "$@" ;;
     crew)   crew install "$@" < <(yes) ;;   # Chromebrew runs as you, no sudo
@@ -479,6 +517,8 @@ sys_owned() {
     xbps)   for p in "${paths[@]}"; do xbps-query -o "$p" >/dev/null 2>&1 && echo "$p"; done ;;
     apk)    for p in "${paths[@]}"; do apk info -qW "$p" 2>/dev/null | grep -q . && echo "$p"; done ;;
     crew)   cat /usr/local/etc/crew/meta/*.filelist 2>/dev/null | grep -Fx -f <(printf '%s\n' "${paths[@]}") ;;
+    emerge) find "$GENTOO_DB" -mindepth 3 -maxdepth 3 -name CONTENTS -exec cat {} + 2>/dev/null |
+              awk 'NR == FNR { want[$0] = 1; next } ($1 == "obj" || $1 == "sym") && ($2 in want) { print $2 }' <(printf '%s\n' "${paths[@]}") - ;;
     *)      return 0 ;;
   esac | while IFS= read -r line; do if [[ -n ${back[$line]:-} ]]; then printf '%s' "${back[$line]}"; fi; done | sed '/^$/d' | sort -u; } || true
   return 0
@@ -1195,6 +1235,11 @@ pm_homepage() { # name → the homepage your distro's package says it's from
     apk)     apk info -w "$1" 2>/dev/null | awk 'NF && !/webpage/ { print $1; exit }' ;;
     xbps)    xbps-query -R -p homepage "$1" 2>/dev/null ;;
     eopkg)   eopkg info "$1" 2>/dev/null | awk -F': *' '/^Homepage/ { print $2; exit }' ;;
+    emerge)  local at r f; at=$(gentoo_atom "$1") || return 0
+             for r in $(gentoo_repos); do
+               for f in "$r/metadata/md5-cache/$at"-[0-9]*; do [[ -f $f ]] && { sed -n 's/^HOMEPAGE=\([^ ]*\).*/\1/p' "$f"; return 0; }; done
+               for f in "$r/$at"/*.ebuild; do [[ -f $f ]] && { sed -n 's/^HOMEPAGE="\([^ "]*\).*/\1/p' "$f" | head -n1; return 0; }; done
+             done ;;
   esac
 }
 appstream_pkg() { # flatpak app id → the package your distro ships that app in (its AppStream catalog says)
@@ -1209,7 +1254,7 @@ appstream_pkg() { # flatpak app id → the package your distro ships that app in
 native_for() { # recipe-name info → your distro's package of the same app (nothing: your distro doesn't have it)
   local name=$1 info=$2 p rh h
   native_first && [[ -z $R ]] || return 1
-  case $PM in apt|dnf|yum|pacman|zypper|apk|xbps|eopkg) ;; *) return 1 ;; esac
+  case $PM in apt|dnf|yum|pacman|zypper|apk|xbps|eopkg|emerge) ;; *) return 1 ;; esac
   # 1. the recipe says (native_apt=steam-installer, native=no when your distro's build is broken)
   p=$(info_get "$info" "native_${PM/yum/dnf}"); [[ -n $p ]] || p=$(info_get "$info" native)
   case $p in no) return 1 ;; ?*) pm_available "$p" && { echo "$p"; return 0; }; return 1 ;; esac
@@ -1248,6 +1293,9 @@ pm_remove() { # name → your package manager removes it
     apk)     asroot apk del "$1" ;;
     xbps)    asroot xbps-remove -y "$1" ;;
     eopkg)   asroot eopkg remove -y "$1" ;;
+    emerge)  local at; at=$(gentoo_installed "$1" | head -n1); at=${at%-"$(gentoo_split "$at" | cut -f2)"}
+             [[ -n $at ]] || return 1
+             asroot emerge --deselect "$at" >/dev/null && asroot emerge --depclean --ask=n "$at" ;;   # depclean: only if nothing else needs it
     *)       return 1 ;;
   esac
 }
@@ -1940,6 +1988,7 @@ pm_available() {
     apk)    apk search -e "$1" 2>/dev/null | grep -q . ;;
     xbps)   xbps-query -R "$1" >/dev/null 2>&1 ;;
     eopkg)  eopkg info "$1" 2>/dev/null | grep -q '^Name' ;;
+    emerge) gentoo_atom "$1" >/dev/null ;;
     nix)    [[ -n $(nix_meta "$1") ]] ;;
     *)      return 1 ;;
   esac
@@ -3925,7 +3974,7 @@ PY
 #    - a command you don't have → gurt offers the package that has it
 #    GURT_HOTWYR=0 turns it off for a moment, `command apt …` skips it once ──
 HOOK_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/gurt"
-HOOK_PMS="apt apt-get dnf yum zypper pacman apk xbps-install xbps-query eopkg"
+HOOK_PMS="apt apt-get dnf yum zypper pacman apk xbps-install xbps-query eopkg emerge"
 HOOK_MARK="# gurt Hotwyr (gurt hotwyr off removes this)"
 HOOK_NOTFOUND=200   # __cnf: nothing found, let the shell's own handler talk
 hook_pms() { local p; for p in $HOOK_PMS; do command -v "$p" >/dev/null && printf '%s ' "$p"; done; return 0; }
@@ -4036,7 +4085,7 @@ hook_find() { # name
     [[ -n $r ]] && { r=${r%/.gurtinfo}; echo "${r##*/}"; return 0; }
   fi
   for s in pacman apt dnf zypper xbps eopkg gentoo apk; do
-    [[ $s == "$PM" || $s:$PM == dnf:yum ]] && continue        # your own distro already said no
+    [[ $s == "$PM" || $s:$PM == dnf:yum || $s:$PM == gentoo:emerge ]] && continue        # your own distro already said no
     [[ $s == apk ]] && ! host_musl && continue
     [[ -s $(idx_file "$s") && -n $(idx_lookup "$s" "$n") ]] && { echo "$s/$n"; return 0; }
   done
@@ -4059,6 +4108,10 @@ hook_pm_kind() { # pm args… → install | search | upgrade | (nothing)
                    elif [[ $1 == -S*u* ]]; then echo upgrade; fi ;; esac ;;
     xbps-install) if [[ -n $v ]]; then echo install; else for a; do [[ $a == -*u* ]] && { echo upgrade; break; }; done; fi ;;
     xbps-query)  for a; do [[ $a == -*s* ]] && { echo search; break; }; done ;;
+    emerge)      local up=0   # no verb: emerge foo installs, -s / --search searches, -u @world upgrades
+                 for a; do case $a in --search|--searchdesc) echo search; return 0 ;; --update) up=1 ;; --*) ;;
+                                      -*[sS]*) echo search; return 0 ;; -*u*) up=1 ;; esac; done
+                 case $v in "") ;; @world|world|@system|system) (( up )) && echo upgrade ;; @*) ;; *) echo install ;; esac ;;
   esac
   return 0
 }
@@ -4075,8 +4128,9 @@ cmd_pmhook() { # [--sudo] pm args… — the real package manager first, then gu
       # the names it was asked for (not options, not the verb)
       for a; do
         [[ $a == -* ]] && continue
-        if (( skip )) && [[ $pm != pacman && $pm != xbps-install ]]; then skip=0; continue; fi
-        names+=("${a%%[<>=]*}")
+        if (( skip )) && [[ $pm != pacman && $pm != xbps-install && $pm != emerge ]]; then skip=0; continue; fi
+        [[ $pm == emerge ]] && { a=${a#[<>=~]}; a=${a#=}; a=${a##*/}; }   # emerge: =cat/name-1.0 → name-1.0
+        names+=("${a%%[<>=:]*}")
       done
       for a in "${names[@]}"; do
         pm_available "$a" && continue   # your distro has it: that failure isn't about a missing package
@@ -4093,7 +4147,7 @@ cmd_pmhook() { # [--sudo] pm args… — the real package manager first, then gu
       return 0 ;;
     search)
       local t=(); skip=1
-      for a; do [[ $a == -* ]] && continue; if (( skip )) && [[ $pm != pacman && $pm != xbps-query ]]; then skip=0; continue; fi; t+=("$a"); done
+      for a; do [[ $a == -* ]] && continue; if (( skip )) && [[ $pm != pacman && $pm != xbps-query && $pm != emerge ]]; then skip=0; continue; fi; t+=("$a"); done
       (( ${#t[@]} )) || return "$rc"
       printf '\n%s── ⚡ Hotwyr: also with gurt (gurt install <name>) ──%s\n' "$B" "$R0"
       { search_main "${t[*]}" 2>/dev/null || true; } | head -n 12
@@ -4433,6 +4487,9 @@ pm_version() { # what version would your distro install?
     pacman) pacman -Si "$1" 2>/dev/null | awk -F': ' '/^Version/ {print $2; exit}' ;;
     dnf|yum) dnf -q info "$1" 2>/dev/null | awk -F': ' '/^Version/ {v=$2} /^Release/ {print v "-" $2; exit}' ;;
     zypper) zypper -q info "$1" 2>/dev/null | awk -F': ' '/^Version/ {print $2; exit}' ;;
+    emerge) local at v; at=$(gentoo_atom "$1") || return 0
+            if command -v portageq >/dev/null && v=$(portageq best_visible / "$at" 2>/dev/null) && [[ -n $v ]]; then gentoo_split "$v" | cut -f2
+            else for v in $(gentoo_repos); do printf '%s\n' "$v/$at"/*.ebuild; done | sed 's|.*/||; s|\.ebuild$||' | while read -r v; do gentoo_split "$v" | cut -f2; done | grep -v '^9999' | sort -V | tail -n1; fi ;;   # 9999 = live git ebuilds
     *)      true ;;
   esac
 }
@@ -5042,6 +5099,7 @@ native_names() { # what your distro's package manager installed, one name per li
     apk)            apk info 2>/dev/null ;;
     xbps)           xbps-query -l 2>/dev/null | awk '{ sub(/-[^-]*$/, "", $2); print $2 }' ;;
     eopkg)          eopkg li 2>/dev/null | awk 'NF { print $1 }' ;;
+    emerge)         local d; for d in "$GENTOO_DB"/*/*/; do d=${d%/}; gentoo_split "$d" | cut -f1; done ;;
   esac
   return 0
 }
@@ -5305,6 +5363,7 @@ cmd_why() {
         dnf)    msg2 "what needs it: dnf repoquery --installed --whatrequires $name" ;;
         pacman) msg2 "what needs it: pacman -Qi $name  (look at \"Required By\")" ;;
         zypper) msg2 "what needs it: zypper search --requires --installed-only $name" ;;
+        emerge) msg2 "what needs it: equery depends $name  (gentoolkit) · in your world file? grep $name /var/lib/portage/world" ;;
       esac
       return 0
     fi
@@ -5352,6 +5411,8 @@ native_sizes() { # → "bytes<TAB>pm/name" for what your distro's package manage
     apt) dpkg-query -W -f='${Installed-Size}\t${Package}\n' 2>/dev/null | awk -F'\t' '$1 ~ /^[0-9]+$/ { printf "%d\tapt/%s\n", $1 * 1024, $2 }' ;;
     pacman) LC_ALL=C pacman -Qi 2>/dev/null | awk -F': *' '/^Name / { n = $2 } /^Installed Size/ { split($2, a, " ")
               m = a[2] ~ /^G/ ? 1073741824 : a[2] ~ /^M/ ? 1048576 : a[2] ~ /^K/ ? 1024 : 1; printf "%d\tpacman/%s\n", a[1] * m, n }' ;;
+    emerge) local d b; for d in "$GENTOO_DB"/*/*/; do d=${d%/}; [[ -s $d/SIZE ]] || continue; read -r b <"$d/SIZE"
+              [[ $b =~ ^[0-9]+$ ]] && printf '%d\temerge/%s\n' "$b" "$(gentoo_split "$d" | cut -f1)"; done ;;
   esac
   return 0
 }
@@ -5392,7 +5453,8 @@ cmd_hogs() { # [--all|all] [--tsv] [n] | junk [--tsv] | clean [what…]
 
 # ── gurt hogs junk: caches, trash + leftovers that are safe to toss · gurt hogs clean [what…] tosses them ──
 dir_bytes() { du -sb -- "$@" 2>/dev/null | awk '{ s += $1 } END { printf "%d\n", s }'; }
-pm_cache_dirs() { case $PM in zypper) echo /var/cache/zypp/packages ;; apt) echo /var/cache/apt/archives ;; pacman) echo /var/cache/pacman/pkg ;; dnf) echo /var/cache/dnf /var/cache/libdnf5 ;; esac; }
+pm_cache_dirs() { case $PM in zypper) echo /var/cache/zypp/packages ;; apt) echo /var/cache/apt/archives ;; pacman) echo /var/cache/pacman/pkg ;; dnf) echo /var/cache/dnf /var/cache/libdnf5 ;; emerge) gentoo_distdir ;; esac; }
+gentoo_distdir() { local d; d=$(portageq distdir 2>/dev/null) || d=""; [[ -d $d ]] || d=/var/cache/distfiles; [[ -d $d ]] || d=/usr/portage/distfiles; echo "$d"; }
 junk_items() { # → what<TAB>bytes<TAB>description<TAB>needs root (1|0)
   local b d trash="${XDG_DATA_HOME:-$HOME/.local/share}/Trash" dirs=()
   b=0; for d in $CACHE_JUNK; do [[ -d $GURT_CACHE/$d ]] && b=$((b + $(dir_bytes "$GURT_CACHE/$d"))); done
@@ -5442,6 +5504,8 @@ junk_clean() { # [what…]
       pm-cache)      case $PM in
                        zypper) asroot zypper --non-interactive clean --all ;; apt) asroot apt-get clean ;;
                        pacman) asroot pacman -Sc --noconfirm ;; dnf) asroot dnf clean packages ;;
+                       emerge) if command -v eclean-dist >/dev/null; then asroot eclean-dist --deep
+                               else asroot find "$(gentoo_distdir)" -maxdepth 1 -type f -delete; fi ;;   # re-downloaded when needed
                      esac >/dev/null || { warn "$PM couldn't clean its cache"; continue; } ;;
       journal)       asroot journalctl --vacuum-size=200M >/dev/null 2>&1 || { warn "couldn't shrink the logs"; continue; } ;;
       coredumps)     asroot find /var/lib/systemd/coredump -type f -delete || { warn "couldn't delete the crash dumps"; continue; } ;;
@@ -6080,6 +6144,7 @@ os_dep() {
     apt)        for c in "lib$d-dev" "$d-dev" "lib${d%-*}-dev" "$d"; do pm_available "$c" && { NATIVE_Q+=("$c"); return 0; }; done ;;
     dnf|zypper) for c in "$d-devel" "lib$d-devel" "$d"; do pm_available "$c" && { NATIVE_Q+=("$c"); return 0; }; done ;;
     apk)        for c in "$d-dev" "$d"; do pm_available "$c" && { NATIVE_Q+=("$c"); return 0; }; done ;;
+    emerge)     for c in "$d" "lib$d" "${d#lib}"; do c=$(gentoo_atom "$c") && { NATIVE_Q+=("$c"); return 0; }; done ;;
   esac
   foreign_dep aur "$d"
 }
@@ -6508,7 +6573,8 @@ system_upgrade() {
       $NOCONFIRM && y=(-y); asroot eopkg upgrade "${y[@]}" ;;
     emerge)
       msg "🐧 updating your system (emerge --sync + @world — grab a snack 🍿)"
-      asroot emerge --sync && asroot emerge --ask="$($NOCONFIRM && echo n || echo y)" --update --deep --newuse @world ;;
+      { if command -v emaint >/dev/null; then asroot emaint sync --auto; else asroot emerge --sync; fi; } &&
+        asroot emerge --ask="$($NOCONFIRM && echo n || echo y)" --update --deep --newuse --quiet-build @world ;;
     nix)
       msg "❄️ updating your nix profile"
       nix_upgrade_profile ;;
@@ -6530,6 +6596,7 @@ system_updates_count() {
     apt)    apt list --upgradable 2>/dev/null | grep -c / ;;
     zypper) zypper -q --no-refresh list-updates 2>/dev/null | grep -c '^v ' ;;
     apk)    apk version -l '<' 2>/dev/null | grep -vc '^Installed' ;;
+    emerge) timeout 180 emerge --pretend --update --deep --newuse --quiet @world 2>/dev/null | grep -c '^\[ebuild' ;;
   esac
   return 0
 }
