@@ -6,13 +6,15 @@ One distro in, one out: gurt runs on Gentoo now, and NixOS support is gone. Plus
 
 ### New
 - **Gentoo 🐧** gurt works on Gentoo like on any other distro now. Portage does deps, `gurt utils`, `gurt sysup` (`emaint sync` + `emerge -uDN @world`), `gurt remove` (`--deselect` + `--depclean`) and native first (`gurt install gimp` emerges `media-gfx/gimp`). `gurt hogs --all`, `gurt dupes`, `gurt why` and the junk cleaner know your Portage packages, Hotwyr wraps `emerge`, and the Updates tab counts what `emerge -uDN @world` would update. Install it with `curl -fsSL https://gurtproject.org/install.sh | sh`.
-
 - quickrice 0.4.5: GRUB themes show on Fedora, and it checks for Plymouth's script plugin before using it.
 
 ### Removed
 - **NixOS support.** gurt doesn't do anything special on NixOS anymore (no nixpkgs-first installs, no /etc/profile.local, no nix-ld checks, no `nixos-rebuild` in `gurt sysup`). The `nix/` source stays: `gurt install nix/hello` works on any distro that has nix, and `gurt upgrade` now updates your nix profile too.
 
 ### Fixed
+- **"destination path '…/gurt/repo' already exists" on every sync** when gurt was installed before `git` was (a fresh Gentoo, a tiny container): its copy of Main GURT was downloaded as a plain folder, and gurt kept trying to `git clone` over it. It swaps the folder for a real clone now. If that folder belongs to root (gurt ran with sudo once), it tells you the `chown` that fixes it.
+- **Update alerts on systems without systemd or cron** (Gentoo with OpenRC, Void with runit…): `gurt notify on` said "no systemd user session or cron here". Your desktop starts the check at login now (an autostart entry), and it starts right away too.
+- The app knows what Gentoo's Portage installed (for "installed ✓" on apps you got with emerge).
 - **The setup wizard's app install looked stuck.** It installed every app you picked as one long step (a Gaming pack is a few GB of Flathub runtimes). Now it's one app at a time ("install steam (7 of 8)"), the bar moves with each one, and the line under it shows what's happening right now, download % included. One app failing doesn't stop the rest anymore.
 - `gurt install a b c` stopped at the first app that failed. Each one installs on its own now, and at the end gurt tells you which didn't work.
 
