@@ -313,7 +313,7 @@ jobs:
           /usr/games/cowsay hi
           ./gurt -y remove apt/cowsay
 
-  # nix/ for real, and NixOS mode (GURT_NIXOS=1) on top of it
+  # nix/ for real (nixpkgs on a normal distro)
   nix:
     if: github.event_name == 'pull_request'
     needs: lint
@@ -326,16 +326,7 @@ jobs:
         run: |
           ./gurt info nix/hello
           ./gurt search nix/hello | head -n 4
-          GURT_PM=nix ./gurt -y install nix/hello && hello && ./gurt list | grep -q '^nix/hello' && ./gurt -y remove nix/hello
-      - name: NixOS mode puts /usr on PATH and installs other distros' packages natively
-        run: |
-          mkdir -p /tmp/d/DEBIAN /tmp/d/usr/bin
-          printf 'Package: gurt-nixtest\nVersion: 1.0\nArchitecture: all\nMaintainer: ci\nDescription: test\n' > /tmp/d/DEBIAN/control
-          printf '#!/bin/sh\necho hi nixos\n' > /tmp/d/usr/bin/gurt-nixtest && chmod 755 /tmp/d/usr/bin/gurt-nixtest
-          dpkg-deb -b /tmp/d /tmp/gurt-nixtest.deb
-          GURT_NIXOS=1 GURT_NIXOS_PROFILE=/tmp/profile.local ./gurt -y --nodeps install /tmp/gurt-nixtest.deb
-          grep -q 'gurt: /usr + /usr/local' /tmp/profile.local && sh -n /tmp/profile.local
-          [ "$(/usr/bin/gurt-nixtest)" = "hi nixos" ] && GURT_NIXOS=1 ./gurt -y remove gurt-nixtest
+          ./gurt -y install nix/hello && hello && ./gurt list | grep -q '^nix/hello' && ./gurt -y remove nix/hello
 
   # recipes uploaded from the website don't have .gurtinfo — generate/refresh them on main
   srcinfo:

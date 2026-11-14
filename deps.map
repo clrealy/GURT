@@ -1,94 +1,94 @@
 # deps.map — translates GENERIC dependency names into each distro's real package names
 #
 # format:  <generic>  <pm>=<pkg>[,<pkg>...]  ...
-#   pm keys: apt dnf pacman zypper apk xbps emerge eopkg nix   (yum uses the dnf column; nix = nixpkgs attributes)
+#   pm keys: apt dnf pacman zypper apk xbps emerge eopkg   (yum uses the dnf column)
 #   <pm>=-   means "nothing to install on this distro"
 #   missing pm key → gurt just tries the generic name as-is
 #
 # recipes ONLY use the generic names on the left. PRs adding more mappings are goated 🙏
 
 # ── toolchains & build systems ──
-cc          apt=build-essential  dnf=gcc,gcc-c++,make  pacman=base-devel  zypper=gcc,gcc-c++,make  apk=build-base  xbps=base-devel  emerge=-  eopkg=gcc,make  nix=gcc,gnumake
-make        emerge=dev-build/make  nix=gnumake
-cmake       emerge=dev-build/cmake  nix=cmake
-meson       emerge=dev-build/meson  nix=meson
-ninja       apt=ninja-build  dnf=ninja-build  apk=samurai  emerge=dev-build/ninja  nix=ninja
-pkg-config  apt=pkg-config  dnf=pkgconf-pkg-config  pacman=pkgconf  zypper=pkgconf-pkg-config  apk=pkgconf  xbps=pkg-config  emerge=dev-util/pkgconf  nix=pkg-config
-autotools   apt=autoconf,automake,libtool  dnf=autoconf,automake,libtool  pacman=autoconf,automake,libtool  zypper=autoconf,automake,libtool  apk=autoconf,automake,libtool  xbps=autoconf,automake,libtool  emerge=-  nix=autoconf,automake,libtool
-git         emerge=dev-vcs/git  nix=git
-curl        emerge=net-misc/curl  nix=curl
-unzip       emerge=app-arch/unzip  nix=unzip
-xdg-utils   emerge=x11-misc/xdg-utils  nix=xdg-utils
-flatpak     emerge=sys-apps/flatpak  nix=-
-podman      emerge=app-containers/podman  nix=-
-distrobox   emerge=app-containers/distrobox  nix=distrobox
-patchelf    emerge=dev-util/patchelf  nix=patchelf
-linux-headers  apt=linux-libc-dev  dnf=kernel-headers  pacman=linux-api-headers  zypper=linux-glibc-devel  apk=linux-headers  xbps=kernel-libc-headers  emerge=sys-kernel/linux-headers  eopkg=linux-headers  nix=linuxHeaders
-zstd        emerge=app-arch/zstd  nix=zstd
-binutils    emerge=sys-devel/binutils  nix=binutils
-gnupg       apt=gpgv,gnupg  dnf=gnupg2  pacman=gnupg  zypper=gpg2  apk=gnupg,gpgv  xbps=gnupg  emerge=app-crypt/gnupg  nix=gnupg
-nvim        apt=neovim  dnf=neovim  pacman=neovim  zypper=neovim  apk=neovim  xbps=neovim  eopkg=neovim  emerge=app-editors/neovim  nix=neovim
+cc          apt=build-essential  dnf=gcc,gcc-c++,make  pacman=base-devel  zypper=gcc,gcc-c++,make  apk=build-base  xbps=base-devel  emerge=-  eopkg=gcc,make
+make        emerge=dev-build/make
+cmake       emerge=dev-build/cmake
+meson       emerge=dev-build/meson
+ninja       apt=ninja-build  dnf=ninja-build  apk=samurai  emerge=dev-build/ninja
+pkg-config  apt=pkg-config  dnf=pkgconf-pkg-config  pacman=pkgconf  zypper=pkgconf-pkg-config  apk=pkgconf  xbps=pkg-config  emerge=dev-util/pkgconf
+autotools   apt=autoconf,automake,libtool  dnf=autoconf,automake,libtool  pacman=autoconf,automake,libtool  zypper=autoconf,automake,libtool  apk=autoconf,automake,libtool  xbps=autoconf,automake,libtool  emerge=-
+git         emerge=dev-vcs/git
+curl        emerge=net-misc/curl
+unzip       emerge=app-arch/unzip
+xdg-utils   emerge=x11-misc/xdg-utils
+flatpak     emerge=sys-apps/flatpak
+podman      emerge=app-containers/podman
+distrobox   emerge=app-containers/distrobox
+patchelf    emerge=dev-util/patchelf
+linux-headers  apt=linux-libc-dev  dnf=kernel-headers  pacman=linux-api-headers  zypper=linux-glibc-devel  apk=linux-headers  xbps=kernel-libc-headers  emerge=sys-kernel/linux-headers  eopkg=linux-headers
+zstd        emerge=app-arch/zstd
+binutils    emerge=sys-devel/binutils
+gnupg       apt=gpgv,gnupg  dnf=gnupg2  pacman=gnupg  zypper=gpg2  apk=gnupg,gpgv  xbps=gnupg  emerge=app-crypt/gnupg
+nvim        apt=neovim  dnf=neovim  pacman=neovim  zypper=neovim  apk=neovim  xbps=neovim  eopkg=neovim  emerge=app-editors/neovim
 # gio: apps use it to move files to the trash
-glib-bin    apt=libglib2.0-bin  dnf=glib2  pacman=glib2  zypper=glib2-tools  apk=glib  xbps=glib  eopkg=glib2  emerge=dev-libs/glib  nix=glib
-bsdtar      apt=libarchive-tools  dnf=bsdtar  pacman=libarchive  zypper=bsdtar  apk=libarchive-tools  xbps=bsdtar  emerge=app-arch/libarchive  nix=libarchive
-rpm2cpio    apt=rpm2cpio,cpio  dnf=rpm,cpio  pacman=rpm-tools,cpio  zypper=rpm,cpio  apk=rpm2cpio,cpio  xbps=rpm2cpio,cpio  nix=rpm,cpio
-7zip        apt=7zip  dnf=7zip  pacman=7zip  zypper=7zip  apk=7zip  xbps=7zip  eopkg=p7zip  emerge=app-arch/7zip  nix=_7zz
-wine        apt=wine  dnf=wine  pacman=wine  zypper=wine  apk=wine  xbps=wine  eopkg=wine  emerge=app-emulation/wine-vanilla  nix=wineWowPackages.stable
+glib-bin    apt=libglib2.0-bin  dnf=glib2  pacman=glib2  zypper=glib2-tools  apk=glib  xbps=glib  eopkg=glib2  emerge=dev-libs/glib
+bsdtar      apt=libarchive-tools  dnf=bsdtar  pacman=libarchive  zypper=bsdtar  apk=libarchive-tools  xbps=bsdtar  emerge=app-arch/libarchive
+rpm2cpio    apt=rpm2cpio,cpio  dnf=rpm,cpio  pacman=rpm-tools,cpio  zypper=rpm,cpio  apk=rpm2cpio,cpio  xbps=rpm2cpio,cpio  emerge=app-arch/rpm,app-arch/cpio
+7zip        apt=7zip  dnf=7zip  pacman=7zip  zypper=7zip  apk=7zip  xbps=7zip  eopkg=p7zip  emerge=app-arch/7zip
+wine        apt=wine  dnf=wine  pacman=wine  zypper=wine  apk=wine  xbps=wine  eopkg=wine  emerge=app-emulation/wine-vanilla
 
 # ── languages ──
-python3     pacman=python  emerge=dev-lang/python  nix=python3
+python3     pacman=python  emerge=dev-lang/python
 # python's venv module (Debian splits it out; everyone else ships it with python)
-python3-venv  apt=python3-venv  dnf=-  pacman=-  zypper=-  apk=-  xbps=-  eopkg=-  emerge=-  nix=-
+python3-venv  apt=python3-venv  dnf=-  pacman=-  zypper=-  apk=-  xbps=-  eopkg=-  emerge=-
 # tkinter, Python's built-in GUI toolkit (Gentoo: comes with dev-lang/python[tk])
-python3-tk  apt=python3-tk  dnf=python3-tkinter  pacman=tk  zypper=python3-tk  apk=py3-tkinter  xbps=python3-tkinter  eopkg=python3-tkinter  emerge=-  nix=python3Packages.tkinter
+python3-tk  apt=python3-tk  dnf=python3-tkinter  pacman=tk  zypper=python3-tk  apk=py3-tkinter  xbps=python3-tkinter  eopkg=python3-tkinter  emerge=-
 # PyYAML
-python3-yaml  apt=python3-yaml  dnf=python3-pyyaml  pacman=python-yaml  zypper=python3-PyYAML  apk=py3-yaml  xbps=python3-yaml  emerge=dev-python/pyyaml  nix=python3Packages.pyyaml
+python3-yaml  apt=python3-yaml  dnf=python3-pyyaml  pacman=python-yaml  zypper=python3-PyYAML  apk=py3-yaml  xbps=python3-yaml  emerge=dev-python/pyyaml
 # PySide6 (Qt for Python)
-python3-pyside6  apt=python3-pyside6.qtwidgets  dnf=python3-pyside6  pacman=pyside6  zypper=python3-pyside6  apk=py3-pyside6  emerge=dev-python/pyside  nix=python3Packages.pyside6
-gzip        emerge=app-arch/gzip  nix=gzip
-rust        apt=cargo  dnf=cargo  pacman=rust  zypper=cargo  apk=cargo  xbps=cargo  emerge=dev-lang/rust  nix=cargo,rustc
-go          apt=golang-go  dnf=golang  pacman=go  zypper=go  apk=go  xbps=go  emerge=dev-lang/go  nix=go
-nodejs      apt=nodejs,npm  dnf=nodejs,npm  pacman=nodejs,npm  zypper=nodejs-default,npm-default  apk=nodejs,npm  xbps=nodejs  emerge=net-libs/nodejs  nix=nodejs
-lua         apt=lua5.4  dnf=lua  pacman=lua  zypper=lua54  apk=lua5.4  xbps=lua54  emerge=dev-lang/lua  nix=lua5_4
+python3-pyside6  apt=python3-pyside6.qtwidgets  dnf=python3-pyside6  pacman=pyside6  zypper=python3-pyside6  apk=py3-pyside6  emerge=dev-python/pyside
+gzip        emerge=app-arch/gzip
+rust        apt=cargo  dnf=cargo  pacman=rust  zypper=cargo  apk=cargo  xbps=cargo  emerge=dev-lang/rust
+go          apt=golang-go  dnf=golang  pacman=go  zypper=go  apk=go  xbps=go  emerge=dev-lang/go
+nodejs      apt=nodejs,npm  dnf=nodejs,npm  pacman=nodejs,npm  zypper=nodejs-default,npm-default  apk=nodejs,npm  xbps=nodejs  emerge=net-libs/nodejs
+lua         apt=lua5.4  dnf=lua  pacman=lua  zypper=lua54  apk=lua5.4  xbps=lua54  emerge=dev-lang/lua
 
 # ── libraries (headers included) ──
-openssl     apt=libssl-dev  dnf=openssl-devel  pacman=openssl  zypper=libopenssl-devel  apk=openssl-dev  xbps=openssl-devel  emerge=dev-libs/openssl  nix=openssl
-openssl-cli apt=openssl  dnf=openssl  pacman=openssl  zypper=openssl  apk=openssl  xbps=openssl  emerge=dev-libs/openssl  nix=openssl
-zlib        apt=zlib1g-dev  dnf=zlib-devel  pacman=zlib  zypper=zlib-devel  apk=zlib-dev  xbps=zlib-devel  emerge=sys-libs/zlib  nix=zlib
-ncurses     apt=libncurses-dev  dnf=ncurses-devel  pacman=ncurses  zypper=ncurses-devel  apk=ncurses-dev  xbps=ncurses-devel  emerge=sys-libs/ncurses  nix=ncurses
-libcurl     apt=libcurl4-openssl-dev  dnf=libcurl-devel  pacman=curl  zypper=libcurl-devel  apk=curl-dev  xbps=libcurl-devel  emerge=net-misc/curl  nix=curl
-sqlite      apt=libsqlite3-dev  dnf=sqlite-devel  pacman=sqlite  zypper=sqlite3-devel  apk=sqlite-dev  xbps=sqlite-devel  emerge=dev-db/sqlite  nix=sqlite
-sdl2        apt=libsdl2-dev  dnf=SDL2-devel  pacman=sdl2  zypper=SDL2-devel  apk=sdl2-dev  xbps=SDL2-devel  emerge=media-libs/libsdl2  nix=SDL2
-gtk3        apt=libgtk-3-dev  dnf=gtk3-devel  pacman=gtk3  zypper=gtk3-devel  apk=gtk+3.0-dev  xbps=gtk+3-devel  emerge=x11-libs/gtk+:3  nix=gtk3
-gtk-layer-shell  apt=libgtk-layer-shell-dev  dnf=gtk-layer-shell-devel  pacman=gtk-layer-shell  zypper=gtk-layer-shell-devel  apk=gtk-layer-shell-dev  xbps=gtk-layer-shell-devel  nix=gtk-layer-shell
-json-c      apt=libjson-c-dev  dnf=json-c-devel  pacman=json-c  zypper=libjson-c-devel  apk=json-c-dev  xbps=json-c-devel  emerge=dev-libs/json-c  nix=json_c
-x11         apt=libx11-dev  dnf=libX11-devel  pacman=libx11  zypper=libX11-devel  apk=libx11-dev  xbps=libX11-devel  emerge=x11-libs/libX11  nix=xorg.libX11
-wayland     apt=libwayland-dev  dnf=wayland-devel  pacman=wayland  zypper=wayland-devel  apk=wayland-dev  xbps=wayland-devel  emerge=dev-libs/wayland  nix=wayland
-vulkan      apt=libvulkan-dev  dnf=vulkan-loader-devel  pacman=vulkan-icd-loader  zypper=vulkan-devel  apk=vulkan-loader-dev  xbps=vulkan-loader-devel  emerge=media-libs/vulkan-loader  nix=vulkan-loader
-dbus        apt=libdbus-1-dev  dnf=dbus-devel  pacman=dbus  zypper=dbus-1-devel  apk=dbus-dev  xbps=dbus-devel  emerge=sys-apps/dbus  nix=dbus
+openssl     apt=libssl-dev  dnf=openssl-devel  pacman=openssl  zypper=libopenssl-devel  apk=openssl-dev  xbps=openssl-devel  emerge=dev-libs/openssl
+openssl-cli apt=openssl  dnf=openssl  pacman=openssl  zypper=openssl  apk=openssl  xbps=openssl  emerge=dev-libs/openssl
+zlib        apt=zlib1g-dev  dnf=zlib-devel  pacman=zlib  zypper=zlib-devel  apk=zlib-dev  xbps=zlib-devel  emerge=sys-libs/zlib
+ncurses     apt=libncurses-dev  dnf=ncurses-devel  pacman=ncurses  zypper=ncurses-devel  apk=ncurses-dev  xbps=ncurses-devel  emerge=sys-libs/ncurses
+libcurl     apt=libcurl4-openssl-dev  dnf=libcurl-devel  pacman=curl  zypper=libcurl-devel  apk=curl-dev  xbps=libcurl-devel  emerge=net-misc/curl
+sqlite      apt=libsqlite3-dev  dnf=sqlite-devel  pacman=sqlite  zypper=sqlite3-devel  apk=sqlite-dev  xbps=sqlite-devel  emerge=dev-db/sqlite
+sdl2        apt=libsdl2-dev  dnf=SDL2-devel  pacman=sdl2  zypper=SDL2-devel  apk=sdl2-dev  xbps=SDL2-devel  emerge=media-libs/libsdl2
+gtk3        apt=libgtk-3-dev  dnf=gtk3-devel  pacman=gtk3  zypper=gtk3-devel  apk=gtk+3.0-dev  xbps=gtk+3-devel  emerge=x11-libs/gtk+:3
+gtk-layer-shell  apt=libgtk-layer-shell-dev  dnf=gtk-layer-shell-devel  pacman=gtk-layer-shell  zypper=gtk-layer-shell-devel  apk=gtk-layer-shell-dev  xbps=gtk-layer-shell-devel  emerge=gui-libs/gtk-layer-shell
+json-c      apt=libjson-c-dev  dnf=json-c-devel  pacman=json-c  zypper=libjson-c-devel  apk=json-c-dev  xbps=json-c-devel  emerge=dev-libs/json-c
+x11         apt=libx11-dev  dnf=libX11-devel  pacman=libx11  zypper=libX11-devel  apk=libx11-dev  xbps=libX11-devel  emerge=x11-libs/libX11
+wayland     apt=libwayland-dev  dnf=wayland-devel  pacman=wayland  zypper=wayland-devel  apk=wayland-dev  xbps=wayland-devel  emerge=dev-libs/wayland
+vulkan      apt=libvulkan-dev  dnf=vulkan-loader-devel  pacman=vulkan-icd-loader  zypper=vulkan-devel  apk=vulkan-loader-dev  xbps=vulkan-loader-devel  emerge=media-libs/vulkan-loader
+dbus        apt=libdbus-1-dev  dnf=dbus-devel  pacman=dbus  zypper=dbus-1-devel  apk=dbus-dev  xbps=dbus-devel  emerge=sys-apps/dbus
 
 # ── gurt gui: the libraries GURT's window needs (EGL/GL + xkbcommon for X11, wayland-client for Wayland) ──
 # webview apps (python GObject + WebKit2GTK), for recipes that need one
-gui-webview  apt=python3-gi,gir1.2-webkit2-4.1,gstreamer1.0-plugins-good  dnf=python3-gobject,webkit2gtk4.1,gstreamer1-plugins-good  pacman=python-gobject,webkit2gtk-4.1,gst-plugins-good  zypper=python3-gobject-Gdk,typelib-1_0-WebKit2-4_1,gstreamer-plugins-good  apk=py3-gobject3,webkit2gtk-4.1,gst-plugins-good  xbps=python3-gobject,libwebkit2gtk41,gst-plugins-good1  eopkg=python-gobject,libwebkit-gtk41,gstreamer-1.0-plugins-good  nix=-
-gui-app  apt=libegl1,libgl1,libxkbcommon-x11-0,libwayland-client0  dnf=mesa-libEGL,mesa-libGL,libxkbcommon-x11,libwayland-client  pacman=libglvnd,libxkbcommon-x11,wayland  zypper=libEGL1,libGL1,libxkbcommon-x11-0,libwayland-client0  apk=-  xbps=libglvnd,libxkbcommon-x11,wayland  eopkg=libglvnd,libxkbcommon,wayland  emerge=media-libs/libglvnd,x11-libs/libxkbcommon,dev-libs/wayland  nix=-
+gui-webview  apt=python3-gi,gir1.2-webkit2-4.1,gstreamer1.0-plugins-good  dnf=python3-gobject,webkit2gtk4.1,gstreamer1-plugins-good  pacman=python-gobject,webkit2gtk-4.1,gst-plugins-good  zypper=python3-gobject-Gdk,typelib-1_0-WebKit2-4_1,gstreamer-plugins-good  apk=py3-gobject3,webkit2gtk-4.1,gst-plugins-good  xbps=python3-gobject,libwebkit2gtk41,gst-plugins-good1  eopkg=python-gobject,libwebkit-gtk41,gstreamer-1.0-plugins-good
+gui-app  apt=libegl1,libgl1,libxkbcommon-x11-0,libwayland-client0  dnf=mesa-libEGL,mesa-libGL,libxkbcommon-x11,libwayland-client  pacman=libglvnd,libxkbcommon-x11,wayland  zypper=libEGL1,libGL1,libxkbcommon-x11-0,libwayland-client0  apk=-  xbps=libglvnd,libxkbcommon-x11,wayland  eopkg=libglvnd,libxkbcommon,wayland  emerge=media-libs/libglvnd,x11-libs/libxkbcommon,dev-libs/wayland
 # python GObject + GTK 3 (native GTK3 apps written in python)
-gui-gtk3  apt=python3-gi,gir1.2-gtk-3.0  dnf=python3-gobject,gtk3  pacman=python-gobject,gtk3  zypper=python3-gobject-Gdk,typelib-1_0-Gtk-3_0  apk=py3-gobject3,gtk+3.0  xbps=python3-gobject,gtk+3  eopkg=python-gobject,libgtk-3  emerge=dev-python/pygobject,x11-libs/gtk+:3  nix=-
+gui-gtk3  apt=python3-gi,gir1.2-gtk-3.0  dnf=python3-gobject,gtk3  pacman=python-gobject,gtk3  zypper=python3-gobject-Gdk,typelib-1_0-Gtk-3_0  apk=py3-gobject3,gtk+3.0  xbps=python3-gobject,gtk+3  eopkg=python-gobject,libgtk-3  emerge=dev-python/pygobject,x11-libs/gtk+:3
 # poppler's command line tools (pdftoppm, pdfunite, pdfinfo)
-poppler     apt=poppler-utils  dnf=poppler-utils  pacman=poppler  zypper=poppler-tools  apk=poppler-utils  xbps=poppler-utils  emerge=app-text/poppler  nix=poppler_utils
+poppler     apt=poppler-utils  dnf=poppler-utils  pacman=poppler  zypper=poppler-tools  apk=poppler-utils  xbps=poppler-utils  emerge=app-text/poppler
 
 # ── Wallpaper Engine (graphics + video libs, and what CEF / Electron load) ──
-gl-libs        apt=libgl-dev,libegl-dev,libglu1-mesa-dev  dnf=mesa-libGL-devel,mesa-libEGL-devel,mesa-libGLU-devel  pacman=libglvnd,glu  zypper=Mesa-libGL-devel,Mesa-libEGL-devel,glu-devel  xbps=MesaLib-devel,glu-devel  emerge=media-libs/libglvnd,media-libs/glu  nix=libGL,libGLU
-x11-gl-extras  apt=libxrandr-dev,libxinerama-dev,libxcursor-dev,libxi-dev,libxxf86vm-dev  dnf=libXrandr-devel,libXinerama-devel,libXcursor-devel,libXi-devel,libXxf86vm-devel  pacman=libxrandr,libxinerama,libxcursor,libxi,libxxf86vm  zypper=libXrandr-devel,libXinerama-devel,libXcursor-devel,libXi-devel,libXxf86vm-devel  xbps=libXrandr-devel,libXinerama-devel,libXcursor-devel,libXi-devel,libXxf86vm-devel  emerge=x11-libs/libXrandr,x11-libs/libXinerama,x11-libs/libXcursor,x11-libs/libXi,x11-libs/libXxf86vm  nix=xorg.libXrandr,xorg.libXinerama,xorg.libXcursor,xorg.libXi,xorg.libXxf86vm
-glew           apt=libglew-dev  dnf=glew-devel  pacman=glew  zypper=glew-devel  xbps=glew-devel  emerge=media-libs/glew  nix=glew
-glfw           apt=libglfw3-dev  dnf=glfw-devel  pacman=glfw  zypper=libglfw-devel  xbps=glfw-devel  emerge=media-libs/glfw  nix=glfw
-freeglut       apt=freeglut3-dev  dnf=freeglut-devel  pacman=freeglut  zypper=freeglut-devel  xbps=freeglut-devel  emerge=media-libs/freeglut  nix=freeglut
-glm            apt=libglm-dev  dnf=glm-devel  pacman=glm  zypper=glm-devel  xbps=glm  emerge=media-libs/glm  nix=glm
-lz4            apt=liblz4-dev  dnf=lz4-devel  pacman=lz4  zypper=liblz4-devel  xbps=liblz4-devel  emerge=app-arch/lz4  nix=lz4
-libmpv         apt=libmpv-dev  dnf=mpv-devel  pacman=mpv  zypper=mpv-devel  xbps=mpv-devel  emerge=media-video/mpv  nix=mpv
-ffmpeg-libs    apt=libavcodec-dev,libavformat-dev,libavutil-dev,libswscale-dev  dnf=ffmpeg-free-devel  pacman=ffmpeg  zypper=libavcodec-devel,libavformat-devel,libavutil-devel,libswscale-devel  xbps=ffmpeg-devel  emerge=media-video/ffmpeg  nix=ffmpeg
-libpulse       apt=libpulse-dev  dnf=pulseaudio-libs-devel  pacman=libpulse  zypper=libpulse-devel  xbps=pulseaudio-devel  emerge=media-libs/libpulse  nix=libpulseaudio
-fftw3          apt=libfftw3-dev  dnf=fftw-devel  pacman=fftw  zypper=fftw3-devel  xbps=fftw-devel  emerge=sci-libs/fftw  nix=fftw
-freetype       apt=libfreetype-dev  dnf=freetype-devel  pacman=freetype2  zypper=freetype2-devel  xbps=freetype-devel  emerge=media-libs/freetype  nix=freetype
-wayland-protocols  apt=wayland-protocols  dnf=wayland-protocols-devel  pacman=wayland-protocols  zypper=wayland-protocols-devel  xbps=wayland-protocols  emerge=dev-libs/wayland-protocols  nix=wayland-protocols
-cef-libs       apt=libnss3-dev,libnspr4-dev,libatk-bridge2.0-dev,libcups2-dev,libxcomposite-dev,libxdamage-dev,libxkbcommon-dev,libgbm-dev,libasound2-dev,libpango1.0-dev,libcairo2-dev  dnf=nss,nspr,at-spi2-atk,cups-libs,libXcomposite,libXdamage,libxkbcommon,mesa-libgbm,alsa-lib,pango,cairo  pacman=nss,nspr,at-spi2-core,libcups,libxcomposite,libxdamage,libxkbcommon,mesa,alsa-lib,pango,cairo  zypper=mozilla-nss,mozilla-nspr,libatk-bridge-2_0-0,libcups2,libXcomposite1,libXdamage1,libxkbcommon0,libgbm1,libasound2,libpango-1_0-0,libcairo2  xbps=nss,nspr,at-spi2-atk,libcups,libXcomposite,libXdamage,libxkbcommon,libgbm,alsa-lib,pango,cairo  emerge=dev-libs/nss,dev-libs/nspr,app-accessibility/at-spi2-core,net-print/cups,x11-libs/libXcomposite,x11-libs/libXdamage,x11-libs/libxkbcommon,media-libs/mesa,media-libs/alsa-lib,x11-libs/pango,x11-libs/cairo  nix=-
-electron-libs  apt=libgtk-3-dev,libnss3-dev,libasound2-dev,libgbm-dev  dnf=gtk3,nss,alsa-lib,mesa-libgbm  pacman=gtk3,nss,alsa-lib,mesa  zypper=libgtk-3-0,mozilla-nss,libasound2,libgbm1  xbps=gtk+3,nss,alsa-lib,libgbm  emerge=x11-libs/gtk+:3,dev-libs/nss,media-libs/alsa-lib,media-libs/mesa  nix=-
+gl-libs        apt=libgl-dev,libegl-dev,libglu1-mesa-dev  dnf=mesa-libGL-devel,mesa-libEGL-devel,mesa-libGLU-devel  pacman=libglvnd,glu  zypper=Mesa-libGL-devel,Mesa-libEGL-devel,glu-devel  xbps=MesaLib-devel,glu-devel  emerge=media-libs/libglvnd,media-libs/glu
+x11-gl-extras  apt=libxrandr-dev,libxinerama-dev,libxcursor-dev,libxi-dev,libxxf86vm-dev  dnf=libXrandr-devel,libXinerama-devel,libXcursor-devel,libXi-devel,libXxf86vm-devel  pacman=libxrandr,libxinerama,libxcursor,libxi,libxxf86vm  zypper=libXrandr-devel,libXinerama-devel,libXcursor-devel,libXi-devel,libXxf86vm-devel  xbps=libXrandr-devel,libXinerama-devel,libXcursor-devel,libXi-devel,libXxf86vm-devel  emerge=x11-libs/libXrandr,x11-libs/libXinerama,x11-libs/libXcursor,x11-libs/libXi,x11-libs/libXxf86vm
+glew           apt=libglew-dev  dnf=glew-devel  pacman=glew  zypper=glew-devel  xbps=glew-devel  emerge=media-libs/glew
+glfw           apt=libglfw3-dev  dnf=glfw-devel  pacman=glfw  zypper=libglfw-devel  xbps=glfw-devel  emerge=media-libs/glfw
+freeglut       apt=freeglut3-dev  dnf=freeglut-devel  pacman=freeglut  zypper=freeglut-devel  xbps=freeglut-devel  emerge=media-libs/freeglut
+glm            apt=libglm-dev  dnf=glm-devel  pacman=glm  zypper=glm-devel  xbps=glm  emerge=media-libs/glm
+lz4            apt=liblz4-dev  dnf=lz4-devel  pacman=lz4  zypper=liblz4-devel  xbps=liblz4-devel  emerge=app-arch/lz4
+libmpv         apt=libmpv-dev  dnf=mpv-devel  pacman=mpv  zypper=mpv-devel  xbps=mpv-devel  emerge=media-video/mpv
+ffmpeg-libs    apt=libavcodec-dev,libavformat-dev,libavutil-dev,libswscale-dev  dnf=ffmpeg-free-devel  pacman=ffmpeg  zypper=libavcodec-devel,libavformat-devel,libavutil-devel,libswscale-devel  xbps=ffmpeg-devel  emerge=media-video/ffmpeg
+libpulse       apt=libpulse-dev  dnf=pulseaudio-libs-devel  pacman=libpulse  zypper=libpulse-devel  xbps=pulseaudio-devel  emerge=media-libs/libpulse
+fftw3          apt=libfftw3-dev  dnf=fftw-devel  pacman=fftw  zypper=fftw3-devel  xbps=fftw-devel  emerge=sci-libs/fftw
+freetype       apt=libfreetype-dev  dnf=freetype-devel  pacman=freetype2  zypper=freetype2-devel  xbps=freetype-devel  emerge=media-libs/freetype
+wayland-protocols  apt=wayland-protocols  dnf=wayland-protocols-devel  pacman=wayland-protocols  zypper=wayland-protocols-devel  xbps=wayland-protocols  emerge=dev-libs/wayland-protocols
+cef-libs       apt=libnss3-dev,libnspr4-dev,libatk-bridge2.0-dev,libcups2-dev,libxcomposite-dev,libxdamage-dev,libxkbcommon-dev,libgbm-dev,libasound2-dev,libpango1.0-dev,libcairo2-dev  dnf=nss,nspr,at-spi2-atk,cups-libs,libXcomposite,libXdamage,libxkbcommon,mesa-libgbm,alsa-lib,pango,cairo  pacman=nss,nspr,at-spi2-core,libcups,libxcomposite,libxdamage,libxkbcommon,mesa,alsa-lib,pango,cairo  zypper=mozilla-nss,mozilla-nspr,libatk-bridge-2_0-0,libcups2,libXcomposite1,libXdamage1,libxkbcommon0,libgbm1,libasound2,libpango-1_0-0,libcairo2  xbps=nss,nspr,at-spi2-atk,libcups,libXcomposite,libXdamage,libxkbcommon,libgbm,alsa-lib,pango,cairo  emerge=dev-libs/nss,dev-libs/nspr,app-accessibility/at-spi2-core,net-print/cups,x11-libs/libXcomposite,x11-libs/libXdamage,x11-libs/libxkbcommon,media-libs/mesa,media-libs/alsa-lib,x11-libs/pango,x11-libs/cairo
+electron-libs  apt=libgtk-3-dev,libnss3-dev,libasound2-dev,libgbm-dev  dnf=gtk3,nss,alsa-lib,mesa-libgbm  pacman=gtk3,nss,alsa-lib,mesa  zypper=libgtk-3-0,mozilla-nss,libasound2,libgbm1  xbps=gtk+3,nss,alsa-lib,libgbm  emerge=x11-libs/gtk+:3,dev-libs/nss,media-libs/alsa-lib,media-libs/mesa

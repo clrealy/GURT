@@ -51,7 +51,7 @@ It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine,
 | `brew/` `homebrew/` | **Homebrew** on Linux | runs `brew install` for you, as you (sets up Homebrew the first time) |
 | `flatpak/` `flathub/` | **Flathub** | runs `flatpak install` for you (sets up flatpak + Flathub the first time) |
 | `snap/` | **Snap Store** | runs `snap install` for you (sets up snapd the first time; asks before `--classic`) |
-| `nix/` `nixpkgs/` | **nixpkgs** (on NixOS, or anywhere nix is installed) | installs into your own nix profile, no sudo |
+| `nix/` `nixpkgs/` | **nixpkgs** (anywhere nix is installed) | installs into your own nix profile, no sudo |
 
 Mirrors and releases are set in [`gurt.conf`](gurt.conf), so apt can point at Ubuntu instead of Debian, for example.
 
@@ -260,30 +260,15 @@ LFS has no package manager on purpose, so gurt fills in: it spots LFS (`/etc/lfs
 
 Before you start, build `git`, `curl` (or `wget`) and `sudo` from BLFS. Then download [install.sh](https://gurtproject.org/install.sh) and run `sh install.sh`.
 
-### NixOS ❄️
+### Gentoo 🐧
 
-NixOS has no `/usr` or `/lib` the way other distros do, so gurt runs it differently. Install with the one-liner (there's no GURTSetupWizard package for NixOS):
+gurt runs on Gentoo like on any distro: `curl -fsSL https://gurtproject.org/install.sh | sh` (there's no ebuild for it yet).
 
-```sh
-curl -fsSL https://gurtproject.org/install.sh | sh
-```
-
-- **nixpkgs is the package manager.** `gurt install nix/<attr>`, `gurt search nix/<term>`, `gurt remove nix/<attr>`. They go into your own nix profile (`nix profile` or `nix-env`, whichever you use), as you, no sudo. Deps of Main GURT recipes come from nixpkgs too.
-- **Main GURT checks nixpkgs first.** If nixpkgs has the app, you get that build (it's made for NixOS). Flathub recipes work like everywhere else once flatpak is on.
-- **Other distros' packages install straight onto the system, no box.** `apt/`, `dnf/`, `zypper/`, `pacman/`, `xbps/`, `eopkg/` and `.deb` / `.rpm` / `.pkg.tar.zst` / `.xbps` / `.eopkg` files go into `/usr` like on any distro. nix-ld starts their programs, and the libraries they need come from nixpkgs when it has them, else from the distro the package was made for. `aur/` works too: `-bin` packages just run, and ones that compile use nixpkgs' gcc, pointed at `/usr` and your nix profile.
-- **AppImages** run through `appimage-run` (gurt gets it from nixpkgs).
-- **`/usr` and `/usr/local` on your PATH.** NixOS doesn't look there, so gurt adds a few lines to `/etc/profile.local` (NixOS reads it at login): PATH, the app menu, and nix-ld's library path.
-- **`gurt sysup`** runs `nixos-rebuild switch --upgrade` (or `nix flake update` + `nixos-rebuild switch` when `/etc/nixos/flake.nix` exists), then upgrades your nix profile.
-
-Some things are system settings on NixOS, so gurt tells you the `configuration.nix` line instead of installing them:
-
-```nix
-services.flatpak.enable = true;           # Flathub apps
-programs.nix-ld.enable = true;            # programs from other distros' packages
-virtualisation.waydroid.enable = true;    # Android apps
-```
-
-There are no snaps (NixOS has no snapd) and no `gurt de` (your desktop is set in `configuration.nix`).
+- **Portage is your package manager** for everything gurt knows: deps, `gurt utils`, `gurt sysup` (`emaint sync` + `emerge -uDN @world`), `gurt remove` (`emerge --deselect` + `--depclean`, so nothing another package needs goes), and native first (`gurt install gimp` emerges `media-gfx/gimp` instead of the Flathub build). Bare names become `category/name` for you.
+- **Fast:** gurt reads `/var/db/pkg` and `/var/db/repos` directly to see what's installed and what your repos have, so it never waits on `equery`.
+- **`gurt hogs --all`, `gurt dupes`, `gurt why` and `gurt hogs junk`** (old distfiles, through `eclean-dist` if you have gentoolkit) know your Portage packages too.
+- **Hotwyr** wraps `emerge`: `sudo emerge -av yay` can't find it → gurt offers aur/yay; `emerge -s` shows gurt's results too; `emerge -uDN @world` updates what gurt installed after.
+- Heads up: anything from your own repos compiles unless you've set up the [binary package host](https://wiki.gentoo.org/wiki/Gentoo_Binary_Host_Quickstart), so a big app can take a while. Other distros' packages and Flathub apps install prebuilt.
 
 ### ChromeOS 💻
 

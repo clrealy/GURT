@@ -43,15 +43,6 @@ if [ -n "$A" ] && command -v curl >/dev/null && command -v sha256sum >/dev/null;
     say "couldn't grab GURT's app right now (gurt gui gets it later)"
   fi
 fi
-# NixOS only finds programs in its profiles: gurt's /usr/local and /usr (other distros' packages), plus the library
-# folders nix-ld hands those programs, go in /etc/profile.local, which NixOS's own /etc/profile reads
-if [ -e /etc/NIXOS ] && ! grep -qs 'gurt: /usr + /usr/local' /etc/profile.local; then
-  printf '%s\n' "# gurt: /usr + /usr/local: where gurt installs things, and NixOS doesn't look there on its own" \
-    'for d in /usr/local/bin /usr/bin "$HOME/.local/bin"; do case ":$PATH:" in *":$d:"*) ;; *) PATH="$PATH:$d" ;; esac; done; export PATH' \
-    'for d in /usr/local/share /usr/share; do case ":${XDG_DATA_DIRS:-}:" in *":$d:"*) ;; *) XDG_DATA_DIRS="${XDG_DATA_DIRS:-/run/current-system/sw/share}:$d" ;; esac; done; export XDG_DATA_DIRS' \
-    'NIX_LD_LIBRARY_PATH=${NIX_LD_LIBRARY_PATH:-/run/current-system/sw/share/nix-ld/lib}; for d in "$HOME/.nix-profile/lib" "/etc/profiles/per-user/$USER/lib" /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib/aarch64-linux-gnu /usr/lib64 /usr/lib; do case ":${NIX_LD_LIBRARY_PATH:-}:" in *":$d:"*) ;; *) NIX_LD_LIBRARY_PATH="${NIX_LD_LIBRARY_PATH:+$NIX_LD_LIBRARY_PATH:}$d" ;; esac; done; export NIX_LD_LIBRARY_PATH' \
-    'unset d' | $SUDO tee -a /etc/profile.local >/dev/null && say "❄️ NixOS: added /usr and /usr/local to your PATH in /etc/profile.local (new terminals get it)"
-fi
 "$BIN/gurt" yo
 # Donk OS 🫏 runs on gurt, so gurt sets up the utilities apps need right away (everywhere else: gurt utils)
 if [ -r /etc/os-release ] && (. /etc/os-release; case " ${ID:-} ${ID_LIKE:-} " in *" donkos "*|*" donk "*) exit 0 ;; *) exit 1 ;; esac); then

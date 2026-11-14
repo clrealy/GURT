@@ -397,12 +397,12 @@ footer.site .cicada{color:#e7e7ea}
         <button class="demotab on" type="button" data-d="0">Hotwyr</button><button class="demotab" type="button" data-d="1">GitHub releases</button><button class="demotab" type="button" data-d="2">like photoshop</button><button class="demotab" type="button" data-d="3">any distro</button><button class="demotab" type="button" data-d="4">convert</button></div>
       <pre class="demoscreen" id="demoscreen" aria-live="off"></pre>
     </div>
-    <div class="srcstrip" aria-label="the sources gurt installs from"><span class="srclabel">20 sources</span><a class="srcchip" href="#packages" data-go="gurt">gurt/</a><a class="srcchip" href="#packages" data-go="aur">aur/</a><a class="srcchip" href="#packages" data-go="apt">apt/</a><a class="srcchip" href="#packages" data-go="dnf">dnf/</a><a class="srcchip" href="#packages" data-go="zypper">zypper/</a><a class="srcchip" href="#packages" data-go="pacman">pacman/</a><a class="srcchip" href="#packages" data-go="apk">apk/</a><a class="srcchip" href="#packages" data-go="xbps">xbps/</a><a class="srcchip" href="#packages" data-go="eopkg">eopkg/</a><a class="srcchip" href="#packages" data-go="gentoo">gentoo/</a><a class="srcchip" href="https://github.com/clrealy/GURT#nixos-">nix/</a><a class="srcchip" href="#packages" data-go="flatpak">flatpak/</a><a class="srcchip" href="#packages" data-go="snap">snap/</a><a class="srcchip" href="#packages" data-go="gh">gh/</a><a class="srcchip" href="#packages" data-go="appimage">appimage/</a><a class="srcchip" href="#packages" data-go="pip">pip/</a><a class="srcchip" href="#packages" data-go="npm">npm/</a><a class="srcchip" href="#packages" data-go="cargo">cargo/</a><a class="srcchip" href="#packages" data-go="brew">brew/</a><a class="srcchip" href="https://github.com/clrealy/GURT#android-apps-waydroid-">android/</a></div>
+    <div class="srcstrip" aria-label="the sources gurt installs from"><span class="srclabel">20 sources</span><a class="srcchip" href="#packages" data-go="gurt">gurt/</a><a class="srcchip" href="#packages" data-go="aur">aur/</a><a class="srcchip" href="#packages" data-go="apt">apt/</a><a class="srcchip" href="#packages" data-go="dnf">dnf/</a><a class="srcchip" href="#packages" data-go="zypper">zypper/</a><a class="srcchip" href="#packages" data-go="pacman">pacman/</a><a class="srcchip" href="#packages" data-go="apk">apk/</a><a class="srcchip" href="#packages" data-go="xbps">xbps/</a><a class="srcchip" href="#packages" data-go="eopkg">eopkg/</a><a class="srcchip" href="#packages" data-go="gentoo">gentoo/</a><a class="srcchip" href="https://github.com/clrealy/GURT#sources">nix/</a><a class="srcchip" href="#packages" data-go="flatpak">flatpak/</a><a class="srcchip" href="#packages" data-go="snap">snap/</a><a class="srcchip" href="#packages" data-go="gh">gh/</a><a class="srcchip" href="#packages" data-go="appimage">appimage/</a><a class="srcchip" href="#packages" data-go="pip">pip/</a><a class="srcchip" href="#packages" data-go="npm">npm/</a><a class="srcchip" href="#packages" data-go="cargo">cargo/</a><a class="srcchip" href="#packages" data-go="brew">brew/</a><a class="srcchip" href="https://github.com/clrealy/GURT#android-apps-waydroid-">android/</a></div>
     <section class="pick linuxdl" id="pick-linux" aria-labelledby="pl-h">
       <div class="pickhead"><div><h2 id="pl-h">GURT for Linux</h2><small>the GURT Setup Wizard as your distro's own package</small></div><span class="mine" hidden>your system</span></div>
       <p>Open it like any package: it installs GURT and the app, then the setup wizard runs. Updates come with your system's.</p>
       <div class="dlbtns" id="dl-linux"></div>
-      <p class="nixnote">NixOS: no package for it, so run <code>curl -fsSL https://gurtproject.org/install.sh | sh</code>. nixpkgs becomes <code>nix/</code>, and other distros' packages run through nix-ld, no box.</p>
+      <p class="nixnote">Gentoo: no package for it, so run <code>curl -fsSL https://gurtproject.org/install.sh | sh</code>. gurt uses Portage for deps, updates and your distro's own apps.</p>
     </section>
   </div>
   <aside class="getbox" id="other-os" aria-labelledby="get-h">
@@ -449,7 +449,7 @@ footer.site .cicada{color:#e7e7ea}
       <a class="frow" href="https://github.com/clrealy/GURT#convert-packages-gurt-convert-"><b>Convert anything</b><span>A .deb into an .rpm, an AppImage into a pacman package, a folder into a signed repo. Every file comes out signed.</span><i>gurt convert →</i></a>
       <a class="frow" href="https://github.com/clrealy/GURT#trust--safety-"><b>Safe by default</b><span>Signatures get checked, build scripts get a sus check before anything runs, btrfs systems get a snapshot before big upgrades.</span><i>trust + safety →</i></a>
       <a class="frow" href="https://github.com/clrealy/GURT#oops-buttons-undo-rollback-hold-exportimport-"><b>Oops buttons</b><span>Undo, roll back an update, hold a version, see your history, and take your whole app list to a new PC.</span><i>undo + rollback →</i></a>
-      <a class="frow" href="#get"><b>Runs everywhere</b><span>Every Linux distro (NixOS and ChromeOS included) and Windows through WSL. Android apps through Waydroid or your Chromebook's own Android.</span><i>download →</i></a>
+      <a class="frow" href="#get"><b>Runs everywhere</b><span>Every Linux distro (Gentoo and ChromeOS included) and Windows through WSL. Android apps through Waydroid or your Chromebook's own Android.</span><i>download →</i></a>
     </div>
   </div>
 </section>
@@ -541,7 +541,7 @@ gurt hotwyr on             <span class="c"># your package manager asks gurt when
       <div><h4>Project</h4><a href="https://github.com/clrealy/GURT">Source code</a><a href="https://github.com/clrealy/GURT#readme">Docs</a><a href="https://github.com/clrealy/GURT/issues">Report a bug</a></div>
     </div>
     <p class="fnote">
-    Works on Debian, Ubuntu, Mint, Fedora, Arch, openSUSE, Alpine, Void, Gentoo, Solus, NixOS and friends. Other sources are searched from the CLI: <code>gurt search -a &lt;term&gt;</code>.
+    Works on Debian, Ubuntu, Mint, Fedora, Arch, openSUSE, Alpine, Void, Gentoo, Solus and friends. Other sources are searched from the CLI: <code>gurt search -a &lt;term&gt;</code>.
     Recipes are user-submitted — always read the GURTBUILD (or PKGBUILD) before you install. ·
     <a href="https://github.com/clrealy/GURT">source</a> ·
     <a href="https://github.com/clrealy/GURT/blob/main/CONTRIBUTING.md">submit a package</a><br>

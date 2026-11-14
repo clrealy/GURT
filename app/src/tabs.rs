@@ -424,7 +424,7 @@ pub fn discover(app: &mut App, ui: &mut Ui) {
     ui.horizontal_wrapped(|ui| {
         ui.spacing_mut().item_spacing = vec2(4.0, 4.0);
         for (src, sub) in SOURCES {
-            if src == "nix" && !st.nix || src == "snap" && st.nixos {
+            if src == "nix" && !st.nix {
                 continue;
             }
             if w::src_btn(ui, &p, src, sub, app.src == src, src == "dirt").clicked() && app.src != src {
