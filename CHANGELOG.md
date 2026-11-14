@@ -1,5 +1,12 @@
 # GURT changelog 🦆
 
+## Not released yet
+
+### Fixed
+- **"destination path '…/gurt/repo' already exists" on every sync** when gurt was installed before `git` was (a fresh Gentoo, a tiny container): its copy of Main GURT was downloaded as a plain folder, and gurt kept trying to `git clone` over it. It swaps the folder for a real clone now. If that folder belongs to root (gurt ran with sudo once), it tells you the `chown` that fixes it.
+- **Update alerts on systems without systemd or cron** (Gentoo with OpenRC, Void with runit…): `gurt notify on` said "no systemd user session or cron here". Your desktop starts the check at login now (an autostart entry), and it starts right away too.
+- The app knows what Gentoo's Portage installed (for "installed ✓" on apps you got with emerge).
+
 ## 1.4.2: Swap 🔄
 
 One distro in, one out: gurt runs on Gentoo now, and NixOS support is gone. Plus a setup wizard that shows you what it's doing.

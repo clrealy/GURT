@@ -5706,6 +5706,8 @@ cmd_gurtd() { # config|on|off|status|log|run|autoupdate|watch|fresh|saver [on|of
   esac
 }
 
+NOTIFY_LOOP="${XDG_DATA_HOME:-$HOME/.local/share}/gurt/notify-loop.sh"
+NOTIFY_AUTOSTART="${XDG_CONFIG_HOME:-$HOME/.config}/autostart/gurt-notify.desktop"
 cmd_notify() { # [on|off|now]
   local unit_dir="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user" self; self=$(readlink -f "$0")
   case ${1:-now} in
@@ -5719,14 +5721,22 @@ cmd_notify() { # [on|off|now]
       elif command -v crontab >/dev/null; then
         ( crontab -l 2>/dev/null | grep -v 'gurt notify now'; echo "17 */6 * * * $self notify now >/dev/null 2>&1" ) | crontab -
         msg "update alerts on 🔔 (cron, every 6 hours)"
-      else die "no systemd user session or cron here to schedule it"; fi ;;
+      else   # no systemd, no cron (OpenRC, runit…): your desktop starts a small loop when you log in
+        mkdir -p "${NOTIFY_LOOP%/*}" "${NOTIFY_AUTOSTART%/*}"
+        printf '#!/bin/sh\n# gurt update alerts (gurt notify off removes this)\nsleep 900\nwhile :; do "%s" notify now >/dev/null 2>&1; sleep 21600; done\n' "$self" > "$NOTIFY_LOOP"
+        chmod 755 "$NOTIFY_LOOP"
+        printf '[Desktop Entry]\nType=Application\nName=GURT update alerts\nExec=%s\nNoDisplay=true\nX-GNOME-Autostart-enabled=true\n' "$NOTIFY_LOOP" > "$NOTIFY_AUTOSTART"
+        if ! pgrep -f "$NOTIFY_LOOP" >/dev/null 2>&1; then setsid "$NOTIFY_LOOP" >/dev/null 2>&1 < /dev/null & fi   # now, not just next login
+        msg "update alerts on 🔔 gurt checks 15 min after you log in, then every 6 hours (started by your desktop)"
+      fi ;;
     off|disable)
       systemctl --user disable --now gurt-notify.timer >/dev/null 2>&1 || true
       rm -f "$unit_dir/gurt-notify.timer" "$unit_dir/gurt-notify.service"
       command -v crontab >/dev/null && crontab -l 2>/dev/null | grep -q 'gurt notify now' && { crontab -l 2>/dev/null | grep -v 'gurt notify now' | crontab -; }
+      if [[ -f $NOTIFY_AUTOSTART ]]; then pkill -f "$NOTIFY_LOOP" 2>/dev/null || true; rm -f "$NOTIFY_AUTOSTART" "$NOTIFY_LOOP"; fi
       msg "update alerts off 🔕" ;;
     status)
-      if systemctl --user is-active gurt-notify.timer >/dev/null 2>&1 || { command -v crontab >/dev/null && crontab -l 2>/dev/null | grep -q 'gurt notify now'; }; then echo on; else echo off; fi ;;
+      if systemctl --user is-active gurt-notify.timer >/dev/null 2>&1 || { command -v crontab >/dev/null && crontab -l 2>/dev/null | grep -q 'gurt notify now'; } || [[ -f $NOTIFY_AUTOSTART ]]; then echo on; else echo off; fi ;;
     now|check)
       local n sys t
       { refresh_all; find_outdated; } >/dev/null 2>&1 || true
@@ -6124,13 +6134,22 @@ sync_main() {
     msg2 "$(find "$GURT_REPO_DIR/packages" -mindepth 1 -maxdepth 1 -type d | wc -l) packages available"
     return 0
   fi
+  local new mine; mine=$( [[ -e $GURT_REPO_DIR ]] && stat -c %U -- "$GURT_REPO_DIR" 2>/dev/null || id -un)
+  if [[ $mine != "$(id -un)" ]]; then   # made by `sudo gurt` once: git won't touch someone else's folder
+    die "gurt's copy of Main GURT ($GURT_REPO_DIR) belongs to $mine, not you (gurt ran with sudo once?). fix: sudo chown -R $(id -un): \"$GURT_CACHE\""
+  fi
   if [[ -d $GURT_REPO_DIR/.git ]]; then
     msg "syncing main GURT repo"
     git -C "$GURT_REPO_DIR" pull -q --ff-only
   else
-    msg "cloning main GURT repo from $GURT_REPO_URL"
     mkdir -p "$(dirname "$GURT_REPO_DIR")"
-    git clone -q --depth 1 -b "$GURT_BRANCH" "$GURT_REPO_URL" "$GURT_REPO_DIR"
+    if [[ -e $GURT_REPO_DIR ]]; then   # a tarball copy, from before git was here: swap it for a real clone
+      [[ $GURT_REPO_DIR == "$GURT_CACHE/repo" ]] || die "$GURT_REPO_DIR isn't a git checkout of GURT (point GURT_REPO_DIR at one)"
+      msg "switching gurt's copy of Main GURT to git (it was downloaded before git was here)"
+    else msg "cloning main GURT repo from $GURT_REPO_URL"; fi
+    new=$(mktemp -d "$(dirname "$GURT_REPO_DIR")/.repo-new.XXXXXX")
+    git clone -q --depth 1 -b "$GURT_BRANCH" "$GURT_REPO_URL" "$new" || { rm -rf -- "$new"; die "couldn't clone $GURT_REPO_URL"; }
+    rm -rf -- "$GURT_REPO_DIR" && mv -- "$new" "$GURT_REPO_DIR" || die "couldn't swap in the new copy at $GURT_REPO_DIR"
   fi
   local n; n=$(find "$GURT_REPO_DIR/packages" -mindepth 1 -maxdepth 1 -type d | wc -l)
   msg2 "$n packages available"

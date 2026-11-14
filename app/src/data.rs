@@ -365,7 +365,7 @@ pub fn has(cmd: &str) -> bool {
 }
 
 pub fn notify_on() -> bool {
-    if config_dir().join("systemd/user/gurt-notify.timer").exists() {
+    if config_dir().join("systemd/user/gurt-notify.timer").exists() || config_dir().join("autostart/gurt-notify.desktop").exists() {
         return true;
     }
     Command::new("crontab").arg("-l").stderr(Stdio::null()).output().map(|o| String::from_utf8_lossy(&o.stdout).contains("gurt notify now")).unwrap_or(false)
@@ -380,6 +380,25 @@ fn native_pkgs(pm: &str) -> HashSet<String> {
         "apk" => &["apk", "info"],
         "xbps" => &["xbps-query", "-l"],
         "eopkg" => &["eopkg", "li"],
+        // Gentoo: /var/db/pkg/<category>/<name>-<version>
+        "emerge" => {
+            let mut out = HashSet::new();
+            for cat in fs::read_dir("/var/db/pkg").into_iter().flatten().flatten() {
+                for p in fs::read_dir(cat.path()).into_iter().flatten().flatten() {
+                    let b = p.file_name().to_string_lossy().to_string();
+                    // name-1.2.3-r1 → name (the version starts at the first "-<digit>" that isn't part of the name)
+                    let mut name = b.as_str();
+                    for (i, _) in b.match_indices('-') {
+                        if b[i + 1..].starts_with(|c: char| c.is_ascii_digit()) {
+                            name = &b[..i];
+                            break;
+                        }
+                    }
+                    out.insert(name.to_lowercase());
+                }
+            }
+            return out;
+        }
         _ => return HashSet::new(),
     };
     let out = Command::new(cmd[0]).args(&cmd[1..]).stderr(Stdio::null()).output().map(|o| String::from_utf8_lossy(&o.stdout).into_owned()).unwrap_or_default();
