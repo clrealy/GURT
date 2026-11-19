@@ -1,0 +1,65 @@
+# Run Android apps on Linux like they belong there
+#
+# Work in progress: apps currently run on Waydroid, which cookie drives for
+# you. Cookie's own runtime (the oven) can prepare and boot a container but
+# cannot show an app's window yet. `cookie burnt` reports exactly what your
+# machine is missing.
+pkgname=cookie
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Run Android apps on Linux like they belong there: wrap an APK into a .cpk and open it in its own window"
+url="https://github.com/clrealy/Cookie"
+license="GPL-3.0-or-later"
+maintainer="clrealy"
+category="system"
+icon="https://raw.githubusercontent.com/clrealy/Cookie/78d3f0e2a18a2fa70c5adf629fb34a5801ea4165/assets/cookie.png"
+arch=(x86_64 aarch64)
+aliases=(cpk)
+makedepends=(rust git)
+
+# No runtime depends on purpose. Waydroid is what actually runs the apps, but
+# it is missing from several distros' official repos, so a hard dependency
+# would make cookie uninstallable on them. Cookie works without it — bake,
+# jar, burnt and kitchen all do — and when it is needed `cookie burnt` names
+# the right package for the distro you are on. Same for lxc, which only the
+# oven backend uses.
+
+# Pinned to a commit so the build is reproducible: there is no release tag yet.
+source=("cookie::git+https://github.com/clrealy/Cookie.git#commit=78d3f0e2a18a2fa70c5adf629fb34a5801ea4165")
+sha256sums=(SKIP)
+
+build() {
+  cd cookie
+  cargo build --release --locked
+}
+
+check() {
+  cd cookie
+  cargo test --release --locked
+}
+
+package() {
+  cd cookie
+  install -Dm755 target/release/cookie "$pkgdir$prefix/bin/cookie"
+
+  # Opens a double-clicked .cpk, plus the file type it is matched by.
+  # These two are generated from the same code `cookie kitchen setup` uses,
+  # so a packaged cookie and a hand-installed one behave identically.
+  install -Dm644 dist/cookie.desktop "$pkgdir$prefix/share/applications/cookie.desktop"
+  install -Dm644 dist/cookie.xml "$pkgdir$prefix/share/mime/packages/cookie.xml"
+
+  # Cookie's own launcher icon, and the one a file manager shows on a .cpk
+  install -Dm644 assets/cookie-icon.png \
+    "$pkgdir$prefix/share/icons/hicolor/256x256/apps/cookie.png"
+  install -Dm644 assets/cookie-128.png \
+    "$pkgdir$prefix/share/icons/hicolor/128x128/apps/cookie.png"
+  install -Dm644 assets/cookie-icon.png \
+    "$pkgdir$prefix/share/icons/hicolor/256x256/mimetypes/application-x-cookie-package.png"
+  install -Dm644 assets/cookie-128.png \
+    "$pkgdir$prefix/share/icons/hicolor/128x128/mimetypes/application-x-cookie-package.png"
+
+  install -Dm644 LICENSE "$pkgdir$prefix/share/licenses/$pkgname/LICENSE"
+  install -Dm644 README.md "$pkgdir$prefix/share/doc/$pkgname/README.md"
+  install -Dm644 docs/cpk-spec.md "$pkgdir$prefix/share/doc/$pkgname/cpk-spec.md"
+  install -Dm644 docs/oven.md "$pkgdir$prefix/share/doc/$pkgname/oven.md"
+}
