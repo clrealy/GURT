@@ -1,0 +1,15 @@
+pkgname = cookie
+pkgver = 0.1.0
+pkgrel = 1
+pkgdesc = Run Android apps on Linux like they belong there: wrap an APK into a .cpk and open it in its own window
+url = https://github.com/clrealy/Cookie
+license = GPL-3.0-or-later
+maintainer = clrealy
+category = system
+icon = https://raw.githubusercontent.com/clrealy/Cookie/78d3f0e2a18a2fa70c5adf629fb34a5801ea4165/assets/cookie.png
+arch = x86_64
+arch = aarch64
+makedepends = rust
+makedepends = git
+source = cookie::git+https://github.com/clrealy/Cookie.git#commit=78d3f0e2a18a2fa70c5adf629fb34a5801ea4165
+alias = cpk
