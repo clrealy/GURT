@@ -40,7 +40,9 @@ jobs:
       - name: it opens (and stays open) under a virtual display
         run: |
           file dist-app/gurt-app-aarch64 | grep -q 'ARM aarch64'
-          file dist-app/gurt-app-windows-x86_64.exe | grep -q 'PE32+ executable (GUI) x86-64'
+          # file's wording moves between versions ("PE32+ executable (GUI) x86-64" / "PE32+ executable for MS Windows 6.00 (GUI), x86-64")
+          w=$(file -b dist-app/gurt-app-windows-x86_64.exe); echo "$w"
+          for k in 'PE32+' 'GUI' 'x86-64'; do [[ $w == *"$k"* ]] || { echo "::error::the Windows app isn't a 64-bit GUI .exe"; exit 1; }; done
           ./dist-app/gurt-app-x86_64 --version
           mkdir -p "$HOME/.config/gurt" && echo '{"wizard":"done"}' > "$HOME/.config/gurt/gui.json"
           set +e; GURT_APP_SILENT=1 timeout 15 xvfb-run -a ./dist-app/gurt-app-x86_64 --gurt ./gurt; rc=$?; set -e
