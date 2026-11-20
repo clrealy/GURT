@@ -6,13 +6,13 @@
 # machine is missing.
 pkgname=cookie
 pkgver=0.1.0
-pkgrel=1
+pkgrel=6
 pkgdesc="Run Android apps on Linux like they belong there: wrap an APK into a .cpk and open it in its own window"
 url="https://github.com/clrealy/Cookie"
 license="GPL-3.0-or-later"
 maintainer="clrealy"
 category="system"
-icon="https://raw.githubusercontent.com/clrealy/Cookie/78d3f0e2a18a2fa70c5adf629fb34a5801ea4165/assets/cookie.png"
+icon="https://raw.githubusercontent.com/clrealy/Cookie/55ef06e2b7b4859a74aac22b7d834abe9327e34f/assets/cookie.png"
 arch=(x86_64 aarch64)
 aliases=(cpk)
 makedepends=(rust git)
@@ -25,7 +25,7 @@ makedepends=(rust git)
 # oven backend uses.
 
 # Pinned to a commit so the build is reproducible: there is no release tag yet.
-source=("cookie::git+https://github.com/clrealy/Cookie.git#commit=78d3f0e2a18a2fa70c5adf629fb34a5801ea4165")
+source=("cookie::git+https://github.com/clrealy/Cookie.git#commit=55ef06e2b7b4859a74aac22b7d834abe9327e34f")
 sha256sums=(SKIP)
 
 build() {
