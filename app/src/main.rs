@@ -1,3 +1,4 @@
+#![cfg_attr(windows, windows_subsystem = "windows")] // a window, not a console
 //! GURT, the app. a native window for the gurt CLI (gurt gui), the GURT Setup Wizard (--wizard) and GURTd (--daemon)
 //!   gurt-app [--gurt <path to gurt>] [--wizard [--from-app]] [--daemon] [file to install]
 mod app;
@@ -53,6 +54,9 @@ fn main() {
             _ => {}
         }
     }
+    // Windows: gurt is gurt.ps1, where install.ps1 puts it
+    #[cfg(windows)]
+    let gurt = gurt.or_else(|| std::env::var_os("LOCALAPPDATA").map(|d| std::path::Path::new(&d).join("gurt").join("bin").join("gurt.ps1").to_string_lossy().into_owned()));
     let _ = data::GURT.set(gurt.unwrap_or_else(|| "gurt".into()));
     if daemon_mode {
         std::process::exit(daemon::main());

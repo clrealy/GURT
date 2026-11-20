@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# builds GURT's app (app/) for x86_64 + aarch64, linked against glibc 2.28 so it runs on any distro from 2018 on
-#   tools/build-app.sh [out-dir]   → out-dir/gurt-app-x86_64 + out-dir/gurt-app-aarch64 (default: dist-app/)
+# builds GURT's app (app/) for x86_64 + aarch64, linked against glibc 2.28 so it runs on any distro from 2018 on,
+# and for Windows (native, x86_64: GURTSetupWizard.exe packs it)
+#   tools/build-app.sh [out-dir]   → out-dir/gurt-app-x86_64 + gurt-app-aarch64 + gurt-app-windows-x86_64.exe (default: dist-app/)
 # needs rustup + cargo-zigbuild + zig (pip install cargo-zigbuild ziglang); tools/make-setup-wizard.sh packs what it makes
 set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
@@ -21,3 +22,7 @@ for arch in x86_64 aarch64; do
   install -m755 "target/$arch-unknown-linux-gnu/release/gurt-app" "$out/gurt-app-$arch"
   echo "made $out/gurt-app-$arch"
 done
+rustup target add x86_64-pc-windows-gnu >/dev/null 2>&1 || true
+cargo zigbuild --release --locked --target x86_64-pc-windows-gnu
+install -m755 target/x86_64-pc-windows-gnu/release/gurt-app.exe "$out/gurt-app-windows-x86_64.exe"
+echo "made $out/gurt-app-windows-x86_64.exe"

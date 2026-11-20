@@ -214,7 +214,16 @@ function Install-One($spec) {
     }
   }
   $already = Installed | Where-Object { ($_.Recipe -and $_.Recipe -eq $name) -or $_.Id -eq $name -or ("$($_.Src)/$($_.Id)" -eq $spec) } | Select-Object -First 1
-  if ($already) { Say "$($already.Src)/$($already.Id) is already installed ($($already.Ver))"; return $true }
+  if ($already) {
+    # already here: bring it up to date instead (GURT's app's "update" button does this)
+    Say "$($already.Src)/$($already.Id) is already installed ($($already.Ver)), updating it"
+    switch ($already.Src) {
+      'winget' { if (WG-Upgrade $already.Id) { Record 'winget' $already.Id (WG-Version $already.Id) $already.Desc $already.Recipe } }
+      'scoop'  { & scoop update $already.Id | Out-Host; Record 'scoop' $already.Id (Scoop-Version $already.Id) $already.Desc $already.Recipe }
+      'choco'  { if (Choco-Run @('upgrade', $already.Id)) { Record 'choco' $already.Id (Choco-Version $already.Id) $already.Desc $already.Recipe } }
+    }
+    return $true
+  }
 
   $order = if ($src) { @($src) } else { $WinSources }
   foreach ($s in $order) {
@@ -291,17 +300,96 @@ function Cmd-List {
     & wsl.exe @w -e /usr/local/bin/gurt list 2>$null | ForEach-Object { Write-Host "wsl: $_" }
   }
 }
-function Cmd-Search($term) {
-  if (-not $term) { Die 'usage: gurt search <term>' }
-  Ensure-Main
-  $hits = @(Get-ChildItem (Join-Path $Repo 'packages') -Directory | Where-Object { $_.Name -like "*$term*" } | Select-Object -First 15)
-  if ($hits) {
-    Say 'Main GURT (gurt install <name>: the Windows version if there is one, else WSL)'
-    foreach ($h in $hits) { Write-Host ("  {0,-28} {1}" -f $h.Name, (InfoGet (Join-Path $h.FullName '.gurtinfo') 'pkgdesc')) }
+# search results, the way Linux gurt prints them (GURT's app reads this): "source/name version", then "    description"
+function Out-Hit($src, $name, $ver, $desc) {
+  $v = if ($ver) { ($ver -replace '\s', '') } else { 'latest' }
+  Write-Output "$src/$name $v"
+  if ($desc) { Write-Output "    $desc" }
+}
+function WG-Search($term) {
+  if (-not (Have winget)) { return }
+  $lines = @(& winget search $term @WG 2>$null | ForEach-Object { ($_ -split "`r")[-1] })
+  $hi = -1
+  for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -match '^-{5,}') { $hi = $i - 1; break } }
+  if ($hi -lt 0) { return }
+  # the columns start where the header's words do (Name Id Version ..., in your language)
+  $starts = @([regex]::Matches($lines[$hi], '\S+') | ForEach-Object { $_.Index })
+  if ($starts.Count -lt 3) { return }
+  foreach ($l in $lines[($hi + 2)..($lines.Count - 1)]) {
+    if (-not $l -or $l.Length -le $starts[2]) { continue }
+    $name = $l.Substring(0, $starts[1]).Trim()
+    $id = $l.Substring($starts[1], $starts[2] - $starts[1]).Trim()
+    $end = if ($starts.Count -gt 3 -and $l.Length -gt $starts[3]) { $starts[3] } else { $l.Length }
+    $ver = $l.Substring($starts[2], $end - $starts[2]).Trim()
+    if ($id -and $id -notmatch '\s') { Out-Hit 'winget' $id $ver $name }
   }
-  if (Have winget) { Say 'winget (gurt install winget/<Id>)'; & winget search $term @WG 2>$null | Select-Object -First 14 | ForEach-Object { Write-Host "  $_" } }
-  if (Have scoop)  { Say 'scoop (gurt install scoop/<name>)'; & scoop search $term 6>$null 2>$null | Select-Object -First 10 | ForEach-Object { Write-Host ("  {0,-28} {1}" -f $_.Name, $_.Version) } }
-  if (Have choco)  { Say 'Chocolatey (gurt install choco/<name>)'; & choco search $term --limit-output 2>$null | Select-Object -First 10 | ForEach-Object { $n, $v = $_ -split '\|'; Write-Host ("  {0,-28} {1}" -f $n, $v) } }
+}
+function Cmd-Search([string[]]$a) {
+  $a = @($a | Where-Object { $_ -ne '-a' -and $_ -ne '--all' })
+  $term = $a -join ' '
+  if (-not $term) { Die 'usage: gurt search <term>  (or winget/<term>, scoop/<term>, choco/<term>)' }
+  $src, $t = Split-Spec $term
+  if ($src -and $LinuxSources -contains $src) { $null = WSL-Gurt @('search', $term); return }
+  if ($src -and $WinSources -notcontains $src) { $src = ''; $t = $term }
+  if (-not $src) {
+    Ensure-Main
+    foreach ($h in @(Get-ChildItem (Join-Path $Repo 'packages') -Directory | Where-Object { $_.Name -like "*$t*" } | Select-Object -First 15)) {
+      Out-Hit 'gurt' $h.Name 'latest' (InfoGet (Join-Path $h.FullName '.gurtinfo') 'pkgdesc')
+    }
+  }
+  if (-not $src -or $src -eq 'winget') { WG-Search $t | Select-Object -First 40 }
+  if ((-not $src -or $src -eq 'scoop') -and (Have scoop)) {
+    & scoop search $t 6>$null 2>$null | Select-Object -First 15 | ForEach-Object { Out-Hit 'scoop' $_.Name $_.Version "from scoop's $($_.Source) bucket" }
+  }
+  if ((-not $src -or $src -eq 'choco') -and (Have choco)) {
+    & choco search $t --limit-output 2>$null | Select-Object -First 15 | ForEach-Object { $n, $v = $_ -split '\|'; Out-Hit 'choco' $n $v '' }
+  }
+}
+# what's outdated, the way Linux gurt's `gurt update` says it (GURT's app reads "  -> src/name old -> new")
+function Latest-Gurt {
+  try { return ((Invoke-RestMethod -UseBasicParsing -TimeoutSec 8 -Uri 'https://api.github.com/repos/clrealy/GURT/releases/latest').tag_name -replace '^v', '') } catch { return '' }
+}
+function Cmd-Update {
+  Say 'checking for updates'
+  $new = Latest-Gurt
+  if ($new -and $new -ne $GURT_VERSION -and ([version]($new -replace '[^0-9.].*$', '') -gt [version]($GURT_VERSION -replace '[^0-9.].*$', ''))) {
+    Warn "gurt $new is out (you have $GURT_VERSION): gurt self-update"
+  }
+  $all = Installed
+  $wg = @($all | Where-Object { $_.Src -eq 'winget' } | ForEach-Object { $_.Id })
+  if ($wg.Count -and (Have winget)) {
+    $lines = @(& winget upgrade @WG 2>$null | ForEach-Object { ($_ -split "`r")[-1] })
+    $hi = -1; for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -match '^-{5,}') { $hi = $i - 1; break } }
+    if ($hi -ge 0) {
+      $st = @([regex]::Matches($lines[$hi], '\S+') | ForEach-Object { $_.Index })
+      foreach ($l in $lines[($hi + 2)..($lines.Count - 1)]) {
+        if ($st.Count -lt 4 -or -not $l -or $l.Length -le $st[3]) { continue }
+        $id = $l.Substring($st[1], $st[2] - $st[1]).Trim()
+        $old = $l.Substring($st[2], $st[3] - $st[2]).Trim()
+        $end = if ($st.Count -gt 4 -and $l.Length -gt $st[4]) { $st[4] } else { $l.Length }
+        $newv = $l.Substring($st[3], $end - $st[3]).Trim()
+        if ($wg -contains $id) { Info "winget/$id $($old -replace '\s','') -> $($newv -replace '\s','')" }
+      }
+    }
+  }
+  if ((Have scoop) -and ($all | Where-Object { $_.Src -eq 'scoop' })) {
+    & scoop status 6>$null 2>$null | Where-Object { $_.'Latest Version' } | ForEach-Object { Info "scoop/$($_.Name) $($_.'Installed Version') -> $($_.'Latest Version')" }
+  }
+  $ch = @($all | Where-Object { $_.Src -eq 'choco' } | ForEach-Object { $_.Id })
+  if ($ch.Count -and (Have choco)) {
+    & choco outdated --limit-output 2>$null | ForEach-Object { $n, $o, $v = $_ -split '\|'; if ($ch -contains $n) { Info "choco/$n $o -> $v" } }
+  }
+}
+function Cmd-SelfUpdate {
+  $new = Latest-Gurt
+  if (-not $new) { Die "couldn't ask GitHub what the newest gurt is" }
+  if ($new -eq $GURT_VERSION) { Say "gurt $GURT_VERSION is already the newest"; return }
+  Say "updating gurt $GURT_VERSION -> $new"
+  # the installer from that release: gurt.ps1, the app, the lists
+  $env:GURT_RAW = "https://raw.githubusercontent.com/clrealy/GURT/v$new"
+  $env:GURT_RELEASE = "https://github.com/clrealy/GURT/releases/download/v$new"
+  $env:GURT_NO_WIZARD = '1'
+  Invoke-Expression (Invoke-RestMethod -UseBasicParsing "$env:GURT_RAW/install.ps1") | Out-Host
 }
 function Cmd-Upgrade {
   $all = Installed
@@ -352,7 +440,7 @@ function Cmd-Gui([string[]]$a) {
 function Cmd-Paths {
   $wsl = if ((WSL-Distros).Count -gt 0) { 'yes' } else { 'no' }
   $pm = if (Have winget) { 'winget' } elseif (Have scoop) { 'scoop' } elseif (Have choco) { 'choco' } else { 'none' }
-  "version=$GURT_VERSION", "repo=$Repo", "db=$DB", "cache=$Cache", 'dirt=off', "pm=$pm", "wsl=$wsl", 'cros=no', 'dev=no', 'nix=no', 'hook=off', 'windows=yes' | ForEach-Object { Write-Output $_ }
+  "version=$GURT_VERSION", "repo=$Repo", "db=$DB", "cache=$Cache", 'dirt=off', "pm=$pm", 'wsl=no', "wsldistro=$wsl", 'cros=no', 'dev=no', 'nix=no', 'hook=off', 'windows=yes' | ForEach-Object { Write-Output $_ }
 }
 function Cmd-Help {
   @"
@@ -365,7 +453,9 @@ gurt $GURT_VERSION for Windows: every app, from wherever it is
   gurt search <term>        Main GURT, winget, scoop and Chocolatey
   gurt info <app>           where gurt would get it
   gurt list                 what gurt installed (and what gurt installed inside WSL)
+  gurt update               what has an update waiting
   gurt upgrade              update everything gurt installed
+  gurt self-update          the newest gurt
   gurt pack [name]          package packs: a bunch of apps for one thing
   gurt sync                 refresh Main GURT's app list
   gurt gui                  GURT's app
@@ -377,7 +467,11 @@ gurt $GURT_VERSION for Windows: every app, from wherever it is
 
 # -- main --
 $rest = @()
-foreach ($x in $args) { if ($x -eq '-y' -or $x -eq '--yes' -or $x -eq '--noconfirm') { $Script:Yes = $true } else { $rest += "$x" } }
+foreach ($x in $args) {
+  if ($x -eq '-y' -or $x -eq '--yes' -or $x -eq '--noconfirm') { $Script:Yes = $true }
+  elseif ($x -in '-a', '--all', '--nodeps', '--no-system', '--force') { }   # Linux gurt's flags: nothing to do here
+  else { $rest += "$x" }
+}
 $cmd = if ($rest.Count) { $rest[0] } else { 'help' }
 $a = if ($rest.Count -gt 1) { $rest[1..($rest.Count - 1)] } else { @() }
 switch -Regex ($cmd) {
@@ -393,10 +487,12 @@ switch -Regex ($cmd) {
     if ($failed) { Die "$($a.Count - $failed.Count) of $($a.Count) installed. these didn't: $($failed -join ' ')" }
   }
   '^(remove|rm|uninstall|yeet)$' { if ($a.Count -eq 0) { Die 'remove what tho' }; foreach ($s in $a) { $null = Remove-One $s } }
-  '^(search|s)$'           { Cmd-Search ($a -join ' ') }
+  '^(search|s)$'           { Cmd-Search $a }
   '^(info)$'               { Cmd-Info ($a | Select-Object -First 1) }
   '^(list|ls)$'            { Cmd-List }
-  '^(upgrade|up|update)$'  { Cmd-Upgrade }
+  '^(upgrade|up)$'         { Cmd-Upgrade }
+  '^(update|check)$'       { Cmd-Update }
+  '^self-update$'          { Cmd-SelfUpdate }
   '^(pack|packs)$'         { Cmd-Pack $a }
   '^(sync|refresh)$'       { Sync-Main; Say "$(@(Get-ChildItem (Join-Path $Repo 'packages') -Directory).Count) packages in Main GURT" }
   '^(gui|app)$'            { Cmd-Gui $a }

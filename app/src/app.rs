@@ -816,7 +816,7 @@ impl App {
                 (Tab::Files, "Install a file"),
             ]
             .into_iter()
-            .filter(|(t, _)| *t != Tab::Desktops || !(self.st.wsl || self.st.cros))
+            .filter(|(t, _)| *t != Tab::Desktops || !(self.st.wsl || self.st.cros || self.st.windows))
             .filter(|(t, _)| *t != Tab::Files || self.width > 900.0)
             .collect();
             let logo_row = |this: &mut App, ui: &mut Ui| {
@@ -824,7 +824,7 @@ impl App {
                     ui.spacing_mut().item_spacing.y = 2.0;
                     crate::icons::logo(ui, &p, if this.src == "dirt" { 28.0 } else { 34.0 }, this.src == "dirt");
                     let mut v = format!("v{} · {}", this.st.version, this.st.pm);
-                    if this.st.wsl {
+                    if this.st.wsl || this.st.windows {
                         v += " · Windows";
                     } else if this.st.cros {
                         v += " · ChromeOS";

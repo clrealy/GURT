@@ -74,7 +74,7 @@ impl Wiz {
         if !miss.is_empty() && (self.utils || (self.srcs.contains("flatpak") && miss.iter().any(|m| m == "flatpak"))) {
             t.push(Task { label: format!("install the utilities apps need ({})", miss.join(", ")), args: s(&["-y", "utils"]), st: "", log: String::new() });
         }
-        for src in &self.srcs {
+        for src in self.srcs.iter().filter(|_| !app.st.windows) {
             if src == "flatpak" {
                 continue;
             }
@@ -86,10 +86,10 @@ impl Wiz {
         for (i, a) in self.apps.iter().enumerate() {
             t.push(Task { label: format!("install {a} ({} of {n})", i + 1), args: s(&["-y", "install", a]), st: "", log: String::new() });
         }
-        if self.hook && !app.st.hook {
+        if self.hook && !app.st.hook && !app.st.windows {
             t.push(Task { label: "turn on Hotwyr (GURT backs up your package manager)".into(), args: s(&["hotwyr", "on"]), st: "", log: String::new() });
         }
-        if self.notify && !self.doc.as_ref().is_some_and(|d| d.notify) {
+        if self.notify && !self.doc.as_ref().is_some_and(|d| d.notify) && !app.st.windows {
             t.push(Task { label: "turn on update alerts".into(), args: s(&["notify", "on"]), st: "", log: String::new() });
         }
         t
@@ -123,7 +123,7 @@ fn run_next(app: &mut App, i: usize) {
 fn finished(app: &App) {
     data::save_conf("wizard", "done".into());
     data::save_conf("seen", app.st.version.clone().into());
-    let _ = std::process::Command::new(data::gurt()).args(["__achieve", "wizard"]).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).spawn();
+    let _ = data::gurt_cmd().args(["__achieve", "wizard"]).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).spawn();
 }
 fn quit(app: &mut App, open: bool) {
     if open {
@@ -341,6 +341,10 @@ fn page(app: &mut App, ui: &mut Ui, step: usize) {
         }
         2 => {
             h(ui, "App sources");
+            if app.st.windows {
+                para(ui, "Windows apps come from winget first, then scoop, then Chocolatey. Apps that only exist for Linux go in WSL (Linux inside Windows): GURT sets it up the first time you ask for one.");
+                return;
+            }
             let pm = app.wiz.as_ref().unwrap().doc.as_ref().map(|d| format!(" ({})", d.pm)).unwrap_or_default();
             para(ui, &format!("where should GURT get apps? your own distro's repos{pm} and Main GURT always work. these are extra, and you can use any of them later too."));
             for (id, name, sub) in SRCS {
@@ -459,6 +463,10 @@ fn page(app: &mut App, ui: &mut Ui, step: usize) {
         }
         5 => {
             h(ui, "Extras");
+            if app.st.windows {
+                para(ui, "nothing extra on Windows: winget, scoop and Chocolatey are ready as they are.");
+                return;
+            }
             para(ui, "a couple more things.");
             let pm = app.wiz.as_ref().unwrap().doc.as_ref().map(|d| d.pm.clone()).unwrap_or_else(|| "your package manager".into());
             let already = app.wiz.as_ref().unwrap().doc.as_ref().is_some_and(|d| d.notify);

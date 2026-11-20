@@ -40,6 +40,7 @@ jobs:
       - name: it opens (and stays open) under a virtual display
         run: |
           file dist-app/gurt-app-aarch64 | grep -q 'ARM aarch64'
+          file dist-app/gurt-app-windows-x86_64.exe | grep -q 'PE32+ executable (GUI) x86-64'
           ./dist-app/gurt-app-x86_64 --version
           mkdir -p "$HOME/.config/gurt" && echo '{"wizard":"done"}' > "$HOME/.config/gurt/gui.json"
           set +e; GURT_APP_SILENT=1 timeout 15 xvfb-run -a ./dist-app/gurt-app-x86_64 --gurt ./gurt; rc=$?; set -e
@@ -116,6 +117,7 @@ jobs:
   # gurt on Windows: the PowerShell installer has to parse + pass PSScriptAnalyzer on a real Windows box
   windows:
     if: github.event_name == 'pull_request'
+    needs: app
     runs-on: windows-latest
     steps:
       - name: long paths (the site has a deeply nested folder Windows' 260-character limit can't hold)
@@ -151,6 +153,35 @@ jobs:
           G -y remove choco/jq
           G list | Tee-Object -Variable l; if ($l -match 'choco/jq') { throw 'jq still in gurt list' }
           G pack list
+      - uses: actions/download-artifact@v4
+        with: { name: gurt-app, path: dist-app }
+      - name: software OpenGL for this GPU-less runner (Mesa's llvmpipe next to the app; real PCs use their graphics driver)
+        shell: pwsh
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release download --repo pal1000/mesa-dist-win --pattern '*release-msvc.7z' --dir mesa
+          7z x (Get-ChildItem mesa\*.7z).FullName -omesa\x | Out-Null
+          Copy-Item mesa\x\x64\*.dll dist-app\
+      - name: GURT's app opens on Windows (and stays open)
+        shell: powershell
+        env: { GALLIUM_DRIVER: llvmpipe }
+        run: |
+          New-Item -ItemType Directory -Force -Path "$env:APPDATA\gurt" | Out-Null
+          Set-Content -Path "$env:APPDATA\gurt\gui.json" -Value '{"wizard":"done"}'
+          $env:GURT_APP_SILENT = '1'
+          $p = Start-Process -FilePath "$PWD\dist-app\gurt-app-windows-x86_64.exe" -ArgumentList '--gurt', "$PWD\gurt.ps1", '--size', '1280x800' -PassThru
+          Start-Sleep -Seconds 20
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+          [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+          $bmp.Save("$PWD\gurt-app-windows.png")
+          if ($p.HasExited) { Write-Host "::error::GURT's app quit by itself on Windows (exit $($p.ExitCode))"; exit 1 }
+          Stop-Process -Id $p.Id -Force
+          Write-Host "GURT's app ran on Windows ✅"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: gurt-app-windows-screenshot, path: gurt-app-windows.png, if-no-files-found: ignore }
 
   # builds every recipe the PR touched, on a few different distros
   build:

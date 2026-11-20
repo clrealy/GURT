@@ -240,14 +240,14 @@ You need `bash`, `git`, GNU `tar`, and `curl` or `wget`. The foreign sources als
 
 ### On Windows 🪟
 
-gurt runs on Windows through **WSL** (the Linux that's built into Windows). Run `GURTSetupWizard.exe` from the [latest release](https://github.com/clrealy/GURT/releases/latest).
+gurt runs natively on Windows 10 / 11. Run `GURTSetupWizard.exe` from the [latest release](https://github.com/clrealy/GURT/releases/latest) (no admin needed), or in PowerShell: `irm https://raw.githubusercontent.com/clrealy/GURT/main/install.ps1 | iex`.
 
-- **No WSL yet?** It installs WSL + Ubuntu for you (Windows asks for admin and might want a reboot). Open Ubuntu once to make your Linux user, then run the wizard again.
-- It installs gurt inside WSL and adds a `gurt` command to Windows, so `gurt install firefox` works straight from PowerShell or cmd.
-- **GURT** shows up in your Start menu, and Linux apps you install show up there too (WSLg, on Windows 11 or Windows 10 21H2+).
-- Want a different distro than your default? set `GURT_WSL_DISTRO=Debian` in your environment before running the wizard.
-- Linux desktops (`gurt de`) don't make sense on Windows, so they're turned off there. Snaps need systemd switched on in WSL; gurt tells you how.
-
+- **`gurt install firefox`** gets the Windows version: **winget** first, then **scoop**, then **Chocolatey**, whichever has it. Main GURT names work (`gurt install gimp`), and so does picking one: `gurt install winget/Mozilla.Firefox`, `scoop/neovim`, `choco/7zip`.
+- **Apps that only exist for Linux go in WSL** (Linux inside Windows). No WSL yet? gurt offers to set it up the first time you ask for one, then installs gurt in there too. Linux sources work the same way: `gurt install apt/cowsay`, `aur/yay`, `flatpak/…`. Their apps show up in your Start menu (WSLg).
+- **`gurt list`, `gurt remove`, `gurt update` / `upgrade`, `gurt search`, `gurt info`, `gurt pack`** all work, for what gurt installed with winget, scoop and Chocolatey and for what it put in WSL. The rest of gurt (`convert`, `hogs`, the lottery…) runs in WSL: `gurt wsl <anything>`.
+- **GURT's app is a real Windows app** now (no WSL needed), with every skin. The Windows 11, XP and 95 skins finally get their real fonts 🪟
+- winget installs most apps for your user; Chocolatey needs admin, so Windows asks when one installs. Want a different WSL distro than your default? Set `GURT_WSL_DISTRO=Debian`.
+- Recipes can say what an app is called on Windows: `win_winget=`, `win_scoop=`, `win_choco=`, or `win=no` for Linux-only apps.
 ### Linux From Scratch 🐧
 
 LFS has no package manager on purpose, so gurt fills in: it spots LFS (`/etc/lfs-release`) and handles deps itself.
@@ -419,7 +419,7 @@ gurt gui
 
 Opens GURT as an app: browse Main GURT, search every source, install or remove with one click, and see updates, holds and rollbacks, with gurt's output live at the bottom. When something needs sudo, it asks for your password in the app. After the first run, **GURT** is in your app menu (with its icon 🦆). The ☀️/🌙 button up top flips between light and dark. It starts on your system theme and remembers what you pick (`~/.config/gurt/gui.json`).
 
-It's a native app written in Rust (`app/`, with egui): one ~10 MB program, no browser, no python, no server. The GURTSetupWizard packages bring it for x86_64 and aarch64. Installed with `install.sh` or from a git checkout? `gurt gui` downloads the one for your CPU from GURT's GitHub release and checks it against the release's `SHA256SUMS` (no release file for your version yet: it builds it with cargo). `gurt gui --setup` also installs the few libraries a window needs (EGL and xkbcommon) if your system doesn't have them. It runs X11 and Wayland, and on Windows it opens through WSLg.
+It's a native app written in Rust (`app/`, with egui): one ~10 MB program, no browser, no python, no server. The GURTSetupWizard packages bring it for x86_64 and aarch64. Installed with `install.sh` or from a git checkout? `gurt gui` downloads the one for your CPU from GURT's GitHub release and checks it against the release's `SHA256SUMS` (no release file for your version yet: it builds it with cargo). `gurt gui --setup` also installs the few libraries a window needs (EGL and xkbcommon) if your system doesn't have them. It runs X11 and Wayland, and on Windows it's a native Windows app (`gurt-app-windows-x86_64.exe`, which GURTSetupWizard.exe brings).
 
 **Sound effects 🔊**: clicks, lottery ticks + a jackpot jingle, a chime when something finishes (a buzz if it fails). The 🔊 button mutes them, and the app and the website both remember it. In the app, every skin has its own sound set: Windows 11 is soft and round, XP gets bells and a big swelly startup-style chord, and 95 is chunky square waves with a brassy ta-da. Switching skins plays its "startup" sound. They're all homemade synth lookalikes, not Microsoft's actual sound files. The website has its own 🌙/☀️ dark mode button too.
 

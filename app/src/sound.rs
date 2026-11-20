@@ -1,7 +1,9 @@
 //! sound effects + background music, synthesized live (no audio files), every skin with its own set.
-//! the samples go to paplay / pw-cat / aplay, so the app needs no audio library of its own
+//! the samples go to paplay / pw-cat / aplay (Windows: its own waveOut API), so the app needs no audio library of its own
 use crate::skin::Skin;
+#[cfg(unix)]
 use std::io::Write;
+#[cfg(unix)]
 use std::process::{Child, Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -26,6 +28,97 @@ fn player() -> Option<Vec<&'static str>> {
     cands.iter().find(|c| crate::data::has(c[0])).map(|c| c.to_vec())
 }
 
+/// plays the track over and over until `stop`
+#[cfg(windows)]
+fn music_loop(pcm: &[u8], stop: &AtomicBool) {
+    while !stop.load(Ordering::Relaxed) && winaudio::play(pcm, Some(stop)) {}
+}
+#[cfg(unix)]
+fn music_loop(pcm: &[u8], stop: &AtomicBool) {
+    let Some(mut ch) = spawn_player() else { return };
+    let Some(mut w) = ch.stdin.take() else { return };
+    // small chunks: the player's pipe paces us, and a stop lands within a fraction of a second
+    'outer: while !stop.load(Ordering::Relaxed) {
+        for chunk in pcm.chunks(8820) {
+            if stop.load(Ordering::Relaxed) || w.write_all(chunk).is_err() {
+                break 'outer;
+            }
+        }
+    }
+    drop(w);
+    let _ = ch.kill();
+    let _ = ch.wait();
+}
+
+/// can this computer play sound?
+fn can_play() -> bool {
+    cfg!(windows) || player().is_some()
+}
+
+// ── Windows: waveOut (winmm, part of every Windows). each sound gets its own stream, Windows mixes them ──
+#[cfg(windows)]
+mod winaudio {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    #[repr(C, packed)]
+    struct WaveFormatEx { tag: u16, channels: u16, rate: u32, bytes_per_sec: u32, block_align: u16, bits: u16, extra: u16 }
+    #[repr(C)]
+    struct WaveHdr { data: *mut u8, len: u32, recorded: u32, user: usize, flags: u32, loops: u32, next: *mut WaveHdr, reserved: usize }
+    #[link(name = "winmm")]
+    extern "system" {
+        fn waveOutOpen(h: *mut isize, dev: u32, fmt: *const WaveFormatEx, cb: usize, inst: usize, flags: u32) -> u32;
+        fn waveOutPrepareHeader(h: isize, hdr: *mut WaveHdr, size: u32) -> u32;
+        fn waveOutWrite(h: isize, hdr: *mut WaveHdr, size: u32) -> u32;
+        fn waveOutUnprepareHeader(h: isize, hdr: *mut WaveHdr, size: u32) -> u32;
+        fn waveOutReset(h: isize) -> u32;
+        fn waveOutClose(h: isize) -> u32;
+    }
+    const WHDR_DONE: u32 = 1;
+    /// plays 16-bit mono 44.1 kHz PCM, blocking until it's done (or `stop` is set). false: no sound device
+    pub fn play(pcm: &[u8], stop: Option<&AtomicBool>) -> bool {
+        let fmt = WaveFormatEx { tag: 1, channels: 1, rate: 44100, bytes_per_sec: 88200, block_align: 2, bits: 16, extra: 0 };
+        let mut h: isize = 0;
+        if unsafe { waveOutOpen(&mut h, u32::MAX, &fmt, 0, 0, 0) } != 0 {
+            return false;
+        }
+        let size = std::mem::size_of::<WaveHdr>() as u32;
+        // a few 100 ms buffers in flight: smooth, and a stop lands quickly
+        let mut bufs: Vec<Vec<u8>> = pcm.chunks(8820).map(|c| c.to_vec()).collect();
+        let mut hdrs: Vec<Box<WaveHdr>> = Vec::new();
+        let (mut next, mut done) = (0usize, 0usize);
+        while done < bufs.len() {
+            if stop.is_some_and(|s| s.load(Ordering::Relaxed)) {
+                break;
+            }
+            while next < bufs.len() && next - done < 4 {
+                let b = &mut bufs[next];
+                let mut hdr = Box::new(WaveHdr { data: b.as_mut_ptr(), len: b.len() as u32, recorded: 0, user: 0, flags: 0, loops: 0, next: std::ptr::null_mut(), reserved: 0 });
+                unsafe {
+                    waveOutPrepareHeader(h, &mut *hdr, size);
+                    waveOutWrite(h, &mut *hdr, size);
+                }
+                hdrs.push(hdr);
+                next += 1;
+            }
+            // flags is written by Windows while it plays
+            if unsafe { std::ptr::read_volatile(&hdrs[done].flags) } & WHDR_DONE != 0 {
+                unsafe { waveOutUnprepareHeader(h, &mut *hdrs[done], size) };
+                done += 1;
+            } else {
+                std::thread::sleep(std::time::Duration::from_millis(10));
+            }
+        }
+        unsafe {
+            waveOutReset(h);
+            for hdr in hdrs.iter_mut().skip(done) {
+                waveOutUnprepareHeader(h, &mut **hdr, size);
+            }
+            waveOutClose(h);
+        }
+        true
+    }
+}
+
+#[cfg(unix)]
 fn spawn_player() -> Option<Child> {
     let p = player()?;
     Command::new(p[0]).args(&p[1..]).stdin(Stdio::piped()).stdout(Stdio::null()).stderr(Stdio::null()).spawn().ok()
@@ -494,8 +587,8 @@ impl Sound {
     pub fn new(skin: Skin) -> Sound {
         let track = crate::data::conf_str("track").filter(|t| TRACKS.iter().any(|x| x.0 == t)).unwrap_or_else(|| "auto".into());
         let mut s = Sound { sfx_on: crate::data::conf_bool("sfx", true), music_on: crate::data::conf_bool("music", true), track, skin, playing: None };
-        if std::env::var_os("GURT_APP_SILENT").is_some() || player().is_none() {
-            s.sfx_on = s.sfx_on && player().is_some() && std::env::var_os("GURT_APP_SILENT").is_none();
+        if std::env::var_os("GURT_APP_SILENT").is_some() || !can_play() {
+            s.sfx_on = s.sfx_on && can_play() && std::env::var_os("GURT_APP_SILENT").is_none();
         }
         s.sync_music();
         s
@@ -511,6 +604,9 @@ impl Sound {
         let name = name.to_string();
         std::thread::spawn(move || {
             let Some(buf) = sfx(skin, &name) else { return };
+            #[cfg(windows)]
+            winaudio::play(&to_pcm(&buf), None);
+            #[cfg(unix)]
             if let Some(mut ch) = spawn_player() {
                 if let Some(mut w) = ch.stdin.take() {
                     let _ = w.write_all(&to_pcm(&buf));
@@ -554,7 +650,7 @@ impl Sound {
     }
     /// start / stop / switch the music to match the settings
     pub fn sync_music(&mut self) {
-        let want = (self.music_on && !Self::silent() && player().is_some()).then(|| self.want());
+        let want = (self.music_on && !Self::silent() && can_play()).then(|| self.want());
         if self.playing.as_ref().map(|p| &p.0) == want.as_ref() {
             return;
         }
@@ -566,19 +662,7 @@ impl Sound {
         self.playing = Some((id.clone(), stop.clone()));
         std::thread::spawn(move || {
             let pcm = to_pcm(&render_track(&id));
-            let Some(mut ch) = spawn_player() else { return };
-            let Some(mut w) = ch.stdin.take() else { return };
-            // small chunks: the player's pipe paces us, and a stop lands within a fraction of a second
-            'outer: while !stop.load(Ordering::Relaxed) {
-                for chunk in pcm.chunks(8820) {
-                    if stop.load(Ordering::Relaxed) || w.write_all(chunk).is_err() {
-                        break 'outer;
-                    }
-                }
-            }
-            drop(w);
-            let _ = ch.kill();
-            let _ = ch.wait();
+            music_loop(&pcm, &stop);
         });
     }
 }

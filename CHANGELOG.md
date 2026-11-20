@@ -1,5 +1,13 @@
 # GURT changelog 🦆
 
+## Not released yet
+
+### New
+- **GURT on Windows is native now 🪟** `gurt install firefox` on Windows gets the Windows version from winget, then scoop, then Chocolatey. Apps that only exist for Linux go in WSL, and gurt offers to set WSL up the first time you ask for one (no WSL needed before that). `winget/`, `scoop/` and `choco/` are sources you can pick, and `apt/`, `aur/`, `flatpak/`… go to WSL. `gurt list`, `remove`, `update`, `upgrade`, `search`, `info` and `pack` work on all of it.
+- **GURT's app runs natively on Windows** (no WSLg), with every skin, its sounds and music, and the Windows skins in their real Windows fonts. The setup wizard and the Setup tab skip what's Linux-only there.
+- GURTSetupWizard.exe needs no admin anymore, and doesn't set up WSL until an app needs it.
+- Recipes can name an app's Windows package: `win_winget=`, `win_scoop=`, `win_choco=` (or `win=no` for Linux-only apps).
+
 ## 1.4.2: Swap 🔄
 
 One distro in, one out: gurt runs on Gentoo now, and NixOS support is gone. Plus a setup wizard that shows you what it's doing.
