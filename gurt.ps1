@@ -169,6 +169,9 @@ function Ensure-WSL {
   if (-not (Have wsl.exe)) { Die 'this Windows has no WSL, and Linux-only apps need it (Windows 10 2004+ or Windows 11)' }
   $d = WSL-Distros
   if ($d.Count -eq 0) {
+    # setting up WSL wants admin + maybe a reboot: only when someone is at a terminal to say yes (not from the app, not -y in a script)
+    if ([Console]::IsInputRedirected -or -not [Environment]::UserInteractive) { Die "that's Linux-only, so it needs WSL, which isn't set up. run the same gurt install in PowerShell and gurt offers to set WSL up" }
+    $Script:Yes = $false
     if (-not (Ask 'that app is Linux-only, so it needs WSL (Linux inside Windows). set up WSL + Ubuntu now? (Windows asks for admin, may want a reboot)')) { Die 'no WSL, no Linux apps' }
     Start-Process wsl.exe -ArgumentList '--install', '-d', 'Ubuntu' -Verb RunAs -Wait
     Say 'WSL is installing. when it is done:'
@@ -188,7 +191,7 @@ function Ensure-WSL {
 function WSL-Gurt([string[]]$a) {
   Ensure-WSL
   $w = WSL-Args
-  $y = if ($Script:Yes) { @('-y') } else { @() }
+  $y = @(if ($Script:Yes) { '-y' })
   & wsl.exe @w -e /usr/local/bin/gurt @y @a | Out-Host
   return $LASTEXITCODE
 }
@@ -226,7 +229,7 @@ function Install-One($spec) {
     return $true
   }
 
-  $order = if ($src) { @($src) } else { $WinSources }
+  $order = @(if ($src) { $src } else { $WinSources })
   foreach ($s in $order) {
     $want = if ($pins[$s]) { $pins[$s] } else { $name }
     switch ($s) {
@@ -474,7 +477,7 @@ foreach ($x in $args) {
   else { $rest += "$x" }
 }
 $cmd = if ($rest.Count) { $rest[0] } else { 'help' }
-$a = if ($rest.Count -gt 1) { $rest[1..($rest.Count - 1)] } else { @() }
+$a = @($rest | Select-Object -Skip 1)   # always a list: $rest[1..1] would be one string, and $a[0] its first letter
 switch -Regex ($cmd) {
   '^(install|i|get|add)$' {
     if ($a.Count -eq 0) { Die 'install what tho' }
