@@ -2,14 +2,23 @@
 //! sudo asks for your password through us: SUDO_ASKPASS is a tiny script that runs `gurt-app --askpass`, which talks to
 //! this app over a private unix socket (0600, in a 0700 folder) and waits until you answer in the window.
 use std::collections::HashMap;
-use std::io::{BufRead, BufReader, Read, Write};
+#[cfg(unix)]
+use std::io::{BufRead, BufReader};
+use std::io::{Read, Write};
+#[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
+#[cfg(unix)]
 use std::os::unix::net::{UnixListener, UnixStream};
+#[cfg(unix)]
 use std::os::unix::process::CommandExt;
+#[cfg(unix)]
 use std::path::PathBuf;
-use std::process::{Child, Command, Stdio};
+#[cfg(windows)]
+use std::process::Command;
+use std::process::{Child, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Condvar, Mutex, OnceLock};
+#[cfg(unix)]
 use std::time::Duration;
 
 #[derive(Default)]
@@ -21,6 +30,7 @@ pub struct JobState {
     pub live: String,               // a progress line that's still updating (downloads redraw it with \r)
     answer: Option<Option<String>>, // Some(Some(pw)) = typed, Some(None) = cancel
     pw: Option<String>,             // the password you typed, remembered until the job ends (sudo runs more than once)
+    #[cfg_attr(windows, allow(dead_code))]
     pw_sudo: i64,                   // …and which sudo it was for
     pid: Option<i32>,
 }
@@ -70,12 +80,19 @@ impl Job {
             return;
         }
         if let (Some(pid), false) = (s.pid, s.done) {
-            unsafe { libc::killpg(pid, libc::SIGTERM) };
+            #[cfg(unix)]
+            unsafe {
+                libc::killpg(pid, libc::SIGTERM)
+            };
+            // Windows: gurt.ps1 and whatever it started (winget, choco…), the whole tree
+            #[cfg(windows)]
+            let _ = crate::data::hidden(Command::new("taskkill").args(["/T", "/F", "/PID", &pid.to_string()])).stdout(Stdio::null()).stderr(Stdio::null()).status();
         }
     }
 }
 
 static JOBS: OnceLock<Mutex<HashMap<String, Arc<Job>>>> = OnceLock::new();
+#[cfg(unix)]
 static ASKPASS: OnceLock<(PathBuf, PathBuf)> = OnceLock::new(); // (askpass script, socket)
 static NEXT: AtomicU64 = AtomicU64::new(1);
 pub static REPAINT: OnceLock<Box<dyn Fn() + Send + Sync>> = OnceLock::new();
@@ -98,7 +115,7 @@ pub fn start(args: Vec<String>, stdin: Option<String>) -> Arc<Job> {
     job.st.lock().unwrap().lines.push(format!("$ {title}"));
     let j = job.clone();
     std::thread::spawn(move || {
-        let mut cmd = Command::new(crate::data::gurt());
+        let mut cmd = crate::data::gurt_cmd();
         cmd.args(&args)
             .env("GURT_GUI", "1")
             .env("NO_COLOR", "1")
@@ -107,14 +124,17 @@ pub fn start(args: Vec<String>, stdin: Option<String>) -> Arc<Job> {
             .stderr(Stdio::piped())
             .stdin(if stdin.is_some() { Stdio::piped() } else { Stdio::null() })
             ; // setsid below: its own session + process group, no controlling tty → sudo uses askpass
-        if let Some((script, sock)) = ASKPASS.get() {
-            cmd.env("SUDO_ASKPASS", script).env("GURT_APP_SOCK", sock);
-        }
-        unsafe {
-            cmd.pre_exec(|| {
-                libc::setsid();
-                Ok(())
-            });
+        #[cfg(unix)]
+        {
+            if let Some((script, sock)) = ASKPASS.get() {
+                cmd.env("SUDO_ASKPASS", script).env("GURT_APP_SOCK", sock);
+            }
+            unsafe {
+                cmd.pre_exec(|| {
+                    libc::setsid();
+                    Ok(())
+                });
+            }
         }
         match cmd.spawn() {
             Ok(mut child) => {
@@ -191,6 +211,7 @@ fn read_lines(mut r: impl Read, j: &Arc<Job>) {
 }
 
 // ── 🔑 the password bridge ──
+#[cfg(unix)]
 pub fn setup_askpass() {
     let base = std::env::var_os("XDG_RUNTIME_DIR").map(PathBuf::from).filter(|p| p.is_dir()).unwrap_or_else(std::env::temp_dir);
     let dir = base.join(format!("gurt-app-{}", std::process::id()));
@@ -212,6 +233,7 @@ pub fn setup_askpass() {
         }
     });
 }
+#[cfg(unix)]
 pub fn cleanup_askpass() {
     if let Some((script, _)) = ASKPASS.get() {
         if let Some(d) = script.parent() {
@@ -221,6 +243,7 @@ pub fn cleanup_askpass() {
 }
 
 /// one sudo asking: "job \t sudo's pid \t prompt\n" → "ok \t password\n" or "cancel\n"
+#[cfg(unix)]
 fn serve_ask(mut s: UnixStream) {
     let mut line = String::new();
     if BufReader::new(&s).read_line(&mut line).is_err() {
@@ -265,6 +288,7 @@ fn serve_ask(mut s: UnixStream) {
 }
 
 /// `gurt-app --askpass <prompt>`: what sudo runs. asks the app, prints the password for sudo
+#[cfg(unix)]
 pub fn askpass_main(prompt: String) -> i32 {
     let (Ok(sock), Ok(job)) = (std::env::var("GURT_APP_SOCK"), std::env::var("GURT_APP_JOB")) else { return 1 };
     let Ok(mut s) = UnixStream::connect(sock) else { return 1 };
@@ -282,4 +306,14 @@ pub fn askpass_main(prompt: String) -> i32 {
         }
         _ => 1,
     }
+}
+
+// Windows: no sudo. winget and Chocolatey ask Windows for admin themselves (the UAC prompt)
+#[cfg(windows)]
+pub fn setup_askpass() {}
+#[cfg(windows)]
+pub fn cleanup_askpass() {}
+#[cfg(windows)]
+pub fn askpass_main(_prompt: String) -> i32 {
+    1
 }

@@ -23,7 +23,7 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
  {"@type":"WebSite","name":"GURT","alternateName":["GURT Universal Repository Thingy","GURT Project","gurtproject"],"url":"https://gurtproject.org/"},
- {"@type":"SoftwareApplication","name":"GURT","alternateName":"GURT Universal Repository Thingy","applicationCategory":"UtilitiesApplication","applicationSubCategory":"Package manager","operatingSystem":"Linux, Windows (WSL)","url":"https://gurtproject.org/","downloadUrl":"https://github.com/clrealy/GURT/releases/latest","image":"https://gurtproject.org/assets/social-card.png","license":"https://opensource.org/licenses/MIT","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"clrealy","url":"https://github.com/clrealy"},"sameAs":["https://github.com/clrealy/GURT"]}
+ {"@type":"SoftwareApplication","name":"GURT","alternateName":"GURT Universal Repository Thingy","applicationCategory":"UtilitiesApplication","applicationSubCategory":"Package manager","operatingSystem":"Linux, Windows","url":"https://gurtproject.org/","downloadUrl":"https://github.com/clrealy/GURT/releases/latest","image":"https://gurtproject.org/assets/social-card.png","license":"https://opensource.org/licenses/MIT","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"clrealy","url":"https://github.com/clrealy"},"sameAs":["https://github.com/clrealy/GURT"]}
 ]}
 </script>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v=4">
@@ -407,11 +407,11 @@ footer.site .cicada{color:#e7e7ea}
   </div>
   <aside class="getbox" id="other-os" aria-labelledby="get-h">
     <h2 class="gethead" id="get-h">Other Operating Systems</h2>
-    <p class="getsub" id="getsub">GURT on Windows (through WSL) and on Chromebooks.</p>
+    <p class="getsub" id="getsub">GURT on Windows (native) and on Chromebooks.</p>
     <div class="choose">
       <details class="pick" id="pick-win">
-        <summary class="pickhead"><div><h2 id="pw-h">GURT for Windows</h2><small>Windows 10 / 11, through WSL</small></div><span class="mine" hidden>your system</span></summary>
-        <p>Sets up WSL if you don't have it, installs GURT inside it, and puts a <code>gurt</code> command and the GURT app in your Start menu. Linux apps you install show up there too.</p>
+        <summary class="pickhead"><div><h2 id="pw-h">GURT for Windows</h2><small>Windows 10 / 11, native</small></div><span class="mine" hidden>your system</span></summary>
+        <p>Native: <code>gurt install firefox</code> gets the Windows version from winget, then scoop, then Chocolatey. Apps that only exist for Linux go in WSL, which GURT sets up the first time you ask for one. You get a <code>gurt</code> command and the GURT app in your Start menu, no admin needed.</p>
         <div class="dlbtns" id="dl-win"></div>
 <div class="smartscreen" id="smartscreen" hidden>
         <b>Windows might say "Windows protected your PC". GURT isn't malware, here's why that shows up:</b>
@@ -449,7 +449,7 @@ footer.site .cicada{color:#e7e7ea}
       <a class="frow" href="https://github.com/clrealy/GURT#convert-packages-gurt-convert-"><b>Convert anything</b><span>A .deb into an .rpm, an AppImage into a pacman package, a folder into a signed repo. Every file comes out signed.</span><i>gurt convert →</i></a>
       <a class="frow" href="https://github.com/clrealy/GURT#trust--safety-"><b>Safe by default</b><span>Signatures get checked, build scripts get a sus check before anything runs, btrfs systems get a snapshot before big upgrades.</span><i>trust + safety →</i></a>
       <a class="frow" href="https://github.com/clrealy/GURT#oops-buttons-undo-rollback-hold-exportimport-"><b>Oops buttons</b><span>Undo, roll back an update, hold a version, see your history, and take your whole app list to a new PC.</span><i>undo + rollback →</i></a>
-      <a class="frow" href="#get"><b>Runs everywhere</b><span>Every Linux distro (Gentoo and ChromeOS included) and Windows through WSL. Android apps through Waydroid or your Chromebook's own Android.</span><i>download →</i></a>
+      <a class="frow" href="#get"><b>Runs everywhere</b><span>Every Linux distro (Gentoo and ChromeOS included) and Windows, natively (winget, scoop and Chocolatey, plus WSL for Linux-only apps). Android apps through Waydroid or your Chromebook's own Android.</span><i>download →</i></a>
     </div>
   </div>
 </section>

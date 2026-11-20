@@ -11,18 +11,58 @@ pub fn gurt() -> &'static str {
 }
 
 pub fn home() -> PathBuf {
+    #[cfg(windows)]
+    if let Some(h) = std::env::var_os("USERPROFILE") {
+        return PathBuf::from(h);
+    }
     std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("/"))
 }
 pub fn config_dir() -> PathBuf {
+    #[cfg(windows)]
+    if let Some(d) = std::env::var_os("APPDATA") {
+        return PathBuf::from(d);
+    }
     std::env::var_os("XDG_CONFIG_HOME").map(PathBuf::from).filter(|p| p.is_absolute()).unwrap_or_else(|| home().join(".config"))
 }
 pub fn state_dir() -> PathBuf {
+    #[cfg(windows)]
+    if let Some(d) = std::env::var_os("LOCALAPPDATA") {
+        return PathBuf::from(d);
+    }
     std::env::var_os("XDG_STATE_HOME").map(PathBuf::from).filter(|p| p.is_absolute()).unwrap_or_else(|| home().join(".local/state"))
+}
+
+/// a gurt command, ready for args: gurt itself on Linux; on Windows gurt.ps1 through PowerShell, with no console window
+pub fn gurt_cmd() -> Command {
+    let g = gurt();
+    #[cfg(windows)]
+    if g.to_ascii_lowercase().ends_with(".ps1") {
+        let mut c = Command::new("powershell.exe");
+        c.args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", g]);
+        hidden(&mut c);
+        return c;
+    }
+    let mut c = Command::new(g);
+    hidden(&mut c);
+    c
+}
+/// Windows: start it without flashing a console window (no-op elsewhere)
+pub fn hidden(c: &mut Command) -> &mut Command {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        c.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+    }
+    c
+}
+/// gurt.ps1's db folders are <source>@<id> (Windows can't have ':' in a name); everywhere else <source>:<id>
+pub fn split_key(key: &str) -> Option<(&str, &str)> {
+    key.split_once(':').or_else(|| if cfg!(windows) { key.split_once('@') } else { None })
 }
 
 /// run gurt quietly (no colours) and hand back what it printed
 pub fn gurt_out(args: &[&str]) -> String {
-    Command::new(gurt())
+    gurt_cmd()
         .args(args)
         .env("NO_COLOR", "1")
         .env("GURT_PLAIN", "1")
@@ -32,8 +72,9 @@ pub fn gurt_out(args: &[&str]) -> String {
         .map(|o| String::from_utf8_lossy(&o.stdout).into_owned())
         .unwrap_or_default()
 }
+#[cfg(unix)]
 pub fn gurt_out_all(args: &[&str]) -> String {
-    Command::new(gurt())
+    gurt_cmd()
         .args(args)
         .env("NO_COLOR", "1")
         .env("GURT_PLAIN", "1")
@@ -184,6 +225,7 @@ pub struct State {
     pub dirt: bool,
     pub wsl: bool,
     pub cros: bool,
+    pub windows: bool, // native gurt on Windows (gurt.ps1)
     pub nix: bool,
     pub hook: bool,
     pub dev: String,
@@ -512,7 +554,7 @@ pub fn load_state() -> State {
     for key in keys {
         let info = kv(&db.join(&key).join("info"));
         let reason = fs::read_to_string(db.join(&key).join("reason")).map(|s| s.trim().to_string()).unwrap_or_default();
-        let (mut src, mut name) = match key.split_once(':') {
+        let (mut src, mut name) = match split_key(&key) {
             Some((a, b)) => (a.to_string(), b.to_string()),
             None => ("gurt".to_string(), key.clone()),
         };
@@ -540,7 +582,7 @@ pub fn load_state() -> State {
         .filter(|(n, _)| !gurt_keys.contains(n) && !main.iter().any(|a| &a.name == n && gurt_keys.contains(&a.ikey)))
         .collect();
     State {
-        version: g("version"), pm: g("pm"), dirt: g("dirt") == "on", wsl: g("wsl") == "yes", cros: g("cros") == "yes",
+        version: g("version"), pm: g("pm"), dirt: g("dirt") == "on", wsl: g("wsl") == "yes", cros: g("cros") == "yes", windows: g("windows") == "yes",
         nix: g("nix") == "yes", hook: g("hook") == "on", dev, unlocks, all_unlocked: all,
         fossonly: strict, notify: notify_on(), vibes: vibes(&repo), packs: packs(&repo), ghonly: ghonly(&repo),
         main, dirtpkgs, installed, outside, cache: g("cache"), repo,
@@ -757,9 +799,17 @@ pub struct Doctor {
     pub wsl: bool,
     pub cros: bool,
     pub sudo: bool,
+    pub root: String, // what gurt uses for root: sudo / doas / root (you are) / "" (none)
     pub missing: Vec<String>,
     pub notify: bool,
 }
+// Windows: winget / scoop / Chocolatey need nothing extra, and admin is asked for when an app needs it
+#[cfg(windows)]
+pub fn doctor() -> Doctor {
+    let p = paths();
+    Doctor { distro: "Windows".into(), pm: p.get("pm").cloned().unwrap_or_else(|| "?".into()), wsl: false, cros: false, sudo: true, root: String::new(), missing: vec![], notify: false }
+}
+#[cfg(unix)]
 pub fn doctor() -> Doctor {
     let out = gurt_out_all(&["utils", "list"]);
     let missing = out
@@ -780,6 +830,7 @@ pub fn doctor() -> Doctor {
         wsl: p.get("wsl").is_some_and(|v| v == "yes"),
         cros: p.get("cros").is_some_and(|v| v == "yes"),
         sudo: euid == 0 || has("sudo") || has("doas"),
+        root: p.get("root").cloned().unwrap_or_else(|| if euid == 0 { "root" } else if has("sudo") { "sudo" } else if has("doas") { "doas" } else { "" }.into()),
         missing,
         notify: notify_on(),
     }
@@ -814,11 +865,18 @@ pub fn lotto_spin() -> Lotto {
     let rarity = if r < leg { "legendary" } else if r < leg + 70 { "epic" } else if r < leg + 290 { "rare" } else { "common" };
     Lotto { streak, best, rarity }
 }
+/// a time → your local date + time (localtime_r on Linux, localtime_s on Windows)
+unsafe fn local_tm(t: &libc::time_t, tm: &mut libc::tm) {
+    #[cfg(unix)]
+    libc::localtime_r(t, tm);
+    #[cfg(windows)]
+    libc::localtime_s(tm, t);
+}
 /// (today, yesterday) as YYYY-MM-DD, local time
 fn today() -> (String, String) {
     let fmt = |t: libc::time_t| unsafe {
         let mut tm: libc::tm = std::mem::zeroed();
-        libc::localtime_r(&t, &mut tm);
+        local_tm(&t, &mut tm);
         format!("{:04}-{:02}-{:02}", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday)
     };
     let now = unsafe { libc::time(std::ptr::null_mut()) };
@@ -834,7 +892,7 @@ pub fn local_hour() -> i32 {
     unsafe {
         let t = libc::time(std::ptr::null_mut());
         let mut tm: libc::tm = std::mem::zeroed();
-        libc::localtime_r(&t, &mut tm);
+        local_tm(&t, &mut tm);
         tm.tm_hour
     }
 }

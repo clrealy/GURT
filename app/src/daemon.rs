@@ -131,7 +131,7 @@ fn notify(title: &str, body: &str, actions: &[(&str, &str)]) -> Option<String> {
 
 fn open_gurt(args: &[&str]) {
     let me = std::env::current_exe().unwrap_or_else(|_| "gurt-app".into());
-    let _ = Command::new(me).arg("--gurt").arg(gurt()).args(args).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).spawn();
+    let _ = crate::data::hidden(&mut Command::new(me)).arg("--gurt").arg(gurt()).args(args).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).spawn();
 }
 
 type Held = Arc<Mutex<HashMap<&'static str, (String, String, bool)>>>;
@@ -152,8 +152,15 @@ fn dnotify(held: &Held, kind: &'static str, title: String, body: String, open_bt
 
 /// run gurt for the daemon (no colours, nicely, never asking anything) → (rc, output)
 fn gurt_quiet(args: &[&str], extra: &[(&str, &str)]) -> (i32, String) {
-    let mut c = Command::new("nice");
-    c.args(["-n", "10", gurt()]).args(args).env("NO_COLOR", "1").env("GURT_PLAIN", "1").stdin(Stdio::null());
+    #[cfg(unix)]
+    let mut c = {
+        let mut c = Command::new("nice");
+        c.args(["-n", "10", gurt()]);
+        c
+    };
+    #[cfg(windows)]
+    let mut c = data::gurt_cmd();
+    c.args(args).env("NO_COLOR", "1").env("GURT_PLAIN", "1").stdin(Stdio::null());
     for (k, v) in extra {
         c.env(k, v);
     }
@@ -179,7 +186,12 @@ fn updates(held: &Held) {
         return;
     }
     if !apps.is_empty() && dconf().get("autoupdate").map(|s| s == "on").unwrap_or(false) {
-        let nopw = unsafe { libc::geteuid() } == 0 || Command::new("sudo").args(["-n", "true"]).stdout(Stdio::null()).stderr(Stdio::null()).status().map(|s| s.success()).unwrap_or(false);
+        #[cfg(unix)]
+        let root = unsafe { libc::geteuid() } == 0;
+        #[cfg(windows)]
+        let root = true; // no sudo on Windows: winget / scoop update as you
+        let quiet_ok = |t: &str| Command::new(t).args(["-n", "true"]).stdout(Stdio::null()).stderr(Stdio::null()).status().map(|s| s.success()).unwrap_or(false);
+        let nopw = root || quiet_ok("sudo") || quiet_ok("doas"); // no password needed right now (NOPASSWD / doas nopass)
         if nopw {
             let (rc, _) = gurt_quiet(&["-y", "--no-system", "upgrade"], &[]);
             dlog(&format!("auto-update: {}", if rc == 0 { "done" } else { "had problems" }));
@@ -246,11 +258,23 @@ fn code_stamp() -> String {
         .join(" ")
 }
 
+/// is that process still running?
+fn alive(pid: i32) -> bool {
+    #[cfg(unix)]
+    return unsafe { libc::kill(pid, 0) } == 0;
+    #[cfg(windows)]
+    return crate::data::hidden(&mut Command::new("tasklist"))
+        .args(["/FI", &format!("PID eq {pid}"), "/NH"])
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).contains(&pid.to_string()))
+        .unwrap_or(false);
+}
+
 pub fn main() -> i32 {
     let pidf = url_file();
     if let Ok(old) = std::fs::read_to_string(&pidf) {
         if let Ok(pid) = old.trim().parse::<i32>() {
-            if pid != std::process::id() as i32 && unsafe { libc::kill(pid, 0) } == 0 {
+            if pid != std::process::id() as i32 && alive(pid) {
                 eprintln!("GURTd is already running (pid {pid})");
                 return 0;
             }
@@ -276,8 +300,19 @@ pub fn main() -> i32 {
                 let _ = std::fs::remove_file(&pidf);
                 let me = std::env::current_exe().unwrap_or_else(|_| "gurt-app".into());
                 let args: Vec<String> = std::env::args().skip(1).collect();
-                let err = std::os::unix::process::CommandExt::exec(Command::new(me).args(args));
-                dlog(&format!("couldn't restart: {err}"));
+                #[cfg(unix)]
+                {
+                    let err = std::os::unix::process::CommandExt::exec(Command::new(me).args(args));
+                    dlog(&format!("couldn't restart: {err}"));
+                }
+                #[cfg(windows)]
+                {
+                    // no exec on Windows: start the new one, and this one bows out
+                    match crate::data::hidden(&mut Command::new(me)).args(args).spawn() {
+                        Ok(_) => return 0,
+                        Err(e) => dlog(&format!("couldn't restart: {e}")),
+                    }
+                }
             }
             seen_stamp = now_stamp;
         }

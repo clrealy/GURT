@@ -6,6 +6,8 @@ use crate::widgets::{self as w, ChipKind, Kind};
 use egui::{pos2, vec2, Align2, Color32, CornerRadius, Rect, Sense, Stroke, Ui, UiBuilder};
 use std::time::{Duration, Instant};
 
+/// on Windows (gurt.ps1) these come first: Windows apps. the Linux ones after them go to WSL
+pub const WIN_SOURCES: [(&str, &str); 3] = [("winget", "Windows"), ("scoop", "Windows, no admin"), ("choco", "Chocolatey")];
 pub const SOURCES: [(&str, &str); 20] = [
     ("gurt", "Main GURT"), ("aur", "Arch User Repo"), ("apt", "Debian · Ubuntu"), ("dnf", "Fedora"), ("zypper", "openSUSE"), ("pacman", "Arch"),
     ("xbps", "Void"), ("eopkg", "Solus"), ("apk", "Alpine"), ("gentoo", "Gentoo"), ("gh", "GitHub releases"), ("appimage", "AppImageHub"),
@@ -32,6 +34,9 @@ fn blurb(src: &str) -> &'static str {
         "snap" => "Snap Store apps. gurt sets up snapd for you.",
         "nix" => "nixpkgs, into your own nix profile. no sudo.",
         "dirt" => "DIRT is GURT's mature section (18+). Packages here install with gurt install dirt/<name>.",
+        "winget" => "Windows apps from winget, Microsoft's package manager (built into Windows 10 and 11).",
+        "scoop" => "Windows apps from scoop: no admin, they install into your user folder.",
+        "choco" => "Windows apps from Chocolatey. Windows asks for admin when one installs.",
         _ => "",
     }
 }
@@ -48,6 +53,9 @@ pub fn trust(k: &str) -> Option<(ChipKind, &'static str, &'static str)> {
         "prebuilt" => (ChipKind::Mid, "official download", "the app maker's own release download, checked against a checksum pinned in Main GURT"),
         "source" => (ChipKind::Mid, "built from source", "built on your computer from the project's own code, at a pinned version"),
         "gurt" => (ChipKind::Mid, "Main GURT", "a Main GURT recipe (every change is reviewed and CI-tested)"),
+        "winget" => (ChipKind::Hi, "winget", "from winget, Microsoft's package manager: every app's manifest is reviewed, and the download's checksum is checked"),
+        "scoop" => (ChipKind::Mid, "scoop", "from scoop's buckets: community manifests with pinned checksums"),
+        "choco" => (ChipKind::Mid, "Chocolatey", "from the Chocolatey community repo: packages are moderated and virus-scanned"),
         "aur" => (ChipKind::Lo, "user upload", "the AUR: anyone can upload, nobody reviews it. gurt shows you the build script and checks it for red flags first"),
         "git" => (ChipKind::Lo, "random repo", "built straight from a git repo you picked. gurt checks the build script for red flags first"),
         "file" => (ChipKind::Lo, "your file", "a file you installed yourself"),
@@ -423,7 +431,7 @@ pub fn discover(app: &mut App, ui: &mut Ui) {
     // source buttons
     ui.horizontal_wrapped(|ui| {
         ui.spacing_mut().item_spacing = vec2(4.0, 4.0);
-        for (src, sub) in SOURCES {
+        for &(src, sub) in WIN_SOURCES.iter().filter(|_| st.windows).chain(SOURCES.iter()) {
             if src == "nix" && !st.nix {
                 continue;
             }
@@ -485,7 +493,7 @@ pub fn discover(app: &mut App, ui: &mut Ui) {
     }
     // a full spec typed in: install it straight away
     let q = app.q.trim().to_string();
-    let direct = q.contains('/') && !q.starts_with("http") && data::spec_ok(&q) && q.split('/').next().is_some_and(|s| SOURCES.iter().any(|x| x.0 == s) || s == "gh");
+    let direct = q.contains('/') && !q.starts_with("http") && data::spec_ok(&q) && q.split('/').next().is_some_and(|s| SOURCES.iter().chain(WIN_SOURCES.iter()).any(|x| x.0 == s) || s == "gh");
     if direct && w::btn_ex(ui, &p, &format!("install {q}"), Kind::Primary, false, false, !app.busy()).clicked() {
         app.go(verb(&["-y", "install", &q], "Install", &q));
     }
@@ -558,7 +566,7 @@ pub fn discover(app: &mut App, ui: &mut Ui) {
                         app.load_sizes();
                     }
                     app.dialog = Some(Dialog::Compare);
-                    let _ = std::process::Command::new(data::gurt()).args(["__achieve", "compare"]).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).spawn();
+                    let _ = data::gurt_cmd().args(["__achieve", "compare"]).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).spawn();
                 }
                 if w::btn(ui, &p, "clear", Kind::Ghost, true).clicked() {
                     app.cmp.clear();
@@ -715,7 +723,7 @@ fn lotto_row(app: &mut App, ui: &mut Ui, rect: Rect) {
                 ach.push("streak7");
             }
             for a in ach {
-                let _ = std::process::Command::new(data::gurt()).args(["__achieve", a]).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).spawn();
+                let _ = data::gurt_cmd().args(["__achieve", a]).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).spawn();
             }
         }
         ui.ctx().request_repaint_after(Duration::from_millis(40));
@@ -895,7 +903,8 @@ pub fn setup(app: &mut App, ui: &mut Ui) {
             });
             ui.add_space(8.0);
         }
-        // Android + Hotwyr bars
+        // Android + Hotwyr bars (Linux things: not on Windows)
+        if !st.windows {
         w::panel(ui, &p, |ui| {
             ui.horizontal_wrapped(|ui| {
                 ui.vertical(|ui| {
@@ -936,6 +945,7 @@ pub fn setup(app: &mut App, ui: &mut Ui) {
                 });
             });
         });
+        }
         ui.add_space(10.0);
         // package packs: one click ticks a whole bunch (gurt pack <id> on the command line)
         if !st.packs.is_empty() {

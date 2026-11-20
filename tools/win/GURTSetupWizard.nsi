@@ -1,5 +1,5 @@
 ; GURTSetupWizard.exe — GURT on Windows, the classic installer way 🧙
-; it runs install.ps1 (WSL + gurt inside it + gurt on your PATH + the Start menu), then opens the setup wizard
+; it unpacks gurt.ps1 + the app and runs install.ps1 (gurt on your PATH + the Start menu + Main GURT's list), then opens the setup wizard
 ; build (on Linux too):  tools/win/build-exe.sh [out-dir]   (needs makensis: apt install nsis)
 Unicode true
 !ifndef VERSION
@@ -17,7 +17,7 @@ Unicode true
 Name "GURT ${VERSION}"
 Caption "GURT Setup Wizard"
 OutFile "${OUTDIR}\GURTSetupWizard.exe"
-RequestExecutionLevel user          ; install.ps1 asks for admin itself, only if WSL needs installing
+RequestExecutionLevel user          ; everything goes in your own folder; winget / Chocolatey ask for admin themselves when an app needs it
 InstallDir "$LOCALAPPDATA\gurt"
 ShowInstDetails show
 BrandingText "GURT ${VERSION}"
@@ -39,9 +39,9 @@ VIAddVersionKey "LegalCopyright" "MIT license"
 !define MUI_HEADERIMAGE_BITMAP "header.bmp"
 !define MUI_ABORTWARNING
 !define MUI_WELCOMEPAGE_TITLE "Welcome to the GURT Setup Wizard"
-!define MUI_WELCOMEPAGE_TEXT "This wizard installs GURT ${VERSION}: every Linux distro's packages, running on Windows through WSL.$\r$\n$\r$\nIt will:$\r$\n  • set up WSL + Ubuntu if you don't have it yet (Windows asks for admin)$\r$\n  • install gurt inside WSL$\r$\n  • put a gurt command on your PATH$\r$\n  • add GURT to your Start menu$\r$\n$\r$\nClick Next to continue."
+!define MUI_WELCOMEPAGE_TEXT "This wizard installs GURT ${VERSION} for Windows: every app, from wherever it is.$\r$\n$\r$\nWindows apps come from winget, scoop or Chocolatey. Apps that only exist for Linux go in WSL, which GURT sets up the first time you ask for one.$\r$\n$\r$\nIt will:$\r$\n  • put a gurt command on your PATH$\r$\n  • install GURT's app and add it to your Start menu$\r$\n  • download Main GURT's app list$\r$\n$\r$\nNo admin needed. Click Next to continue."
 !define MUI_FINISHPAGE_TITLE "GURT is set up"
-!define MUI_FINISHPAGE_TEXT "The GURT Setup Wizard opens in its own window to finish up (your look, starter apps, extras).$\r$\n$\r$\nIf WSL was just installed: reboot if Windows asks, open Ubuntu once to make your Linux username, then run GURTSetupWizard.exe again."
+!define MUI_FINISHPAGE_TEXT "The GURT Setup Wizard opens in its own window to finish up (your look, starter apps, extras).$\r$\n$\r$\nIn a new terminal: gurt install firefox"
 !define MUI_FINISHPAGE_LINK "GURT on GitHub"
 !define MUI_FINISHPAGE_LINK_LOCATION "https://github.com/clrealy/GURT"
 
@@ -55,6 +55,13 @@ VIAddVersionKey "LegalCopyright" "MIT license"
 Section "GURT"
   SetOutPath "$INSTDIR"
   File "/oname=install.ps1" "${PS1}"
+  File "/oname=gurt.ps1" "..\..\gurt.ps1"
+  File "/oname=gurt.ico" "..\..\site\favicon.ico"
+  File "/oname=packs.map" "..\..\packs.map"
+  File "/oname=vibes.map" "..\..\vibes.map"
+!ifdef APP
+  File "/oname=gurt-app.exe" "${APP}"
+!endif
   DetailPrint "running the GURT installer (install.ps1)… this takes a minute"
   nsExec::ExecToLog 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\install.ps1"'
   Pop $0
@@ -78,5 +85,5 @@ Section "Uninstall"
   Delete "$SMPROGRAMS\GURT.lnk"
   RMDir /r "$INSTDIR"
   DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\GURT"
-  MessageBox MB_ICONINFORMATION "GURT is off Windows. gurt inside WSL is still there; to remove it too, run in WSL: sudo rm /usr/local/bin/gurt"
+  MessageBox MB_ICONINFORMATION "GURT is off Windows. Apps it installed stay (remove them in Settings → Apps). If you used WSL apps, gurt inside WSL is still there; to remove it too, run in WSL: gurt uninstall"
 SectionEnd

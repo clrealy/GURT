@@ -96,12 +96,80 @@ depmap_file() {
   done
 }
 
+# ── 🔐 root: sudo or doas. `gurt root doas` (or GURT_SUDO=doas) picks one when you have both; auto = sudo, else doas ──
+ROOT_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/root"
+root_tool() { # → sudo | doas | (nothing)
+  local want=${GURT_SUDO:-$(cat "$ROOT_CONF" 2>/dev/null)}
+  case $want in sudo|doas) command -v "$want" >/dev/null && { echo "$want"; return; } ;; esac
+  if command -v sudo >/dev/null; then echo sudo; elif command -v doas >/dev/null; then echo doas; fi
+}
 asroot() {
-  if (( EUID == 0 )) || { [[ -n $R ]] && [[ -w $R ]]; } || { $CROS_NATIVE && [[ -z $R && -w /usr/local ]]; }; then "$@"
-  elif command -v sudo >/dev/null; then
-    if [[ -n ${SUDO_ASKPASS:-} && -n ${GURT_GUI:-} ]]; then sudo -A "$@"; else sudo "$@"; fi
-  elif command -v doas >/dev/null; then doas "$@"
-  else die "need root for that (install sudo or doas)"; fi
+  if (( EUID == 0 )) || { [[ -n $R ]] && [[ -w $R ]]; } || { $CROS_NATIVE && [[ -z $R && -w /usr/local ]]; }; then "$@"; return; fi
+  case $(root_tool) in
+    sudo) if [[ -n ${SUDO_ASKPASS:-} && -n ${GURT_GUI:-} ]]; then sudo -A "$@"; else sudo "$@"; fi ;;
+    doas) if [[ -n ${SUDO_ASKPASS:-} && -n ${GURT_GUI:-} ]] && ! doas -n true 2>/dev/null; then doas_askpass "$@"; else doas "$@"; fi ;;
+    *)    die "need root for that (install sudo or doas, or run gurt as root)" ;;
+  esac
+}
+# GURT's app has no terminal, and doas only reads your password from one (it has no askpass like sudo -A).
+# so: doas gets a little terminal of its own just for the password; the command's input and output stay where they were.
+# the password comes from $SUDO_ASKPASS (the app's password box); doas saying "Authentication failed" asks you again
+doas_askpass() {
+  command -v python3 >/dev/null || die "GURT's app types doas's password through python3, which isn't here. install python3, or run this gurt command in a terminal"
+  python3 -I -c '
+import os, pty, select, subprocess, sys, fcntl, termios
+askpass, cmd = os.environ["SUDO_ASKPASS"], sys.argv[1:]
+who = os.environ.get("USER") or str(os.getuid())
+pw = None
+for attempt in range(3):
+    if pw is None:
+        a = subprocess.run([askpass, "doas (" + who + ") password:"], stdout=subprocess.PIPE)
+        if a.returncode != 0:
+            sys.stderr.write("doas: no password given\n"); sys.exit(1)
+        pw = a.stdout.decode().rstrip("\n")
+    m, s = pty.openpty()
+    er, ew = os.pipe()
+    def tty():
+        os.setsid(); fcntl.ioctl(s, termios.TIOCSCTTY, 0)
+    p = subprocess.Popen(["doas", "--"] + cmd, stderr=ew, preexec_fn=tty, pass_fds=(s,))
+    os.close(ew)   # s stays open here: doas closes every fd before it opens /dev/tty, and a pty with no slave open reads as EIO
+    sent, err, bad, buf, fds = False, b"", False, b"", [m, er]
+    while True:
+        r, _, _ = select.select(fds, [], [], 0.2)
+        if not r and p.poll() is not None: break   # done, and nothing left to read
+        for f in r:
+            try: d = os.read(f, 4096)
+            except OSError: d = b""
+            if not d:
+                fds.remove(f); continue
+            if f == m:
+                buf += d
+                if not sent and b"assword" in buf:
+                    os.write(m, pw.encode() + b"\n"); sent = True
+                elif sent and d.strip():   # not the newline doas echoes after the password
+                    sys.stderr.buffer.write(d); sys.stderr.flush()
+            else:
+                err += d
+                if b"Authentication failed" in err: bad = True
+                else: sys.stderr.buffer.write(d); sys.stderr.flush()
+                if b"\n" in err: err = err.rsplit(b"\n", 1)[1]
+    os.close(m); os.close(s); os.close(er)
+    rc = p.wait()
+    if not bad: sys.exit(rc)
+    pw = None
+sys.stderr.write("doas: wrong password 3 times\n"); sys.exit(1)
+' "$@"
+}
+cmd_root() { # [auto | sudo | doas | status]
+  case ${1:-status} in
+    sudo|doas) command -v "$1" >/dev/null || die "$1 isn't installed"
+               mkdir -p "${ROOT_CONF%/*}"; echo "$1" > "$ROOT_CONF"; msg "🔐 gurt uses $1 for root (gurt root auto undoes it)" ;;
+    auto)      rm -f "$ROOT_CONF"; msg "🔐 gurt uses sudo, or doas when there's no sudo" ;;
+    status)    if (( EUID == 0 )); then echo "root: you are root, nothing needed"
+               elif [[ -n $(root_tool) ]]; then echo "root: $(root_tool)$([[ -n ${GURT_SUDO:-} ]] && echo " (GURT_SUDO)" || { [[ -s $ROOT_CONF ]] && echo " (gurt root $(cat "$ROOT_CONF"))"; } || echo " (auto)")"
+               else echo "root: none (install sudo or doas, or run gurt as root)"; fi ;;
+    *)         die "usage: gurt root [auto | sudo | doas | status]" ;;
+  esac
 }
 
 # ───────────────────────── distro detection ─────────────────────────
@@ -517,6 +585,7 @@ load_recipe() {
   pkgname="" pkgbase="" pkgver="" pkgrel=1 epoch="" pkgdesc="" url="" license="" maintainer="" install=""
   via_repo="" via_type="" via_url="" via_suite="" via_components="" via_key="" via_fingerprint="" via_pkg=""
   native="" native_apt="" native_dnf="" native_zypper="" native_pacman="" native_apk="" native_xbps="" native_eopkg=""
+  win="" win_winget="" win_scoop="" win_choco=""   # gurt on Windows (gurt.ps1): win=no → Linux-only, else these pins
   aliases=() hidden="" desktop_icon="" secret="" category="" icon=""
   arch=() depends=() makedepends=() checkdepends=() source=() noextract=() sums=() SUMALGO=sha256
   local a v fn
@@ -591,7 +660,7 @@ print_srcinfo() {
   case ${hidden,,} in 1|true|yes) printf 'hidden = true\n' ;; esac
   case ${desktop_icon,,} in 1|true|yes) printf 'desktop_icon = true\n' ;; esac
   case ${secret,,} in 1|true|yes) printf 'secret = true\n' ;; esac
-  for x in via_repo via_type via_url via_suite via_components via_key via_fingerprint via_pkg native native_apt native_dnf native_zypper native_pacman native_apk native_xbps native_eopkg; do
+  for x in via_repo via_type via_url via_suite via_components via_key via_fingerprint via_pkg native native_apt native_dnf native_zypper native_pacman native_apk native_xbps native_eopkg win win_winget win_scoop win_choco; do
     [[ -n ${!x} ]] && printf '%s = %s\n' "$x" "${!x}"
   done
   return 0
@@ -3899,14 +3968,18 @@ hook_script() { # bash | zsh | fish → the snippet
     printf '%s\n' "$HOOK_MARK" \
       'function __gurt_hook; if test "$GURT_HOTWYR" = 0; or not command -q gurt; command $argv; else; command gurt __pmhook $argv; end; end'
     for p in $pms; do printf 'function %s --wraps %s; __gurt_hook %s $argv; end\n' "$p" "$p" "$p"; done
+    for r in sudo doas; do
+      command -v "$r" >/dev/null || continue
+      printf '%s\n' \
+        "function $r --wraps $r" \
+        "    if test \"\$GURT_HOTWYR\" != 0; and command -q gurt; and contains -- \"\$argv[1]\" $pms" \
+        "        command gurt __pmhook --$r \$argv" \
+        '    else' \
+        "        command $r \$argv" \
+        '    end' \
+        'end'
+    done
     printf '%s\n' \
-      "function sudo --wraps sudo" \
-      "    if test \"\$GURT_HOTWYR\" != 0; and command -q gurt; and contains -- \"\$argv[1]\" $pms" \
-      '        command gurt __pmhook --sudo $argv' \
-      '    else' \
-      '        command sudo $argv' \
-      '    end' \
-      'end' \
       'function fish_command_not_found' \
       '    if test "$GURT_HOTWYR" != 0; and command -q gurt' \
       '        command gurt __cnf $argv' \
@@ -3922,14 +3995,17 @@ hook_script() { # bash | zsh | fish → the snippet
   printf '%s\n' "$HOOK_MARK" \
     '__gurt_hook() { if [ "${GURT_HOTWYR:-1}" = 0 ] || ! command -v gurt >/dev/null 2>&1; then command "$@"; else command gurt __pmhook "$@"; fi; }'
   for p in $pms; do printf '%s() { __gurt_hook %s "$@"; }\n' "$p" "$p"; done
-  printf '%s\n' \
-    'sudo() {' \
-    '  case "${1:-}" in' \
-    "    $(tr ' ' '|' <<<"${pms% }"))" \
-    '      if [ "${GURT_HOTWYR:-1}" != 0 ] && command -v gurt >/dev/null 2>&1; then command gurt __pmhook --sudo "$@"; else command sudo "$@"; fi ;;' \
-    '    *) command sudo "$@" ;;' \
-    '  esac' \
-    '}'
+  for r in sudo doas; do
+    command -v "$r" >/dev/null || continue
+    printf '%s\n' \
+      "$r() {" \
+      '  case "${1:-}" in' \
+      "    $(tr ' ' '|' <<<"${pms% }"))" \
+      "      if [ \"\${GURT_HOTWYR:-1}\" != 0 ] && command -v gurt >/dev/null 2>&1; then command gurt __pmhook --$r \"\$@\"; else command $r \"\$@\"; fi ;;" \
+      "    *) command $r \"\$@\" ;;" \
+      '  esac' \
+      '}'
+  done
   if [[ $sh == zsh ]]; then   # keep the shell's own handler (Ubuntu's "install it with apt…") for what gurt doesn't know
     printf '%s\n' '(( $+functions[command_not_found_handler] )) && ! (( $+functions[__gurt_cnf_prev] )) && functions -c command_not_found_handler __gurt_cnf_prev 2>/dev/null'
   else
@@ -4030,9 +4106,9 @@ hook_pm_kind() { # pm args… → install | search | upgrade | (nothing)
   esac
   return 0
 }
-cmd_pmhook() { # [--sudo] pm args… — the real package manager first, then gurt
+cmd_pmhook() { # [--sudo | --doas] pm args… — the real package manager first, then gurt
   local run=() pm kind rc=0 a skip=1 names=() miss=() specs=() keep=() s
-  [[ ${1:-} == --sudo ]] && { run=(sudo); shift; }
+  case ${1:-} in --sudo) run=(sudo); shift ;; --doas) run=(doas); shift ;; esac
   pm=${1:?}; shift; run+=("$pm" "$@")
   kind=$(hook_pm_kind "$pm" "$@")
   for a; do case $a in -y|--yes|--assume-yes|--assumeyes|--noconfirm|--non-interactive|-n) NOCONFIRM=true ;; esac; done   # you said yes to it already
@@ -5527,7 +5603,7 @@ cmd_setup() {
   printf '\n%s[1/4] system check%s\n' "$B" "$R0"
   d=$( . /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-unknown distro}" )
   msg2 "$d · package manager: $PM$(is_wsl && echo ' · WSL on Windows')$(is_cros && echo ' · Linux on ChromeOS')$($CROS_NATIVE && echo ' · ChromeOS itself')"
-  if (( EUID == 0 )) || command -v sudo >/dev/null || command -v doas >/dev/null; then msg2 "sudo works ✅"; else warn "no sudo or doas: install one, or run gurt as root"; fi
+  if (( EUID == 0 )); then msg2 "you're root ✅"; elif [[ -n $(root_tool) ]]; then msg2 "$(root_tool) works ✅"; else warn "no sudo or doas: install one, or run gurt as root"; fi
   miss=$(cmd_utils list 2>&1 | grep -c '✗' || true)
   if (( miss )); then cmd_utils list; ask "install the $miss missing utilities (most apps need them)?" && cmd_utils
   else msg2 "every utility apps need is here ✅"; fi
@@ -5842,7 +5918,7 @@ cmd_complete() {
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
     commands)  printf '%s\n' sync search info install update upgrade self-update uninstall remove autoremove list files owns lottery sysup \
                  build add srcinfo checksum new repo dirt gui de outsource undo rollback hold unhold export import completions doctor version help yo \
-                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache try dupes hotwyr gh-only redeem native foss pack ;;
+                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache try dupes hotwyr gh-only redeem native root foss pack ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman apk xbps eopkg gentoo flatpak snap nix gh pip npm cargo appimage brew dirt ;;
   esac
   return 0
@@ -6592,6 +6668,7 @@ _gurt() {
       COMPREPLY=($(compgen -W "$(gurt __complete available; gurt __complete sources)" -- "$cur"))
       [[ ${#COMPREPLY[@]} == 1 && ${COMPREPLY[0]} != */ ]] && COMPREPLY[0]+=" " ;;
     dirt) COMPREPLY=($(compgen -W "on off status list" -- "$cur")) ;;
+    root) COMPREPLY=($(compgen -W "auto sudo doas status" -- "$cur")) ;;
     repo|repos) COMPREPLY=($(compgen -W "add list remove" -- "$cur")) ;;
     sync) COMPREPLY=($(compgen -W "all aur apt dnf zypper pacman apk xbps eopkg gentoo" -- "$cur")) ;;
     import|add|export|build) COMPREPLY=($(compgen -f -- "$cur")) ;;
@@ -6609,6 +6686,7 @@ _gurt() {
     remove|rm|yeet|files|run|rollback|undo|hold|unhold|pin|unpin) compadd -- ${(f)"$(gurt __complete installed)"} ;;
     install|i|get|info|search|s|try) compadd -- ${(f)"$(gurt __complete available)"}; compadd -S '' -- ${(f)"$(gurt __complete sources)"} ;;
     dirt) compadd on off status list ;;
+    root) compadd auto sudo doas status ;;
     repo|repos) compadd add list remove ;;
     sync) compadd all aur apt dnf zypper pacman apk xbps eopkg gentoo ;;
     import|add|export|build) _files ;;
@@ -6624,6 +6702,7 @@ complete -c gurt -n '__fish_is_first_arg' -a '(gurt __complete commands)'
 complete -c gurt -n '__fish_seen_subcommand_from remove rm yeet files rollback undo hold unhold pin unpin' -a '(gurt __complete installed)'
 complete -c gurt -n '__fish_seen_subcommand_from install i get info search s try' -a '(gurt __complete available; gurt __complete sources)'
 complete -c gurt -n '__fish_seen_subcommand_from dirt' -a 'on off status list'
+complete -c gurt -n '__fish_seen_subcommand_from root' -a 'auto sudo doas status'
 complete -c gurt -n '__fish_seen_subcommand_from repo repos' -a 'add list remove'
 complete -c gurt -n '__fish_seen_subcommand_from sync' -a 'all aur apt dnf zypper pacman apk xbps eopkg gentoo'
 complete -c gurt -n '__fish_seen_subcommand_from import add export build' -F
@@ -6708,7 +6787,7 @@ cmd_uninstall() {
   exit 0
 }
 # run a command as root and never come back (gurt's own file is about to vanish)
-exec_root() { if (( EUID == 0 )); then exec "$@"; elif command -v sudo >/dev/null; then exec sudo "$@"; else exec doas "$@"; fi; }
+exec_root() { if (( EUID == 0 )); then exec "$@"; elif [[ $(root_tool) == doas ]]; then exec doas "$@"; else exec sudo "$@"; fi; }
 cmd_self_update() {
   local self new tmp dir
   self=$(readlink -f "$0")
@@ -7518,6 +7597,7 @@ ${B}misc${R0}
   android [setup|list|open|remove <app>|fdroid]   Android apps through Waydroid 🤖 (gurt install android/<app> = F-Droid)
   hotwyr on|off        Hotwyr: gurt backs up your package manager. sudo apt install yay → apt can't, gurt offers aur/yay ⚡
   native on|off        apps your distro has come from your distro, not Flathub / Snap (on by default) 🐧
+  root sudo|doas|auto  what gurt uses for root when you have both (auto: sudo, else doas) 🔐
   foss on|off          FOSS-only mode: no closed-source apps at all (off: they install with a heads-up) 🔓
   snapshots            the snapshots gurt took before system upgrades (btrfs: snapper/timeshift/plain) 📸
   achievements         🏆 trophies for doing gurt things
@@ -7636,6 +7716,7 @@ main() {
     android|waydroid)  cmd_android "$@" ;;
     foss)              cmd_foss "$@" ;;
     native)            cmd_native "$@" ;;
+    root)              cmd_root "$@" ;;
     hotwyr|hook)       cmd_hook "$@" ;;
     __pmhook)          cmd_pmhook "$@" ;;
     __cnf)             cmd_cnf "$@" ;;
@@ -7675,7 +7756,7 @@ main() {
     __complete)        cmd_complete "$@" ;;
     __achieve)         [[ ${1:-} =~ ^[a-z0-9]+$ ]] && achieve "$1" ;;
     __devunlock)       [[ $(dev_state) == locked ]] || exit 0; IFS= read -r p || p=""; dev_check "$p" ;;   # the app sends it on stdin
-    __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\nwsl=%s\ncros=%s\ndev=%s\nnix=%s\nhook=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" "$(is_wsl && echo yes || echo no)" "$( { is_cros || $CROS_NATIVE; } && echo yes || echo no)" "$(dev_state)" "$(command -v nix >/dev/null && echo yes || echo no)" "$(hook_on && echo on || echo off)" ;;
+    __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\nwsl=%s\ncros=%s\ndev=%s\nnix=%s\nhook=%s\nroot=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" "$(is_wsl && echo yes || echo no)" "$( { is_cros || $CROS_NATIVE; } && echo yes || echo no)" "$(dev_state)" "$(command -v nix >/dev/null && echo yes || echo no)" "$(hook_on && echo on || echo off)" "$( (( EUID == 0 )) && echo root || root_tool)" ;;
     gui)               cmd_gui "$@" ;;
     completions)       completion_script "${1:?usage: gurt completions bash|zsh|fish}" ;;
     outsource|os|clone) (( $# )) || die "outsource what tho — gurt outsource https://github.com/user/repo (or a file: gurt outsource ./app.deb)"

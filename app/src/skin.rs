@@ -1,6 +1,7 @@
 //! the six skins: one palette + fonts + how controls are drawn each. GURT's look rules: flat, 1px borders, square-ish
 //! corners, one accent per skin, data in monospace, no shadows / glows / gradients.
 use egui::{Color32, CornerRadius, FontFamily, FontId, Stroke};
+#[cfg(unix)]
 use std::process::{Command, Stdio};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -135,6 +136,7 @@ pub const VAPOR_CYAN: Color32 = hex(0x01cdfe);
 pub const VAPOR_YELLOW: Color32 = hex(0xfffb96);
 
 // ── fonts: each skin's own, found with fontconfig (fc-match always answers with the closest one you have) ──
+#[cfg(unix)]
 fn fc(pattern: &str) -> Option<Vec<u8>> {
     let out = Command::new("fc-match").args(["-f", "%{file}", pattern]).stderr(Stdio::null()).output().ok()?;
     let f = String::from_utf8_lossy(&out.stdout).into_owned();
@@ -143,6 +145,29 @@ fn fc(pattern: &str) -> Option<Vec<u8>> {
         return None;
     }
     std::fs::read(f).ok()
+}
+
+/// Windows has no fontconfig: the skins' families are files in C:\Windows\Fonts (and the real ones are there:
+/// Segoe UI, Tahoma, MS Sans Serif…). the generic names fall back to what every Windows has
+#[cfg(windows)]
+fn win_font(family: &str, bold: bool) -> Option<Vec<u8>> {
+    let files: &[(&str, &str)] = match family {
+        "Segoe UI Variable" => &[("SegUIVar.ttf", "SegUIVar.ttf")],
+        "Segoe UI" | "sans-serif" => &[("segoeui.ttf", "segoeuib.ttf")],
+        "Cascadia Mono" => &[("CascadiaMono.ttf", "CascadiaMono.ttf")],
+        "Cascadia Code" => &[("CascadiaCode.ttf", "CascadiaCode.ttf")],
+        "Tahoma" => &[("tahoma.ttf", "tahomabd.ttf")],
+        "Verdana" => &[("verdana.ttf", "verdanab.ttf")],
+        "Lucida Console" => &[("lucon.ttf", "lucon.ttf")],
+        "Microsoft Sans Serif" => &[("micross.ttf", "micross.ttf")],
+        "Arial" => &[("arial.ttf", "arialbd.ttf")],
+        "Courier New" => &[("cour.ttf", "courbd.ttf")],
+        "monospace" => &[("consola.ttf", "consolab.ttf"), ("cour.ttf", "courbd.ttf")],
+        "serif" => &[("georgia.ttf", "georgiab.ttf"), ("times.ttf", "timesbd.ttf")],
+        _ => &[],
+    };
+    let dir = std::path::PathBuf::from(std::env::var_os("WINDIR").unwrap_or_else(|| "C:\\Windows".into())).join("Fonts");
+    files.iter().find_map(|(r, b)| std::fs::read(dir.join(if bold { b } else { r })).ok())
 }
 
 pub fn fonts(skin: Skin) -> egui::FontDefinitions {
@@ -157,6 +182,9 @@ pub fn fonts(skin: Skin) -> egui::FontDefinitions {
     };
     let mut defs = egui::FontDefinitions::default();
     // the first family name fontconfig really has (fc-match falls back by itself; ask for the exact family first)
+    #[cfg(windows)]
+    let pick = |names: &[&str], bold: bool| -> Option<Vec<u8>> { names.iter().find_map(|n| win_font(n, bold)) };
+    #[cfg(unix)]
     let pick = |names: &[&str], bold: bool| -> Option<Vec<u8>> {
         for n in names {
             let pat = if bold { format!("{n}:bold") } else { format!("{n}:regular") };
