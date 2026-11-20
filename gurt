@@ -517,6 +517,7 @@ load_recipe() {
   pkgname="" pkgbase="" pkgver="" pkgrel=1 epoch="" pkgdesc="" url="" license="" maintainer="" install=""
   via_repo="" via_type="" via_url="" via_suite="" via_components="" via_key="" via_fingerprint="" via_pkg=""
   native="" native_apt="" native_dnf="" native_zypper="" native_pacman="" native_apk="" native_xbps="" native_eopkg=""
+  win="" win_winget="" win_scoop="" win_choco=""   # gurt on Windows (gurt.ps1): win=no → Linux-only, else these pins
   aliases=() hidden="" desktop_icon="" secret="" category="" icon=""
   arch=() depends=() makedepends=() checkdepends=() source=() noextract=() sums=() SUMALGO=sha256
   local a v fn
@@ -591,7 +592,7 @@ print_srcinfo() {
   case ${hidden,,} in 1|true|yes) printf 'hidden = true\n' ;; esac
   case ${desktop_icon,,} in 1|true|yes) printf 'desktop_icon = true\n' ;; esac
   case ${secret,,} in 1|true|yes) printf 'secret = true\n' ;; esac
-  for x in via_repo via_type via_url via_suite via_components via_key via_fingerprint via_pkg native native_apt native_dnf native_zypper native_pacman native_apk native_xbps native_eopkg; do
+  for x in via_repo via_type via_url via_suite via_components via_key via_fingerprint via_pkg native native_apt native_dnf native_zypper native_pacman native_apk native_xbps native_eopkg win win_winget win_scoop win_choco; do
     [[ -n ${!x} ]] && printf '%s = %s\n' "$x" "${!x}"
   done
   return 0

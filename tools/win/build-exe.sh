@@ -10,5 +10,8 @@ printf '\xef\xbb\xbf' > "$tmp/install.ps1"; cat "$root/install.ps1" >> "$tmp/ins
 # Windows wants 4 plain numbers: 1.0.0 → 1.0.0.0, 1.0.0+hotfix1 → 1.0.0.1
 base=${ver%%+*}; extra=""; [[ $ver == *+* ]] && extra=$(grep -o '[0-9]*$' <<<"${ver#*+}" || true)
 numver="$base.${extra:-0}"
-cd "$here" && makensis -V2 -DVERSION="$ver" -DNUMVER="$numver" -DOUTDIR="$out" -DPS1="$tmp/install.ps1" GURTSetupWizard.nsi
+# GURT's app for Windows, when it's been built (tools/build-app.sh windows → dist-app/gurt-app-windows-x86_64.exe)
+app=${GURT_WIN_APP:-$root/dist-app/gurt-app-windows-x86_64.exe}; appdef=()
+[[ -f $app ]] && appdef=(-DAPP="$app") || echo "no $app: the installer downloads the app from the release instead" >&2
+cd "$here" && makensis -V2 -DVERSION="$ver" -DNUMVER="$numver" -DOUTDIR="$out" -DPS1="$tmp/install.ps1" "${appdef[@]}" GURTSetupWizard.nsi
 echo "made $out/GURTSetupWizard.exe"

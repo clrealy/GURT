@@ -121,16 +121,36 @@ jobs:
       - name: long paths (the site has a deeply nested folder Windows' 260-character limit can't hold)
         run: git config --system core.longpaths true
       - uses: actions/checkout@v4
-      - name: install.ps1 parses + passes PSScriptAnalyzer
+      - name: install.ps1 + gurt.ps1 parse + pass PSScriptAnalyzer
         shell: pwsh
         run: |
-          $e = $null; [void][System.Management.Automation.Language.Parser]::ParseFile("$PWD\install.ps1", [ref]$null, [ref]$e)
-          if ($e) { $e | ForEach-Object { Write-Host "::error file=install.ps1::$_" }; exit 1 }
           Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
-          $r = Invoke-ScriptAnalyzer -Path install.ps1 -Severity Error
-          $r | Format-Table -AutoSize | Out-String -Width 200 | Write-Host
-          if ($r) { exit 1 }
-          Write-Host "install.ps1 ✅"
+          foreach ($f in 'install.ps1', 'gurt.ps1') {
+            $e = $null; [void][System.Management.Automation.Language.Parser]::ParseFile("$PWD\$f", [ref]$null, [ref]$e)
+            if ($e) { $e | ForEach-Object { Write-Host "::error file=$f::$_" }; exit 1 }
+            $r = Invoke-ScriptAnalyzer -Path $f -Severity Error
+            $r | Format-Table -AutoSize | Out-String -Width 200 | Write-Host
+            if ($r) { exit 1 }
+            Write-Host "$f ✅"
+          }
+          $v = (Select-String -Path gurt -Pattern '^GURT_VERSION="(.*)"').Matches[0].Groups[1].Value
+          $w = (Select-String -Path gurt.ps1 -Pattern "^\`$GURT_VERSION = '(.*)'").Matches[0].Groups[1].Value
+          if ($v -ne $w) { Write-Host "::error file=gurt.ps1::gurt.ps1 says $w, gurt says $v (bump both)"; exit 1 }
+      - name: native gurt on Windows (Windows PowerShell 5.1, like people have)
+        shell: powershell
+        env: { GURT_HOME: "${{ runner.temp }}\\gurt" }
+        run: |
+          $g = "$PWD\gurt.ps1"
+          function G { & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $g @args; if ($LASTEXITCODE -ne 0) { throw "gurt $args failed ($LASTEXITCODE)" } }
+          G version
+          G __paths
+          G sync
+          G info jq
+          G -y install choco/jq
+          G list | Tee-Object -Variable l; if (-not ($l -match 'choco/jq')) { throw 'jq missing from gurt list' }
+          G -y remove choco/jq
+          G list | Tee-Object -Variable l; if ($l -match 'choco/jq') { throw 'jq still in gurt list' }
+          G pack list
 
   # builds every recipe the PR touched, on a few different distros
   build:
