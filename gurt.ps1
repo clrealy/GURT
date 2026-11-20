@@ -158,11 +158,12 @@ function Choco-Run([string[]]$a) {
 
 # -- WSL: Linux apps --
 function WSL-Distros {
-  if (-not (Have wsl.exe)) { return @() }
-  $env:WSL_UTF8 = '1'
-  return @(& wsl.exe --list --quiet 2>$null | ForEach-Object { ($_ -replace "`0", '').Trim() } | Where-Object { $_ })
+  # from the registry, never `wsl.exe --list`: without WSL, wsl.exe is a stub that waits for "press any key to install"
+  $k = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss'
+  if (-not (Test-Path $k)) { return @() }
+  return @(Get-ChildItem $k -ErrorAction SilentlyContinue | ForEach-Object { (Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue).DistributionName } | Where-Object { $_ })
 }
-function WSL-Args { if ($Distro) { return @('-d', $Distro) } else { return @() } }
+function WSL-Args { $env:WSL_UTF8 = '1'; if ($Distro) { return @('-d', $Distro) } else { return @() } }
 function WSL-HasGurt { $a = WSL-Args; & wsl.exe @a -e sh -c 'command -v gurt >/dev/null' 2>$null; return ($LASTEXITCODE -eq 0) }
 function Ensure-WSL {
   if (-not (Have wsl.exe)) { Die 'this Windows has no WSL, and Linux-only apps need it (Windows 10 2004+ or Windows 11)' }

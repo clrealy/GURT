@@ -121,6 +121,7 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: app
     runs-on: windows-latest
+    timeout-minutes: 30   # something waiting on a keypress shouldn't hold the runner for 6 hours
     steps:
       - name: long paths (the site has a deeply nested folder Windows' 260-character limit can't hold)
         run: git config --system core.longpaths true
