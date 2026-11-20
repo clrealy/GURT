@@ -152,9 +152,9 @@ jobs:
           G sync
           G info jq
           G -y install choco/jq
-          G list | Tee-Object -Variable l; if (-not ($l -match 'choco/jq')) { throw 'jq missing from gurt list' }
+          $l = (G list) -join "`n"; Write-Host $l; if ($l -notmatch 'choco/jq') { throw 'jq missing from gurt list' }
           G -y remove choco/jq
-          G list | Tee-Object -Variable l; if ($l -match 'choco/jq') { throw 'jq still in gurt list' }
+          $l = (G list) -join "`n"; Write-Host $l; if ($l -match 'choco/jq') { throw 'jq still in gurt list' }
           G pack list
       - uses: actions/download-artifact@v4
         with: { name: gurt-app, path: dist-app }
