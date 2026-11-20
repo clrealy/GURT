@@ -799,6 +799,7 @@ pub struct Doctor {
     pub wsl: bool,
     pub cros: bool,
     pub sudo: bool,
+    pub root: String, // what gurt uses for root: sudo / doas / root (you are) / "" (none)
     pub missing: Vec<String>,
     pub notify: bool,
 }
@@ -806,7 +807,7 @@ pub struct Doctor {
 #[cfg(windows)]
 pub fn doctor() -> Doctor {
     let p = paths();
-    Doctor { distro: "Windows".into(), pm: p.get("pm").cloned().unwrap_or_else(|| "?".into()), wsl: false, cros: false, sudo: true, missing: vec![], notify: false }
+    Doctor { distro: "Windows".into(), pm: p.get("pm").cloned().unwrap_or_else(|| "?".into()), wsl: false, cros: false, sudo: true, root: String::new(), missing: vec![], notify: false }
 }
 #[cfg(unix)]
 pub fn doctor() -> Doctor {
@@ -829,6 +830,7 @@ pub fn doctor() -> Doctor {
         wsl: p.get("wsl").is_some_and(|v| v == "yes"),
         cros: p.get("cros").is_some_and(|v| v == "yes"),
         sudo: euid == 0 || has("sudo") || has("doas"),
+        root: p.get("root").cloned().unwrap_or_else(|| if euid == 0 { "root" } else if has("sudo") { "sudo" } else if has("doas") { "doas" } else { "" }.into()),
         missing,
         notify: notify_on(),
     }

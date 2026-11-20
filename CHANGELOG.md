@@ -7,6 +7,7 @@
 - **GURT's app runs natively on Windows** (no WSLg), with every skin, its sounds and music, and the Windows skins in their real Windows fonts. The setup wizard and the Setup tab skip what's Linux-only there.
 - GURTSetupWizard.exe needs no admin anymore, and doesn't set up WSL until an app needs it.
 - Recipes can name an app's Windows package: `win_winget=`, `win_scoop=`, `win_choco=` (or `win=no` for Linux-only apps).
+- **doas 🔐** GURT's app can type your doas password now (doas has no askpass like sudo, so it gets a terminal of its own just for the password), Hotwyr wraps `doas apt install …` like `sudo apt install …`, and update alerts auto-update when doas needs no password (`nopass`). Have both sudo and doas? `gurt root doas` picks doas (`gurt root auto` goes back to sudo first; `GURT_SUDO=doas` for one command).
 
 ## 1.4.2: Swap 🔄
 

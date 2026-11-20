@@ -190,7 +190,8 @@ fn updates(held: &Held) {
         let root = unsafe { libc::geteuid() } == 0;
         #[cfg(windows)]
         let root = true; // no sudo on Windows: winget / scoop update as you
-        let nopw = root || Command::new("sudo").args(["-n", "true"]).stdout(Stdio::null()).stderr(Stdio::null()).status().map(|s| s.success()).unwrap_or(false);
+        let quiet_ok = |t: &str| Command::new(t).args(["-n", "true"]).stdout(Stdio::null()).stderr(Stdio::null()).status().map(|s| s.success()).unwrap_or(false);
+        let nopw = root || quiet_ok("sudo") || quiet_ok("doas"); // no password needed right now (NOPASSWD / doas nopass)
         if nopw {
             let (rc, _) = gurt_quiet(&["-y", "--no-system", "upgrade"], &[]);
             dlog(&format!("auto-update: {}", if rc == 0 { "done" } else { "had problems" }));

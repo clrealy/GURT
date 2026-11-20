@@ -27,14 +27,15 @@ pub fn gurtd_view() -> GurtdView {
 impl App {
     pub fn dialogs(&mut self, ctx: &egui::Context) {
         let p = self.pal;
-        // sudo wants your password
+        // sudo (or doas) wants your password
         if let Some(r) = &self.run {
             if let Some(prompt) = r.job.ask() {
                 let job = r.job.clone();
                 let mut answer: Option<Option<String>> = None;
                 let (_, closed) = modal(ctx, &p, "pw", "password needed", 380.0, |ui| {
                     let extra = if prompt.contains("password") { String::new() } else { prompt.clone() };
-                    ui.add(egui::Label::new(egui::RichText::new(format!("gurt needs your password (sudo) to put files in system folders. {extra}")).color(p.muted)).wrap());
+                    let tool = if prompt.starts_with("doas") { "doas" } else { "sudo" };
+                    ui.add(egui::Label::new(egui::RichText::new(format!("gurt needs your password ({tool}) to put files in system folders. {extra}")).color(p.muted)).wrap());
                     ui.add_space(6.0);
                     let te = ui.add(egui::TextEdit::singleline(self.pw_mut()).password(true).hint_text("your password").font(mono(14.0)).desired_width(f32::INFINITY));
                     if !te.has_focus() && !te.lost_focus() {

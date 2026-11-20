@@ -326,7 +326,7 @@ fn page(app: &mut App, ui: &mut Ui, step: usize) {
                         ui.set_width(ui.available_width());
                         let extra = if d.wsl { " · running in WSL on Windows" } else if d.cros { " · Linux on ChromeOS" } else { "" };
                         chk(ui, true, if d.distro.is_empty() { "your distro" } else { &d.distro }, &format!("package manager: {}{extra}", d.pm));
-                        chk(ui, d.sudo, if d.sudo { "sudo works" } else { "no sudo or doas" }, if d.sudo { "GURT asks for your password when it installs things system-wide" } else { "install sudo, or run GURT as root" });
+                        chk(ui, d.sudo, &if d.root == "root" { "you're root".to_string() } else if d.sudo { format!("{} works", if d.root.is_empty() { "sudo" } else { &d.root }) } else { "no sudo or doas".to_string() }, if d.sudo { "GURT asks for your password when it installs things system-wide" } else { "install sudo, or run GURT as root" });
                         let n = d.missing.len();
                         chk(ui, n == 0, &if n > 0 { format!("{n} utilit{} missing", if n == 1 { "y" } else { "ies" }) } else { "every utility apps need is here".into() }, &if n > 0 { d.missing.join(", ") } else { "flatpak, git, unzip tools, a compiler…".into() });
                     });
