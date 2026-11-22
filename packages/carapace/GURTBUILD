@@ -1,6 +1,6 @@
 # Tab completions for hundreds of commands in any shell
 pkgname=carapace
-pkgver=1.8.0
+pkgver=1.8.3
 pkgrel=1
 pkgdesc="Tab completions for hundreds of commands in any shell"
 url="https://github.com/carapace-sh/carapace-bin"
@@ -12,8 +12,8 @@ _tag=v$pkgver
 # official prebuilt release binary
 source_x86_64=("https://github.com/carapace-sh/carapace-bin/releases/download/${_tag}/carapace-bin_${pkgver}_linux_amd64.tar.gz")
 source_aarch64=("https://github.com/carapace-sh/carapace-bin/releases/download/${_tag}/carapace-bin_${pkgver}_linux_arm64.tar.gz")
-sha256sums_x86_64=(6883bb61fe88a8f56c7b74bc9ff68445791ee22697f705b59a063443d8ffc8ad)
-sha256sums_aarch64=(d501dfb17f3d1fe32d71e2a3704ef92572fc407f90fa9684d07c64f50d9d2fe4)
+sha256sums_x86_64=('ab07066de9e08421cc3c9332746ebd90140faa6d81cc2ad5964fb2cbbcb01b84')
+sha256sums_aarch64=('31c69a94097ee689bafae64ae1b9af5978826f181a8379021c323d5284f70470')
 
 package() {
   local f
