@@ -1,6 +1,8 @@
 # GURT changelog 🦆
 
-## Not released yet
+## 1.5.0: Window 🪟
+
+gurt on Windows is real Windows now: winget, scoop and Chocolatey first, WSL only for apps that are Linux-only, and GURT's app as a Windows app. Plus doas, all the way through.
 
 ### New
 - **GURT on Windows is native now 🪟** `gurt install firefox` on Windows gets the Windows version from winget, then scoop, then Chocolatey. Apps that only exist for Linux go in WSL, and gurt offers to set WSL up the first time you ask for one (no WSL needed before that). `winget/`, `scoop/` and `choco/` are sources you can pick, and `apt/`, `aur/`, `flatpak/`… go to WSL. `gurt list`, `remove`, `update`, `upgrade`, `search`, `info` and `pack` work on all of it.
@@ -8,6 +10,7 @@
 - GURTSetupWizard.exe needs no admin anymore, and doesn't set up WSL until an app needs it.
 - Recipes can name an app's Windows package: `win_winget=`, `win_scoop=`, `win_choco=` (or `win=no` for Linux-only apps).
 - **doas 🔐** GURT's app can type your doas password now (doas has no askpass like sudo, so it gets a terminal of its own just for the password), Hotwyr wraps `doas apt install …` like `sudo apt install …`, and update alerts auto-update when doas needs no password (`nopass`). Have both sudo and doas? `gurt root doas` picks doas (`gurt root auto` goes back to sudo first; `GURT_SUDO=doas` for one command).
+- New in Main GURT: cookie (run Android apps on Linux in their own windows).
 
 ## 1.4.2: Swap 🔄
 
