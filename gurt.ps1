@@ -6,7 +6,7 @@
 # It keeps its own list of what it installed in %LOCALAPPDATA%\gurt\db (gurt list / remove / upgrade use it).
 # Plain ASCII on purpose: Windows PowerShell 5.1 reads a file without a BOM as ANSI.
 $ErrorActionPreference = 'Stop'
-$GURT_VERSION = '1.4.2'
+$GURT_VERSION = '1.5.0'
 
 $GHome  = if ($env:GURT_HOME) { $env:GURT_HOME } else { Join-Path $env:LOCALAPPDATA 'gurt' }
 $Bin    = Join-Path $GHome 'bin'
