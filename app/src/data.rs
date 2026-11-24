@@ -941,7 +941,7 @@ pub fn split_pkg_ext(name: &str) -> (&str, &str) {
 /// files gurt can install / convert (the same list gurt outsource understands)
 pub fn droppable(name: &str) -> bool {
     let l = name.to_lowercase();
-    let exts = [".deb", ".rpm", ".apk", ".xbps", ".eopkg", ".gurt", ".appimage", ".dmg", ".exe", ".msi", ".snap", ".flatpak", ".flatpakref",
+    let exts = [".deb", ".rpm", ".apk", ".xbps", ".eopkg", ".gurt", ".gurtsrc", ".appimage", ".dmg", ".exe", ".msi", ".snap", ".flatpak", ".flatpakref",
         ".tgz", ".tbz", ".tbz2", ".txz", ".tzst", ".zip", ".7z", ".gz", ".xz", ".bz2", ".zst", ".tar"];
     exts.iter().any(|e| l.ends_with(e)) || l.contains(".pkg.tar") || l.contains(".tar.")
 }

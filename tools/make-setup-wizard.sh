@@ -55,7 +55,7 @@ Terminal=false
 StartupWMClass=gurt
 Categories=System;Settings;PackageManager;
 Keywords=packages;install;aur;apt;flatpak;setup;wizard;
-MimeType=application/x-gurt-package;
+MimeType=application/x-gurt-package;application/x-gurt-source;application/x-compressed-tar;application/x-xz-compressed-tar;application/x-bzip2-compressed-tar;application/x-zstd-compressed-tar;application/zip;
 DESK
 # 🧙 the GURT Setup Wizard: its own app in the menu (its own window, not inside GURT)
 install -Dm644 /dev/stdin "$t/usr/share/applications/gurt-setup.desktop" <<'DESK'

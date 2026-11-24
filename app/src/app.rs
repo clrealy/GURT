@@ -607,8 +607,14 @@ impl App {
             return;
         }
         let p = f.display().to_string();
-        let sub = if name.to_lowercase().ends_with(".gurt") { "add" } else { "outsource" };
-        self.go(Act::new(&["-y", sub, &p]).ask(format!("Install {name}?"), format!("gurt will install {name}. only install files you trust.")));
+        let l = name.to_lowercase();
+        if l.ends_with(".gurtsrc") {
+            // an app as its source code: it compiles here first
+            self.go(Act::new(&["-y", "outsource", &p]).ask(format!("Build {name} from source?"), format!("gurt compiles {name} on your computer (that can take a few minutes), then installs it. its build script runs as you, so only build files you trust.")));
+            return;
+        }
+        let sub = if l.ends_with(".gurt") { "add" } else { "outsource" };
+        self.go(Act::new(&["-y", sub, &p]).ask(format!("Install {name}?"), format!("gurt will install {name}. if it's source code, gurt builds it first. only install files you trust.")));
     }
 
     pub fn load_zone(&mut self) {

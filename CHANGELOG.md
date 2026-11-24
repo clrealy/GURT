@@ -1,5 +1,11 @@
 # GURT changelog 🦆
 
+## Not released yet
+
+### New
+- **Apps that build themselves 🧱** a `.gurtsrc` file is an app as its source code plus the GURTBUILD that builds it. Double-click one (or `gurt install ./app.gurtsrc`) and GURT compiles it on your computer, then installs it like any `git/` app, so `gurt remove` and `gurt upgrade` work on it. Make one from any folder with a GURTBUILD: `gurt srcpack <folder>`.
+- Source tarballs and zips you downloaded get "Open with GURT" too: GURT sees it's source code, finds how it builds (its GURTBUILD, PKGBUILD, CMake, meson, cargo, go or make) and builds it. Your archive app stays their default.
+
 ## 1.5.0: Window 🪟
 
 gurt on Windows is real Windows now: winget, scoop and Chocolatey first, WSL only for apps that are Linux-only, and GURT's app as a Windows app. Plus doas, all the way through.

@@ -3137,7 +3137,7 @@ cmd_convert() { # file|url format|out-file [-o dir]
 # .deb .rpm .pkg.tar.* .apk .xbps .eopkg → repacked like above · .AppImage → installed + menu entry
 # .tar.* .zip .7z .gz/.xz/.zst/.bz2 → source trees get built, prebuilt apps get installed · lone binaries too
 # .snap .flatpak .flatpakref → handed to snap/flatpak · .exe .msi → wine · .dmg → Darling (yes really 🍎)
-OS_FILE_RE='\.(deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|appimage|dmg|exe|msi|snap|flatpak|flatpakref|tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst)$'
+OS_FILE_RE='\.(gurtsrc|deb|rpm|pkg\.tar(\.[a-z0-9]+)?|apk|xbps|eopkg|appimage|dmg|exe|msi|snap|flatpak|flatpakref|tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst)$'
 is_os_file() { # arg → is it a file (or a url to one) rather than a git repo?
   [[ -f $1 ]] && return 0
   local l=${1,,}; l=${l%%[?#]*}
@@ -3159,7 +3159,7 @@ fetch_arg() { # file-or-url → prints a local path
 # "Some_App-1.2.3-linux-x64.tar.gz" → "some_app\t1.2.3"
 file_namever() { # path
   local b=${1##*/} n v
-  b=$(sed -E 's/\.(pkg\.tar(\.[a-z0-9]+)?|tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst|appimage|dmg|exe|msi|snap|flatpak|flatpakref|deb|rpm|apk|xbps|eopkg)$//I' <<<"$b")
+  b=$(sed -E 's/\.(gurtsrc|pkg\.tar(\.[a-z0-9]+)?|tar(\.[a-z0-9]+)?|tgz|tbz2?|txz|tzst|zip|7z|gz|xz|bz2|zst|appimage|dmg|exe|msi|snap|flatpak|flatpakref|deb|rpm|apk|xbps|eopkg)$//I' <<<"$b")
   b=$(sed -E 's/([-_.](linux|gnu|musl|x86[-_]64|amd64|x64|arm64|aarch64|static|portable|setup|installer|win(32|64)?|windows|mac(os)?|osx|darwin|universal))+$//I' <<<"$b")
   if [[ $b =~ ^(.+)[-_]v?([0-9][0-9A-Za-z.+~]*)$ ]]; then n=${BASH_REMATCH[1]}; v=${BASH_REMATCH[2]}
   else n=$b; v="0.file$(date +%Y%m%d)"; fi
@@ -3358,17 +3358,53 @@ archive_install() { # file name ver reason
     app_tree_install "$n" "$name" "$ver" "${f##*/}" "$reason"; rm -rf "$work"; return
   fi
   if [[ -f $root/GURTBUILD || -f $root/PKGBUILD ]] || os_build_kind "$root" >/dev/null; then
-    # source code → snapshot it as a local git repo and build it the normal outsource way
-    need_tool git outsource
-    local snap="$GURT_CACHE/outsource-src/$name"
-    rm -rf "$snap"; mkdir -p "$snap"; cp -a "$root/." "$snap/"; rm -rf "$work"
     msg2 "${f##*/} is source code — building it"
-    ( cd "$snap" && git init -q && git add -A && git -c user.name=gurt -c user.email=gurt@localhost commit -qm "${f##*/}" ) || die "couldn't snapshot the source"
-    outsource_install "file://$snap" "$reason" "$ver"; return
+    src_tree_install "$root" "$name" "$ver" "${f##*/}" "$reason" "$work"; return
   fi
   ask "install $name $ver (prebuilt app from ${f##*/})?" || { rm -rf "$work"; die "aborted, no cap"; }
   app_tree_install "$root" "$name" "$ver" "${f##*/}" "$reason"
   rm -rf "$work"
+}
+
+src_tree_install() { # source-dir name ver label reason [workdir to delete] → built + installed the normal outsource way
+  # a snapshot as a local git repo, so gurt remove / gurt upgrade --force work on it like on any git/ app
+  need_tool git outsource
+  local snap="$GURT_CACHE/outsource-src/$2"
+  rm -rf "$snap"; mkdir -p "$snap"; cp -a "$1/." "$snap/"; [[ -n ${6:-} ]] && rm -rf "$6"
+  ( cd "$snap" && git init -q && git add -A && git -c user.name=gurt -c user.email=gurt@localhost commit -qm "$4" ) || die "couldn't snapshot the source"
+  outsource_install "file://$snap" "$5" "$3"
+}
+
+# ── 🧱 .gurtsrc: an app as its source code + the GURTBUILD that builds it, in one file. double-click it (or gurt install
+#    ./app.gurtsrc) and it compiles on your computer, then installs like any git/ app. gurt srcpack <dir> makes one ──
+gurtsrc_peek() { # file → its top folder's path inside (where GURTBUILD is), "" = not a .gurtsrc
+  tar -tzf "$1" 2>/dev/null | awk '{ sub(/^\.\//, "") } $0 == "GURTBUILD" { print "."; exit } /^[^\/]+\/GURTBUILD$/ { sub(/\/GURTBUILD$/, ""); print; exit }'
+}
+gurtsrc_install() { # file reason
+  local f=$1 reason=${2:-explicit} work top nv name ver
+  [[ -f $f ]] || die "no such file: $f"
+  top=$(gurtsrc_peek "$f")
+  [[ -n $top ]] || die "${f##*/} isn't a .gurtsrc: there's no GURTBUILD in it (make one with: gurt srcpack <folder>)"
+  nv=$(file_namever "$f"); name=${nv%%$'\t'*}; ver=${nv#*$'\t'}
+  work=$(mktemp -d "${TMPDIR:-/tmp}/gurt-src.XXXXXX")
+  tar -xzf "$f" -C "$work" --no-same-owner 2>/dev/null || { rm -rf "$work"; die "couldn't open ${f##*/}"; }
+  msg "🧱 ${f##*/} is an app as source code: gurt compiles it on your computer (that can take a while), then installs it"
+  src_tree_install "$work/$top" "$name" "$ver" "${f##*/}" "$reason" "$work"
+}
+cmd_srcpack() { # [dir] [out dir] → <name>-<ver>.gurtsrc
+  local dir=${1:-.} out=${2:-$PWD} info name ver f
+  [[ -d $dir ]] || die "no such folder: $dir"
+  dir=$(cd "$dir" && pwd)
+  [[ -f $dir/GURTBUILD ]] || die "$dir has no GURTBUILD, so nobody would know how to build it (start one: gurt new <name>)"
+  info=$(cd "$dir" && load_recipe && print_srcinfo) || die "couldn't read $dir/GURTBUILD"
+  name=$(info_get <(echo "$info") pkgname); ver=$(info_get <(echo "$info") pkgver)
+  [[ -n $name && -n $ver ]] || die "GURTBUILD needs a pkgname and a pkgver"
+  mkdir -p "$out"; f="$(cd "$out" && pwd)/$name-$ver.gurtsrc"
+  # the source as it is, minus git history and what earlier builds left behind
+  tar -czf "$f" --exclude-vcs --exclude='*.gurt' --exclude='*.gurtsrc' --exclude=./pkg --exclude=./.gurt-build \
+    --owner=0 --group=0 --numeric-owner --transform "s,^\.,$name-$ver," -C "$dir" . || die "couldn't pack $dir"
+  [[ -n $(gurtsrc_peek "$f") ]] || { rm -f "$f"; die "packing went wrong: no GURTBUILD in $f"; }
+  msg "🧱 $f ($(du -h "$f" | cut -f1)): double-click it, or gurt install $f, and it builds from source"
 }
 
 # ── 🤖 Android apps, through Waydroid (on ChromeOS: ChromeOS's own Android): gurt install android/<app> (from F-Droid) ·
@@ -4176,6 +4212,7 @@ outsource_file() { # file-or-url reason
       ask "install $name $ver (AppImage)?" || die "aborted, no cap"
       appimage_install "$f" "$name" "$ver" "$reason" ;;
     *.gurt)       install_file "$f" "$reason" ;;
+    *.gurtsrc)    gurtsrc_install "$f" "$reason" ;;
     *.dmg)        dmg_install "$f" "$reason" ;;
     *.exe|*.msi)  win_install "$f" "$name" "$ver" "$reason" ;;
     *.snap)       ensure_snap; msg "${f##*/} → snap (unsigned, so --dangerous)"; asroot snap install --dangerous "$f" || die "snap couldn't install it"
@@ -5918,7 +5955,7 @@ cmd_complete() {
                  info_get "$f" pkgname; awk -F' = ' '$1=="alias"{print $2}' "$f"; done ;;
     commands)  printf '%s\n' sync search info install update upgrade self-update uninstall remove autoremove list files owns lottery sysup \
                  build add srcinfo checksum new repo dirt gui de outsource undo rollback hold unhold export import completions doctor version help yo \
-                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache try dupes hotwyr gh-only redeem native root foss pack ;;
+                 convert key verify sus why hogs compare profile notify snapshots achievements utils setup run history cache try dupes hotwyr gh-only redeem native root foss pack srcpack ;;
     sources)   printf '%s/\n' aur apt dnf zypper pacman apk xbps eopkg gentoo flatpak snap nix gh pip npm cargo appimage brew dirt ;;
   esac
   return 0
@@ -5998,7 +6035,7 @@ gui_desktop_entry() { # add "GURT" to your app menu (just for you, no sudo)
     > "$data/applications/gurt-setup.desktop"
   entry=$(printf '%s\n' "[Desktop Entry]" "Type=Application" "Name=GURT" "GenericName=Package Manager" \
     "Comment=every distro's packages, on every distro" "Exec=$(readlink -f "$0") gui %f" "Icon=$icon" "Terminal=false" "StartupWMClass=gurt" \
-    "Categories=System;PackageManager;" "Keywords=packages;install;aur;apt;flatpak;" "MimeType=application/x-gurt-package;")
+    "Categories=System;PackageManager;" "Keywords=packages;install;aur;apt;flatpak;" "MimeType=$GURT_MIMES")
   [[ $entry == "$(cat "$data/applications/gurt.desktop" 2>/dev/null)" ]] && return 0
   printf '%s\n' "$entry" > "$data/applications/gurt.desktop"
   # tell the app menu (KDE caches it)
@@ -6006,7 +6043,9 @@ gui_desktop_entry() { # add "GURT" to your app menu (just for you, no sudo)
   for f in kbuildsycoca6 kbuildsycoca5; do command -v "$f" >/dev/null && { "$f" >/dev/null 2>&1 & break; }; done
   return 0
 }
-# .gurt files get their own type + icon, and double-clicking one opens it in GURT
+# .gurt and .gurtsrc files get their own types + icons, and double-clicking one opens it in GURT. source tarballs and
+# zips get "Open with GURT" too (it builds them), but your archive app stays their default
+GURT_MIMES="application/x-gurt-package;application/x-gurt-source;application/x-compressed-tar;application/x-xz-compressed-tar;application/x-bzip2-compressed-tar;application/x-zstd-compressed-tar;application/zip;"
 gui_mime_types() { # data-dir icon-png
   local data=$1 png=$2 xml
   xml='<?xml version="1.0" encoding="UTF-8"?>
@@ -6017,17 +6056,27 @@ gui_mime_types() { # data-dir icon-png
     <icon name="application-x-gurt-package"/>
     <glob pattern="*.gurt" weight="90"/>
   </mime-type>
+  <mime-type type="application/x-gurt-source">
+    <comment>GURT app (source code)</comment>
+    <sub-class-of type="application/x-compressed-tar"/>
+    <icon name="application-x-gurt-source"/>
+    <glob pattern="*.gurtsrc" weight="90"/>
+  </mime-type>
 </mime-info>'
   mkdir -p "$data/mime/packages" "$data/icons/hicolor/256x256/mimetypes" 2>/dev/null || return 0
-  [[ -f $png ]] && ! cmp -s "$png" "$data/icons/hicolor/256x256/mimetypes/application-x-gurt-package.png" &&
-    cp -f "$png" "$data/icons/hicolor/256x256/mimetypes/application-x-gurt-package.png" 2>/dev/null
+  local t; for t in package source; do
+    [[ -f $png ]] && ! cmp -s "$png" "$data/icons/hicolor/256x256/mimetypes/application-x-gurt-$t.png" &&
+      cp -f "$png" "$data/icons/hicolor/256x256/mimetypes/application-x-gurt-$t.png" 2>/dev/null
+  done
   if [[ $xml != "$(cat "$data/mime/packages/gurt.xml" 2>/dev/null)" ]]; then
     printf '%s\n' "$xml" > "$data/mime/packages/gurt.xml"
     command -v update-mime-database >/dev/null && update-mime-database "$data/mime" >/dev/null 2>&1
   fi
-  if command -v xdg-mime >/dev/null && [[ $(xdg-mime query default application/x-gurt-package 2>/dev/null) != gurt.desktop ]]; then
-    xdg-mime default gurt.desktop application/x-gurt-package 2>/dev/null
-  fi
+  for t in package source; do
+    if command -v xdg-mime >/dev/null && [[ $(xdg-mime query default "application/x-gurt-$t" 2>/dev/null) != gurt.desktop ]]; then
+      xdg-mime default gurt.desktop "application/x-gurt-$t" 2>/dev/null
+    fi
+  done
   return 0
 }
 gui_setup() { # get GURT's app + the libraries its window needs (no questions: you asked for the app)
@@ -6671,7 +6720,7 @@ _gurt() {
     root) COMPREPLY=($(compgen -W "auto sudo doas status" -- "$cur")) ;;
     repo|repos) COMPREPLY=($(compgen -W "add list remove" -- "$cur")) ;;
     sync) COMPREPLY=($(compgen -W "all aur apt dnf zypper pacman apk xbps eopkg gentoo" -- "$cur")) ;;
-    import|add|export|build) COMPREPLY=($(compgen -f -- "$cur")) ;;
+    import|add|export|build|srcpack) COMPREPLY=($(compgen -f -- "$cur")) ;;
     completions) COMPREPLY=($(compgen -W "bash zsh fish" -- "$cur")) ;;
   esac
 }
@@ -6689,7 +6738,7 @@ _gurt() {
     root) compadd auto sudo doas status ;;
     repo|repos) compadd add list remove ;;
     sync) compadd all aur apt dnf zypper pacman apk xbps eopkg gentoo ;;
-    import|add|export|build) _files ;;
+    import|add|export|build|srcpack) _files ;;
     completions) compadd bash zsh fish ;;
   esac
 }
@@ -6750,7 +6799,7 @@ cmd_uninstall() {
   cmd_notify off >/dev/null 2>&1 || true
   # the menu entry, icons, file type + tab completion gurt made just for you
   rm -f "$data/applications/gurt.desktop" "$data/applications/gurt-setup.desktop" "$data/icons/hicolor/256x256/apps/gurt.png" \
-        "$data/icons/hicolor/256x256/mimetypes/application-x-gurt-package.png" "$data/mime/packages/gurt.xml" \
+        "$data/icons/hicolor/256x256/mimetypes/application-x-gurt-package.png" "$data/icons/hicolor/256x256/mimetypes/application-x-gurt-source.png" "$data/mime/packages/gurt.xml" \
         "$data/bash-completion/completions/gurt" "$cfg/fish/completions/gurt.fish" 2>/dev/null || true
   command -v update-mime-database >/dev/null && update-mime-database "$data/mime" >/dev/null 2>&1 || true
   command -v update-desktop-database >/dev/null && update-desktop-database -q "$data/applications" 2>/dev/null || true
@@ -7598,6 +7647,7 @@ ${B}misc${R0}
   hotwyr on|off        Hotwyr: gurt backs up your package manager. sudo apt install yay → apt can't, gurt offers aur/yay ⚡
   native on|off        apps your distro has come from your distro, not Flathub / Snap (on by default) 🐧
   root sudo|doas|auto  what gurt uses for root when you have both (auto: sudo, else doas) 🔐
+  srcpack [dir]        pack a folder with a GURTBUILD into <name>-<ver>.gurtsrc: double-click it and it builds from source 🧱
   foss on|off          FOSS-only mode: no closed-source apps at all (off: they install with a heads-up) 🔓
   snapshots            the snapshots gurt took before system upgrades (btrfs: snapper/timeshift/plain) 📸
   achievements         🏆 trophies for doing gurt things
@@ -7685,6 +7735,7 @@ main() {
     install|i|get)     (( $# )) || die "install what tho"
                        install_one() { if is_pkgfile "$1"; then pkgfile_install "$1" explicit
                                        elif [[ ${1,,} == *.gurt && -f $1 ]]; then install_file "$1" explicit
+                                       elif [[ ${1,,} == *.gurtsrc && -f $1 ]]; then gurtsrc_install "$1" explicit
                                        elif $SCAN && [[ $1 != */* ]]; then scan_install "$1"; else install_any "$1" explicit; fi; }
                        if (( $# == 1 )); then install_one "$1"
                        else   # a few at once: each on its own, so one that fails doesn't stop the rest
@@ -7733,6 +7784,7 @@ main() {
     run|open|launch)   cmd_run "$@" ;;
     owns)              cmd_owns "$@" ;;
     build)             build_pkg "${1:-.}" "${2:-$PWD}"; echo "$BUILT_PKG" ;;
+    srcpack)           cmd_srcpack "$@" ;;
     add)               (( $# )) || die "add what tho"; for p; do if is_pkgfile "$p"; then pkgfile_install "$p" explicit; else install_file "$p" explicit; fi; done; ach_installs ;;
     srcinfo)           cmd_srcinfo "$@" ;;
     checksum)          cmd_checksum "$@" ;;
