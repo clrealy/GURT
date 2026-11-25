@@ -897,6 +897,12 @@ install_file() { # file.gurt [reason]
   if [[ -z $R ]]; then
     local sysfiles
     sysfiles=$(sed 's|^|/|' "$tmp/.FILES" | sys_owned)
+    if [[ -n $sysfiles && $reason == dep && $src != gurt ]] && ! is_installed "$key"; then
+      # a dependency whose files your distro already has: your distro has that thing (under another name). use yours
+      rm -rf "$tmp"
+      msg2 "$(pretty "$key"): your distro already has its files ($(head -n1 <<<"$sysfiles")…), so gurt uses yours"
+      return 0
+    fi
     if [[ -n $sysfiles ]]; then
       sed 's/^/   /' <<<"$sysfiles" | head -n 15 >&2
       rm -rf "$tmp"
@@ -1945,8 +1951,26 @@ CORE_RE='^(ncurses|ncurses-libs|ncurses-base|libncurses.*|libtinfo.*|readline|li
 LDCACHE=""
 ld_has() {
   [[ -n $LDCACHE ]] || LDCACHE=$( { ldconfig -p || /sbin/ldconfig -p; } 2>/dev/null || true)
-  local re; re=$(sed 's/[][\.*^$+?(){}|/]/\\&/g' <<<"$1")
-  grep -qiE "^[[:space:]]+$re " <<<"$LDCACHE"      # -i: debian says libxss1, the lib is libXss.so.1
+  local n=$1 alt re
+  # debian names say - where the library says _: libgdk-pixbuf-2.0-0 → libgdk_pixbuf-2.0.so.0
+  if [[ $n =~ ^(.+)-([0-9][0-9.]*\.so.*)$ ]]; then alt="${BASH_REMATCH[1]//-/_}-${BASH_REMATCH[2]}"; else alt=${n//-/_}; fi
+  re=$(sed 's/[][\.*^$+?(){}|/]/\\&/g' <<<"$n"); [[ $alt != "$n" ]] && re="$re|$(sed 's/[][\.*^$+?(){}|/]/\\&/g' <<<"$alt")"
+  grep -qiE "^[[:space:]]+($re) " <<<"$LDCACHE"      # -i: debian says libxss1, the lib is libXss.so.1
+}
+host_lib_pkg() { # debian/fedora-style library package → your distro's package of the same library, if one has a matching name
+  # libgdk-pixbuf-2.0-0 → gdk-pixbuf2 · libgtk-3-0 → gtk3 · libnotify4 → libnotify · libnss3 → nss · libpango-1.0-0 → pango
+  local d=${1%t64} base="" api="" so="" c seen=" "
+  d=${d%-dev}; d=${d%-devel}; d=${d%-libs}
+  [[ $d == lib?* ]] || return 1
+  if [[ $d =~ ^(lib[a-z0-9_+.-]*[a-z_+])-?([0-9]+(\.[0-9]+)*)-([0-9]+)$ ]]; then base=${BASH_REMATCH[1]}; api=${BASH_REMATCH[2]}; so=${BASH_REMATCH[4]}
+  elif [[ $d =~ ^(lib[a-z0-9_+.-]*[a-z_+])-?([0-9]+)$ ]]; then base=${BASH_REMATCH[1]}; so=${BASH_REMATCH[2]}
+  else base=$d; fi
+  base=${base%-}; local nolib=${base#lib}
+  for c in ${api:+"$nolib${api%%.*}" "$nolib$api" "$base${api%%.*}"} ${so:+"$nolib$so"} "$base" "$nolib"; do
+    [[ -n $c && $c != "$1" && $seen != *" $c "* ]] || continue; seen+="$c "
+    [[ ${#c} -ge 3 ]] && pm_available "$c" && { echo "$c"; return 0; }
+  done
+  return 1
 }
 host_has() {
   local d=$1
@@ -2055,6 +2079,10 @@ foreign_dep() { # src dep
     fi
   fi
   if pm_available "$dep"; then NATIVE_Q+=("$dep"); return 0; fi
+  # a library under another distro's name: your distro's package of it (Debian's libgtk-3-0 is Arch's gtk3)
+  if [[ $(src_pm "$src") != "$PM" ]] && nat=$(host_lib_pkg "$dep"); then
+    msg2 "$dep is $nat on your distro: using that"; NATIVE_Q+=("$nat"); return 0
+  fi
   # a Perl or Python module from Debian lands where only Debian's perl/python looks (and an XS module only fits
   # Debian's perl): your distro's own package of the same module is the one that works
   if [[ $(src_pm "$src") == apt && $PM != apt ]] && nat=$(host_lang_pkg "$dep"); then

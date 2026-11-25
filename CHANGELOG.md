@@ -6,6 +6,9 @@
 - **Apps that build themselves 🧱** a `.gurtsrc` file is an app as its source code plus the GURTBUILD that builds it. Double-click one (or `gurt install ./app.gurtsrc`) and GURT compiles it on your computer, then installs it like any `git/` app, so `gurt remove` and `gurt upgrade` work on it. Make one from any folder with a GURTBUILD: `gurt srcpack <folder>`.
 - Source tarballs and zips you downloaded get "Open with GURT" too: GURT sees it's source code, finds how it builds (its GURTBUILD, PKGBUILD, CMake, meson, cargo, go or make) and builds it. Your archive app stays their default.
 
+### Fixed
+- **Debian apps on Arch (and Fedora, openSUSE…) dying on a library you already have**, like `claude-desktop` on Arch: "apt/libgdk-pixbuf2.0-common would overwrite files your distro (pacman) owns". gurt now knows Debian's library names for your distro's (`libgdk-pixbuf-2.0-0` is Arch's `gdk-pixbuf2`, `libgtk-3-0` is `gtk3`, `libnotify4` is `libnotify`, `libnss3` is `nss`), sees libraries spelled with `_` (`libgdk_pixbuf-2.0.so.0`), and a dependency whose files your distro already owns is skipped (you have it) instead of stopping the install. An app you asked for still never overwrites your distro's files.
+
 ## 1.5.0: Window 🪟
 
 gurt on Windows is real Windows now: winget, scoop and Chocolatey first, WSL only for apps that are Linux-only, and GURT's app as a Windows app. Plus doas, all the way through.
