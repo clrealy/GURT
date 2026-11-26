@@ -1,14 +1,14 @@
 # deps.map — translates GENERIC dependency names into each distro's real package names
 #
 # format:  <generic>  <pm>=<pkg>[,<pkg>...]  ...
-#   pm keys: apt dnf pacman zypper apk xbps emerge eopkg gobo   (yum uses the dnf column; gobo = GoboLinux, names are its /Programs names)
+#   pm keys: apt dnf pacman zypper apk xbps emerge eopkg gobo moss   (yum uses the dnf column; gobo = GoboLinux, names are its /Programs names; moss = AerynOS, providers like binary(gcc) work)
 #   <pm>=-   means "nothing to install on this distro"
 #   missing pm key → gurt just tries the generic name as-is
 #
 # recipes ONLY use the generic names on the left. PRs adding more mappings are goated 🙏
 
 # ── toolchains & build systems ──
-cc          apt=build-essential  dnf=gcc,gcc-c++,make  pacman=base-devel  zypper=gcc,gcc-c++,make  apk=build-base  xbps=base-devel  emerge=-  eopkg=gcc,make  gobo=GCC,Make
+cc          apt=build-essential  dnf=gcc,gcc-c++,make  pacman=base-devel  zypper=gcc,gcc-c++,make  apk=build-base  xbps=base-devel  emerge=-  eopkg=gcc,make  gobo=GCC,Make  moss=binary(gcc),binary(g++),binary(make)
 make        emerge=dev-build/make
 cmake       emerge=dev-build/cmake
 meson       emerge=dev-build/meson

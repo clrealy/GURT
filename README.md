@@ -27,7 +27,7 @@ gurt search fetch --repo fedora
 gurt remove htop --repo apt
 ```
 
-It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine, Void, Gentoo, GoboLinux, Solus, Devuan and anything else built on those.
+It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine, Void, Gentoo, GoboLinux, AerynOS, Solus, Devuan and anything else built on those.
 
 ## Sources
 
@@ -270,6 +270,15 @@ gurt runs on Gentoo like on any distro: `curl -fsSL https://gurtproject.org/inst
 - **Hotwyr** wraps `emerge`: `sudo emerge -av yay` can't find it → gurt offers aur/yay; `emerge -s` shows gurt's results too; `emerge -uDN @world` updates what gurt installed after.
 - Heads up: anything from your own repos compiles unless you've set up the [binary package host](https://wiki.gentoo.org/wiki/Gentoo_Binary_Host_Quickstart), so a big app can take a while. Other distros' packages and Flathub apps install prebuilt.
 
+### AerynOS 🌌
+
+gurt runs on AerynOS: `curl -fsSL https://gurtproject.org/install.sh | sh`.
+
+- **moss is your package manager** for deps, `gurt utils`, `gurt remove` and native first (`moss pkg add` / `pkg remove`, and providers like `binary(gcc)` or `pkgconfig(gtk4)` for build deps). `gurt sysup` runs `moss sync --update`, so every system update is a new moss state you can boot back to.
+- **Everything gurt installs lives in /opt/gurt**, gurt itself too. moss swaps in a whole new /usr on every install and update (/usr/local included), so anything else in there would vanish. Other distros' packages get moved over when they install: `/usr/bin/x` becomes `/opt/gurt/bin/x`, and their app menu entries, symlinks and libraries follow. gurt puts /opt/gurt on your PATH, library path and app menu (`/etc/profile.d`, `/etc/ld.so.conf.d`, `/etc/environment.d`), so open a new terminal (or log in again for the menu) after the first one.
+- A package that hooks into the system (services, udev rules, PAM) goes in a box instead (`--box`), since those only work from /usr.
+- Heads up: an app with /usr paths baked into it might not find its files from /opt/gurt. Flathub, AppImage and `gh/` apps don't care, so they're the safest picks on AerynOS.
+
 ### GoboLinux 🐟
 
 gurt runs on GoboLinux too: `curl -fsSL https://gurtproject.org/install.sh | sh`.
@@ -320,6 +329,7 @@ gurt isn't just an installer: `gurt upgrade` updates **everything**. First your 
 | Solus | `eopkg upgrade` |
 | Gentoo | `emerge --sync` + `emerge -uDN @world` |
 | GoboLinux | `UpdateRecipes`, then `InstallPackage` / `Compile` for what `SuggestUpdates` lists |
+| AerynOS | `moss sync --update` (a new state you can boot back to) |
 
 ```sh
 gurt update               # what's waiting (system + gurt + gurt itself), installs nothing
