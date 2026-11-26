@@ -1009,6 +1009,7 @@ dependencies = [
  "eframe",
  "egui",
  "egui_extras",
+ "ehttp",
  "image",
  "libc",
  "serde",

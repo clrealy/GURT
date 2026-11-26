@@ -270,6 +270,16 @@ gurt runs on Gentoo like on any distro: `curl -fsSL https://gurtproject.org/inst
 - **Hotwyr** wraps `emerge`: `sudo emerge -av yay` can't find it → gurt offers aur/yay; `emerge -s` shows gurt's results too; `emerge -uDN @world` updates what gurt installed after.
 - Heads up: anything from your own repos compiles unless you've set up the [binary package host](https://wiki.gentoo.org/wiki/Gentoo_Binary_Host_Quickstart), so a big app can take a while. Other distros' packages and Flathub apps install prebuilt.
 
+### icontd
+
+icontd is Arch-based (`ID=icontd`, `ID_LIKE=arch` in /etc/os-release), so gurt uses pacman there. What's different:
+
+- **pacman and gurt live in `/usr/lib/icontd/bin`, off PATH.** gurt finds pacman as `$PACMAN`, then `/usr/lib/icontd/bin/pacman`, then `pacman` on PATH, and always runs it by its full path (sudo too). gurt runs fine by its full path, and `gurt self-update` replaces the gurt that's running, wherever it is.
+- **Installing it:** `arch-chroot /mnt bash -c "curl -fsSL https://gurtproject.org/install.sh | sh"` puts gurt in `/usr/bin/gurt` (icontd moves it), its files in `/usr/share/gurt` and the app in `/usr/lib/gurt`. It asks nothing, starts no services and needs no session.
+- **From scripts:** with no terminal on stdin, gurt says yes to everything (same as `-y` / `--yes`), shows no colors and never pages. Any failure exits non-zero, including a failed system update inside `gurt upgrade`.
+- **Commands to rely on:** `gurt install <pkg>`, `gurt remove <pkg>`, `gurt update` (what's waiting), `gurt upgrade` (installs it), and `gurt list --installed`: one name per line, exactly what `gurt remove` takes (`firefox`, `aur/yay`, `flatpak/org.gimp.GIMP`).
+- **GURT's app:** installs, removes and updates run as `pkexec /usr/lib/icontd/bin/gurt …` (icontd's polkit rule asks for the password). Browsing and search never ask: Main GURT's list comes from gurtproject.org/packages.json (cached for when you're offline). Since those jobs run as root, Flathub apps from the app install system-wide. AUR/source builds and pip/npm/cargo apps never run as root, so the app tells you to install those from a terminal (`gurt install aur/yay`).
+
 ### AerynOS 🌌
 
 gurt runs on AerynOS: `curl -fsSL https://gurtproject.org/install.sh | sh`.
