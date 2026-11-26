@@ -115,6 +115,22 @@ pub fn start(args: Vec<String>, stdin: Option<String>) -> Arc<Job> {
     job.st.lock().unwrap().lines.push(format!("$ {title}"));
     let j = job.clone();
     std::thread::spawn(move || {
+        // icontd: what changes the system goes through pkexec + icontd's own gurt (its polkit rule asks for the password)
+        #[cfg(unix)]
+        let mut cmd = if crate::data::is_icontd() && crate::data::needs_root(&args) {
+            // pkexec only takes a full path
+            let g = if std::path::Path::new(crate::data::ICONTD_GURT).exists() {
+                PathBuf::from(crate::data::ICONTD_GURT)
+            } else {
+                std::fs::canonicalize(crate::data::gurt()).unwrap_or_else(|_| PathBuf::from(crate::data::gurt()))
+            };
+            let mut c = std::process::Command::new("pkexec");
+            c.arg(g);
+            c
+        } else {
+            crate::data::gurt_cmd()
+        };
+        #[cfg(windows)]
         let mut cmd = crate::data::gurt_cmd();
         cmd.args(&args)
             .env("GURT_GUI", "1")

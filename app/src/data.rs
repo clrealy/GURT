@@ -266,46 +266,125 @@ fn recipe_trust(info: &HashMap<String, Vec<String>>) -> String {
     }
 }
 
+// ── icontd (an Arch-based distro): its gurt lives in /usr/lib/icontd/bin, off PATH. what changes the system runs as
+//    pkexec /usr/lib/icontd/bin/gurt … (icontd's polkit rule asks for the password); browsing never needs root, and Main
+//    GURT's list comes straight from gurtproject.org instead of from gurt ──
+#[cfg_attr(windows, allow(dead_code))]
+pub const ICONTD_GURT: &str = "/usr/lib/icontd/bin/gurt";
+pub fn is_icontd() -> bool {
+    static ON: OnceLock<bool> = OnceLock::new();
+    *ON.get_or_init(|| {
+        fs::read_to_string("/etc/os-release")
+            .unwrap_or_default()
+            .lines()
+            .any(|l| l.strip_prefix("ID=").is_some_and(|v| v.trim().trim_matches(|c| c == '"' || c == '\'') == "icontd"))
+    })
+}
+/// does this gurt command change the system? (on icontd: run it through pkexec)
+#[cfg_attr(windows, allow(dead_code))]
+pub fn needs_root(args: &[String]) -> bool {
+    let mut words = args.iter().filter(|a| !a.starts_with('-'));
+    let cmd = words.next().map(String::as_str).unwrap_or("");
+    let sub = words.next().map(String::as_str).unwrap_or("");
+    match cmd {
+        // (not "update": it only looks for what's waiting, and the app runs it on its own at startup)
+        "install" | "i" | "get" | "add" | "remove" | "rm" | "uninstall" | "yeet" | "upgrade" | "up" | "sysup" | "utils" | "outsource"
+        | "os" | "clone" | "import" | "undo" | "rollback" | "autoremove" | "hold" | "unhold" | "pin" | "unpin" | "de" => true,
+        "pack" | "packs" => !matches!(sub, "" | "list" | "ls" | "show"),
+        "android" => matches!(sub, "install" | "i" | "remove" | "rm" | "setup"),
+        _ => false,
+    }
+}
+/// icontd: Main GURT from https://gurtproject.org/packages.json (the site's own list), kept in gurt's cache for when
+/// you're offline. None = no list (no network, no cached copy): the app falls back to gurt's local copy of the recipes
+fn icontd_catalogue(full: bool, unlocked: &dyn Fn(&str) -> bool) -> Option<Vec<Pkg>> {
+    let cache = std::env::var_os("XDG_CACHE_HOME").map(PathBuf::from).filter(|p| p.is_absolute()).unwrap_or_else(|| home().join(".cache"));
+    let file = cache.join("gurt/packages.json");
+    let fresh = fs::metadata(&file).and_then(|m| m.modified()).ok().and_then(|t| t.elapsed().ok()).is_some_and(|age| age.as_secs() < 6 * 3600);
+    if !fresh {
+        let mut req = ehttp::Request::get("https://gurtproject.org/packages.json");
+        req.timeout = Some(std::time::Duration::from_secs(20));
+        if let Ok(r) = ehttp::fetch_blocking(&req) {
+            if r.ok && serde_json::from_slice::<serde_json::Value>(&r.bytes).is_ok() {
+                let _ = fs::create_dir_all(file.parent().unwrap_or(&cache));
+                let tmp = file.with_extension("json.part");
+                if fs::write(&tmp, &r.bytes).is_ok() {
+                    let _ = fs::rename(&tmp, &file);
+                }
+            }
+        }
+    }
+    let v: serde_json::Value = serde_json::from_slice(&fs::read(&file).ok()?).ok()?;
+    let mut out: Vec<Pkg> = v
+        .get("packages")?
+        .as_array()?
+        .iter()
+        .filter_map(|p| {
+            let o = p.as_object()?;
+            let mut info: HashMap<String, Vec<String>> = HashMap::new();
+            for (k, val) in o {
+                let vals: Vec<String> = match val {
+                    serde_json::Value::String(s) => vec![s.clone()],
+                    serde_json::Value::Array(a) => a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect(),
+                    serde_json::Value::Number(n) => vec![n.to_string()],
+                    serde_json::Value::Bool(b) => vec![b.to_string()],
+                    _ => continue,
+                };
+                if !vals.is_empty() {
+                    info.insert(k.clone(), vals);
+                }
+            }
+            let name = one(&info, "pkgname");
+            if name.is_empty() {
+                return None;
+            }
+            pkg_of(&name, &info, full, unlocked)
+        })
+        .collect();
+    out.sort_by(|a, b| a.name.cmp(&b.name));
+    (!out.is_empty()).then_some(out)
+}
+
 fn read_tree(dir: &Path, full: bool, unlocked: &dyn Fn(&str) -> bool) -> Vec<Pkg> {
     let mut names: Vec<String> = fs::read_dir(dir)
         .map(|rd| rd.filter_map(|e| e.ok()).map(|e| e.file_name().to_string_lossy().into_owned()).collect())
         .unwrap_or_default();
     names.sort();
-    let mut out = Vec::new();
-    for name in names {
-        let info = kv(&dir.join(&name).join(".gurtinfo"));
-        // hidden + secret recipes stay out of sight, unless a GURT key unlocked them
-        if info.is_empty() || ((one(&info, "hidden") == "true" || one(&info, "secret") == "true") && !unlocked(&format!("app:{name}"))) {
-            continue;
-        }
-        let (vt, vp, vr) = (one(&info, "via_type"), one(&info, "via_pkg"), one(&info, "via_repo"));
-        let pname = { let n = one(&info, "pkgname"); if n.is_empty() { name.clone() } else { n } };
-        let ikey = if vt == "flatpak" || vt == "snap" {
-            format!("{vt}:{vp}")
-        } else if !vr.is_empty() {
-            format!("{vr}:{}", if vp.is_empty() { &name } else { &vp })
-        } else {
-            name.clone()
-        };
-        let mut icon = one(&info, "icon");
-        if icon.is_empty() && vt == "flatpak" && !vp.is_empty() {
-            icon = format!("{FLATHUB_ICON}{vp}.png");
-        }
-        let alias = info.get("alias").cloned().unwrap_or_default();
-        let desc = one(&info, "pkgdesc");
-        let ver = if full && !vr.is_empty() { "latest".to_string() } else { format!("{}-{}", one(&info, "pkgver"), one(&info, "pkgrel")) };
-        let license = one(&info, "license");
-        let search = format!("{} {} {}", pname, desc, alias.join(" ")).to_lowercase();
-        out.push(Pkg {
-            foss: foss_class(&license),
-            trust: if full { recipe_trust(&info) } else { "dirt".into() },
-            vtype: if !vt.is_empty() { vt.clone() } else if !vr.is_empty() { "repo".into() } else { String::new() },
-            flatpak: if vt == "flatpak" { vp.clone() } else { String::new() },
-            name: pname, ver, desc, alias, ikey, vpkg: vp, icon, license, search,
-            category: one(&info, "category"), url: one(&info, "url"), maintainer: one(&info, "maintainer"),
-        });
+    names.iter().filter_map(|name| pkg_of(name, &kv(&dir.join(name).join(".gurtinfo")), full, unlocked)).collect()
+}
+
+/// one Main GURT / DIRT app from its .gurtinfo (a local recipe, or an entry of gurtproject.org's packages.json)
+fn pkg_of(name: &str, info: &HashMap<String, Vec<String>>, full: bool, unlocked: &dyn Fn(&str) -> bool) -> Option<Pkg> {
+    // hidden + secret recipes stay out of sight, unless a GURT key unlocked them
+    if info.is_empty() || ((one(&info, "hidden") == "true" || one(&info, "secret") == "true") && !unlocked(&format!("app:{name}"))) {
+        return None;
     }
-    out
+    let (vt, vp, vr) = (one(&info, "via_type"), one(&info, "via_pkg"), one(&info, "via_repo"));
+    let pname = { let n = one(&info, "pkgname"); if n.is_empty() { name.to_string() } else { n } };
+    let ikey = if vt == "flatpak" || vt == "snap" {
+        format!("{vt}:{vp}")
+    } else if !vr.is_empty() {
+        format!("{vr}:{}", if vp.is_empty() { name } else { &vp })
+    } else {
+        name.to_string()
+    };
+    let mut icon = one(&info, "icon");
+    if icon.is_empty() && vt == "flatpak" && !vp.is_empty() {
+        icon = format!("{FLATHUB_ICON}{vp}.png");
+    }
+    let alias = info.get("alias").cloned().unwrap_or_default();
+    let desc = one(&info, "pkgdesc");
+    let ver = if full && !vr.is_empty() { "latest".to_string() } else { format!("{}-{}", one(&info, "pkgver"), one(&info, "pkgrel")) };
+    let license = one(&info, "license");
+    let search = format!("{} {} {}", pname, desc, alias.join(" ")).to_lowercase();
+    Some(Pkg {
+        foss: foss_class(&license),
+        trust: if full { recipe_trust(&info) } else { "dirt".into() },
+        vtype: if !vt.is_empty() { vt.clone() } else if !vr.is_empty() { "repo".into() } else { String::new() },
+        flatpak: if vt == "flatpak" { vp.clone() } else { String::new() },
+        name: pname, ver, desc, alias, ikey, vpkg: vp, icon, license, search,
+        category: one(&info, "category"), url: one(&info, "url"), maintainer: one(&info, "maintainer"),
+    })
 }
 
 pub fn ghonly(repo: &str) -> Vec<GhApp> {
@@ -543,7 +622,8 @@ pub fn load_state() -> State {
     let unlocks = key_unlocks();
     let all = dev != "no"; // 🧪 dev builds have everything keys unlock
     let unlocked = |u: &str| all || unlocks.contains(u);
-    let mut main = read_tree(&Path::new(&repo).join("packages"), true, &unlocked);
+    let mut main = if is_icontd() { icontd_catalogue(true, &unlocked) } else { None }
+        .unwrap_or_else(|| read_tree(&Path::new(&repo).join("packages"), true, &unlocked));
     main.retain(|m| !(strict && m.foss != "foss"));
     main.sort_by_key(|m| m.foss == "closed"); // stable: free ones first, A–Z inside each
     let dirtpkgs = read_tree(&Path::new(&repo).join("dirt"), false, &unlocked);

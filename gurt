@@ -24,6 +24,7 @@ eval "$_envsave"
 
 GURT_REPO_URL="${GURT_REPO_URL:-https://github.com/clrealy/GURT.git}"
 GURT_BRANCH="${GURT_BRANCH:-main}"
+_prefix_given=${GURT_PREFIX:-}
 GURT_PREFIX="${GURT_PREFIX:-/usr/local}"
 GURT_ROOT="${GURT_ROOT:-/}"
 # ChromeOS itself: your home folder and /tmp are noexec (nothing built or unpacked there can run), /usr/local isn't
@@ -77,6 +78,16 @@ R="${GURT_ROOT%/}"                       # "" when root is /
 # yours. so gurt keeps everything there (its database too), relocates packages into it and never needs sudo
 is_cros_native() { [[ ! -e /dev/.cros_milestone ]] && grep -qs '^CHROMEOS_RELEASE_NAME=' /etc/lsb-release; }
 CROS_NATIVE=false; is_cros_native && CROS_NATIVE=true
+# AerynOS: moss swaps in a whole new /usr (/usr/local too) on every install and update, so whatever else is in there
+# disappears. gurt keeps what it installs in /opt/gurt instead (packages get moved there, see reloc_pkg)
+is_aeryn() {
+  command -v moss >/dev/null || return 1
+  [[ -f ${AERYN_STATE_FILE:-/usr/.stateID} ]] && return 0
+  [[ -r /etc/os-release ]] && [[ " $(. /etc/os-release; echo "${ID:-} ${ID_LIKE:-}") " =~ \ (aerynos|serpentos)\  ]]
+}
+AERYN=false; is_aeryn && AERYN=true
+AERYN_OPT=${AERYN_OPT:-/opt/gurt}
+$AERYN && [[ -z $_prefix_given ]] && GURT_PREFIX=$AERYN_OPT
 DB="$R/var/lib/gurt/local"
 $CROS_NATIVE && [[ -z $R ]] && DB=/usr/local/var/lib/gurt/local
 SELF_DIR=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
@@ -91,7 +102,7 @@ is_wsl() { [[ -n ${WSL_DISTRO_NAME:-} || -n ${WSL_INTEROP:-} ]] || grep -qi micr
 
 depmap_file() {
   local f
-  for f in "$GURT_REPO_DIR/deps.map" "$SELF_DIR/deps.map" /usr/local/share/gurt/deps.map /usr/share/gurt/deps.map; do
+  for f in "$GURT_REPO_DIR/deps.map" "$SELF_DIR/deps.map" /usr/local/share/gurt/deps.map /opt/gurt/share/gurt/deps.map /usr/share/gurt/deps.map; do
     [[ -r $f ]] && { echo "$f"; return; }
   done
 }
@@ -101,13 +112,16 @@ ROOT_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/root"
 root_tool() { # → sudo | doas | (nothing)
   local want=${GURT_SUDO:-$(cat "$ROOT_CONF" 2>/dev/null)}
   case $want in sudo|doas) command -v "$want" >/dev/null && { echo "$want"; return; } ;; esac
-  if command -v sudo >/dev/null; then echo sudo; elif command -v doas >/dev/null; then echo doas; fi
+  if command -v sudo >/dev/null; then echo sudo; elif command -v doas >/dev/null; then echo doas
+  elif $ICONTD && command -v pkexec >/dev/null; then echo pkexec; fi   # icontd: polkit asks
 }
 asroot() {
+  $PACMAN_FN && [[ ${1:-} == pacman ]] && set -- "$PACMAN_BIN" "${@:2}"
   if (( EUID == 0 )) || { [[ -n $R ]] && [[ -w $R ]]; } || { $CROS_NATIVE && [[ -z $R && -w /usr/local ]]; }; then "$@"; return; fi
   case $(root_tool) in
     sudo) if [[ -n ${SUDO_ASKPASS:-} && -n ${GURT_GUI:-} ]]; then sudo -A "$@"; else sudo "$@"; fi ;;
     doas) if [[ -n ${SUDO_ASKPASS:-} && -n ${GURT_GUI:-} ]] && ! doas -n true 2>/dev/null; then doas_askpass "$@"; else doas "$@"; fi ;;
+    pkexec) local c=$1; [[ $c == */* ]] || c=$(type -P -- "$c" || echo "$c"); shift; pkexec "$c" "$@" ;;   # pkexec wants a full path
     *)    die "need root for that (install sudo or doas, or run gurt as root)" ;;
   esac
 }
@@ -173,9 +187,37 @@ cmd_root() { # [auto | sudo | doas | status]
 }
 
 # ───────────────────────── distro detection ─────────────────────────
+# ── icontd (Arch-based): pacman and gurt itself live in /usr/lib/icontd/bin, which isn't on PATH. gurt finds pacman
+#    there ($PACMAN → /usr/lib/icontd/bin/pacman → pacman on PATH) and, from scripts (no terminal), never asks anything ──
+ICONTD=false; [[ $(sed -n 's/^ID=//p' "${ICONTD_OS_RELEASE:-/etc/os-release}" 2>/dev/null | tr -d "\"'") == icontd ]] && ICONTD=true
+ICONTD_BIN=${ICONTD_BIN:-/usr/lib/icontd/bin}
+pacman_bin() { # → the pacman to run (a full path), nothing if there's none
+  local p
+  if [[ -n ${PACMAN:-} ]]; then
+    p=$PACMAN; [[ $p == */* ]] || p=$(type -P -- "$p" || true)
+    [[ -n $p && -x $p && ! -d $p ]] && { echo "$p"; return 0; }
+  fi
+  [[ -x $ICONTD_BIN/pacman ]] && { echo "$ICONTD_BIN/pacman"; return 0; }
+  type -P pacman || true
+}
+PACMAN_BIN=$(pacman_bin)
+PACMAN_FN=false
+# pacman isn't callable by that name here: every "pacman …" in gurt (and asroot pacman …) runs the real one instead
+if [[ -n $PACMAN_BIN && $(type -P pacman || true) != "$PACMAN_BIN" ]]; then
+  pacman() { "$PACMAN_BIN" "$@"; }
+  PACMAN_FN=true; export PACMAN="$PACMAN_BIN"   # makepkg and friends read $PACMAN too
+fi
+SOFT_FAIL=0   # icontd: a problem gurt normally only warns about still makes the exit code non-zero
+# Flathub apps go into your own account (--user). icontd's app runs gurt as root (pkexec): there they're system-wide
+FP_SCOPE=--user; $ICONTD && (( EUID == 0 )) && FP_SCOPE=--system
+soft_fail() { warn "$1"; SOFT_FAIL=1; }
+GOBO_PROGRAMS=${GOBO_PROGRAMS:-/Programs}   # 🐟 GoboLinux (more about it next to Gentoo's helpers)
+is_gobo() { [[ -f ${GOBO_VERSION_FILE:-/System/Settings/GoboLinuxVersion} ]]; }
 detect_pm() {
   local id="" like=""
   if $CROS_NATIVE; then if command -v crew >/dev/null; then echo crew; else echo none; fi; return; fi   # Chromebrew
+  if is_gobo && command -v InstallPackage >/dev/null; then echo gobo; return; fi                          # GoboLinux
+  if $AERYN; then echo moss; return; fi                                                                     # AerynOS
   if [[ -r /etc/os-release ]]; then
     id=$(. /etc/os-release; echo "${ID:-}"); like=$(. /etc/os-release; echo "${ID_LIKE:-}")
   fi
@@ -214,12 +256,52 @@ pm_has() {
     apk)            apk info -e "$1" >/dev/null 2>&1 ;;
     xbps)           xbps-query "$1" >/dev/null 2>&1 ;;
     emerge)         [[ -n $(gentoo_installed "$1") ]] ;;
+    gobo)           gobo_installed "$1" >/dev/null ;;
+    moss)           moss_has "$1" ;;
     eopkg)          eopkg li 2>/dev/null | awk '{print $1}' | grep -qxF "$1" ;;
     lfs)            lfs_has "$1" ;;
     crew)           [[ -f /usr/local/etc/crew/meta/$1.filelist ]] ;;
     *)              return 1 ;;
   esac
 }
+
+# ── 🐟 GoboLinux: every program lives in /Programs/<Name>/<Version>/ (Current → the version in use), and /usr
+#    (/System/Index) is symlinks into them, so a file belongs to whichever program it points into. InstallPackage
+#    (binary packages) / Compile (recipes) / RemoveProgram / FindPackage / SuggestUpdates are its tools. names are
+#    CamelCase (Gimp, Curl), FindPackage doesn't care about case ──
+gobo_installed() { # name (any case) → /Programs/<Name> when a version of it is in use
+  local d n=${1,,}
+  for d in "$GOBO_PROGRAMS"/*; do
+    local b=${d##*/}
+    [[ ${b,,} == "$n" && -e $d/Current ]] && { echo "$d"; return 0; }
+  done
+  return 1
+}
+gobo_find() { # types name → the url / path FindPackage picks (types: official_package, recipe, installed…)
+  command -v FindPackage >/dev/null || return 1
+  FindPackage -t "$1" "$2" 2>/dev/null | head -n1 | grep .
+}
+# ── 🌌 AerynOS: moss. `moss pkg add / remove / list --installed|--available|--sync` (older moss: install / remove /
+#    list installed…), `moss sync --update` updates the system. names can be providers too: binary(gcc), pkgconfig(gtk4) ──
+moss_new() { [[ -n ${MOSS_NEW:-} ]] || { if moss pkg --help >/dev/null 2>&1; then MOSS_NEW=1; else MOSS_NEW=0; fi; }; [[ $MOSS_NEW == 1 ]]; }
+moss_list() { # installed | available | sync → "name<TAB>version-release" (sync: the newer one)
+  { if moss_new; then moss pkg list --"$1"; else moss list "$1"; fi; } 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' |
+    awk '$1 != "" && $2 != "" { v = $2; for (i = 3; i < NF; i++) if ($i == "=>") v = $(i + 1); print $1 "\t" v }'
+}
+MOSS_INST=""; moss_has() { # name or provider → installed?
+  case $1 in binary\(*\)) local b=${1#binary(}; command -v "${b%)}" >/dev/null; return ;; *\(*\)) return 1 ;; esac
+  [[ -n $MOSS_INST ]] || MOSS_INST=$(moss_list installed | cut -f1; echo .)
+  grep -qxF -- "$1" <<<"$MOSS_INST"
+}
+MOSS_AVAIL=""; moss_ver() { # name → the version its repos have
+  [[ -n $MOSS_AVAIL ]] || MOSS_AVAIL=$(moss_list available; echo .)
+  awk -F'\t' -v n="$1" '$1 == n { print $2; exit }' <<<"$MOSS_AVAIL"
+}
+moss_do() { # add|remove names… (as root, -y with gurt's -y)
+  local v=$1 y=(); shift; $NOCONFIRM && y=(-y); MOSS_INST=""
+  if moss_new; then asroot moss "${y[@]}" pkg "$v" "$@"; else asroot moss "${y[@]}" "$([[ $v == add ]] && echo install || echo remove)" "$@"; fi
+}
+gobo_url_ver() { local b=${1##*/}; b=${b#*--}; echo "${b%%--*}"; }   # …/Gimp--2.10.18--x86_64.tar.bz2 → 2.10.18
 
 # ── Gentoo: what's installed is /var/db/pkg/<category>/<name>-<version>/, the ebuilds are in /var/db/repos/<repo>/.
 #    reading those directly is instant (portageq / equery take seconds) and needs nothing extra installed ──
@@ -479,6 +561,12 @@ pm_install() {
     emerge) local a at=(); for a; do if [[ $a == */* ]]; then at+=("$a"); else at+=("$(gentoo_atom "$a" || echo "$a")"); fi; done
             if $NOCONFIRM; then asroot emerge --noreplace --ask=n --quiet-build "${at[@]}"
             else asroot emerge --noreplace --ask --quiet-build "${at[@]}"; fi ;;
+    gobo)   local a b=(); $NOCONFIRM && b=(--batch)
+            for a; do   # its binary package when there is one, else build its recipe
+              if gobo_find official_package "$a" >/dev/null; then asroot InstallPackage "${b[@]}" "$a"
+              else asroot Compile "${b[@]}" "$a"; fi || return 1
+            done ;;
+    moss)   moss_do add "$@" ;;
     eopkg)  asroot eopkg install -y "$@" ;;
     lfs)    lfs_install "$@" ;;
     crew)   crew install "$@" < <(yes) ;;   # Chromebrew runs as you, no sudo
@@ -528,6 +616,8 @@ sys_owned() {
     crew)   cat /usr/local/etc/crew/meta/*.filelist 2>/dev/null | grep -Fx -f <(printf '%s\n' "${paths[@]}") ;;
     emerge) find "$GENTOO_DB" -mindepth 3 -maxdepth 3 -name CONTENTS -exec cat {} + 2>/dev/null |
               awk 'NR == FNR { want[$0] = 1; next } ($1 == "obj" || $1 == "sym") && ($2 in want) { print $2 }' <(printf '%s\n' "${paths[@]}") - ;;
+    gobo)   for p in "${paths[@]}"; do [[ $p == "$GOBO_PROGRAMS"/* || $(readlink -f -- "$p" 2>/dev/null) == "$GOBO_PROGRAMS"/* ]] && echo "$p"; done ;;
+    moss)   for p in "${paths[@]}"; do [[ $p == /usr/* || $(readlink -f -- "$p" 2>/dev/null) == /usr/* ]] && echo "$p"; done ;;   # all of /usr is moss's
     *)      return 0 ;;
   esac | while IFS= read -r line; do if [[ -n ${back[$line]:-} ]]; then printf '%s' "${back[$line]}"; fi; done | sed '/^$/d' | sort -u; } || true
   return 0
@@ -797,6 +887,7 @@ build_pkg() {
   rdir=$(cd "$1" && pwd)
   mkdir -p "${2:-$PWD}"; outdir=$(cd "${2:-$PWD}" && pwd)
   if (( EUID == 0 )) && [[ -z ${GURT_ALLOW_ROOT:-} ]]; then
+    $ICONTD && [[ -n ${PKEXEC_UID:-} ]] && die "this one gets built from source, and gurt never builds as root (GURT's app runs gurt as root on icontd). install it from a terminal as you: gurt install $(basename "$rdir")"
     die "don't build as root fr. run gurt as your normal user — it'll ask for sudo when it needs it (or set GURT_ALLOW_ROOT=1 in containers)"
   fi
   work=$(mktemp -d "${TMPDIR:-/tmp}/gurt-build.XXXXXX")
@@ -843,26 +934,36 @@ build_pkg() {
 }
 
 # ───────────────────────── install / remove ─────────────────────────
-# ChromeOS itself: only /usr/local is writable, so a package's /usr, /etc, /opt… files move under /usr/local
-cros_relocate() { # file.gurt → a copy laid out under /usr/local (prints its path), or the same file if it already is
-  local f=$1 out
-  tar -xzOf "$f" .FILES 2>/dev/null | grep -qv '^usr/local\(/\|$\)' || { echo "$f"; return 0; }
-  need_tool python3 "moving the package under /usr/local"
-  out="$GURT_CACHE/cros/${f##*/}"; mkdir -p "${out%/*}"
-  python3 - "$f" "$out" <<'PY' || die "couldn't move ${f##*/} under /usr/local"
+# ChromeOS itself: only /usr/local is writable, so a package's /usr, /etc, /opt… files move under /usr/local.
+# AerynOS: moss owns all of /usr (and replaces it on every update), so a package's /usr files move to /opt/gurt
+cros_relocate() { reloc_pkg "$1" usr/local all "ChromeOS: moved it under /usr/local (the only place ChromeOS lets you write)"; }
+aeryn_relocate() { reloc_pkg "$1" "${AERYN_OPT#/}" usr "AerynOS: moved it to $AERYN_OPT (moss replaces /usr on every update)"; }
+reloc_pkg() { # file.gurt prefix all|usr note → a copy laid out under prefix (prints its path), or the same file if nothing moves
+  local f=$1 to=$2 mode=$3 out
+  if [[ $mode == all ]]; then tar -xzOf "$f" .FILES 2>/dev/null | grep -qv "^$to\(/\|\$\)" || { echo "$f"; return 0; }
+  else tar -xzOf "$f" .FILES 2>/dev/null | grep -q '^usr\(/\|$\)' || { echo "$f"; return 0; }; fi
+  need_tool python3 "moving the package under /$to"
+  out="$GURT_CACHE/reloc/${to//\//_}/${f##*/}"; mkdir -p "${out%/*}"
+  python3 - "$f" "$out" "$to" "$mode" <<'PY' || die "couldn't move ${f##*/} under /$to"
 import io, sys, tarfile
+TO, MODE = sys.argv[3], sys.argv[4]
 def reloc(p):
     p = p[2:] if p.startswith("./") else p
-    if p in ("usr/local", "") or p.startswith("usr/local/") or p.startswith("."): return p
-    return "usr/local" if p == "usr" else "usr/local/" + (p[4:] if p.startswith("usr/") else p)
-def reloc_abs(t):   # an absolute link target into the system → the same place under /usr/local
-    return t if not t.startswith("/") or t.startswith("/usr/local/") else "/" + reloc(t[1:])
+    if p in (TO, "") or p.startswith(TO + "/") or p.startswith("."): return p
+    if MODE == "usr":   # only /usr moves: usr/local/x and usr/x → TO/x
+        if p in ("usr", "usr/local"): return TO
+        if p.startswith("usr/local/"): return TO + "/" + p[10:]
+        return TO + "/" + p[4:] if p.startswith("usr/") else p
+    return TO if p == "usr" else TO + "/" + (p[4:] if p.startswith("usr/") else p)
+def reloc_abs(t):   # an absolute link target into the system → the same place under the prefix
+    return t if not t.startswith("/") or t.startswith("/" + TO + "/") else "/" + reloc(t[1:])
 with tarfile.open(sys.argv[1]) as t, tarfile.open(sys.argv[2], "w:gz") as o:
     for m in t.getmembers():
         name = m.name[2:] if m.name.startswith("./") else m.name
         if name in (".FILES", ".DIRS"):
             lines = [reloc(l) for l in t.extractfile(m).read().decode().splitlines() if l]
-            b = "".join(l + "\n" for l in sorted(set(lines) - {"usr/local"})).encode()   # sorted: gurt compares these with comm
+            parents = {TO[:i] for i in range(len(TO)) if TO[i] == "/"}   # opt (for opt/gurt) is the system's, not ours
+            b = "".join(l + "\n" for l in sorted(set(lines) - {"usr/local"} - parents)).encode()   # sorted: gurt compares these with comm
             m.size = len(b); o.addfile(m, io.BytesIO(b)); continue
         if name == ".PKGINFO" or name in ("", "."):
             o.addfile(m, t.extractfile(m) if m.isfile() else None); continue
@@ -875,14 +976,35 @@ with tarfile.open(sys.argv[1]) as t, tarfile.open(sys.argv[2], "w:gz") as o:
             b = b.encode(); m.size = len(b); o.addfile(m, io.BytesIO(b)); continue
         o.addfile(m, t.extractfile(m) if m.isfile() else None)
 PY
-  msg2 "ChromeOS: moved it under /usr/local (the only place ChromeOS lets you write)" >&2
+  msg2 "$4" >&2
   echo "$out"
+}
+# AerynOS: /opt/gurt's programs, libraries and app menu entries, for every login (/etc stays across moss updates)
+aeryn_env() {
+  local o=$AERYN_OPT a pf=/etc/profile.d/gurt-opt.sh lf=/etc/ld.so.conf.d/gurt-opt.conf want; a=$(uname -m)
+  want="# gurt (AerynOS): what gurt installs lives in $o, outside moss's /usr
+case \":\$PATH:\" in *\":$o/bin:\"*) ;; *) export PATH=\"\$PATH:$o/bin\" ;; esac
+case \":\${XDG_DATA_DIRS:-}:\" in *\":$o/share:\"*) ;; *) export XDG_DATA_DIRS=\"\${XDG_DATA_DIRS:-/usr/local/share:/usr/share}:$o/share\" ;; esac"
+  [[ $(cat "$pf" 2>/dev/null) == "$want" ]] || { asroot mkdir -p /etc/profile.d && printf '%s\n' "$want" | asroot tee "$pf" >/dev/null; }
+  want=$(printf '%s\n' "$o/lib" "$o/lib64" "$o/lib/$a-linux-gnu")
+  if [[ $(cat "$lf" 2>/dev/null) != "$want" ]]; then
+    asroot mkdir -p /etc/ld.so.conf.d && printf '%s\n' "$want" | asroot tee "$lf" >/dev/null
+    grep -qs 'ld.so.conf.d' /etc/ld.so.conf || echo 'include /etc/ld.so.conf.d/*.conf' | asroot tee -a /etc/ld.so.conf >/dev/null
+  fi
+  # graphical sessions (systemd) read environment.d, not profile.d: that's what puts /opt/gurt's apps in your app menu
+  want=$(printf '%s\n' "PATH=\${PATH}:$o/bin" "XDG_DATA_DIRS=\${XDG_DATA_DIRS:-/usr/local/share/:/usr/share/}:$o/share")
+  [[ $(cat /etc/environment.d/60-gurt-opt.conf 2>/dev/null) == "$want" ]] ||
+    { asroot mkdir -p /etc/environment.d && printf '%s\n' "$want" | asroot tee /etc/environment.d/60-gurt-opt.conf >/dev/null; }
+  asroot ldconfig 2>/dev/null || true
+  [[ ":$PATH:" == *":$o/bin:"* ]] || export PATH="$PATH:$o/bin"
+  return 0
 }
 install_file() { # file.gurt [reason]
   local f reason=${2:-explicit} tmp name src key dbd
   f=$(readlink -f "$1")
   [[ -f $f.asc || -f $f.sig ]] && sig_gate "$f"
-  if $CROS_NATIVE && [[ -z $R ]]; then f=$(cros_relocate "$f"); fi
+  if $CROS_NATIVE && [[ -z $R ]]; then f=$(cros_relocate "$f")
+  elif $AERYN && [[ -z $R ]]; then f=$(aeryn_relocate "$f"); aeryn_env; fi
   tmp=$(mktemp -d "${TMPDIR:-/tmp}/gurt-inst.XXXXXX")
   tar -xzf "$f" -C "$tmp" .PKGINFO .FILES .DIRS 2>/dev/null || { rm -rf "$tmp"; die "not a gurt package: $1"; }
   name=$(info_get "$tmp/.PKGINFO" pkgname)
@@ -989,7 +1111,7 @@ play_scream() {
   { $QUIET_YEET || [[ ${GURT_SOUNDS:-1} == 0 ]]; } && return 0
   (( EUID == 0 )) && return 0   # root has no speakers, your user session does
   local f snd=""
-  for f in "$SELF_DIR/assets/wilhelm.mp3" "$SELF_DIR/../share/gurt/wilhelm.mp3" /usr/local/share/gurt/wilhelm.mp3 /usr/share/gurt/wilhelm.mp3 "$GURT_REPO_DIR/assets/wilhelm.mp3"; do
+  for f in "$SELF_DIR/assets/wilhelm.mp3" "$SELF_DIR/../share/gurt/wilhelm.mp3" /usr/local/share/gurt/wilhelm.mp3 /opt/gurt/share/gurt/wilhelm.mp3 /usr/share/gurt/wilhelm.mp3 "$GURT_REPO_DIR/assets/wilhelm.mp3"; do
     [[ -r $f ]] && { snd=$f; break; }
   done
   [[ -n $snd ]] || return 0
@@ -1150,7 +1272,7 @@ remove_pkg() {
   key=$(resolve_key "$1") || die "$1 isn't installed"
   name=${key#*:}; v=$(inst_ver "$key" 2>/dev/null) || v=""
   case $key in
-    flatpak:*) msg "removing $(pretty "$key")"; flatpak uninstall --user -y --noninteractive "$name" || warn "flatpak couldn't remove it (already gone?)"
+    flatpak:*) msg "removing $(pretty "$key")"; flatpak uninstall "$FP_SCOPE" -y --noninteractive "$name" || warn "flatpak couldn't remove it (already gone?)"
                asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
     snap:*)    msg "removing $(pretty "$key")"; asroot snap remove "$name" || warn "snap couldn't remove it (already gone?)"
                asroot rm -rf -- "$DB/$key"; log_hist remove "$key" "$v"; msg "$(pretty "$key") removed 🗑️"; return ;;
@@ -1262,7 +1384,7 @@ appstream_pkg() { # flatpak app id → the package your distro ships that app in
 native_for() { # recipe-name info → your distro's package of the same app (nothing: your distro doesn't have it)
   local name=$1 info=$2 p rh h
   native_first && [[ -z $R ]] || return 1
-  case $PM in apt|dnf|yum|pacman|zypper|apk|xbps|eopkg|emerge) ;; *) return 1 ;; esac
+  case $PM in apt|dnf|yum|pacman|zypper|apk|xbps|eopkg|emerge|gobo|moss) ;; *) return 1 ;; esac
   # 1. the recipe says (native_apt=steam-installer, native=no when your distro's build is broken)
   p=$(info_get "$info" "native_${PM/yum/dnf}"); [[ -n $p ]] || p=$(info_get "$info" native)
   case $p in no) return 1 ;; ?*) pm_available "$p" && { echo "$p"; return 0; }; return 1 ;; esac
@@ -1304,6 +1426,8 @@ pm_remove() { # name → your package manager removes it
     emerge)  local at; at=$(gentoo_installed "$1" | head -n1); at=${at%-"$(gentoo_split "$at" | cut -f2)"}
              [[ -n $at ]] || return 1
              asroot emerge --deselect "$at" >/dev/null && asroot emerge --depclean --ask=n "$at" ;;   # depclean: only if nothing else needs it
+    gobo)    local d; d=$(gobo_installed "$1") || return 0; asroot RemoveProgram --batch "${d##*/}" ;;
+    moss)    NOCONFIRM=true moss_do remove "$1" ;;
     *)       return 1 ;;
   esac
 }
@@ -2007,6 +2131,8 @@ pm_available() {
     xbps)   xbps-query -R "$1" >/dev/null 2>&1 ;;
     eopkg)  eopkg info "$1" 2>/dev/null | grep -q '^Name' ;;
     emerge) gentoo_atom "$1" >/dev/null ;;
+    gobo)   gobo_installed "$1" >/dev/null || gobo_find official_package,recipe "$1" >/dev/null ;;
+    moss)   [[ $1 == *\(*\) ]] || moss_has "$1" || [[ -n $(moss_ver "$1") ]] ;;   # providers: moss resolves them
     *)      return 1 ;;
   esac
 }
@@ -2128,7 +2254,8 @@ box_reason() { # src name deps files(newline list, may be empty)
   [[ $name =~ $SYSTOOL_RE ]] && { echo "it's a system utility for its own distro"; return; }
   local IFS=,; for d in $deps; do [[ ${d%%[<>=]*} =~ $PMLIB_RE ]] && { echo "it needs package-manager internals ($d)"; return; }; done
   if [[ -n $files ]] && grep -qE "$SYSFILE_RE" <<<"$files"; then echo "it installs system services/hooks"; return; fi
-  if [[ -n $files && -z $R ]] && [[ -n $(sed 's|^|/|' <<<"$files" | sys_owned) ]]; then echo "it would overwrite files your distro owns"; return; fi
+  # (AerynOS: its /usr files move to /opt/gurt, so they never land on moss's)
+  if [[ -n $files && -z $R ]] && ! $AERYN && [[ -n $(sed 's|^|/|' <<<"$files" | sys_owned) ]]; then echo "it would overwrite files your distro owns"; return; fi
   return 0
 }
 
@@ -3060,7 +3187,7 @@ EOF
   chmod 755 "$dir/AppRun"
   icon=$(find "$dir/usr/share/icons" "$dir/usr/share/pixmaps" -name '*.png' 2>/dev/null | grep -i "$CV_NAME" | sort -V | tail -n1 || true)
   [[ -n $icon ]] || icon=$(find "$dir/usr/share/icons" "$dir/usr/share/pixmaps" -name '*.png' 2>/dev/null | sort -V | tail -n1 || true)
-  for f in "$icon" /usr/local/share/gurt/gurt.png /usr/share/gurt/gurt.png "$SELF_DIR/site/assets/apple-touch-icon.png"; do [[ -n $f && -f $f ]] && { cp "$f" "$dir/$CV_NAME.png"; break; }; done
+  for f in "$icon" /usr/local/share/gurt/gurt.png /opt/gurt/share/gurt/gurt.png /usr/share/gurt/gurt.png "$SELF_DIR/site/assets/apple-touch-icon.png"; do [[ -n $f && -f $f ]] && { cp "$f" "$dir/$CV_NAME.png"; break; }; done
   [[ -f $dir/$CV_NAME.png ]] || die "need an icon for the AppImage and couldn't find one"
   write_desktop "$dir/$CV_NAME.desktop" "$CV_NAME" "$CV_NAME" "$CV_NAME" "$CV_DESC"
   tool="$GURT_CACHE/tools/appimagetool-$CARCH.AppImage"
@@ -3715,7 +3842,7 @@ gh_repo_of() { # spec (owner/repo, or the repo name of one you installed) → ow
 # ── 🐙 gh-only.map: free apps that ship their Linux builds on GitHub releases. gurt gh-only lists them ──
 ghonly_file() {
   local f
-  for f in "$GURT_REPO_DIR/gh-only.map" "$SELF_DIR/gh-only.map" /usr/local/share/gurt/gh-only.map /usr/share/gurt/gh-only.map; do
+  for f in "$GURT_REPO_DIR/gh-only.map" "$SELF_DIR/gh-only.map" /usr/local/share/gurt/gh-only.map /opt/gurt/share/gurt/gh-only.map /usr/share/gurt/gh-only.map; do
     [[ -r $f ]] && { echo "$f"; return 0; }
   done
   return 1
@@ -3859,6 +3986,7 @@ lang_install() { # src name reason
     ask "install $src/$name $ver${desc:+ ($desc)}?" || die "aborted, no cap"
   fi
   if (( EUID == 0 )) && [[ -z ${GURT_ALLOW_ROOT:-} ]]; then
+    $ICONTD && [[ -n ${PKEXEC_UID:-} ]] && die "$src/ packages install as you, never as root (GURT's app runs gurt as root on icontd). from a terminal: gurt install $src/$name"
     die "don't install $src/ packages as root fr: their install scripts would run as root. run gurt as you (it asks for sudo to put the result in place)"
   fi
   work=$(mktemp -d "${TMPDIR:-/tmp}/gurt-$src.XXXXXX"); stage="$work/pkg"
@@ -4245,9 +4373,9 @@ outsource_file() { # file-or-url reason
     *.exe|*.msi)  win_install "$f" "$name" "$ver" "$reason" ;;
     *.snap)       ensure_snap; msg "${f##*/} → snap (unsigned, so --dangerous)"; asroot snap install --dangerous "$f" || die "snap couldn't install it"
                   msg2 "it's managed by snap: snap list · snap remove <name>" ;;
-    *.flatpak)    ensure_flatpak; flatpak install --user -y --noninteractive --bundle "$f" || die "flatpak couldn't install it"
+    *.flatpak)    ensure_flatpak; flatpak install "$FP_SCOPE" -y --noninteractive --bundle "$f" || die "flatpak couldn't install it"
                   msg2 "it's managed by flatpak: flatpak list --app · flatpak uninstall <id>" ;;
-    *.flatpakref) ensure_flatpak; flatpak install --user -y --noninteractive --from "$f" || die "flatpak couldn't install it"
+    *.flatpakref) ensure_flatpak; flatpak install "$FP_SCOPE" -y --noninteractive --from "$f" || die "flatpak couldn't install it"
                   msg2 "it's managed by flatpak: flatpak list --app · flatpak uninstall <id>" ;;
     *) archive_install "$f" "$name" "$ver" "$reason" ;;
   esac
@@ -4276,9 +4404,9 @@ ensure_flatpak() {
     install_native $(map_dep flatpak)
     command -v flatpak >/dev/null || die "couldn't install flatpak — install it with your package manager, then try again"
   fi
-  if ! flatpak remotes --user --columns=name 2>/dev/null | grep -qx flathub; then
+  if ! flatpak remotes "$FP_SCOPE" --columns=name 2>/dev/null | grep -qx flathub; then
     msg2 "adding Flathub (for your user, no sudo needed)"
-    flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || die "couldn't add Flathub"
+    flatpak remote-add "$FP_SCOPE" --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || die "couldn't add Flathub"
   fi
 }
 cros_launcher_refresh() { # ChromeOS: garcon puts apps in the launcher, but only sees flatpaks once their folder is on its XDG_DATA_DIRS
@@ -4308,8 +4436,8 @@ flatpak_install() { # name reason
   fi
   [[ ${2:-explicit} == explicit ]] && { ask "install $id from Flathub?" || die "aborted, no cap"; }
   msg "installing $id from Flathub 📦"
-  flatpak install --user -y --noninteractive flathub "$id" || die "flatpak couldn't install $id"
-  local ver; ver=$(flatpak info --user "$id" 2>/dev/null | awk -F': *' '/^ *Version:/ {print $2; exit}')
+  flatpak install "$FP_SCOPE" -y --noninteractive flathub "$id" || die "flatpak couldn't install $id"
+  local ver; ver=$(flatpak info "$FP_SCOPE" "$id" 2>/dev/null | awk -F': *' '/^ *Version:/ {print $2; exit}')
   record_meta "$key" "$id" "${ver:-latest}" "Flathub app" "${2:-explicit}" flatpak
   log_hist install "$key"
   cros_launcher_refresh
@@ -4543,6 +4671,8 @@ pm_version() { # what version would your distro install?
     emerge) local at v; at=$(gentoo_atom "$1") || return 0
             if command -v portageq >/dev/null && v=$(portageq best_visible / "$at" 2>/dev/null) && [[ -n $v ]]; then gentoo_split "$v" | cut -f2
             else for v in $(gentoo_repos); do printf '%s\n' "$v/$at"/*.ebuild; done | sed 's|.*/||; s|\.ebuild$||' | while read -r v; do gentoo_split "$v" | cut -f2; done | grep -v '^9999' | sort -V | tail -n1; fi ;;   # 9999 = live git ebuilds
+    gobo)   local u; u=$(gobo_find official_package,recipe "$1") && gobo_url_ver "$u" ;;
+    moss)   moss_ver "$1" ;;
     *)      true ;;
   esac
 }
@@ -4884,6 +5014,7 @@ dm_pkg() { # the package that owns your login screen, so removing a desktop neve
     apt) dpkg -S "$bin" 2>/dev/null | head -n1 | cut -d: -f1 ;;
     pacman) pacman -Qoq "$bin" 2>/dev/null ;;
     dnf|yum|zypper) rpm -qf --qf '%{NAME}\n' "$bin" 2>/dev/null | head -n1 ;;
+    gobo) local r; r=$(readlink -f "$bin"); [[ $r == "$GOBO_PROGRAMS"/* ]] && { r=${r#"$GOBO_PROGRAMS"/}; echo "${r%%/*}"; } ;;
   esac
 }
 ask_really() { # like ask, but -y never says yes for you (used for deleting desktops)
@@ -5153,6 +5284,8 @@ native_names() { # what your distro's package manager installed, one name per li
     xbps)           xbps-query -l 2>/dev/null | awk '{ sub(/-[^-]*$/, "", $2); print $2 }' ;;
     eopkg)          eopkg li 2>/dev/null | awk 'NF { print $1 }' ;;
     emerge)         local d; for d in "$GENTOO_DB"/*/*/; do d=${d%/}; gentoo_split "$d" | cut -f1; done ;;
+    gobo)           local d; for d in "$GOBO_PROGRAMS"/*/; do d=${d%/}; [[ -e $d/Current ]] && echo "${d##*/}"; done ;;
+    moss)           moss_list installed | cut -f1 ;;
   esac
   return 0
 }
@@ -5207,7 +5340,7 @@ is_held() { [[ -f $DB/$1/held ]]; }
 KEYS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/gurt/keys"
 keys_map() {
   local f
-  for f in "$GURT_REPO_DIR/keys.map" "$SELF_DIR/keys.map" /usr/local/share/gurt/keys.map /usr/share/gurt/keys.map; do
+  for f in "$GURT_REPO_DIR/keys.map" "$SELF_DIR/keys.map" /usr/local/share/gurt/keys.map /opt/gurt/share/gurt/keys.map /usr/share/gurt/keys.map; do
     [[ -r $f ]] && { echo "$f"; return 0; }
   done
   return 1
@@ -5304,7 +5437,7 @@ cmd_quack() {
 # ── package packs: a bunch of Main GURT apps for one thing (gaming, coding…), installed together ──
 packs_file() {
   local f
-  for f in "$GURT_REPO_DIR/packs.map" "$SELF_DIR/packs.map" /usr/local/share/gurt/packs.map /usr/share/gurt/packs.map; do
+  for f in "$GURT_REPO_DIR/packs.map" "$SELF_DIR/packs.map" /usr/local/share/gurt/packs.map /opt/gurt/share/gurt/packs.map /usr/share/gurt/packs.map; do
     [[ -r $f ]] && { echo "$f"; return 0; }
   done
   return 1
@@ -5372,7 +5505,7 @@ cmd_pack() { # [list | show <id> | <id> [--skip app,app]]
 }
 vibes_file() {
   local f
-  for f in "$GURT_REPO_DIR/vibes.map" "$SELF_DIR/vibes.map" /usr/local/share/gurt/vibes.map /usr/share/gurt/vibes.map; do
+  for f in "$GURT_REPO_DIR/vibes.map" "$SELF_DIR/vibes.map" /usr/local/share/gurt/vibes.map /opt/gurt/share/gurt/vibes.map /usr/share/gurt/vibes.map; do
     [[ -r $f ]] && { echo "$f"; return; }
   done
 }
@@ -5417,6 +5550,8 @@ cmd_why() {
         pacman) msg2 "what needs it: pacman -Qi $name  (look at \"Required By\")" ;;
         zypper) msg2 "what needs it: zypper search --requires --installed-only $name" ;;
         emerge) msg2 "what needs it: equery depends $name  (gentoolkit) · in your world file? grep $name /var/lib/portage/world" ;;
+        gobo)   msg2 "what needs it: CheckDependants $name" ;;
+        moss)   msg2 "what it is: moss info $name · explicitly installed ones: moss pkg list --explicit" ;;
       esac
       return 0
     fi
@@ -5466,6 +5601,7 @@ native_sizes() { # → "bytes<TAB>pm/name" for what your distro's package manage
               m = a[2] ~ /^G/ ? 1073741824 : a[2] ~ /^M/ ? 1048576 : a[2] ~ /^K/ ? 1024 : 1; printf "%d\tpacman/%s\n", a[1] * m, n }' ;;
     emerge) local d b; for d in "$GENTOO_DB"/*/*/; do d=${d%/}; [[ -s $d/SIZE ]] || continue; read -r b <"$d/SIZE"
               [[ $b =~ ^[0-9]+$ ]] && printf '%d\temerge/%s\n' "$b" "$(gentoo_split "$d" | cut -f1)"; done ;;
+    gobo)   du -sb "$GOBO_PROGRAMS"/*/ 2>/dev/null | awk -F'\t' '{ n = $2; sub(/\/$/, "", n); sub(/.*\//, "", n); printf "%d\tgobo/%s\n", $1, n }' ;;
   esac
   return 0
 }
@@ -5506,7 +5642,7 @@ cmd_hogs() { # [--all|all] [--tsv] [n] | junk [--tsv] | clean [what…]
 
 # ── gurt hogs junk: caches, trash + leftovers that are safe to toss · gurt hogs clean [what…] tosses them ──
 dir_bytes() { du -sb -- "$@" 2>/dev/null | awk '{ s += $1 } END { printf "%d\n", s }'; }
-pm_cache_dirs() { case $PM in zypper) echo /var/cache/zypp/packages ;; apt) echo /var/cache/apt/archives ;; pacman) echo /var/cache/pacman/pkg ;; dnf) echo /var/cache/dnf /var/cache/libdnf5 ;; emerge) gentoo_distdir ;; esac; }
+pm_cache_dirs() { case $PM in zypper) echo /var/cache/zypp/packages ;; apt) echo /var/cache/apt/archives ;; pacman) echo /var/cache/pacman/pkg ;; dnf) echo /var/cache/dnf /var/cache/libdnf5 ;; emerge) gentoo_distdir ;; gobo) echo /Data/Compile/Archives ;; moss) echo /.moss/cache ;; esac; }
 gentoo_distdir() { local d; d=$(portageq distdir 2>/dev/null) || d=""; [[ -d $d ]] || d=/var/cache/distfiles; [[ -d $d ]] || d=/usr/portage/distfiles; echo "$d"; }
 junk_items() { # → what<TAB>bytes<TAB>description<TAB>needs root (1|0)
   local b d trash="${XDG_DATA_HOME:-$HOME/.local/share}/Trash" dirs=()
@@ -5559,6 +5695,8 @@ junk_clean() { # [what…]
                        pacman) asroot pacman -Sc --noconfirm ;; dnf) asroot dnf clean packages ;;
                        emerge) if command -v eclean-dist >/dev/null; then asroot eclean-dist --deep
                                else asroot find "$(gentoo_distdir)" -maxdepth 1 -type f -delete; fi ;;   # re-downloaded when needed
+                       gobo)   asroot find /Data/Compile/Archives -maxdepth 1 -type f -delete ;;   # Compile downloads them again when needed
+                       moss)   asroot moss cache prune ;;   # what no saved state needs anymore
                      esac >/dev/null || { warn "$PM couldn't clean its cache"; continue; } ;;
       journal)       asroot journalctl --vacuum-size=200M >/dev/null 2>&1 || { warn "couldn't shrink the logs"; continue; } ;;
       coredumps)     asroot find /var/lib/systemd/coredump -type f -delete || { warn "couldn't delete the crash dumps"; continue; } ;;
@@ -5887,7 +6025,7 @@ cmd_notify() { # [on|off|now]
       local body="$n app update(s)"; (( sys )) && body+=", $sys system update(s)"
       msg "🦆 $body waiting — gurt upgrade"
       if command -v notify-send >/dev/null && [[ -n ${DISPLAY:-}${WAYLAND_DISPLAY:-}${DBUS_SESSION_BUS_ADDRESS:-} ]]; then
-        local icon=""; for icon in /usr/local/share/gurt/gurt.png /usr/share/gurt/gurt.png "$SELF_DIR/site/assets/apple-touch-icon.png"; do [[ -f $icon ]] && break; done
+        local icon=""; for icon in /usr/local/share/gurt/gurt.png /opt/gurt/share/gurt/gurt.png /usr/share/gurt/gurt.png "$SELF_DIR/site/assets/apple-touch-icon.png"; do [[ -f $icon ]] && break; done
         notify-send -a GURT -i "$icon" "🦆 $t update$( (( t == 1 )) || echo s) ready" "$body. open GURT or run: gurt upgrade" 2>/dev/null || true
       fi ;;
     *) die "usage: gurt notify [on | off | status | now]" ;;
@@ -6047,7 +6185,7 @@ gui_desktop_entry() { # add "GURT" to your app menu (just for you, no sudo)
   local data="${XDG_DATA_HOME:-$HOME/.local/share}" f icon="" png entry
   png="$data/icons/hicolor/256x256/apps/gurt.png"
   mkdir -p "$data/applications" "${png%/*}" 2>/dev/null || return 0
-  for f in /usr/local/share/gurt/gurt.png /usr/share/gurt/gurt.png "$SELF_DIR/../share/gurt/gurt.png" \
+  for f in /usr/local/share/gurt/gurt.png /opt/gurt/share/gurt/gurt.png /usr/share/gurt/gurt.png "$SELF_DIR/../share/gurt/gurt.png" \
            "$SELF_DIR/site/assets/apple-touch-icon.png" "$GURT_REPO_DIR/site/assets/apple-touch-icon.png"; do
     [[ -f $f ]] && { icon=$f; break; }
   done
@@ -6220,6 +6358,9 @@ os_dep() {
     dnf|zypper) for c in "$d-devel" "lib$d-devel" "$d"; do pm_available "$c" && { NATIVE_Q+=("$c"); return 0; }; done ;;
     apk)        for c in "$d-dev" "$d"; do pm_available "$c" && { NATIVE_Q+=("$c"); return 0; }; done ;;
     emerge)     for c in "$d" "lib$d" "${d#lib}"; do c=$(gentoo_atom "$c") && { NATIVE_Q+=("$c"); return 0; }; done ;;
+    gobo)       for c in "$d" "lib$d" "${d#lib}"; do pm_available "$c" && { NATIVE_Q+=("$c"); return 0; }; done ;;
+    moss)       for c in "$d-devel" "lib$d-devel" "$d"; do pm_available "$c" && { NATIVE_Q+=("$c"); return 0; }; done
+                NATIVE_Q+=("pkgconfig($d)"); return 0 ;;   # moss finds whatever provides it
   esac
   foreign_dep aur "$d"
 }
@@ -6426,7 +6567,7 @@ cmd_info() {
       [[ -n $o ]] && printf '%-14s: %s\n' "out of date" yes ;;
     flatpak)
       ensure_flatpak; local id; id=$(flatpak_resolve "$name"); [[ -n $id ]] || die "nothing on Flathub matches '$name'"
-      key="flatpak:$id"; flatpak remote-info --user flathub "$id" 2>/dev/null || flatpak remote-info flathub "$id" 2>/dev/null || die "couldn't get info for $id" ;;
+      key="flatpak:$id"; flatpak remote-info "$FP_SCOPE" flathub "$id" 2>/dev/null || flatpak remote-info flathub "$id" 2>/dev/null || die "couldn't get info for $id" ;;
     gh) gh_info "$name" ;;
     appimage)
       local w; w=$(appimagehub_rows | awk -F'\t' -v n="${name,,}" 'tolower($1) == n { print; exit }')
@@ -6498,6 +6639,14 @@ recipe_of() { # key → the Main GURT recipe it came from (works for installs fr
 }
 cmd_list() {
   local d k r
+  if [[ ${1:-} == --installed ]]; then   # for scripts: one name per line, nothing else (what gurt remove takes)
+    for d in "$DB"/*/; do
+      k=$(basename "$d"); grep -q '^gh_by = ' "$d/info" 2>/dev/null && continue
+      r=$(recipe_of "$k"); echo "${r:-$(pretty "$k")}"
+    done
+    return 0
+  fi
+  [[ -z ${1:-} ]] || die "gurt list takes no options except --installed"
   for d in "$DB"/*/; do
     k=$(basename "$d"); grep -q '^gh_by = ' "$d/info" 2>/dev/null && continue   # shows up as its gh/ entry
     r=$(recipe_of "$k")
@@ -6646,6 +6795,19 @@ system_upgrade() {
       msg "🐧 updating your system (emerge --sync + @world — grab a snack 🍿)"
       { if command -v emaint >/dev/null; then asroot emaint sync --auto; else asroot emerge --sync; fi; } &&
         asroot emerge --ask="$($NOCONFIRM && echo n || echo y)" --update --deep --newuse --quiet-build @world ;;
+    moss)
+      msg "🌌 updating AerynOS (moss sync --update: a new system state, the old one stays bootable)"
+      $NOCONFIRM && y=(-y); asroot moss "${y[@]}" sync --update ;;
+    gobo)
+      msg "🐟 updating GoboLinux (UpdateRecipes, then what SuggestUpdates says is newer)"
+      command -v UpdateRecipes >/dev/null && { asroot UpdateRecipes >/dev/null || warn "couldn't update the recipes"; }
+      local how name ver n=0 b=(); $NOCONFIRM && b=(--batch)
+      while read -r how name ver _; do
+        how=${how//\'/}; [[ -n $name && -n $ver ]] || continue
+        case $how in InstallPackage|Compile) ;; *) continue ;; esac
+        msg2 "$name → $ver ($how)"; asroot "$how" "${b[@]}" "$name" "$ver" || warn "$name didn't update"; n=$((n + 1))
+      done < <(SuggestUpdates 2>/dev/null | grep "^'")
+      (( n )) || msg2 "nothing newer" ;;
     crew)
       msg "💻 updating Chromebrew (crew update + upgrade). ChromeOS updates itself: Settings → About ChromeOS"
       crew update && crew upgrade < <(yes) ;;
@@ -6653,18 +6815,20 @@ system_upgrade() {
          msg2 "https://www.linuxfromscratch.org/lfs/advisories/ · https://www.linuxfromscratch.org/blfs/advisories/"
          msg2 "(gurt still updates everything it installed)"; return 0 ;;
     *) warn "don't know how to update this distro's own packages ($PM) — skipping that part"; return 0 ;;
-  esac || { warn "the system update had problems (scroll up) — carrying on with gurt's own stuff"; return 0; }
+  esac || { soft_fail "the system update had problems (scroll up) — carrying on with gurt's own stuff"; return 0; }
   msg "system updated ✅"
 }
 # how many system updates are waiting (best effort, never needs root; empty = can't tell)
 system_updates_count() {
   case $PM in
-    pacman) command -v checkupdates >/dev/null && checkupdates 2>/dev/null | grep -c . ;;
+    pacman) command -v checkupdates >/dev/null && PATH="${PACMAN_BIN%/*}:$PATH" checkupdates 2>/dev/null | grep -c . ;;
     dnf)    dnf -q check-update 2>/dev/null | grep -cE '^[[:alnum:]][^ ]*\.[^ ]+ ' ;;
     apt)    apt list --upgradable 2>/dev/null | grep -c / ;;
     zypper) zypper -q --no-refresh list-updates 2>/dev/null | grep -c '^v ' ;;
     apk)    apk version -l '<' 2>/dev/null | grep -vc '^Installed' ;;
     emerge) timeout 180 emerge --pretend --update --deep --newuse --quiet @world 2>/dev/null | grep -c '^\[ebuild' ;;
+    gobo)   command -v SuggestUpdates >/dev/null && timeout 120 SuggestUpdates 2>/dev/null | grep -c "^'" ;;
+    moss)   moss_list sync | grep -c . ;;
   esac
   return 0
 }
@@ -6698,9 +6862,9 @@ cmd_utils() { # [list]
   msg "installing the utilities most apps need: ${miss[*]}"
   # shellcheck disable=SC2046
   pm_install $(printf '%s\n' "${nat[@]}" | sort -u)
-  if command -v flatpak >/dev/null && ! flatpak remotes --user --columns=name 2>/dev/null | grep -qx flathub; then
+  if command -v flatpak >/dev/null && ! flatpak remotes "$FP_SCOPE" --columns=name 2>/dev/null | grep -qx flathub; then
     msg2 "adding Flathub (for your user, no sudo needed)"
-    flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || warn "couldn't add Flathub"
+    flatpak remote-add "$FP_SCOPE" --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || warn "couldn't add Flathub"
   fi
   msg "utilities ready ✅ pretty much any app installs now"
 }
@@ -6719,14 +6883,14 @@ cmd_upgrade() {  # your system + everything gurt installed
 }
 upgrade_containers() {   # flatpak + snap update their own apps
   local d
-  d=("$DB"/flatpak:*/); if (( ${#d[@]} )) && command -v flatpak >/dev/null; then msg "updating flatpaks"; flatpak update --user -y --noninteractive || warn "flatpak update had problems"; fi
-  d=("$DB"/snap:*/);    if (( ${#d[@]} )) && command -v snap >/dev/null;    then msg "updating snaps";    asroot snap refresh || warn "snap refresh had problems"; fi
-  d=("$DB"/nix:*/);     if (( ${#d[@]} )) && command -v nix >/dev/null; then msg "updating your nix profile ❄️"; nix_upgrade_profile || warn "your nix profile update had problems"; fi
-  d=("$DB"/brew:*/);    if (( ${#d[@]} )) && b=$(brew_find); then msg "updating Homebrew's apps"; "$b" update && "$b" upgrade || warn "brew upgrade had problems"; fi
+  d=("$DB"/flatpak:*/); if (( ${#d[@]} )) && command -v flatpak >/dev/null; then msg "updating flatpaks"; flatpak update "$FP_SCOPE" -y --noninteractive || soft_fail "flatpak update had problems"; fi
+  d=("$DB"/snap:*/);    if (( ${#d[@]} )) && command -v snap >/dev/null;    then msg "updating snaps";    asroot snap refresh || soft_fail "snap refresh had problems"; fi
+  d=("$DB"/nix:*/);     if (( ${#d[@]} )) && command -v nix >/dev/null; then msg "updating your nix profile ❄️"; nix_upgrade_profile || soft_fail "your nix profile update had problems"; fi
+  d=("$DB"/brew:*/);    if (( ${#d[@]} )) && b=$(brew_find); then msg "updating Homebrew's apps"; "$b" update && "$b" upgrade || soft_fail "brew upgrade had problems"; fi
   local s; for s in apt dnf zypper pacman xbps; do
     d=("$DB"/box-"$s":*/)
     if (( ${#d[@]} )) && command -v distrobox >/dev/null; then
-      msg "updating the $(box_name "$s") box"; distrobox enter "$(box_name "$s")" -- sh -c "$(box_cmd "$s" upgrade)" || warn "$(box_name "$s") update had problems"
+      msg "updating the $(box_name "$s") box"; distrobox enter "$(box_name "$s")" -- sh -c "$(box_cmd "$s" upgrade)" || soft_fail "$(box_name "$s") update had problems"
     fi
   done
   return 0
@@ -6857,19 +7021,19 @@ cmd_uninstall() {
   # running straight out of a folder (a git clone): that folder is yours, leave it alone
   [[ $self == */bin/gurt ]] || { msg "gurt's off your system 🫡 this copy runs from $(dirname "$self"), delete that folder yourself if you want"; exit 0; }
   # installed by hand (install.sh): those files are gurt's own
-  asroot rm -rf -- "$(dirname "$(dirname "$self")")/share/gurt" /usr/local/share/gurt
+  asroot rm -rf -- "$(dirname "$(dirname "$self")")/share/gurt" /usr/local/share/gurt /opt/gurt/share/gurt
   [[ -f /etc/gurt.conf ]] && asroot rm -f /etc/gurt.conf
   asroot rm -f -- "$self"
   msg "gurt's gone. bye 🫡🦆 (want it back? grab a GURTSetupWizard from github.com/clrealy/GURT/releases)"
   exit 0
 }
 # run a command as root and never come back (gurt's own file is about to vanish)
-exec_root() { if (( EUID == 0 )); then exec "$@"; elif [[ $(root_tool) == doas ]]; then exec doas "$@"; else exec sudo "$@"; fi; }
+exec_root() { $PACMAN_FN && [[ ${1:-} == pacman ]] && set -- "$PACMAN_BIN" "${@:2}"; if (( EUID == 0 )); then exec "$@"; elif [[ $(root_tool) == doas ]]; then exec doas "$@"; elif [[ $(root_tool) == pkexec ]]; then exec pkexec "$(type -P -- "$1" || echo "$1")" "${@:2}"; else exec sudo "$@"; fi; }
 cmd_self_update() {
   local self new tmp dir
   self=$(readlink -f "$0")
   # 🧪 a dev build: the newest dev build for your distro, from gurtproject.org/dev
-  if [[ $self == /usr/bin/gurt ]] && is_dev; then
+  if [[ $self == /usr/bin/gurt ]] && ! $ICONTD && is_dev; then
     local ext url; ext=$(own_pkg_ext) || die "no dev build for $PM yet"
     [[ $ext == rpm ]] && url="$DEV_URL/rpm/GURTSetupWizard-dev.rpm" || url="$DEV_URL/GURTSetupWizard-dev.$ext"
     tmp=$(mktemp -d)
@@ -6882,7 +7046,7 @@ cmd_self_update() {
   fi
   # installed from a GURTSetupWizard package: grab the newest release's package and let your package manager swap it in.
   # (pacman has no repo drop-in folder and unsigned .debs get no apt repo, so "just run your system updates" can loop forever)
-  if [[ $self == /usr/bin/gurt && -f /usr/share/gurt/vibes.map ]] && ! $FORCE; then
+  if [[ $self == /usr/bin/gurt && -f /usr/share/gurt/vibes.map ]] && ! $FORCE && ! $ICONTD; then
     local ext r url
     new=$(latest_gurt_ver)
     if [[ -n $new ]] && ! vnewer "$GURT_VERSION" "$new"; then
@@ -6914,7 +7078,7 @@ cmd_self_update() {
   asroot cp "$GURT_REPO_DIR/gurt" "$tmp"
   asroot chmod 755 "$tmp"
   asroot mv -f "$tmp" "$self"
-  for f in /usr/local/share/gurt/deps.map /usr/share/gurt/deps.map; do
+  for f in /usr/local/share/gurt/deps.map /opt/gurt/share/gurt/deps.map /usr/share/gurt/deps.map; do
     [[ -f $f ]] && asroot cp "$GURT_REPO_DIR/deps.map" "$f"
   done
   for f in /usr/local/share/gurt /usr/share/gurt; do
@@ -6924,7 +7088,7 @@ cmd_self_update() {
   done
   # GURT's app, for the new version (the old one keeps working if there's no release file for it yet)
   local a lib; a=$(app_arch 2>/dev/null || true)
-  for lib in /usr/local/lib/gurt "$dir/../lib/gurt"; do
+  for lib in /usr/local/lib/gurt "$dir/../lib/gurt" $($ICONTD && echo /usr/lib/gurt); do   # icontd: install.sh put it in /usr/lib/gurt
     if [[ -n $a && -f $lib/gurt-app-$a ]]; then
       local nb; nb=$(GURT_VERSION=$new gui_fetch 2>/dev/null) && asroot install -m755 "$nb" "$lib/gurt-app-$a" && msg2 "GURT's app updated too"
       break
@@ -7709,7 +7873,7 @@ main() {
   case ${1:-} in __pmhook|__cnf) args=("$@"); set -- ;; esac   # the hook passes your package manager's options through untouched
   while (( $# )); do
     case $1 in
-      -y|--noconfirm) NOCONFIRM=true ;;
+      -y|--yes|--noconfirm) NOCONFIRM=true ;;
       -f|--force)     FORCE=true ;;
       -a|--all)       ALLSRC=true ;;
       --box|--container) BOX=true ;;
@@ -7737,6 +7901,8 @@ main() {
     esac
     shift
   done
+  # icontd runs gurt from scripts and installers (arch-chroot too): no terminal on stdin = no questions, yes to everything
+  $ICONTD && [[ ! -t 0 ]] && NOCONFIRM=true
   set -- "${args[@]}"
   local cmd=${1:-hi}; shift || true
   [[ $cmd == __complete ]] || ensure_completions
@@ -7805,7 +7971,7 @@ main() {
                        else cmd_uninstall; fi ;;
     remove|rm|yeet)    (( $# )) || die "remove what tho"; for p; do remove_pkg "$p"; done; play_scream; achieve yeet ;;
     autoremove|clean)  cmd_autoremove ;;
-    list|ls)           cmd_list ;;
+    list|ls)           cmd_list "$@" ;;
     files)             cmd_files "$@" ;;
     history|log)       cmd_history "$@" ;;
     cache)             cmd_cache "$@" ;;
@@ -7836,6 +8002,7 @@ main() {
     __complete)        cmd_complete "$@" ;;
     __achieve)         [[ ${1:-} =~ ^[a-z0-9]+$ ]] && achieve "$1" ;;
     __devunlock)       [[ $(dev_state) == locked ]] || exit 0; IFS= read -r p || p=""; dev_check "$p" ;;   # the app sends it on stdin
+    __aeryn-env)       $AERYN || die "this isn't AerynOS"; aeryn_env ;;
     __paths)           printf 'version=%s\nrepo=%s\ndb=%s\ncache=%s\ndirt=%s\npm=%s\nwsl=%s\ncros=%s\ndev=%s\nnix=%s\nhook=%s\nroot=%s\n' "$GURT_VERSION" "$GURT_REPO_DIR" "$DB" "$GURT_CACHE" "$(dirt_on && echo on || echo off)" "$PM" "$(is_wsl && echo yes || echo no)" "$( { is_cros || $CROS_NATIVE; } && echo yes || echo no)" "$(dev_state)" "$(command -v nix >/dev/null && echo yes || echo no)" "$(hook_on && echo on || echo off)" "$( (( EUID == 0 )) && echo root || root_tool)" ;;
     gui)               cmd_gui "$@" ;;
     completions)       completion_script "${1:?usage: gurt completions bash|zsh|fish}" ;;
@@ -7850,3 +8017,5 @@ main() {
   esac
 }
 main "$@"
+# icontd: a problem that only got a warning (the system update, a flatpak update…) still fails the run, for its scripts
+if $ICONTD && (( SOFT_FAIL )); then exit 1; fi

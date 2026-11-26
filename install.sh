@@ -3,8 +3,16 @@
 # GURTSetupWizard.exe runs this inside WSL (people install with the GURTSetupWizard downloads, not this)
 set -eu
 REPO="${GURT_REPO_URL:-https://github.com/clrealy/GURT.git}"
-BIN="${GURT_BIN:-/usr/local/bin}"
-SHARE="${GURT_SHARE:-/usr/local/share/gurt}"
+# AerynOS: moss swaps in a whole new /usr (/usr/local too) on every update, so gurt lives in /opt/gurt there
+AERYN=""
+if command -v moss >/dev/null && { [ -f /usr/.stateID ] || { [ -r /etc/os-release ] && (. /etc/os-release; case " ${ID:-} ${ID_LIKE:-} " in *" aerynos "*|*" serpentos "*) exit 0 ;; *) exit 1 ;; esac); }; }; then AERYN=1; fi
+# icontd: installed from its installer, as root inside arch-chroot (no systemd, no session, nobody to ask). gurt goes to
+# /usr/bin/gurt (icontd moves it to /usr/lib/icontd/bin itself), and nothing here asks or starts anything
+ICONTD=""
+if [ "$(sed -n 's/^ID=//p' /etc/os-release 2>/dev/null | tr -d "\"'")" = icontd ]; then ICONTD=1; fi
+if [ -n "$AERYN" ]; then BIN="${GURT_BIN:-/opt/gurt/bin}"; SHARE="${GURT_SHARE:-/opt/gurt/share/gurt}"
+elif [ -n "$ICONTD" ]; then BIN="${GURT_BIN:-/usr/bin}"; SHARE="${GURT_SHARE:-/usr/share/gurt}"; GURT_WIZARD=0
+else BIN="${GURT_BIN:-/usr/local/bin}"; SHARE="${GURT_SHARE:-/usr/local/share/gurt}"; fi
 say() { printf '\033[32m==>\033[0m %s\n' "$*"; }
 die() { printf '\033[31m==> nah:\033[0m %s\n' "$*" >&2; exit 1; }
 # ChromeOS itself (developer mode / Brunch, with Chromebrew): /usr/local is yours and the rest is read-only, so no sudo
@@ -30,6 +38,9 @@ $SUDO install -Dm644 "$tmp/gurt/assets/wilhelm.mp3" "$SHARE/wilhelm.mp3"
 $SUDO install -Dm644 "$tmp/gurt/site/assets/apple-touch-icon.png" "$SHARE/gurt.png"
 [ -n "$CROS" ] || [ -f /etc/gurt.conf ] || $SUDO install -Dm644 "$tmp/gurt/gurt.conf" /etc/gurt.conf   # ChromeOS: /etc is read-only
 say "gurt installed to $BIN/gurt 🦆"
+if [ -n "$AERYN" ]; then   # /opt/gurt on PATH (and the library path + app menu) for every login
+  "$BIN/gurt" __aeryn-env && say "AerynOS: gurt lives in /opt/gurt (moss replaces /usr on every update). open a new terminal to use it"
+fi
 # GURT's app (a native window) for your CPU, from the latest release, checked against the release's SHA256SUMS.
 # no luck (offline, an unusual CPU)? gurt gui gets it later
 LIB="${GURT_LIB:-$(dirname "$BIN")/lib/gurt}"

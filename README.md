@@ -27,7 +27,7 @@ gurt search fetch --repo fedora
 gurt remove htop --repo apt
 ```
 
-It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine, Void, Gentoo, Solus, Devuan and anything else built on those.
+It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine, Void, Gentoo, GoboLinux, AerynOS, Solus, Devuan and anything else built on those.
 
 ## Sources
 
@@ -270,6 +270,33 @@ gurt runs on Gentoo like on any distro: `curl -fsSL https://gurtproject.org/inst
 - **Hotwyr** wraps `emerge`: `sudo emerge -av yay` can't find it → gurt offers aur/yay; `emerge -s` shows gurt's results too; `emerge -uDN @world` updates what gurt installed after.
 - Heads up: anything from your own repos compiles unless you've set up the [binary package host](https://wiki.gentoo.org/wiki/Gentoo_Binary_Host_Quickstart), so a big app can take a while. Other distros' packages and Flathub apps install prebuilt.
 
+### icontd
+
+icontd is Arch-based (`ID=icontd`, `ID_LIKE=arch` in /etc/os-release), so gurt uses pacman there. What's different:
+
+- **pacman and gurt live in `/usr/lib/icontd/bin`, off PATH.** gurt finds pacman as `$PACMAN`, then `/usr/lib/icontd/bin/pacman`, then `pacman` on PATH, and always runs it by its full path (sudo too). gurt runs fine by its full path, and `gurt self-update` replaces the gurt that's running, wherever it is.
+- **Installing it:** `arch-chroot /mnt bash -c "curl -fsSL https://gurtproject.org/install.sh | sh"` puts gurt in `/usr/bin/gurt` (icontd moves it), its files in `/usr/share/gurt` and the app in `/usr/lib/gurt`. It asks nothing, starts no services and needs no session.
+- **From scripts:** with no terminal on stdin, gurt says yes to everything (same as `-y` / `--yes`), shows no colors and never pages. Any failure exits non-zero, including a failed system update inside `gurt upgrade`.
+- **Commands to rely on:** `gurt install <pkg>`, `gurt remove <pkg>`, `gurt update` (what's waiting), `gurt upgrade` (installs it), and `gurt list --installed`: one name per line, exactly what `gurt remove` takes (`firefox`, `aur/yay`, `flatpak/org.gimp.GIMP`).
+- **GURT's app:** installs, removes and updates run as `pkexec /usr/lib/icontd/bin/gurt …` (icontd's polkit rule asks for the password). Browsing and search never ask: Main GURT's list comes from gurtproject.org/packages.json (cached for when you're offline). Since those jobs run as root, Flathub apps from the app install system-wide. AUR/source builds and pip/npm/cargo apps never run as root, so the app tells you to install those from a terminal (`gurt install aur/yay`).
+
+### AerynOS 🌌
+
+gurt runs on AerynOS: `curl -fsSL https://gurtproject.org/install.sh | sh`.
+
+- **moss is your package manager** for deps, `gurt utils`, `gurt remove` and native first (`moss pkg add` / `pkg remove`, and providers like `binary(gcc)` or `pkgconfig(gtk4)` for build deps). `gurt sysup` runs `moss sync --update`, so every system update is a new moss state you can boot back to.
+- **Everything gurt installs lives in /opt/gurt**, gurt itself too. moss swaps in a whole new /usr on every install and update (/usr/local included), so anything else in there would vanish. Other distros' packages get moved over when they install: `/usr/bin/x` becomes `/opt/gurt/bin/x`, and their app menu entries, symlinks and libraries follow. gurt puts /opt/gurt on your PATH, library path and app menu (`/etc/profile.d`, `/etc/ld.so.conf.d`, `/etc/environment.d`), so open a new terminal (or log in again for the menu) after the first one.
+- A package that hooks into the system (services, udev rules, PAM) goes in a box instead (`--box`), since those only work from /usr.
+- Heads up: an app with /usr paths baked into it might not find its files from /opt/gurt. Flathub, AppImage and `gh/` apps don't care, so they're the safest picks on AerynOS.
+
+### GoboLinux 🐟
+
+gurt runs on GoboLinux too: `curl -fsSL https://gurtproject.org/install.sh | sh`.
+
+- **GoboLinux's own tools do your distro's part:** deps and `gurt utils` use `InstallPackage` when there's a binary package and `Compile` (its recipes) when there isn't, `gurt remove` runs `RemoveProgram`, and `gurt sysup` runs `UpdateRecipes` and then installs what `SuggestUpdates` says is newer.
+- **Your /Programs are safe:** files in /usr (/System/Index) that link into `/Programs/<Name>/` belong to GoboLinux, and gurt never writes over them. `gurt why`, `gurt hogs --all`, `gurt dupes` and the junk cleaner (Compile's old source archives) know your programs.
+- Program names are GoboLinux's (`Curl`, `GCC`), and case doesn't matter: `gurt utils` finds `curl` as `Curl`.
+
 ### ChromeOS 💻
 
 Two ways, and gurt knows which one it's in.
@@ -311,6 +338,8 @@ gurt isn't just an installer: `gurt upgrade` updates **everything**. First your 
 | Void | `xbps-install -Su` (xbps itself first) |
 | Solus | `eopkg upgrade` |
 | Gentoo | `emerge --sync` + `emerge -uDN @world` |
+| GoboLinux | `UpdateRecipes`, then `InstallPackage` / `Compile` for what `SuggestUpdates` lists |
+| AerynOS | `moss sync --update` (a new state you can boot back to) |
 
 ```sh
 gurt update               # what's waiting (system + gurt + gurt itself), installs nothing
