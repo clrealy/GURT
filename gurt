@@ -173,9 +173,12 @@ cmd_root() { # [auto | sudo | doas | status]
 }
 
 # ───────────────────────── distro detection ─────────────────────────
+GOBO_PROGRAMS=${GOBO_PROGRAMS:-/Programs}   # 🐟 GoboLinux (more about it next to Gentoo's helpers)
+is_gobo() { [[ -f ${GOBO_VERSION_FILE:-/System/Settings/GoboLinuxVersion} ]]; }
 detect_pm() {
   local id="" like=""
   if $CROS_NATIVE; then if command -v crew >/dev/null; then echo crew; else echo none; fi; return; fi   # Chromebrew
+  if is_gobo && command -v InstallPackage >/dev/null; then echo gobo; return; fi                          # GoboLinux
   if [[ -r /etc/os-release ]]; then
     id=$(. /etc/os-release; echo "${ID:-}"); like=$(. /etc/os-release; echo "${ID_LIKE:-}")
   fi
@@ -214,12 +217,31 @@ pm_has() {
     apk)            apk info -e "$1" >/dev/null 2>&1 ;;
     xbps)           xbps-query "$1" >/dev/null 2>&1 ;;
     emerge)         [[ -n $(gentoo_installed "$1") ]] ;;
+    gobo)           gobo_installed "$1" >/dev/null ;;
     eopkg)          eopkg li 2>/dev/null | awk '{print $1}' | grep -qxF "$1" ;;
     lfs)            lfs_has "$1" ;;
     crew)           [[ -f /usr/local/etc/crew/meta/$1.filelist ]] ;;
     *)              return 1 ;;
   esac
 }
+
+# ── 🐟 GoboLinux: every program lives in /Programs/<Name>/<Version>/ (Current → the version in use), and /usr
+#    (/System/Index) is symlinks into them, so a file belongs to whichever program it points into. InstallPackage
+#    (binary packages) / Compile (recipes) / RemoveProgram / FindPackage / SuggestUpdates are its tools. names are
+#    CamelCase (Gimp, Curl), FindPackage doesn't care about case ──
+gobo_installed() { # name (any case) → /Programs/<Name> when a version of it is in use
+  local d n=${1,,}
+  for d in "$GOBO_PROGRAMS"/*; do
+    local b=${d##*/}
+    [[ ${b,,} == "$n" && -e $d/Current ]] && { echo "$d"; return 0; }
+  done
+  return 1
+}
+gobo_find() { # types name → the url / path FindPackage picks (types: official_package, recipe, installed…)
+  command -v FindPackage >/dev/null || return 1
+  FindPackage -t "$1" "$2" 2>/dev/null | head -n1 | grep .
+}
+gobo_url_ver() { local b=${1##*/}; b=${b#*--}; echo "${b%%--*}"; }   # …/Gimp--2.10.18--x86_64.tar.bz2 → 2.10.18
 
 # ── Gentoo: what's installed is /var/db/pkg/<category>/<name>-<version>/, the ebuilds are in /var/db/repos/<repo>/.
 #    reading those directly is instant (portageq / equery take seconds) and needs nothing extra installed ──
@@ -479,6 +501,11 @@ pm_install() {
     emerge) local a at=(); for a; do if [[ $a == */* ]]; then at+=("$a"); else at+=("$(gentoo_atom "$a" || echo "$a")"); fi; done
             if $NOCONFIRM; then asroot emerge --noreplace --ask=n --quiet-build "${at[@]}"
             else asroot emerge --noreplace --ask --quiet-build "${at[@]}"; fi ;;
+    gobo)   local a b=(); $NOCONFIRM && b=(--batch)
+            for a; do   # its binary package when there is one, else build its recipe
+              if gobo_find official_package "$a" >/dev/null; then asroot InstallPackage "${b[@]}" "$a"
+              else asroot Compile "${b[@]}" "$a"; fi || return 1
+            done ;;
     eopkg)  asroot eopkg install -y "$@" ;;
     lfs)    lfs_install "$@" ;;
     crew)   crew install "$@" < <(yes) ;;   # Chromebrew runs as you, no sudo
@@ -528,6 +555,7 @@ sys_owned() {
     crew)   cat /usr/local/etc/crew/meta/*.filelist 2>/dev/null | grep -Fx -f <(printf '%s\n' "${paths[@]}") ;;
     emerge) find "$GENTOO_DB" -mindepth 3 -maxdepth 3 -name CONTENTS -exec cat {} + 2>/dev/null |
               awk 'NR == FNR { want[$0] = 1; next } ($1 == "obj" || $1 == "sym") && ($2 in want) { print $2 }' <(printf '%s\n' "${paths[@]}") - ;;
+    gobo)   for p in "${paths[@]}"; do [[ $p == "$GOBO_PROGRAMS"/* || $(readlink -f -- "$p" 2>/dev/null) == "$GOBO_PROGRAMS"/* ]] && echo "$p"; done ;;
     *)      return 0 ;;
   esac | while IFS= read -r line; do if [[ -n ${back[$line]:-} ]]; then printf '%s' "${back[$line]}"; fi; done | sed '/^$/d' | sort -u; } || true
   return 0
@@ -1262,7 +1290,7 @@ appstream_pkg() { # flatpak app id → the package your distro ships that app in
 native_for() { # recipe-name info → your distro's package of the same app (nothing: your distro doesn't have it)
   local name=$1 info=$2 p rh h
   native_first && [[ -z $R ]] || return 1
-  case $PM in apt|dnf|yum|pacman|zypper|apk|xbps|eopkg|emerge) ;; *) return 1 ;; esac
+  case $PM in apt|dnf|yum|pacman|zypper|apk|xbps|eopkg|emerge|gobo) ;; *) return 1 ;; esac
   # 1. the recipe says (native_apt=steam-installer, native=no when your distro's build is broken)
   p=$(info_get "$info" "native_${PM/yum/dnf}"); [[ -n $p ]] || p=$(info_get "$info" native)
   case $p in no) return 1 ;; ?*) pm_available "$p" && { echo "$p"; return 0; }; return 1 ;; esac
@@ -1304,6 +1332,7 @@ pm_remove() { # name → your package manager removes it
     emerge)  local at; at=$(gentoo_installed "$1" | head -n1); at=${at%-"$(gentoo_split "$at" | cut -f2)"}
              [[ -n $at ]] || return 1
              asroot emerge --deselect "$at" >/dev/null && asroot emerge --depclean --ask=n "$at" ;;   # depclean: only if nothing else needs it
+    gobo)    local d; d=$(gobo_installed "$1") || return 0; asroot RemoveProgram --batch "${d##*/}" ;;
     *)       return 1 ;;
   esac
 }
@@ -2007,6 +2036,7 @@ pm_available() {
     xbps)   xbps-query -R "$1" >/dev/null 2>&1 ;;
     eopkg)  eopkg info "$1" 2>/dev/null | grep -q '^Name' ;;
     emerge) gentoo_atom "$1" >/dev/null ;;
+    gobo)   gobo_installed "$1" >/dev/null || gobo_find official_package,recipe "$1" >/dev/null ;;
     *)      return 1 ;;
   esac
 }
@@ -4543,6 +4573,7 @@ pm_version() { # what version would your distro install?
     emerge) local at v; at=$(gentoo_atom "$1") || return 0
             if command -v portageq >/dev/null && v=$(portageq best_visible / "$at" 2>/dev/null) && [[ -n $v ]]; then gentoo_split "$v" | cut -f2
             else for v in $(gentoo_repos); do printf '%s\n' "$v/$at"/*.ebuild; done | sed 's|.*/||; s|\.ebuild$||' | while read -r v; do gentoo_split "$v" | cut -f2; done | grep -v '^9999' | sort -V | tail -n1; fi ;;   # 9999 = live git ebuilds
+    gobo)   local u; u=$(gobo_find official_package,recipe "$1") && gobo_url_ver "$u" ;;
     *)      true ;;
   esac
 }
@@ -4884,6 +4915,7 @@ dm_pkg() { # the package that owns your login screen, so removing a desktop neve
     apt) dpkg -S "$bin" 2>/dev/null | head -n1 | cut -d: -f1 ;;
     pacman) pacman -Qoq "$bin" 2>/dev/null ;;
     dnf|yum|zypper) rpm -qf --qf '%{NAME}\n' "$bin" 2>/dev/null | head -n1 ;;
+    gobo) local r; r=$(readlink -f "$bin"); [[ $r == "$GOBO_PROGRAMS"/* ]] && { r=${r#"$GOBO_PROGRAMS"/}; echo "${r%%/*}"; } ;;
   esac
 }
 ask_really() { # like ask, but -y never says yes for you (used for deleting desktops)
@@ -5153,6 +5185,7 @@ native_names() { # what your distro's package manager installed, one name per li
     xbps)           xbps-query -l 2>/dev/null | awk '{ sub(/-[^-]*$/, "", $2); print $2 }' ;;
     eopkg)          eopkg li 2>/dev/null | awk 'NF { print $1 }' ;;
     emerge)         local d; for d in "$GENTOO_DB"/*/*/; do d=${d%/}; gentoo_split "$d" | cut -f1; done ;;
+    gobo)           local d; for d in "$GOBO_PROGRAMS"/*/; do d=${d%/}; [[ -e $d/Current ]] && echo "${d##*/}"; done ;;
   esac
   return 0
 }
@@ -5417,6 +5450,7 @@ cmd_why() {
         pacman) msg2 "what needs it: pacman -Qi $name  (look at \"Required By\")" ;;
         zypper) msg2 "what needs it: zypper search --requires --installed-only $name" ;;
         emerge) msg2 "what needs it: equery depends $name  (gentoolkit) · in your world file? grep $name /var/lib/portage/world" ;;
+        gobo)   msg2 "what needs it: CheckDependants $name" ;;
       esac
       return 0
     fi
@@ -5466,6 +5500,7 @@ native_sizes() { # → "bytes<TAB>pm/name" for what your distro's package manage
               m = a[2] ~ /^G/ ? 1073741824 : a[2] ~ /^M/ ? 1048576 : a[2] ~ /^K/ ? 1024 : 1; printf "%d\tpacman/%s\n", a[1] * m, n }' ;;
     emerge) local d b; for d in "$GENTOO_DB"/*/*/; do d=${d%/}; [[ -s $d/SIZE ]] || continue; read -r b <"$d/SIZE"
               [[ $b =~ ^[0-9]+$ ]] && printf '%d\temerge/%s\n' "$b" "$(gentoo_split "$d" | cut -f1)"; done ;;
+    gobo)   du -sb "$GOBO_PROGRAMS"/*/ 2>/dev/null | awk -F'\t' '{ n = $2; sub(/\/$/, "", n); sub(/.*\//, "", n); printf "%d\tgobo/%s\n", $1, n }' ;;
   esac
   return 0
 }
@@ -5506,7 +5541,7 @@ cmd_hogs() { # [--all|all] [--tsv] [n] | junk [--tsv] | clean [what…]
 
 # ── gurt hogs junk: caches, trash + leftovers that are safe to toss · gurt hogs clean [what…] tosses them ──
 dir_bytes() { du -sb -- "$@" 2>/dev/null | awk '{ s += $1 } END { printf "%d\n", s }'; }
-pm_cache_dirs() { case $PM in zypper) echo /var/cache/zypp/packages ;; apt) echo /var/cache/apt/archives ;; pacman) echo /var/cache/pacman/pkg ;; dnf) echo /var/cache/dnf /var/cache/libdnf5 ;; emerge) gentoo_distdir ;; esac; }
+pm_cache_dirs() { case $PM in zypper) echo /var/cache/zypp/packages ;; apt) echo /var/cache/apt/archives ;; pacman) echo /var/cache/pacman/pkg ;; dnf) echo /var/cache/dnf /var/cache/libdnf5 ;; emerge) gentoo_distdir ;; gobo) echo /Data/Compile/Archives ;; esac; }
 gentoo_distdir() { local d; d=$(portageq distdir 2>/dev/null) || d=""; [[ -d $d ]] || d=/var/cache/distfiles; [[ -d $d ]] || d=/usr/portage/distfiles; echo "$d"; }
 junk_items() { # → what<TAB>bytes<TAB>description<TAB>needs root (1|0)
   local b d trash="${XDG_DATA_HOME:-$HOME/.local/share}/Trash" dirs=()
@@ -5559,6 +5594,7 @@ junk_clean() { # [what…]
                        pacman) asroot pacman -Sc --noconfirm ;; dnf) asroot dnf clean packages ;;
                        emerge) if command -v eclean-dist >/dev/null; then asroot eclean-dist --deep
                                else asroot find "$(gentoo_distdir)" -maxdepth 1 -type f -delete; fi ;;   # re-downloaded when needed
+                       gobo)   asroot find /Data/Compile/Archives -maxdepth 1 -type f -delete ;;   # Compile downloads them again when needed
                      esac >/dev/null || { warn "$PM couldn't clean its cache"; continue; } ;;
       journal)       asroot journalctl --vacuum-size=200M >/dev/null 2>&1 || { warn "couldn't shrink the logs"; continue; } ;;
       coredumps)     asroot find /var/lib/systemd/coredump -type f -delete || { warn "couldn't delete the crash dumps"; continue; } ;;
@@ -6220,6 +6256,7 @@ os_dep() {
     dnf|zypper) for c in "$d-devel" "lib$d-devel" "$d"; do pm_available "$c" && { NATIVE_Q+=("$c"); return 0; }; done ;;
     apk)        for c in "$d-dev" "$d"; do pm_available "$c" && { NATIVE_Q+=("$c"); return 0; }; done ;;
     emerge)     for c in "$d" "lib$d" "${d#lib}"; do c=$(gentoo_atom "$c") && { NATIVE_Q+=("$c"); return 0; }; done ;;
+    gobo)       for c in "$d" "lib$d" "${d#lib}"; do pm_available "$c" && { NATIVE_Q+=("$c"); return 0; }; done ;;
   esac
   foreign_dep aur "$d"
 }
@@ -6646,6 +6683,16 @@ system_upgrade() {
       msg "🐧 updating your system (emerge --sync + @world — grab a snack 🍿)"
       { if command -v emaint >/dev/null; then asroot emaint sync --auto; else asroot emerge --sync; fi; } &&
         asroot emerge --ask="$($NOCONFIRM && echo n || echo y)" --update --deep --newuse --quiet-build @world ;;
+    gobo)
+      msg "🐟 updating GoboLinux (UpdateRecipes, then what SuggestUpdates says is newer)"
+      command -v UpdateRecipes >/dev/null && { asroot UpdateRecipes >/dev/null || warn "couldn't update the recipes"; }
+      local how name ver n=0 b=(); $NOCONFIRM && b=(--batch)
+      while read -r how name ver _; do
+        how=${how//\'/}; [[ -n $name && -n $ver ]] || continue
+        case $how in InstallPackage|Compile) ;; *) continue ;; esac
+        msg2 "$name → $ver ($how)"; asroot "$how" "${b[@]}" "$name" "$ver" || warn "$name didn't update"; n=$((n + 1))
+      done < <(SuggestUpdates 2>/dev/null | grep "^'")
+      (( n )) || msg2 "nothing newer" ;;
     crew)
       msg "💻 updating Chromebrew (crew update + upgrade). ChromeOS updates itself: Settings → About ChromeOS"
       crew update && crew upgrade < <(yes) ;;
@@ -6665,6 +6712,7 @@ system_updates_count() {
     zypper) zypper -q --no-refresh list-updates 2>/dev/null | grep -c '^v ' ;;
     apk)    apk version -l '<' 2>/dev/null | grep -vc '^Installed' ;;
     emerge) timeout 180 emerge --pretend --update --deep --newuse --quiet @world 2>/dev/null | grep -c '^\[ebuild' ;;
+    gobo)   command -v SuggestUpdates >/dev/null && timeout 120 SuggestUpdates 2>/dev/null | grep -c "^'" ;;
   esac
   return 0
 }

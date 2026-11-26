@@ -3,6 +3,7 @@
 ## Not released yet
 
 ### New
+- **GoboLinux 🐟** gurt runs on GoboLinux. Deps and `gurt utils` come from `InstallPackage` (binary packages) or `Compile` (recipes), `gurt remove` uses `RemoveProgram`, `gurt sysup` runs `UpdateRecipes` and installs what `SuggestUpdates` lists, and the files in /System/Index that link into /Programs count as your distro's, so gurt never overwrites them. `gurt why`, `gurt hogs --all`, `gurt dupes` and the junk cleaner know your programs too.
 - **Apps that build themselves 🧱** a `.gurtsrc` file is an app as its source code plus the GURTBUILD that builds it. Double-click one (or `gurt install ./app.gurtsrc`) and GURT compiles it on your computer, then installs it like any `git/` app, so `gurt remove` and `gurt upgrade` work on it. Make one from any folder with a GURTBUILD: `gurt srcpack <folder>`.
 - Source tarballs and zips you downloaded get "Open with GURT" too: GURT sees it's source code, finds how it builds (its GURTBUILD, PKGBUILD, CMake, meson, cargo, go or make) and builds it. Your archive app stays their default.
 

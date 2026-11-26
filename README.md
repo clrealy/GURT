@@ -27,7 +27,7 @@ gurt search fetch --repo fedora
 gurt remove htop --repo apt
 ```
 
-It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine, Void, Gentoo, Solus, Devuan and anything else built on those.
+It works on Debian, Ubuntu, Mint, Fedora, RHEL, Arch, Manjaro, openSUSE, Alpine, Void, Gentoo, GoboLinux, Solus, Devuan and anything else built on those.
 
 ## Sources
 
@@ -270,6 +270,14 @@ gurt runs on Gentoo like on any distro: `curl -fsSL https://gurtproject.org/inst
 - **Hotwyr** wraps `emerge`: `sudo emerge -av yay` can't find it → gurt offers aur/yay; `emerge -s` shows gurt's results too; `emerge -uDN @world` updates what gurt installed after.
 - Heads up: anything from your own repos compiles unless you've set up the [binary package host](https://wiki.gentoo.org/wiki/Gentoo_Binary_Host_Quickstart), so a big app can take a while. Other distros' packages and Flathub apps install prebuilt.
 
+### GoboLinux 🐟
+
+gurt runs on GoboLinux too: `curl -fsSL https://gurtproject.org/install.sh | sh`.
+
+- **GoboLinux's own tools do your distro's part:** deps and `gurt utils` use `InstallPackage` when there's a binary package and `Compile` (its recipes) when there isn't, `gurt remove` runs `RemoveProgram`, and `gurt sysup` runs `UpdateRecipes` and then installs what `SuggestUpdates` says is newer.
+- **Your /Programs are safe:** files in /usr (/System/Index) that link into `/Programs/<Name>/` belong to GoboLinux, and gurt never writes over them. `gurt why`, `gurt hogs --all`, `gurt dupes` and the junk cleaner (Compile's old source archives) know your programs.
+- Program names are GoboLinux's (`Curl`, `GCC`), and case doesn't matter: `gurt utils` finds `curl` as `Curl`.
+
 ### ChromeOS 💻
 
 Two ways, and gurt knows which one it's in.
@@ -311,6 +319,7 @@ gurt isn't just an installer: `gurt upgrade` updates **everything**. First your 
 | Void | `xbps-install -Su` (xbps itself first) |
 | Solus | `eopkg upgrade` |
 | Gentoo | `emerge --sync` + `emerge -uDN @world` |
+| GoboLinux | `UpdateRecipes`, then `InstallPackage` / `Compile` for what `SuggestUpdates` lists |
 
 ```sh
 gurt update               # what's waiting (system + gurt + gurt itself), installs nothing
